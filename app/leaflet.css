@@ -1,0 +1,33 @@
+/* Leaflet CSS */
+@import 'leaflet/dist/leaflet.css';
+
+/* Styles personnalisés pour tous les tooltips */
+.leaflet-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.leaflet-tooltip::before {
+  display: none !important;
+}
+
+.leaflet-tooltip-top::before,
+.leaflet-tooltip-bottom::before,
+.leaflet-tooltip-left::before,
+.leaflet-tooltip-right::before {
+  display: none !important;
+}
+
+/* Améliorer le contraste du cercle */
+.leaflet-interactive {
+  stroke-width: 3 !important;
+}
+
+/* Améliorer les contrôles de zoom */
+.leaflet-control-zoom a {
+  font-size: 18px !important;
+  font-weight: bold !important;
+}

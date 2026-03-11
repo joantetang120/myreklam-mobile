@@ -1,0 +1,1968 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart' as quill;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/screens/publish_options_screen.dart';
+import 'package:myreklam/widgets/categories_icon.dart';
+import 'package:myreklam/widgets/job_announcement_card.dart';
+import 'package:myreklam/widgets/formation_card.dart';
+import 'package:myreklam/widgets/evenement_card.dart';
+import 'package:myreklam/widgets/demande_card.dart';
+import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/screens/pro_post_detail_screen.dart';
+import 'package:myreklam/screens/job_detail_screen.dart';
+import 'package:myreklam/screens/training_detail_screen.dart';
+import 'package:myreklam/screens/event_detail_screen.dart';
+import 'package:myreklam/screens/demande_detail_screen.dart';
+import 'package:myreklam/widgets/post_content_card.dart';
+
+class MyAnnouncesScreen extends StatefulWidget {
+  const MyAnnouncesScreen({super.key});
+
+  @override
+  State<MyAnnouncesScreen> createState() => _MyAnnouncesScreenState();
+}
+
+class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
+  String _selectedFilter = 'Bons plans';
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  // Bons plans data
+  List<Map<String, dynamic>> _bonPlans = [];
+  bool _isLoadingBonPlans = true;
+  String? _bonPlansError;
+
+  // Job offers data
+  List<Map<String, dynamic>> _jobOffers = [];
+  bool _isLoadingJobOffers = true;
+  String? _jobOffersError;
+
+  // Trainings data
+  List<Map<String, dynamic>> _trainings = [];
+  bool _isLoadingTrainings = true;
+  String? _trainingsError;
+
+  // Events data
+  List<Map<String, dynamic>> _events = [];
+  bool _isLoadingEvents = true;
+  String? _eventsError;
+
+  // Demandes data
+  List<Map<String, dynamic>> _demandes = [];
+  bool _isLoadingDemandes = true;
+  String? _demandesError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBonPlans();
+    _loadJobOffers();
+    _loadTrainings();
+    _loadEvents();
+    _loadDemandes();
+  }
+
+  Future<void> _loadDemandes() async {
+    setState(() {
+      _isLoadingDemandes = true;
+      _demandesError = null;
+    });
+    try {
+      debugPrint('Fetching demandes from: /demandes');
+      final response = await ApiClient().authenticatedGet('/demandes');
+      final data = response['data'];
+      if (data is List) {
+        _demandes = List<Map<String, dynamic>>.from(data);
+      } else if (data is Map && data.containsKey('data')) {
+        _demandes = List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        _demandes = [];
+      }
+      debugPrint('Loaded ${_demandes.length} demandes');
+    } on ApiException catch (e) {
+      debugPrint('Error loading demandes: ${e.message}');
+      _demandesError = e.message;
+    } catch (e) {
+      debugPrint('Error loading demandes: $e');
+      _demandesError = 'Erreur de chargement';
+    } finally {
+      if (mounted) setState(() => _isLoadingDemandes = false);
+    }
+  }
+
+  Widget _buildDemandesList() {
+    if (_isLoadingDemandes) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+        ),
+      );
+    }
+    if (_demandesError != null) {
+      return _buildErrorState(_demandesError!, onRetry: _loadDemandes);
+    }
+    final items = _filteredDemandes;
+    if (items.isEmpty) {
+      return _buildEmptyState(
+        _searchQuery.isNotEmpty
+            ? 'Aucune demande trouvée pour "$_searchQuery"'
+            : 'Aucune demande publiée',
+      );
+    }
+    return Column(
+      children: items.map(_buildDemandeCard).toList(),
+    );
+  }
+
+  Widget _buildDemandeCard(Map<String, dynamic> d) {
+    final title = d['title']?.toString() ?? '';
+    final description = d['description']?.toString() ?? '';
+    final nature = d['nature']?.toString() ?? '';
+    final type = d['type']?.toString() ?? '';
+    final location = d['location']?.toString() ?? '';
+    final nationwide = d['nationwide'] == true;
+    final createdAt = d['created_at']?.toString();
+    final mediaFiles = d['media_files'] as List? ?? [];
+    final imageUrl = mediaFiles.isNotEmpty
+        ? _buildImageUrl(mediaFiles.first['url']?.toString() ?? '')
+        : null;
+
+    final categoryLabel = type.isNotEmpty ? type : (nature.isNotEmpty ? nature : 'Demande');
+    final displayLocation = nationwide
+        ? 'Toute la France'
+        : (location.isNotEmpty ? location : 'Non spécifié');
+
+    return DemandeCard(
+      profileImage: 'assets/images/default_profile.png',
+      username: 'Ma demande',
+      categoryLabel: categoryLabel,
+      categoryColor: const Color(0xFFFF9800),
+      title: title,
+      description: description.length > 200
+          ? '${description.substring(0, 200)}...'
+          : description,
+      location: displayLocation,
+      postImage: imageUrl,
+      likesCount: 0,
+      commentsCount: 0,
+      timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
+      onTapCTA: () => _navigateToDemandeDetail(d),
+    );
+  }
+
+  Future<void> _navigateToDemandeDetail(Map<String, dynamic> d) async {
+    final demandeId = d['id']?.toString();
+    if (demandeId == null || demandeId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir cette demande')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedGet('/demandes/$demandeId');
+      Navigator.pop(context);
+
+      final data = response['data'] as Map<String, dynamic>? ?? response;
+
+      final title = data['title']?.toString() ?? '';
+      final description = data['description']?.toString() ?? '';
+      final nature = data['nature']?.toString();
+      final type = data['type']?.toString();
+      final urgent = data['urgent'] == true;
+      final budgetMax = data['budget_max']?.toString();
+      final location = data['location']?.toString();
+      final nationwide = data['nationwide'] == true;
+      final searchRadiusKm = data['search_radius_km'] is int
+          ? data['search_radius_km'] as int
+          : int.tryParse(data['search_radius_km']?.toString() ?? '');
+      final showGoogleLocation = data['show_google_location'] == true;
+      final acceptMessages = data['accept_messages'] == true;
+      final createdAt = data['created_at']?.toString();
+      final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+
+      final images = mediaFiles
+          .where((m) => m is Map && m['url'] != null)
+          .map((m) => _buildImageUrl(m['url']?.toString() ?? ''))
+          .where((url) => url.isNotEmpty)
+          .toList();
+
+      final categoryLabel = (type != null && type.isNotEmpty)
+          ? type
+          : (nature != null && nature.isNotEmpty ? nature : 'Demande');
+
+      final tags = <PostTag>[
+        PostTag(title: categoryLabel, icon: Icons.label_outline, color: Colors.orange),
+        if (urgent)
+          PostTag(title: 'Urgent', icon: Icons.warning_amber_rounded, color: Colors.red),
+        if (nationwide)
+          PostTag(title: 'Toute la France', icon: Icons.public, color: Colors.blue),
+      ];
+
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DemandeDetailScreen(
+            images: images,
+            avatar: 'assets/images/default_profile.png',
+            username: 'Ma demande',
+            userType: categoryLabel,
+            demandeTitle: title,
+            description: description,
+            tags: tags,
+            timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
+            nature: nature,
+            type: type,
+            urgent: urgent,
+            budgetMax: budgetMax,
+            location: location,
+            nationwide: nationwide,
+            searchRadiusKm: searchRadiusKm,
+            showGoogleLocation: showGoogleLocation,
+            acceptMessages: acceptMessages,
+            isOwner: true,
+            demandeId: demandeId,
+            demandeData: data,
+            returnToListingOnEdit: true,
+          ),
+        ),
+      );
+      if (result == 'deleted' && mounted) _loadDemandes();
+    } catch (e) {
+      Navigator.pop(context);
+      debugPrint('Error fetching demande detail: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du chargement: ${e.toString()}')),
+      );
+    }
+  }
+
+  Widget _buildTrainingsList() {
+    if (_isLoadingTrainings) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+        ),
+      );
+    }
+    if (_trainingsError != null) {
+      return _buildErrorState(_trainingsError!, onRetry: _loadTrainings);
+    }
+    final items = _filteredTrainings;
+    if (items.isEmpty) {
+      return _buildEmptyState(
+        _searchQuery.isNotEmpty
+            ? 'Aucune formation trouvée pour "$_searchQuery"'
+            : 'Aucune formation publiée',
+      );
+    }
+    return Column(
+      children: items.map(_buildTrainingCard).toList(),
+    );
+  }
+
+  Widget _buildTrainingCard(Map<String, dynamic> tr) {
+    final title = tr['title']?.toString() ?? '';
+    final description = _stripHtml(tr['description']?.toString() ?? '');
+    final createdAt = tr['created_at']?.toString();
+    final price = tr['price'];
+    final durationHours = tr['duration_in_h'];
+    final durationUnit = tr['duration_unit']?.toString();
+    final status = tr['status']?.toString() ?? '';
+    final category = tr['training_category']?.toString() ?? '';
+    final subCategory = tr['training_sub_category']?.toString() ?? '';
+    final trainingType = tr['training_type']?.toString() ?? '';
+
+    final tags = <FormationTag>[
+      if (category.isNotEmpty)
+        FormationTag(icon: Icons.category_outlined, text: category),
+      if (subCategory.isNotEmpty)
+        FormationTag(icon: Icons.subdirectory_arrow_right, text: subCategory),
+      if (trainingType.isNotEmpty)
+        FormationTag(icon: Icons.school_outlined, text: trainingType),
+      if (price != null)
+        FormationTag(
+          icon: Icons.euro,
+          text: '${price.toString()} €',
+          isSpecial: true,
+        ),
+      if (durationHours != null)
+        FormationTag(
+          icon: Icons.timer_outlined,
+          text: '$durationHours h${durationUnit != null ? ' / $durationUnit' : ''}',
+        ),
+      if (status.isNotEmpty)
+        FormationTag(icon: Icons.flag_outlined, text: _statusLabel(status)),
+    ];
+
+    return FormationCard(
+      companyLogo: 'assets/images/Formation.png',
+      companyName: 'Ma formation',
+      formationTitle: title,
+      description: description.isNotEmpty ? description : 'Aucune description fournie.',
+      tags: tags,
+      timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
+      onApply: () {
+        debugPrint('TRAINING CARD TAPPED: ${tr['id']} ${tr['title']}');
+        _navigateToTrainingDetail(tr);
+      },
+    );
+  }
+
+  String _stripHtml(String value) {
+    return value.replaceAll(RegExp(r'<[^>]*>'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  Future<void> _loadTrainings() async {
+    setState(() {
+      _isLoadingTrainings = true;
+      _trainingsError = null;
+    });
+    try {
+      debugPrint('Fetching trainings from: /trainings');
+      final response = await ApiClient().authenticatedGet('/trainings');
+      final data = response['data'];
+      if (data is List) {
+        _trainings = List<Map<String, dynamic>>.from(data);
+      } else if (data is Map && data.containsKey('data')) {
+        _trainings = List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        _trainings = [];
+      }
+      debugPrint('Loaded ${_trainings.length} trainings');
+    } on ApiException catch (e) {
+      debugPrint('Error loading trainings: ${e.message}');
+      _trainingsError = e.message;
+    } catch (e) {
+      debugPrint('Error loading trainings: $e');
+      _trainingsError = 'Erreur de chargement';
+    } finally {
+      if (mounted) setState(() => _isLoadingTrainings = false);
+    }
+  }
+
+  Future<void> _loadEvents() async {
+    setState(() {
+      _isLoadingEvents = true;
+      _eventsError = null;
+    });
+    try {
+      debugPrint('Fetching events from: /events');
+      final response = await ApiClient().authenticatedGet('/events');
+      final data = response['data'];
+      if (data is List) {
+        _events = List<Map<String, dynamic>>.from(data);
+      } else if (data is Map && data.containsKey('data')) {
+        _events = List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        _events = [];
+      }
+      debugPrint('Loaded ${_events.length} events');
+    } on ApiException catch (e) {
+      debugPrint('Error loading events: ${e.message}');
+      _eventsError = e.message;
+    } catch (e) {
+      debugPrint('Error loading events: $e');
+      _eventsError = 'Erreur de chargement';
+    } finally {
+      if (mounted) setState(() => _isLoadingEvents = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadBonPlans() async {
+    setState(() {
+      _isLoadingBonPlans = true;
+      _bonPlansError = null;
+    });
+    try {
+      debugPrint('Fetching bon plans from: /bonplans');
+      final response = await ApiClient().authenticatedGet('/bonplans');
+      debugPrint('Bon plans response keys: ${response.keys.toList()}');
+      final data = response['data'];
+      debugPrint('Bon plans data type: ${data.runtimeType}');
+      if (data is List) {
+        _bonPlans = List<Map<String, dynamic>>.from(data);
+      } else if (data is Map && data.containsKey('data')) {
+        _bonPlans = List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        _bonPlans = [];
+      }
+      debugPrint('Loaded ${_bonPlans.length} bon plans');
+    } on ApiException catch (e) {
+      debugPrint('Error loading bon plans: ${e.message}');
+      _bonPlansError = e.message;
+    } catch (e) {
+      debugPrint('Error loading bon plans: $e');
+      _bonPlansError = 'Erreur de chargement';
+    } finally {
+      if (mounted) setState(() => _isLoadingBonPlans = false);
+    }
+  }
+
+  Future<void> _loadJobOffers() async {
+    setState(() {
+      _isLoadingJobOffers = true;
+      _jobOffersError = null;
+    });
+    try {
+      debugPrint('Fetching job offers from: /job-offers');
+      final response = await ApiClient().authenticatedGet('/job-offers');
+      debugPrint('Job offers response keys: ${response.keys.toList()}');
+      final data = response['data'];
+      debugPrint('Job offers data type: ${data.runtimeType}');
+      if (data is List) {
+        _jobOffers = List<Map<String, dynamic>>.from(data);
+      } else if (data is Map && data.containsKey('data')) {
+        _jobOffers = List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        _jobOffers = [];
+      }
+      debugPrint('Loaded ${_jobOffers.length} job offers');
+    } on ApiException catch (e) {
+      debugPrint('Error loading job offers: ${e.message}');
+      _jobOffersError = e.message;
+    } catch (e) {
+      debugPrint('Error loading job offers: $e');
+      _jobOffersError = 'Erreur de chargement';
+    } finally {
+      if (mounted) setState(() => _isLoadingJobOffers = false);
+    }
+  }
+
+  List<Map<String, dynamic>> get _filteredBonPlans {
+    if (_searchQuery.isEmpty) return _bonPlans;
+    final q = _searchQuery.toLowerCase();
+    return _bonPlans.where((bp) {
+      final title = (bp['title'] ?? '').toString().toLowerCase();
+      final desc = (bp['description'] ?? '').toString().toLowerCase();
+      final cat = (bp['category'] ?? '').toString().toLowerCase();
+      return title.contains(q) || desc.contains(q) || cat.contains(q);
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> get _filteredJobOffers {
+    if (_searchQuery.isEmpty) return _jobOffers;
+    final q = _searchQuery.toLowerCase();
+    return _jobOffers.where((jo) {
+      final title = (jo['title'] ?? '').toString().toLowerCase();
+      final desc = (jo['description'] ?? '').toString().toLowerCase();
+      final company = (jo['company']?['name'] ?? '').toString().toLowerCase();
+      return title.contains(q) || desc.contains(q) || company.contains(q);
+    }).toList();
+  }
+
+  int get _totalCount => _bonPlans.length + _jobOffers.length + _trainings.length + _events.length + _demandes.length;
+
+  int get _activeCount {
+    final activeBp = _bonPlans.where((bp) =>
+        bp['status'] == 'published' || bp['status'] == 'PUBLISHED').length;
+    final activeJo = _jobOffers.where((jo) =>
+        jo['status'] == 'PUBLISHED' || jo['status'] == 'published').length;
+    final activeTrainings = _trainings.where((tr) =>
+        (tr['status'] ?? '').toString().toUpperCase() == 'PUBLISHED').length;
+    final activeEvents = _events.where((ev) =>
+        (ev['status'] ?? '').toString().toUpperCase() == 'PUBLISHED').length;
+    final activeDemandes = _demandes.where((d) =>
+        (d['status'] ?? '').toString().toUpperCase() == 'PUBLISHED').length;
+    return activeBp + activeJo + activeTrainings + activeEvents + activeDemandes;
+  }
+
+  int get _expiredCount {
+    final expBp = _bonPlans.where((bp) =>
+        bp['status'] == 'rejected' || bp['status'] == 'REJECTED' ||
+        bp['status'] == 'ARCHIVED' || bp['status'] == 'archived').length;
+    final expJo = _jobOffers.where((jo) =>
+        jo['status'] == 'REJECTED' || jo['status'] == 'rejected' ||
+        jo['status'] == 'ARCHIVED' || jo['status'] == 'archived').length;
+    final expTrainings = _trainings.where((tr) {
+      final status = (tr['status'] ?? '').toString().toUpperCase();
+      return status == 'REJECTED' || status == 'ARCHIVED';
+    }).length;
+    final expEvents = _events.where((ev) {
+      final status = (ev['status'] ?? '').toString().toUpperCase();
+      return status == 'REJECTED' || status == 'ARCHIVED';
+    }).length;
+    final expDemandes = _demandes.where((d) {
+      final status = (d['status'] ?? '').toString().toUpperCase();
+      return status == 'REJECTED' || status == 'ARCHIVED';
+    }).length;
+    return expBp + expJo + expTrainings + expEvents + expDemandes;
+  }
+
+  List<Map<String, dynamic>> get _filteredTrainings {
+    if (_searchQuery.isEmpty) return _trainings;
+    final q = _searchQuery.toLowerCase();
+    return _trainings.where((tr) {
+      final title = (tr['title'] ?? '').toString().toLowerCase();
+      final category = (tr['training_category'] ?? '').toString().toLowerCase();
+      final subCategory = (tr['training_sub_category'] ?? '').toString().toLowerCase();
+      return title.contains(q) || category.contains(q) || subCategory.contains(q);
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> get _filteredDemandes {
+    if (_searchQuery.isEmpty) return _demandes;
+    final q = _searchQuery.toLowerCase();
+    return _demandes.where((d) {
+      final title = (d['title'] ?? '').toString().toLowerCase();
+      final desc = (d['description'] ?? '').toString().toLowerCase();
+      final nature = (d['nature'] ?? '').toString().toLowerCase();
+      final type = (d['type'] ?? '').toString().toLowerCase();
+      return title.contains(q) || desc.contains(q) || nature.contains(q) || type.contains(q);
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> get _filteredEvents {
+    if (_searchQuery.isEmpty) return _events;
+    final q = _searchQuery.toLowerCase();
+    return _events.where((ev) {
+      final title = (ev['title'] ?? '').toString().toLowerCase();
+      final desc = (ev['description'] ?? '').toString().toLowerCase();
+      final location = (ev['coverage_area'] ?? '').toString().toLowerCase();
+      return title.contains(q) || desc.contains(q) || location.contains(q);
+    }).toList();
+  }
+
+  Future<void> _navigateToBonPlanDetail(Map<String, dynamic> bp) async {
+    final bonPlanId = bp['id']?.toString();
+    if (bonPlanId == null || bonPlanId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir ce bon plan')),
+      );
+      return;
+    }
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedGet('/bonplans/$bonPlanId');
+      if (!mounted) return;
+      Navigator.pop(context); // dismiss loading
+
+      final data = response['data'] as Map<String, dynamic>? ?? response;
+      final user = data['user'] as Map<String, dynamic>?;
+      final profileImage = user?['avatar']?.toString() != null
+          ? _buildImageUrl(user!['avatar']?.toString())
+          : 'assets/images/default_profile.png';
+      final username = user?['name']?.toString() ?? 'Mon bon plan';
+      final userType = user?['account_type']?.toString() ?? 'Particulier';
+      final title = data['title']?.toString() ?? 'Bon plan';
+      final description = _stripHtml(data['description']?.toString() ?? '');
+      final descriptionDelta = data['description_delta'];
+      final category = data['category']?.toString() ?? '';
+      final subCategory = data['sub_category']?.toString() ?? '';
+      final type = data['type']?.toString() ?? '';
+      final availableAt = data['available_at_name']?.toString() ?? 'Non spécifié';
+      final validityType = data['validity_type']?.toString() ?? 'permanent';
+      final validFrom = data['valid_from']?.toString();
+      final validUntil = data['valid_until']?.toString();
+      final link = data['link']?.toString();
+      final pickupMethods = data['pickup_methods'] as Map<String, dynamic>?;
+      final deliveryInfo = _buildDeliveryInfo(pickupMethods);
+      final location = data['location_search']?.toString();
+      final mediaFiles = data['media_files'] as List?;
+      final images = _extractImages(mediaFiles);
+      final reductionLabel = data['reduction_label']?.toString();
+
+      final tags = <PostTag>[
+        if (category.isNotEmpty)
+          PostTag(title: category, icon: Icons.local_offer_outlined, color: Colors.orange),
+        if (subCategory.isNotEmpty)
+          PostTag(title: subCategory, icon: Icons.grid_view_outlined, color: Colors.grey),
+        if (type.isNotEmpty)
+          PostTag(title: type, icon: Icons.check_circle_outline, color: Colors.green),
+      ];
+
+      if (!mounted) return;
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProPostDetailScreen(
+            images: images,
+            discount: reductionLabel,
+            avatar: profileImage,
+            name: username,
+            userType: userType,
+            title: title,
+            description: description,
+            descriptionDelta: descriptionDelta,
+            tags: tags,
+            time: _timeAgo(data['created_at']?.toString()),
+            availability: availableAt,
+            validityType: validityType,
+            validFrom: validFrom,
+            validUntil: validUntil,
+            deliveryInfo: deliveryInfo,
+            location: location,
+            link: link,
+            isOwner: true,
+            bonPlanId: bonPlanId,
+            bonPlanData: data,
+          ),
+        ),
+      );
+      if (result == 'deleted' && mounted) _loadBonPlans();
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // dismiss loading
+      debugPrint('Error fetching bon plan detail: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du chargement: $e')),
+      );
+    }
+  }
+
+  String _buildDeliveryInfo(Map<String, dynamic>? pickupMethods) {
+    if (pickupMethods == null) return 'Non spécifié';
+    final inStore = pickupMethods['in_store'] == true;
+    final delivery = pickupMethods['delivery'] == true;
+    if (inStore && delivery) return 'En magasin et livraison';
+    if (inStore) return 'En magasin uniquement';
+    if (delivery) return 'Livraison disponible';
+    return 'Non spécifié';
+  }
+
+  Future<void> _navigateToTrainingDetail(Map<String, dynamic> tr) async {
+    debugPrint('TRAINING NAV: called with keys=${tr.keys.toList()}');
+    debugPrint('TRAINING NAV: id=${tr['id']} title=${tr['title']}');
+    final trainingId = tr['id']?.toString();
+    if (trainingId == null || trainingId.isEmpty) {
+      debugPrint('TRAINING NAV: id is null or empty, showing snackbar');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir cette formation')),
+      );
+      return;
+    }
+    debugPrint('TRAINING NAV: fetching /trainings/$trainingId');
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedGet('/trainings/$trainingId');
+      Navigator.pop(context); // Dismiss loading
+
+      final data = response['data'] as Map<String, dynamic>? ?? response;
+
+      debugPrint('TRAINING DETAIL keys: ${data.keys.toList()}');
+
+      final title = data['title']?.toString() ?? '';
+      final description = _stripHtml(data['description']?.toString() ?? '');
+      final descriptionDelta = data['description_delta'];
+      final companyName = data['company_name']?.toString() ?? 'Organisme';
+      final website = data['website']?.toString();
+      final trainingType = data['training_type']?.toString();
+      final trainingCategory = data['training_category']?.toString();
+      final trainingSubCategory = data['training_sub_category']?.toString();
+      final trainingStyleRaw = data['training_style'];
+      final trainingStyle = trainingStyleRaw is List
+          ? trainingStyleRaw.map((e) => e.toString()).toList()
+          : <String>[];
+      final trainingPublicRaw = data['training_public'];
+      final trainingPublic = trainingPublicRaw is List
+          ? trainingPublicRaw.map((e) => e.toString()).toList()
+          : <String>[];
+      final requiredLevelsRaw = data['required_levels'];
+      final requiredLevels = requiredLevelsRaw is List
+          ? requiredLevelsRaw.map((e) => e.toString()).toList()
+          : <String>[];
+      final price = data['price']?.toString();
+      final priceType = data['price_type']?.toString();
+      final publicType = data['public_type']?.toString();
+      final tempo = data['tempo']?.toString();
+      final trainingFundingRaw = data['training_funding'];
+      final trainingFunding = trainingFundingRaw is List
+          ? trainingFundingRaw.map((e) => e.toString()).toList()
+          : <String>[];
+      final durationInH = data['duration_in_h'] is int
+          ? data['duration_in_h'] as int
+          : int.tryParse(data['duration_in_h']?.toString() ?? '');
+      final durationUnit = data['duration_unit']?.toString();
+      final startDate = data['start_date']?.toString();
+      final endDate = data['end_date']?.toString();
+      final dateToDefine = data['date_to_define'] == true;
+      final addressCity = data['address_city']?.toString();
+      final addressZipcode = data['address_zipcode']?.toString();
+      final addressLine1 = data['address_line1']?.toString();
+      final showLocation = data['show_location'] == true;
+      final certificationRaw = data['certification'];
+      final certification = certificationRaw is List
+          ? certificationRaw.map((e) => e.toString()).toList()
+          : <String>[];
+      final createdAt = data['created_at']?.toString();
+      final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+
+      // Build images
+      final images = mediaFiles
+          .where((m) => m is Map && m['url'] != null)
+          .map((m) => _buildImageUrl(m['url']?.toString() ?? ''))
+          .where((url) => url.isNotEmpty)
+          .toList();
+
+      // Build tags
+      final tags = <FormationTag>[
+        if (trainingCategory != null && trainingCategory.isNotEmpty)
+          FormationTag(icon: Icons.category_outlined, text: trainingCategory),
+        if (trainingSubCategory != null && trainingSubCategory.isNotEmpty)
+          FormationTag(icon: Icons.subdirectory_arrow_right, text: trainingSubCategory),
+        if (trainingType != null && trainingType.isNotEmpty)
+          FormationTag(icon: Icons.school_outlined, text: trainingType),
+        if (durationInH != null)
+          FormationTag(icon: Icons.timer_outlined, text: '$durationInH h'),
+        if (price != null)
+          FormationTag(icon: Icons.euro, text: '$price €', isSpecial: true),
+      ];
+
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TrainingDetailScreen(
+            images: images,
+            companyLogo: 'assets/images/Formation.png',
+            companyName: companyName,
+            trainingTitle: title,
+            description: description,
+            descriptionDelta: descriptionDelta,
+            tags: tags,
+            timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
+            website: website,
+            trainingType: trainingType,
+            trainingCategory: trainingCategory,
+            trainingSubCategory: trainingSubCategory,
+            trainingStyle: trainingStyle,
+            trainingPublic: trainingPublic,
+            requiredLevels: requiredLevels,
+            price: price,
+            priceType: priceType,
+            publicType: publicType,
+            tempo: tempo,
+            trainingFunding: trainingFunding,
+            durationInH: durationInH,
+            durationUnit: durationUnit,
+            startDate: startDate,
+            endDate: endDate,
+            dateToDefine: dateToDefine,
+            addressCity: addressCity,
+            addressZipcode: addressZipcode,
+            addressLine1: addressLine1,
+            showLocation: showLocation,
+            certification: certification,
+            isOwner: true,
+            trainingId: trainingId,
+            trainingData: data,
+            returnToListingOnEdit: true,
+          ),
+        ),
+      );
+      if (result == 'deleted' && mounted) _loadTrainings();
+    } catch (e) {
+      Navigator.pop(context); // Dismiss loading
+      debugPrint('Error fetching training detail: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du chargement: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _navigateToJobDetail(Map<String, dynamic> jo) async {
+    final jobId = jo['id']?.toString();
+    if (jobId == null || jobId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir cette offre d\'emploi')),
+      );
+      return;
+    }
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedGet('/job-offers/$jobId');
+      Navigator.pop(context); // Dismiss loading
+
+      final data = response['data'] as Map<String, dynamic>? ?? response;
+
+      debugPrint('JOB DETAIL API response keys: ${data.keys.toList()}');
+      debugPrint('JOB DETAIL description type: ${data['description']?.runtimeType}');
+      debugPrint('JOB DETAIL description value: ${data['description']}');
+      debugPrint('JOB DETAIL description_delta: ${data['description_delta']}');
+      data.forEach((key, value) {
+        if (key.toLowerCase().contains('desc') || key.toLowerCase().contains('delta')) {
+          debugPrint('JOB DETAIL key=$key type=${value?.runtimeType} value=$value');
+        }
+      });
+
+      // Extract job offer details
+      final title = data['title']?.toString() ?? '';
+      final descriptionRaw = data['description'];
+      final description = descriptionRaw?.toString() ?? '';
+      final descriptionDelta = data['description_delta'] ?? (descriptionRaw is List ? descriptionRaw : null);
+      final profileDescription = data['profile_description']?.toString();
+      final companyName = data['company_name']?.toString() ?? 'Entreprise';
+      final companyWebsite = data['company_website']?.toString() ?? '';
+      final contractTypeRaw = data['contract_type'];
+      final contractType = contractTypeRaw is Map ? (contractTypeRaw['name'] ?? contractTypeRaw.toString()) : (contractTypeRaw?.toString() ?? '');
+      final workTimeRaw = data['work_time'];
+      final workTime = workTimeRaw is Map ? (workTimeRaw['name'] ?? workTimeRaw.toString()) : (workTimeRaw?.toString() ?? '');
+      final locationRaw = data['location'];
+      final location = locationRaw is Map ? (locationRaw['city'] ?? locationRaw['name'] ?? locationRaw.toString()) : (locationRaw?.toString() ?? '');
+      final categoryRaw = data['category'];
+      final category = categoryRaw is Map ? (categoryRaw['name'] ?? categoryRaw.toString()) : (categoryRaw?.toString() ?? '');
+      final salaryMin = data['salary_min'];
+      final salaryMax = data['salary_max'];
+      final advantagesRaw = data['advantages'];
+      final advantages = advantagesRaw is List
+          ? advantagesRaw.map((a) => a is Map ? (a['name'] ?? a.toString()) : a.toString()).toList()
+          : <String>[];
+      final createdAt = data['created_at']?.toString();
+      final mediaRaw = data['media'] as List? ?? data['media_files'] as List? ?? [];
+      final remoteWork = data['remote_work'] == true;
+      final educationLevelRaw = data['education_level'];
+      final educationLevel = educationLevelRaw is Map ? (educationLevelRaw['name'] ?? educationLevelRaw.toString()) : educationLevelRaw?.toString();
+      final experienceLevelRaw = data['experience_level'];
+      final experienceLevel = experienceLevelRaw is Map ? (experienceLevelRaw['name'] ?? experienceLevelRaw.toString()) : experienceLevelRaw?.toString();
+
+      // Build images list
+      final images = mediaRaw
+          .where((m) => m is Map && m['url'] != null)
+          .map((m) => _buildImageUrl(m['url']?.toString() ?? ''))
+          .where((url) => url.isNotEmpty)
+          .toList();
+
+      if (images.isEmpty) {
+        images.add('assets/images/dashboard_particulier/Rectangle 13.png');
+      }
+
+      // Build tags
+      final tags = <JobDetailTag>[
+        if (contractType.isNotEmpty)
+          JobDetailTag(icon: Icons.description_outlined, text: contractType),
+        if (workTime.isNotEmpty)
+          JobDetailTag(icon: Icons.access_time, text: workTime),
+        if (category.isNotEmpty)
+          JobDetailTag(icon: Icons.category_outlined, text: category),
+        if (location.isNotEmpty)
+          JobDetailTag(icon: Icons.location_on_outlined, text: location),
+        if (salaryMin != null || salaryMax != null)
+          JobDetailTag(
+            icon: Icons.euro,
+            text: _formatSalary(salaryMin, salaryMax),
+            isSpecial: true,
+          ),
+      ];
+
+      // Build advantages list
+      final advantagesList = advantages.take(3).map((a) => a.toString()).toList();
+
+      // Navigate to detail screen
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => JobDetailScreen(
+            images: images,
+            companyLogo: '',
+            companyName: companyName,
+            companyWebsite: companyWebsite,
+            jobTitle: title,
+            description: description,
+            descriptionDelta: descriptionDelta,
+            profileDescription: profileDescription,
+            tags: tags,
+            advantages: advantagesList,
+            timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
+            location: location,
+            remoteWork: remoteWork,
+            educationLevel: educationLevel,
+            experienceLevel: experienceLevel,
+            isOwner: true,
+            jobOfferId: jobId,
+            jobOfferData: data,
+          ),
+        ),
+      );
+      if (result == 'deleted' && mounted) _loadJobOffers();
+    } catch (e) {
+      Navigator.pop(context); // Dismiss loading
+      debugPrint('Error fetching job offer detail: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du chargement: ${e.toString()}')),
+      );
+    }
+  }
+
+  List<String> _extractImages(List? mediaFiles) {
+    if (mediaFiles == null || mediaFiles.isEmpty) {
+      return ['assets/images/details_bon_plans/Rectangle 35.png'];
+    }
+    final images = <String>[];
+    for (final m in mediaFiles) {
+      if (m is Map && m['url'] != null) {
+        final url = _buildImageUrl(m['url']?.toString());
+        if (url.isNotEmpty) {
+          images.add(url);
+        }
+      }
+    }
+    return images.isNotEmpty ? images : ['assets/images/details_bon_plans/Rectangle 35.png'];
+  }
+
+  String _timeAgo(String? dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      final diff = DateTime.now().difference(date);
+      if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes}min';
+      if (diff.inHours < 24) return 'il y a ${diff.inHours}h';
+      if (diff.inDays < 7) return 'il y a ${diff.inDays}j';
+      if (diff.inDays < 30) return 'il y a ${diff.inDays ~/ 7} sem.';
+      return 'il y a ${diff.inDays ~/ 30} mois';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _statusLabel(String? status) {
+    switch (status?.toUpperCase()) {
+      case 'PUBLISHED': return 'Publié';
+      case 'PENDING_REVIEW': return 'En attente';
+      case 'DRAFT': return 'Brouillon';
+      case 'REJECTED': return 'Rejeté';
+      case 'ARCHIVED': return 'Archivé';
+      default: return status ?? '';
+    }
+  }
+
+  Color _statusColor(String? status) {
+    switch (status?.toUpperCase()) {
+      case 'PUBLISHED': return const Color(0xFF4CAF50);
+      case 'PENDING_REVIEW': return const Color(0xFFFF9800);
+      case 'DRAFT': return Colors.grey;
+      case 'REJECTED': return const Color(0xFFF44336);
+      case 'ARCHIVED': return Colors.blueGrey;
+      default: return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppLayout(
+      currentIndex: 4,
+      onTabTapped: (index) {
+        if (index != 4) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ParticulierMainScreen(initialIndex: index),
+            ),
+          );
+        }
+      },
+      body: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios,
+              color: Color(0xFF616161),
+              size: 18,
+            ),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      const ParticulierMainScreen(initialIndex: 4),
+                ),
+              );
+            },
+          ),
+          title: const Text(
+            'Mes annonces',
+            style: TextStyle(
+              color: Color(0xFF616161),
+              fontFamily: 'Manjari',
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: RefreshIndicator(
+          onRefresh: () async {
+            await Future.wait([
+              _loadBonPlans(),
+              _loadJobOffers(),
+              _loadTrainings(),
+              _loadEvents(),
+              _loadDemandes(),
+            ]);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 16),
+                // Search bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    decoration: InputDecoration(
+                      hintText: 'Faire une recherche',
+                      hintStyle: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      prefixIcon: Icon(Icons.search, color: Colors.grey[600], size: 20),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFFF9800)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Stats cards
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          count: '$_totalCount',
+                          label: 'Total',
+                          iconColor: const Color(0xFF03A9F4),
+                          icon: Icons.description,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStatCard(
+                          count: '$_activeCount',
+                          label: 'Activés',
+                          iconColor: const Color(0xFF4CAF50),
+                          icon: Icons.check_circle,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStatCard(
+                          count: '$_expiredCount',
+                          label: 'Expirées',
+                          iconColor: const Color(0xFFFF5252),
+                          icon: Icons.cancel,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // Filter header + post button
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Filtre par catégorie',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF616161),
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const PublishOptionsScreen(),
+                            ),
+                          ).then((_) {
+                            _loadBonPlans();
+                            _loadJobOffers();
+                          });
+                        },
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text(
+                          'Poster une annonce',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF9800),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Category filter icons
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        CategoriesIcon(
+                          title: 'Bons plans',
+                          iconColor: const Color.fromARGB(255, 252, 116, 37),
+                          bgColor: const Color(0xFFFFE0B2).withOpacity(0.2),
+                          icon: Icons.card_giftcard_outlined,
+                          onTap: () => setState(() => _selectedFilter = 'Bons plans'),
+                        ),
+                        const SizedBox(width: 15),
+                        CategoriesIcon(
+                          title: "Offre d'emploi",
+                          iconColor: Colors.lightBlueAccent,
+                          bgColor: const Color(0xFFB3E5FC).withOpacity(0.2),
+                          iconAsset: 'assets/images/offres.png',
+                          onTap: () => setState(() => _selectedFilter = "Offre d'emploi"),
+                        ),
+                        const SizedBox(width: 15),
+                        CategoriesIcon(
+                          title: 'Formations',
+                          iconColor: Colors.purple,
+                          bgColor: const Color(0xFFE1BEE7).withOpacity(0.1),
+                          iconAsset: 'assets/images/Formation.png',
+                          onTap: () => setState(() => _selectedFilter = 'Formations'),
+                        ),
+                        const SizedBox(width: 15),
+                        CategoriesIcon(
+                          title: 'Evenements',
+                          iconColor: Colors.green,
+                          bgColor: const Color(0xFFE6F7EF).withOpacity(0.5),
+                          icon: Icons.event_outlined,
+                          onTap: () => setState(() => _selectedFilter = 'Événement'),
+                        ),
+                        const SizedBox(width: 15),
+                        CategoriesIcon(
+                          title: 'Demandes',
+                          iconColor: const Color.fromARGB(255, 252, 231, 49),
+                          bgColor: const Color.fromARGB(255, 255, 250, 178).withOpacity(0.2),
+                          icon: Icons.chat_outlined,
+                          onTap: () => setState(() => _selectedFilter = 'Demandes'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _buildContent(),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    if (_selectedFilter == 'Bons plans') {
+      return _buildBonPlansList();
+    } else if (_selectedFilter == "Offre d'emploi") {
+      return _buildJobOffersList();
+    } else if (_selectedFilter == 'Formations') {
+      return _buildTrainingsList();
+    } else if (_selectedFilter == 'Événement') {
+      return _buildEventsList();
+    } else if (_selectedFilter == 'Demandes') {
+      return _buildDemandesList();
+    }
+    return _buildEmptyState('Bientôt disponible pour cette catégorie');
+  }
+
+  Widget _buildBonPlansList() {
+    if (_isLoadingBonPlans) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+        ),
+      );
+    }
+    if (_bonPlansError != null) {
+      return _buildErrorState(_bonPlansError!, onRetry: _loadBonPlans);
+    }
+    final items = _filteredBonPlans;
+    if (items.isEmpty) {
+      return _buildEmptyState(
+        _searchQuery.isNotEmpty
+            ? 'Aucun bon plan trouvé pour "$_searchQuery"'
+            : 'Aucun bon plan publié',
+      );
+    }
+    return Column(
+      children: items.map((bp) => _buildBonPlanCard(bp)).toList(),
+    );
+  }
+
+  Widget _buildJobOffersList() {
+    if (_isLoadingJobOffers) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+        ),
+      );
+    }
+    if (_jobOffersError != null) {
+      return _buildErrorState(_jobOffersError!, onRetry: _loadJobOffers);
+    }
+    final items = _filteredJobOffers;
+    if (items.isEmpty) {
+      return _buildEmptyState(
+        _searchQuery.isNotEmpty
+            ? 'Aucune offre trouvée pour "$_searchQuery"'
+            : "Aucune offre d'emploi publiée",
+      );
+    }
+    return Column(
+      children: items.map((jo) => _buildJobOfferCard(jo)).toList(),
+    );
+  }
+
+  Widget _buildEventsList() {
+    if (_isLoadingEvents) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+        ),
+      );
+    }
+    if (_eventsError != null) {
+      return _buildErrorState(_eventsError!, onRetry: _loadEvents);
+    }
+    final items = _filteredEvents;
+    if (items.isEmpty) {
+      return _buildEmptyState(
+        _searchQuery.isNotEmpty
+            ? 'Aucun événement trouvé pour "$_searchQuery"'
+            : 'Aucun événement publié',
+      );
+    }
+    return Column(
+      children: items.map((ev) => _buildEventCard(ev)).toList(),
+    );
+  }
+
+  Widget _buildEventCard(Map<String, dynamic> ev) {
+    final title = ev['title']?.toString() ?? '';
+    final description = _stripHtml(ev['description']?.toString() ?? '');
+    final createdAt = ev['created_at']?.toString();
+    final priceType = ev['price_type']?.toString() ?? 'gratuit';
+    final priceAmount = ev['price_amount'];
+    final coverageArea = ev['coverage_area']?.toString() ?? '';
+    final eventDate = ev['event_date']?.toString();
+    final startDate = ev['start_date']?.toString();
+    final durationType = ev['duration_type']?.toString() ?? '';
+    final categoryCode = ev['category_code']?.toString() ?? '';
+    final subCategoryCode = ev['sub_category_code']?.toString() ?? '';
+    final formatType = ev['format_type']?.toString() ?? '';
+    
+    final mediaFiles = ev['media_files'] as List? ?? [];
+    final eventImage = mediaFiles.isNotEmpty 
+        ? _buildImageUrl(mediaFiles.first['url']?.toString() ?? '')
+        : 'assets/images/default_event.png';
+
+    String displayDate = '';
+    if (durationType == 'one_day' && eventDate != null) {
+      try {
+        final date = DateTime.parse(eventDate);
+        displayDate = '${date.day}/${date.month}/${date.year}';
+      } catch (_) {
+        displayDate = eventDate;
+      }
+    } else if (durationType == 'multi_day' && startDate != null) {
+      try {
+        final date = DateTime.parse(startDate);
+        displayDate = 'À partir du ${date.day}/${date.month}/${date.year}';
+      } catch (_) {
+        displayDate = startDate;
+      }
+    } else if (durationType == 'permanent') {
+      displayDate = 'Permanent';
+    }
+
+    String displayPrice = 'Gratuit';
+    if (priceType == 'payant' && priceAmount != null) {
+      displayPrice = '$priceAmount €';
+    }
+
+    final categories = <String>[
+      if (categoryCode.isNotEmpty) categoryCode,
+      if (subCategoryCode.isNotEmpty) subCategoryCode,
+      if (formatType.isNotEmpty) formatType,
+    ];
+
+    return EvenementCard(
+      profileImage: 'assets/images/default_profile.png',
+      username: 'Mon événement',
+      userType: 'Organisateur',
+      eventTitle: title,
+      eventImage: eventImage,
+      badge: null,
+      categories: categories,
+      eventDate: displayDate,
+      location: coverageArea.isNotEmpty ? coverageArea : 'Non spécifié',
+      timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
+      price: displayPrice,
+      likesCount: 0,
+      commentsCount: 0,
+      onTapCTA: () => _navigateToEventDetail(ev),
+    );
+  }
+
+  Future<void> _navigateToEventDetail(Map<String, dynamic> ev) async {
+    final eventId = ev['id']?.toString();
+    if (eventId == null || eventId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir cet événement')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedGet('/events/$eventId');
+      Navigator.pop(context);
+
+      final data = response['data'] as Map<String, dynamic>? ?? response;
+      debugPrint('EVENT DETAIL keys: ${data.keys.toList()}');
+
+      final title = data['title']?.toString() ?? '';
+      final description = _stripHtml(data['description']?.toString() ?? '');
+      final descriptionDelta = data['description_delta'];
+      final categoryCode = data['category_code']?.toString();
+      final subCategoryCode = data['sub_category_code']?.toString();
+      final formatType = data['format_type']?.toString();
+      final durationType = data['duration_type']?.toString();
+      final eventDate = data['event_date']?.toString();
+      final startDate = data['start_date']?.toString();
+      final endDate = data['end_date']?.toString();
+      final startTime = data['start_time']?.toString();
+      final endTime = data['end_time']?.toString();
+      final priceType = data['price_type']?.toString();
+      final priceAmount = data['price_amount']?.toString();
+      final reservationMode = data['reservation_mode']?.toString();
+      final coverageArea = data['coverage_area']?.toString();
+      final isNationwide = data['is_nationwide'] == true;
+      final organizerName = data['organizer_name']?.toString();
+      final isOrganizer = data['is_organizer'] != false;
+      final websiteUrl = data['website_url']?.toString();
+      final landingUrl = data['landing_url']?.toString();
+      final acceptMessages = data['accept_messages'] == true;
+      final createdAt = data['created_at']?.toString();
+      final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+
+      final images = mediaFiles
+          .where((m) => m is Map && m['url'] != null)
+          .map((m) => _buildImageUrl(m['url']?.toString() ?? ''))
+          .where((url) => url.isNotEmpty)
+          .toList();
+
+      final tags = <PostTag>[
+        if (categoryCode != null && categoryCode.isNotEmpty)
+          PostTag(title: categoryCode, icon: Icons.local_offer_outlined, color: Colors.green),
+        if (subCategoryCode != null && subCategoryCode.isNotEmpty)
+          PostTag(title: subCategoryCode, icon: Icons.grid_view_outlined, color: Colors.grey),
+        if (formatType != null && formatType.isNotEmpty)
+          PostTag(title: formatType, icon: Icons.videocam_outlined, color: Colors.blue),
+      ];
+
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EventDetailScreen(
+            images: images,
+            avatar: 'assets/images/default_profile.png',
+            username: isOrganizer ? 'Mon événement' : (organizerName ?? 'Organisateur'),
+            userType: 'Évènement',
+            eventTitle: title,
+            description: description,
+            descriptionDelta: descriptionDelta,
+            tags: tags,
+            timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
+            categoryCode: categoryCode,
+            subCategoryCode: subCategoryCode,
+            formatType: formatType,
+            durationType: durationType,
+            eventDate: eventDate,
+            startDate: startDate,
+            endDate: endDate,
+            startTime: startTime,
+            endTime: endTime,
+            priceType: priceType,
+            priceAmount: priceAmount,
+            reservationMode: reservationMode,
+            coverageArea: coverageArea,
+            isNationwide: isNationwide,
+            organizerName: organizerName,
+            isOrganizer: isOrganizer,
+            websiteUrl: websiteUrl,
+            landingUrl: landingUrl,
+            acceptMessages: acceptMessages,
+            isOwner: true,
+            eventId: eventId,
+            eventData: data,
+            returnToListingOnEdit: true,
+          ),
+        ),
+      );
+      if (result == 'deleted' && mounted) _loadEvents();
+    } catch (e) {
+      Navigator.pop(context);
+      debugPrint('Error fetching event detail: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du chargement: ${e.toString()}')),
+      );
+    }
+  }
+
+  Widget _buildBonPlanCard(Map<String, dynamic> bp) {
+    final title = bp['title'] ?? '';
+    final category = bp['category'] ?? '';
+    final subCategory = bp['sub_category'] ?? '';
+    final type = bp['type'] ?? '';
+    final status = bp['status']?.toString() ?? '';
+    final merchantName = bp['available_at_name'] ?? '';
+    final locationType = bp['available_location_type'] ?? '';
+    final createdAt = bp['created_at']?.toString();
+    final mediaFiles = bp['media_files'] as List? ?? [];
+    final imageUrl = mediaFiles.isNotEmpty ? mediaFiles.first['url']?.toString() : null;
+
+    return Container(
+      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with status badge
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF333333),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: _statusColor(status).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: _statusColor(status).withOpacity(0.5)),
+                ),
+                child: Text(
+                  _statusLabel(status),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: _statusColor(status),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Description
+          _buildDescription(bp),
+          // Image
+          if (imageUrl != null) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                _buildImageUrl(imageUrl),
+                width: double.infinity,
+                height: 180,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    height: 180,
+                    color: Colors.grey[100],
+                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  );
+                },
+                errorBuilder: (_, error, ___) {
+                  debugPrint('Image load error: $error');
+                  return Container(
+                    height: 100,
+                    color: Colors.grey[200],
+                    child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey)),
+                  );
+                },
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          // Category & type tags
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              if (category.isNotEmpty) _buildTag(category, Icons.local_offer_outlined),
+              if (subCategory.isNotEmpty) _buildTag(subCategory, Icons.subdirectory_arrow_right),
+              if (type.isNotEmpty) _buildTag(type, Icons.label_outline),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Merchant + time
+          Row(
+            children: [
+              if (merchantName.isNotEmpty) ...[
+                Icon(Icons.store_outlined, size: 14, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    '$locationType chez $merchantName',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ] else
+                const Spacer(),
+              if (createdAt != null) ...[
+                Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Text(
+                  _timeAgo(createdAt),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          const SizedBox(height: 12),
+          // CTA Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _navigateToBonPlanDetail(bp),
+              icon: const Icon(Icons.visibility_outlined, size: 18),
+              label: const Text('VOIR LE BON PLAN'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF9800),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildJobOfferCard(Map<String, dynamic> jo) {
+    final title = jo['title'] ?? '';
+    final contractType = jo['contract_type'] ?? '';
+    final workTime = jo['work_time'] ?? '';
+    final companyRaw = jo['company'];
+    final companyName = companyRaw is Map ? (companyRaw['name'] ?? '') : (companyRaw ?? '').toString();
+    final locationRaw = jo['location'];
+    final city = locationRaw is Map ? (locationRaw['city'] ?? '') : '';
+    final createdAt = jo['created_at']?.toString();
+    final categoryRaw = jo['category'];
+    final categoryName = categoryRaw is Map ? (categoryRaw['name'] ?? '') : (categoryRaw ?? '').toString();
+    final advantages = jo['advantages'] as List? ?? [];
+    final salaryMin = jo['salary_min'];
+    final salaryMax = jo['salary_max'];
+    
+    // Extract description
+    String description = '';
+    final descriptionDelta = jo['description_delta'];
+    if (descriptionDelta != null) {
+      try {
+        List opsList;
+        if (descriptionDelta is List) {
+          opsList = descriptionDelta;
+        } else if (descriptionDelta is Map && descriptionDelta['ops'] is List) {
+          opsList = descriptionDelta['ops'] as List;
+        } else if (descriptionDelta is String && descriptionDelta.isNotEmpty) {
+          final decoded = jsonDecode(descriptionDelta);
+          opsList = decoded is List ? decoded : (decoded['ops'] as List);
+        } else {
+          throw Exception('Unsupported type');
+        }
+        final filteredOps = opsList
+            .where((op) => op is Map && op['insert'] != null)
+            .map((op) => Map<String, dynamic>.from(op as Map))
+            .toList();
+        if (filteredOps.isNotEmpty) {
+          final lastInsert = filteredOps.last['insert'];
+          if (lastInsert is String && !lastInsert.endsWith('\n')) {
+            filteredOps.add({'insert': '\n'});
+          }
+          final doc = quill.Document.fromJson(filteredOps);
+          description = doc.toPlainText().trim();
+          if (description.length > 150) {
+            description = '${description.substring(0, 150)}...';
+          }
+        }
+      } catch (e) {
+        description = jo['description']?.toString() ?? '';
+      }
+    } else {
+      description = jo['description']?.toString() ?? '';
+    }
+    
+    // Build tags
+    final tags = <JobDetailTag>[
+      if (contractType.isNotEmpty)
+        JobDetailTag(icon: Icons.description_outlined, text: contractType),
+      if (workTime.isNotEmpty)
+        JobDetailTag(icon: Icons.access_time, text: _workTimeLabel(workTime)),
+      if (categoryName.isNotEmpty)
+        JobDetailTag(icon: Icons.category_outlined, text: categoryName),
+      if (city.isNotEmpty)
+        JobDetailTag(icon: Icons.location_on_outlined, text: city),
+      if (salaryMin != null || salaryMax != null)
+        JobDetailTag(
+          icon: Icons.euro,
+          text: _formatSalary(salaryMin, salaryMax),
+          isSpecial: true,
+        ),
+    ];
+    
+    // Build advantages list
+    final advantagesList = advantages.take(3).map((a) => a.toString()).toList();
+
+    return JobAnnouncementCard(
+      companyLogo: '',
+      companyName: companyName.isNotEmpty ? companyName : 'Entreprise',
+      jobTitle: title,
+      description: description,
+      tags: tags,
+      advantages: advantagesList,
+      timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
+      onApply: () => _navigateToJobDetail(jo),
+    );
+  }
+  
+  String _formatSalary(dynamic min, dynamic max) {
+    if (min != null && max != null) {
+      return '${min}€ - ${max}€';
+    } else if (min != null) {
+      return 'À partir de ${min}€';
+    } else if (max != null) {
+      return 'Jusqu\'à ${max}€';
+    }
+    return 'Salaire non spécifié';
+  }
+
+  String _buildImageUrl(String? url) {
+    if (url == null) return '';
+    // Derive storage base from ApiConfig.baseUrl by stripping /api
+    final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+    String fullUrl = url;
+    if (url.startsWith('http')) {
+      // Replace any localhost/127.0.0.1 or old IP with current server base
+      fullUrl = url.replaceFirst(RegExp(r'https?://[^/]+'), serverBase);
+    } else {
+      fullUrl = '$serverBase$url';
+    }
+    debugPrint('Image URL: $fullUrl');
+    return fullUrl;
+  }
+
+  String _workTimeLabel(String val) {
+    switch (val) {
+      case 'FULL_TIME': return 'Temps plein';
+      case 'PART_TIME': return 'Temps partiel';
+      default: return val;
+    }
+  }
+
+  Widget _buildDescription(Map<String, dynamic> item) {
+    final descriptionDelta = item['description_delta'];
+    final descriptionPlain = item['description'] ?? '';
+
+    if (descriptionDelta != null) {
+      try {
+        List opsList;
+
+        if (descriptionDelta is List) {
+          opsList = descriptionDelta;
+        } else if (descriptionDelta is Map && descriptionDelta['ops'] is List) {
+          opsList = descriptionDelta['ops'] as List;
+        } else if (descriptionDelta is String && descriptionDelta.isNotEmpty) {
+          String jsonString = descriptionDelta;
+          jsonString = jsonString.replaceAllMapped(
+            RegExp(r'(\{|,)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:'),
+            (match) => '${match.group(1)}"${match.group(2)}":',
+          );
+          jsonString = jsonString.replaceAllMapped(
+            RegExp(r':\s*([a-zA-Z_][a-zA-Z0-9_\s]*?)(\s*[,\}\]])'),
+            (match) {
+              final value = match.group(1)!.trim();
+              if (value == 'true' || value == 'false' || value == 'null') {
+                return ': $value${match.group(2)}';
+              }
+              return ': "$value"${match.group(2)}';
+            },
+          );
+          dynamic rawData = jsonDecode(jsonString);
+          if (rawData is String) rawData = jsonDecode(rawData);
+          if (rawData is List) {
+            opsList = rawData;
+          } else if (rawData is Map && rawData['ops'] is List) {
+            opsList = rawData['ops'] as List;
+          } else {
+            throw Exception('Unknown delta format: ${rawData.runtimeType}');
+          }
+        } else {
+          throw Exception('Unsupported type: ${descriptionDelta.runtimeType}');
+        }
+
+        final filteredOps = opsList
+            .where((op) => op is Map && op['insert'] != null)
+            .map((op) => Map<String, dynamic>.from(op as Map))
+            .toList();
+
+        if (filteredOps.isEmpty) throw Exception('No valid ops');
+
+        final lastInsert = filteredOps.last['insert'];
+        if (lastInsert is String && !lastInsert.endsWith('\n')) {
+          filteredOps.add({'insert': '\n'});
+        }
+
+        final doc = quill.Document.fromJson(filteredOps);
+        final controller = quill.QuillController(
+          document: doc,
+          selection: const TextSelection.collapsed(offset: 0),
+        );
+
+        return SizedBox(
+          height: 60,
+          child: quill.QuillEditor.basic(
+            controller: controller,
+            config: quill.QuillEditorConfig(
+              padding: EdgeInsets.zero,
+              onLaunchUrl: (url) async {
+                final uri = Uri.parse(url);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+            ),
+          ),
+        );
+      } catch (e) {
+        debugPrint('Error rendering rich text: $e');
+      }
+    }
+
+    return Text(
+      descriptionPlain,
+      style: const TextStyle(fontSize: 13, color: Color(0xFF666666), height: 1.5),
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _buildTag(String text, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.grey[600]),
+          const SizedBox(width: 4),
+          Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Padding(
+      padding: const EdgeInsets.all(40),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String message, {VoidCallback? onRetry}) {
+    return Padding(
+      padding: const EdgeInsets.all(40),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+            if (onRetry != null) ...[
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: onRetry,
+                child: const Text('Réessayer'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required String count,
+    required String label,
+    required Color iconColor,
+    required IconData icon,
+  }) {
+    String iconPath;
+    if (label == 'Total') {
+      iconPath = 'assets/images/profil_pro/annonce-2.png';
+    } else if (label == 'Activés') {
+      iconPath = 'assets/images/profil_pro/annonce-3.png';
+    } else {
+      iconPath = 'assets/images/profil_pro/annonce-1.png';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(color: iconColor.withOpacity(0.5), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(iconPath, width: 45, height: 45),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            count,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF333333),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

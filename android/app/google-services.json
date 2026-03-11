@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "166441708619",
+    "project_id": "myreklam-7b2d9",
+    "storage_bucket": "myreklam-7b2d9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:166441708619:android:30873afbe2bfdd021b31ce",
+        "android_client_info": {
+          "package_name": "com.example.myreklam"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "166441708619-e63s1vkkj2cbnqi43j542uscj94n5oid.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.myreklam",
+            "certificate_hash": "099d2ee2544354406973f6fd575fce9425263cf5"
+          }
+        },
+        {
+          "client_id": "166441708619-tt4a3fg0ah3g5ol3mmt0f5a65hgif4f8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3voo0Cdm-kN3891rzRLTqoWDS6C1fODQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "166441708619-tt4a3fg0ah3g5ol3mmt0f5a65hgif4f8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

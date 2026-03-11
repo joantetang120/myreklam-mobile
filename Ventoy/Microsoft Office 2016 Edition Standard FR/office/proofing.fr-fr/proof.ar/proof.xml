@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--_MODULUS=1rbqK3IWEScj5NDIH8jy0X/l5rujm2+6QSLiHwMRTvHLVdwP3FUBYopmg4xN2w6ztZXYKlizy0j1ApSEKzJf91LXFMAx7Wbqw0ewrxrhFUjuv8Tt8EP3rg9VDhBPgn2HOkD3zc4KCTJoEeSzCHED8/zdjA4gpfmpKgwtnS8nF2I=-->
+<!--_SIG=bUlSz+NbHhkpX7Emge5Pb8pRsIzagNWXXk4A5f9g6BE3w3kgvZbdPtYd+bpQybtm3lgatNGZouhyupXfip1ZzPK1AKnejq/qApAr3a7PMtOMAlKf4e8qgFRQiF6X/jAQIZmp7TW3Owf7qrdklKaEPvPdwL6AFeeFXzMN3sgXnxE=-->
+<Package Id="Proof.ar-sa" Type="MSI" Path="Proof.MSI" Version="1.0" ProductCode="{90160000-001F-0401-0000-0000000FF1CE}" MSIVersion="16.0.4266.1001" ProductLanguage="1025" Platform="x86">
+	<Feature Id="ThesaurusFiles_1025" Cost="2324168">
+		<OptionRef Id="ThesaurusFiles_1025"/>
+	</Feature>
+	<Feature Id="Gimme_OnDemandData" Cost="0">
+		<OptionRef Id="Gimme_OnDemandData"/>
+	</Feature>
+	<Feature Id="MsoInstalledPackagesScopedIntl_1025" Cost="0">
+		<OptionRef Id="AlwaysInstalled"/>
+	</Feature>
+	<Feature Id="SpellingAndGrammarFiles_1025" Cost="18126731">
+		<OptionRef Id="SpellingAndGrammarFiles_1025"/>
+	</Feature>
+	<Feature Id="SetupXmlFiles" Cost="234">
+		<OptionRef Id="AlwaysInstalled"/>
+	</Feature>
+	<Feature Id="TranslationFiles_1025" Cost="5663330">
+		<OptionRef Id="TranslationFiles_1025"/>
+	</Feature>
+	<Feature Id="SetupControllerFiles" Cost="234">
+		<OptionRef Id="AlwaysInstalled"/>
+	</Feature>
+</Package>

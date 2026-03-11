@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--_MODULUS=xT5gN7YdweixkSJTkbRxNQuW1plBR8RnKT+mX6Lx7LfeEZCnSapaqcP9OpoDeWskcnZ/spIYnYUMztEBLnrjBmzSQW6tmVTg9VR8bGt6/rXmZpNwRvibXuCcPBY8P0A1FEAOKB6Q2kbeYVImGpEkIlrtXhsxOthyuQOS1McnphQ=-->
+<!--_SIG=l7uYh4xcTXiSTvox7OcK8HAvdKA5aVC/iD7lCU5W1AA+jMB5jk4ErlV8zDshJ/kdrSvycPEiV4mnXaT3BGNTkgNM5ikg/tpaOkrmwIUPKp7Bxwqvk2ZYoprKNuKq1HNpm+ebxeuWF3kbXmG/BBSimACkIBlXPXsjCaRiaEVIkA4=-->
+<Package Id="Proof.de-de" Type="MSI" Path="Proof.MSI" Version="1.0" ProductCode="{90160000-001F-0407-0000-0000000FF1CE}" MSIVersion="16.0.4266.1001" ProductLanguage="1031" Platform="x86">
+	<Feature Id="SpellingAndGrammarFiles_1031" Cost="25334801">
+		<OptionRef Id="SpellingAndGrammarFiles_1031"/>
+	</Feature>
+	<Feature Id="FindAllWordFormsFiles_1031" Cost="1256833">
+		<OptionRef Id="FindAllWordFormsFiles_1031"/>
+	</Feature>
+	<Feature Id="Gimme_OnDemandData" Cost="0">
+		<OptionRef Id="Gimme_OnDemandData"/>
+	</Feature>
+	<Feature Id="OCR_1031" Cost="0">
+		<OptionRef Id="OCR_1031"/>
+	</Feature>
+	<Feature Id="HyphenationFiles_1031" Cost="1682128">
+		<OptionRef Id="HyphenationFiles_1031"/>
+	</Feature>
+	<Feature Id="SetupXmlFiles" Cost="234">
+		<OptionRef Id="AlwaysInstalled"/>
+	</Feature>
+	<Feature Id="SetupControllerFiles" Cost="234">
+		<OptionRef Id="AlwaysInstalled"/>
+	</Feature>
+	<Feature Id="ThesaurusFiles_1031" Cost="6704328">
+		<OptionRef Id="ThesaurusFiles_1031"/>
+	</Feature>
+	<Feature Id="TranslationFiles_1031" Cost="3304282">
+		<OptionRef Id="TranslationFiles_1031"/>
+	</Feature>
+	<Feature Id="MsoInstalledPackagesScopedIntl_1031" Cost="0">
+		<OptionRef Id="AlwaysInstalled"/>
+	</Feature>
+</Package>

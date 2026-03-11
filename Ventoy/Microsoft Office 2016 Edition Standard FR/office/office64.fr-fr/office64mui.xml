@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--_MODULUS=2swcCQkO3VBPcBi7hG5UNjX+ttBrpLFeKbBvLBYeFE5ObIbuB43P+xXYOpOY4FqGCkRHeOOfxKhG5l556ovfgjSA/k+PQsMGbtBypRBIRN9F3bYv4ulgGNZzGaE8YbCPlRmrXkBnr5arb/4GcLLo9rDlvZmdY3ur7+22VTDmISg=-->
+<!--_SIG=wTaRLuGv6M/4vpyrfu8gF+SDfcVPkWhovJ4GN5+/B21dC5h7wS9gUwJ6geVGX49/P2TBycHwQIeQAm0/j8akeJallvAkmKMjw2MT2ZPIcu82MYIPNWL9kQR1xlU9+TmmWTuoipboN9sG6lup1axef/gjTwhJqpWIUMV/znrCnAo=-->
+<Package Id="Office64MUI.fr-fr" Type="MSI" Path="Office64MUI.MSI" Version="1.0" ProductCode="{90160000-002A-040C-1000-0000000FF1CE}" MSIVersion="16.0.4266.1001" ProductLanguage="1036" Platform="x64">
+	<Feature Id="SetupControllerFiles" Cost="468">
+		<OptionRef Id="AlwaysInstalled"/>
+	</Feature>
+	<Feature Id="Outlook64SearchShellRegIntl_1036" Cost="177432">
+		<OptionRef Id="Outlook64SearchShellRegIntl"/>
+	</Feature>
+	<Feature Id="GrooveFiles64Intl_1036" Cost="8967440">
+		<OptionRef Id="GrooveFiles64Intl"/>
+	</Feature>
+	<Feature Id="LyncFiles64Intl_1036" Cost="3430384">
+		<OptionRef Id="LyncFiles64Intl"/>
+	</Feature>
+	<Feature Id="VSTO64Intl_1036" Cost="63536">
+		<OptionRef Id="VSTO64"/>
+	</Feature>
+	<Feature Id="OfficeExample64bitFilesAIntl_1036" Cost="84">
+		<OptionRef Id="ProductFiles"/>
+	</Feature>
+	<Feature Id="SetupXmlFiles" Cost="468">
+		<OptionRef Id="AlwaysInstalled"/>
+	</Feature>
+	<Feature Id="OneNoteToLinkedNotesIEAddin64Intl_1036" Cost="0">
+		<OptionRef Id="OneNoteToLinkedNotesIntl"/>
+	</Feature>
+	<Feature Id="OfficeExample64bitFilesBIntl_1036" Cost="84">
+		<OptionRef Id="TOOLSFiles"/>
+	</Feature>
+	<Feature Id="Gimme_OnDemandData" Cost="0">
+		<OptionRef Id="Gimme_OnDemandData"/>
+	</Feature>
+	<Feature Id="MsoInstalledPackagesScopedIntl_1036" Cost="0">
+		<OptionRef Id="AlwaysInstalled"/>
+	</Feature>
+	<Feature Id="ProductFilesIntl64_1036" Cost="30408">
+		<OptionRef Id="ProductFiles"/>
+	</Feature>
+	<Feature Id="OsmInvAgentResource64Intl_1036" Cost="6890">
+		<OptionRef Id="OsmSKUMain"/>
+	</Feature>
+</Package>

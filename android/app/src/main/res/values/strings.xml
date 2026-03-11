@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Myreklam</string>
+    <string name="facebook_app_id">3165264463642042</string>
+    <string name="fb_login_protocol_scheme">fb3165264463642042</string>
+    <string name="facebook_client_token">423dbab72c56b6c42fcc3189e020c33a</string>
+</resources>

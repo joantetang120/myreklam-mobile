@@ -1,0 +1,303 @@
+// CODE À COPIER DANS /announcements/events/[announcementId]/page.tsx
+// Remplacer les lignes 1016-1082 par ce code :
+
+{relatedEvents.map((relatedEvent) => {
+  // Fonctions helper (copié de /evenements/page.tsx)
+  const [imageError, setImageError] = useState(false)
+  
+  const getCleanDescription = () => {
+    if (!relatedEvent.description) return ""
+    const cleanText = relatedEvent.description.replace(/<[^>]*>/g, ' ')
+    const normalized = cleanText.replace(/\s+/g, ' ').trim()
+    return normalized
+  }
+
+  const isExpired = (relatedEvent.eventDurationType === "permanent" || relatedEvent.isAllDays) 
+    ? false 
+    : (relatedEvent.endDate ? new Date(relatedEvent.endDate) < new Date() : false)
+  
+  const isFull = relatedEvent.eventMaxAttendees && relatedEvent.eventCurrentAttendees &&
+    Number.parseInt(relatedEvent.eventCurrentAttendees) >= Number.parseInt(relatedEvent.eventMaxAttendees)
+
+  const getEventStatus = () => {
+    if (isExpired) return { label: "Passé", color: "bg-gray-500" }
+    if (isFull) return { label: "Complet", color: "bg-red-500" }
+    if (relatedEvent.eventDurationType === "permanent" || relatedEvent.isAllDays) {
+      return { label: "Permanent", color: "bg-blue-500" }
+    }
+    const eventDate = relatedEvent.eventDate || relatedEvent.startDate
+    if (!eventDate) return { label: "Date à définir", color: "bg-gray-400" }
+    const eventDateTime = new Date(eventDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const diffTime = eventDateTime.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    if (diffDays < 0) return { label: "Passé", color: "bg-gray-500" }
+    if (diffDays === 0) return { label: "Aujourd'hui", color: "bg-green-500" }
+    if (diffDays === 1) return { label: "Demain", color: "bg-blue-500" }
+    if (diffDays <= 7) return { label: "Cette semaine", color: "bg-blue-500" }
+    if (diffDays <= 30) return { label: "Ce mois-ci", color: "bg-orange-500" }
+    return { label: "À venir", color: "bg-orange-500" }
+  }
+
+  const status = getEventStatus()
+
+  const getOrganizerName = () => {
+    const companyData = relatedEvent.companyData
+    if (!companyData) return "Organisateur"
+    if (companyData.profiletype === "professionnel") {
+      return companyData.nomsociete || "Entreprise"
+    }
+    return companyData.pseudo || relatedEvent.userPseudo || "Particulier"
+  }
+
+  const getOrganizerPhoto = () => {
+    const companyData = relatedEvent.companyData
+    if (!companyData || !companyData.photoprofilurl) return null
+    return companyData.photoprofilurl.startsWith("http") 
+      ? companyData.photoprofilurl 
+      : `${config.API_URL}${companyData.photoprofilurl}`
+  }
+
+  const isProfessional = relatedEvent.companyData?.profiletype === "professionnel"
+
+  const formatEventDate = () => {
+    if (relatedEvent.eventDurationType === "permanent" || relatedEvent.isAllDays) {
+      return "Permanent"
+    }
+    const eventDate = relatedEvent.eventDate || relatedEvent.startDate
+    if (!eventDate) return "Date à définir"
+    const date = new Date(eventDate)
+    return date.toLocaleDateString("fr-FR", { 
+      day: "numeric", 
+      month: "long", 
+      year: "numeric" 
+    })
+  }
+
+  const getFormattedLocation = () => {
+    if (relatedEvent.eventCity) return relatedEvent.eventCity
+    if (relatedEvent.eventLocation) {
+      if (typeof relatedEvent.eventLocation === 'string') {
+        return relatedEvent.eventLocation
+      }
+      return formatAddress(relatedEvent.eventLocation)
+    }
+    if (relatedEvent.address) {
+      return formatAddress(relatedEvent.address)
+    }
+    return null
+  }
+
+  const getParticipantsDisplay = () => {
+    const current = Number.parseInt(relatedEvent.eventCurrentAttendees || "0")
+    const max = Number.parseInt(relatedEvent.eventMaxAttendees || "0")
+    if (max > 0) {
+      return `${current}/${max} participants`
+    } else if (current > 0) {
+      return `${current} participant${current > 1 ? 's' : ''}`
+    }
+    return null
+  }
+
+  const getFormattedPrice = () => {
+    const price = relatedEvent.eventPrice || relatedEvent.price
+    if (!price) return "Gratuit"
+    const numPrice = Number.parseFloat(price)
+    return numPrice === 0 ? "Gratuit" : `${numPrice}€`
+  }
+
+  const getDisplayCategory = () => {
+    const eventType = relatedEvent.eventType || relatedEvent.eventCategory || relatedEvent.category
+    return (labelObject as any)[eventType] || eventType
+  }
+
+  const getDisplaySubCategory = () => {
+    if (!relatedEvent.subCategory) return null
+    return (labelObject as any)[relatedEvent.subCategory] || relatedEvent.subCategory
+  }
+
+  const getImageUrl = (imagePath: string) => {
+    if (!imagePath) return ""
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath
+    }
+    let cleanPath = imagePath
+    if (!cleanPath.startsWith('/')) {
+      cleanPath = '/' + cleanPath
+    }
+    if (cleanPath.includes("/ads/")) {
+      cleanPath = cleanPath.replace("/ads/", "/annonces/")
+    }
+    return `${config.API_URL}${cleanPath}`
+  }
+
+  const imageUrl = relatedEvent.images && relatedEvent.images[0] ? getImageUrl(relatedEvent.images[0]) : null
+
+  return (
+    <Link
+      key={relatedEvent.id}
+      href={`/announcements/events/${relatedEvent.id}`}
+    >
+      <Card
+        className={`flex flex-col h-full min-h-[400px] hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 overflow-visible group cursor-pointer border-0 bg-white/90 backdrop-blur-md ${
+          isExpired ? "opacity-60 grayscale" : "hover:shadow-orange-200/60"
+        }`}
+      >
+        {/* Image with overlays */}
+        <div className="relative h-56 bg-gradient-to-br from-orange-100 via-orange-50 to-pink-50 overflow-hidden">
+          {isExpired && (
+            <div className="absolute inset-0 bg-black/40 z-20 flex items-center justify-center">
+              <Badge className="bg-red-600 text-white border-2 border-white font-bold shadow-lg">EXPIRÉ</Badge>
+            </div>
+          )}
+          {imageUrl && !imageError ? (
+            <img
+              src={imageUrl}
+              alt={relatedEvent.title}
+              className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 ${
+                isExpired ? "grayscale brightness-75" : ""
+              }`}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <div
+              className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-orange-50 ${
+                isExpired ? "grayscale brightness-75" : ""
+              }`}
+            >
+              <Calendar className="w-16 h-16 text-orange-300" />
+            </div>
+          )}
+
+          {/* Category badge - top left */}
+          {getDisplayCategory() && (
+            <div className="absolute top-3 left-3 z-10">
+              <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-xl backdrop-blur-sm border border-white/20">{getDisplayCategory()}</Badge>
+            </div>
+          )}
+
+          {/* Badge statut */}
+          <div className="absolute top-3 right-3 z-10">
+            <Badge className={`text-white shadow-xl backdrop-blur-sm border border-white/20 ${status.color}`}>
+              {status.label}
+            </Badge>
+          </div>
+
+          {/* Action buttons - bottom right */}
+          <div className="absolute bottom-3 right-3 flex gap-2 z-10">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full bg-white/95 hover:bg-white shadow-lg backdrop-blur-md hover:scale-110 transition-all duration-300"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            >
+              <Heart className="w-4 h-4 text-gray-600" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full bg-white/90 hover:bg-white shadow-md"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            >
+              <Share2 className="w-4 h-4 text-gray-600" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 flex-1 flex flex-col">
+          {/* Title and organizer */}
+          <h3
+            className={`text-lg font-bold mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors ${
+              isExpired ? "text-gray-500" : "text-gray-900"
+            }`}
+          >
+            {relatedEvent.title}
+          </h3>
+
+          <div className="flex items-center gap-2 mb-3">
+            {getOrganizerPhoto() ? (
+              <img
+                src={getOrganizerPhoto()!}
+                alt={getOrganizerName()}
+                className="w-5 h-5 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+                {isProfessional ? (
+                  <svg className="w-2.5 h-2.5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-6a1 1 0 00-1-1H9a1 1 0 00-1 1v6a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-2.5 h-2.5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+            )}
+            <span className="text-sm font-medium text-gray-600">{getOrganizerName()}</span>
+          </div>
+
+          {/* Informations clés */}
+          <div className="space-y-2 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 bg-orange-100 px-3 py-1.5 rounded-lg">
+                <Calendar className="w-4 h-4 text-orange-600" />
+                <span className={status.label === "Passé" ? "text-sm font-bold text-orange-900 line-through" : "text-sm font-bold text-orange-900"}>{formatEventDate()}</span>
+              </div>
+            </div>
+            
+            {(relatedEvent.eventType || relatedEvent.subCategory) && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="font-medium text-xs truncate">{getDisplayCategory()}</span>
+                {relatedEvent.subCategory && relatedEvent.eventType && <span className="flex-shrink-0">·</span>}
+                {relatedEvent.subCategory && <span className="text-xs truncate">{getDisplaySubCategory()}</span>}
+              </div>
+            )}
+            
+            {getFormattedLocation() && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{getFormattedLocation()}</span>
+              </div>
+            )}
+            
+            {getParticipantsDisplay() && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Users className="w-4 h-4 flex-shrink-0" />
+                <span>{getParticipantsDisplay()}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Prix */}
+          <div className={`text-2xl font-bold mb-4 mt-auto ${isExpired ? "text-gray-400 line-through" : "text-orange-600"}`}>
+            {getFormattedPrice()}
+          </div>
+
+          {/* CTA Button */}
+          <Button
+            className={
+              isExpired
+                ? "w-full bg-gray-400 cursor-not-allowed"
+                : "w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+            }
+            disabled={isExpired}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+          >
+            {isExpired ? "Expiré" : "Voir l'événement"}
+          </Button>
+
+          {/* Publié il y a */}
+          <p className="text-sm text-gray-500 mt-3 text-center">
+            Publié {formatDateRelative(relatedEvent.createdat)}
+          </p>
+        </div>
+      </Card>
+    </Link>
+  )
+})}

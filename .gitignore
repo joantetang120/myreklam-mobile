@@ -1,0 +1,45 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+*.iso
+*.cab
+*.zip
+*.apk
+*.aab
+build/
+.gradle/
+.dart_tool/
+node_modules/
+.env
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+# .env files are tracked in this project
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE
+.idea/
+
+# scripts python
+fix_duplicate.py
+*.py
