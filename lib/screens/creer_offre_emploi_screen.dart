@@ -2011,12 +2011,27 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               controller: _locationController,
               fieldKey: 'location',
               helperText: 'Indiquez la ville ou la région où le poste est basé.',
+              enabled: !_nationwide,
+              onChanged: (value) {
+                if (value.trim().isNotEmpty && _nationwide) {
+                  setState(() => _nationwide = false);
+                }
+              },
             ),
             const SizedBox(height: 16),
             _buildCheckOption(
               'Toute la France',
               _nationwide,
-              () => setState(() => _nationwide = !_nationwide),
+              _locationController.text.trim().isEmpty
+                  ? () {
+                      setState(() {
+                        _nationwide = !_nationwide;
+                        if (_nationwide) {
+                          _locationController.clear();
+                        }
+                      });
+                    }
+                  : null,
             ),
             const SizedBox(height: 16),
             _buildCheckOption(
@@ -2516,7 +2531,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             DateTime? pickedDate = await showDatePicker(
               context: context,
               initialDate: selectedDate ?? DateTime.now(),
-              firstDate: DateTime(1900),
+              firstDate: DateTime.now().subtract(const Duration(days: 1)),
               lastDate: DateTime(2100),
             );
 
@@ -2763,6 +2778,8 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     String? suffix,
     String? fieldKey,
     String? helperText,
+    bool enabled = true,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2778,6 +2795,8 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             controller: controller,
             maxLines: maxLines,
             keyboardType: keyboardType,
+            enabled: enabled,
+            onChanged: onChanged,
             onTap: () {
               if (fieldKey != null) {
                 setState(() => _focusedField = fieldKey);
@@ -2998,9 +3017,9 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     );
   }
 
-  Widget _buildCheckOption(String label, bool isSelected, VoidCallback onTap) {
+  Widget _buildCheckOption(String label, bool isSelected, VoidCallback? onTap) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap ?? () {},
       child: Row(
         children: [
           Container(

@@ -1069,7 +1069,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                             final picked = await showDatePicker(
                               context: context,
                               initialDate: _startDate ?? DateTime.now(),
-                              firstDate: DateTime.now(),
+                              firstDate: DateTime.now().subtract(const Duration(days: 1)),
                               lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
                             );
                             if (picked != null) setState(() => _startDate = picked);
@@ -1114,7 +1114,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                             final picked = await showDatePicker(
                               context: context,
                               initialDate: _endDate ?? _startDate ?? DateTime.now(),
-                              firstDate: _startDate ?? DateTime.now(),
+                              firstDate: _startDate ?? DateTime.now().subtract(const Duration(days: 1)),
                               lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
                             );
                             if (picked != null) setState(() => _endDate = picked);

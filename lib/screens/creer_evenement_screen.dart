@@ -1691,6 +1691,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               controller: _disponibleChezController,
               fieldKey: 'disponible_chez',
               helperText: 'Indiquez la ville, la région ou le lieu précis de l\'événement.',
+              enabled: !_touteLaFrance,
+              onChanged: (value) {
+                if (value.trim().isNotEmpty && _touteLaFrance) {
+                  setState(() => _touteLaFrance = false);
+                }
+              },
             ),
             const SizedBox(height: 16),
             // Toute la France switch
@@ -1710,7 +1716,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   ),
                   Switch(
                     value: _touteLaFrance,
-                    onChanged: (val) => setState(() => _touteLaFrance = val),
+                    onChanged: _disponibleChezController.text.trim().isEmpty
+                        ? (val) {
+                            setState(() {
+                              _touteLaFrance = val;
+                              if (val) {
+                                _disponibleChezController.clear();
+                              }
+                            });
+                          }
+                        : null,
                     activeThumbColor: Colors.white,
                     activeTrackColor: const Color(0xFFEF8A40),
                   ),
@@ -2200,7 +2215,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             DateTime? pickedDate = await showDatePicker(
               context: context,
               initialDate: selectedDate ?? DateTime.now(),
-              firstDate: DateTime(1900),
+              firstDate: DateTime.now().subtract(const Duration(days: 1)),
               lastDate: DateTime(2100),
             );
 
@@ -2475,6 +2490,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     IconData? prefixIcon,
     String? fieldKey,
     String? helperText,
+    bool enabled = true,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2490,6 +2507,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             controller: controller,
             maxLines: maxLines,
             keyboardType: keyboardType,
+            enabled: enabled,
+            onChanged: onChanged,
             onTap: () {
               if (fieldKey != null) {
                 setState(() => _focusedField = fieldKey);
