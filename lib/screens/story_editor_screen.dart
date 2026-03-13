@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:myreklam/models/story_model.dart';
+import 'package:myreklam/services/story_service.dart';
 
 class StoryEditorScreen extends StatefulWidget {
   final AssetEntity asset;
@@ -14,6 +14,8 @@ class StoryEditorScreen extends StatefulWidget {
 
 class _StoryEditorScreenState extends State<StoryEditorScreen> {
   final TextEditingController _captionController = TextEditingController();
+  final StoryService _storyService = StoryService();
+  bool _isUploading = false;
 
   @override
   void dispose() {
@@ -157,15 +159,35 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                       ),
                       const Spacer(),
                       GestureDetector(
-                        onTap: () async {
-                          final imageBytes = await widget.asset.originBytes;
-                          if (imageBytes != null) {
-                            final story = StoryModel(
+                        onTap: _isUploading ? null : () async {
+                          setState(() => _isUploading = true);
+                          try {
+                            final imageBytes = await widget.asset.originBytes;
+                            if (imageBytes == null) {
+                              setState(() => _isUploading = false);
+                              return;
+                            }
+                            final title = await widget.asset.titleAsync;
+                            final story = await _storyService.uploadStory(
                               imageBytes: imageBytes,
+                              fileName: title,
                               caption: _captionController.text.trim(),
-                              timestamp: DateTime.now(),
                             );
-                            Navigator.pop(context, story);
+                            if (story != null && mounted) {
+                              Navigator.pop(context, story);
+                            } else if (mounted) {
+                              setState(() => _isUploading = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Erreur lors de la publication de la story')),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              setState(() => _isUploading = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Erreur: $e')),
+                              );
+                            }
                           }
                         },
                         child: Container(
@@ -175,7 +197,12 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                             color: Colors.white,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.keyboard_arrow_right, color: Colors.black, size: 28),
+                          child: _isUploading
+                              ? const Padding(
+                                  padding: EdgeInsets.all(10),
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                                )
+                              : const Icon(Icons.keyboard_arrow_right, color: Colors.black, size: 28),
                         ),
                       ),
                     ],

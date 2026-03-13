@@ -73,7 +73,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   String? selectedOptionOrg = "Oui";
   bool _touteLaFrance = false;
   String? _selectedPrixEntree = "Gratuit";
+  String? _selectedPricingMode; // 'Prix unique' or 'Catégories'
   final TextEditingController _prixEntreeController = TextEditingController();
+  List<Map<String, TextEditingController>> _priceCategories = [];
   String? _selectedModeReservation = "Sans inscription";
   final TextEditingController _siteWebController = TextEditingController();
   bool _isSubmitting = false;
@@ -145,8 +147,29 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     _prixFinalController.dispose();
     _reductionController.dispose();
     _prixEntreeController.dispose();
+    for (final cat in _priceCategories) {
+      cat['name']!.dispose();
+      cat['price']!.dispose();
+    }
     _siteWebController.dispose();
     super.dispose();
+  }
+
+  void _addPriceCategory() {
+    setState(() {
+      _priceCategories.add({
+        'name': TextEditingController(),
+        'price': TextEditingController(),
+      });
+    });
+  }
+
+  void _removePriceCategory(int index) {
+    setState(() {
+      _priceCategories[index]['name']!.dispose();
+      _priceCategories[index]['price']!.dispose();
+      _priceCategories.removeAt(index);
+    });
   }
 
   Future<void> _checkForSavedProgress() async {
@@ -191,12 +214,26 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       final priceType = data['price_type']?.toString();
       if (priceType == 'payant') {
         _selectedPrixEntree = 'Payant';
-        final amount = data['price_amount'];
-        if (amount != null) {
-          _prixEntreeController.text = amount.toString().replaceAll(RegExp(r'\.00$'), '');
+        final pricingMode = data['pricing_mode']?.toString();
+        if (pricingMode == 'categories') {
+          _selectedPricingMode = 'Catégories';
+          final cats = data['price_categories'] as List? ?? [];
+          _priceCategories = cats.map<Map<String, TextEditingController>>((c) {
+            return {
+              'name': TextEditingController(text: c['name']?.toString() ?? ''),
+              'price': TextEditingController(text: c['price']?.toString().replaceAll(RegExp(r'\.00$'), '') ?? ''),
+            };
+          }).toList();
+        } else {
+          _selectedPricingMode = 'Prix unique';
+          final amount = data['price_amount'];
+          if (amount != null) {
+            _prixEntreeController.text = amount.toString().replaceAll(RegExp(r'\.00$'), '');
+          }
         }
       } else {
         _selectedPrixEntree = 'Gratuit';
+        _selectedPricingMode = null;
       }
 
       // Reservation mode
@@ -421,7 +458,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         'disponible_chez': _disponibleChezController.text,
         'toute_la_france': _touteLaFrance,
         'prix_entree': _selectedPrixEntree,
+        'pricing_mode': _selectedPricingMode,
         'prix_entree_montant': _prixEntreeController.text,
+        'price_categories': _priceCategories.map((c) => {
+          'name': c['name']!.text,
+          'price': c['price']!.text,
+        }).toList(),
         'mode_reservation': _selectedModeReservation,
         'site_web': _siteWebController.text,
         'duree': _selectedTimeEvenement,
@@ -458,7 +500,21 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         _disponibleChezController.text = formData['disponible_chez'] ?? '';
         _touteLaFrance = formData['toute_la_france'] ?? false;
         _selectedPrixEntree = formData['prix_entree'] ?? 'Gratuit';
+        _selectedPricingMode = formData['pricing_mode'];
         _prixEntreeController.text = formData['prix_entree_montant'] ?? '';
+        // Restore price categories
+        for (final cat in _priceCategories) {
+          cat['name']!.dispose();
+          cat['price']!.dispose();
+        }
+        _priceCategories = [];
+        final savedCats = formData['price_categories'] as List? ?? [];
+        for (final c in savedCats) {
+          _priceCategories.add({
+            'name': TextEditingController(text: c['name']?.toString() ?? ''),
+            'price': TextEditingController(text: c['price']?.toString() ?? ''),
+          });
+        }
         _selectedModeReservation = formData['mode_reservation'] ?? 'Sans inscription';
         _siteWebController.text = formData['site_web'] ?? '';
         _selectedTimeEvenement = formData['duree'] ?? 'Sur une journée';
@@ -643,8 +699,26 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         if (_selectedPrixEntree == null) {
           return 'Précisez si l\'événement est gratuit ou payant.';
         }
-        if (_selectedPrixEntree == 'Payant' && _prixEntreeController.text.trim().isEmpty) {
-          return 'Indiquez le prix d\'entrée.';
+        if (_selectedPrixEntree == 'Payant') {
+          if (_selectedPricingMode == null) {
+            return 'Veuillez choisir un type de tarification.';
+          }
+          if (_selectedPricingMode == 'Prix unique' && _prixEntreeController.text.trim().isEmpty) {
+            return 'Indiquez le prix d\'entrée.';
+          }
+          if (_selectedPricingMode == 'Catégories') {
+            if (_priceCategories.isEmpty) {
+              return 'Ajoutez au moins une catégorie de prix.';
+            }
+            for (int i = 0; i < _priceCategories.length; i++) {
+              if (_priceCategories[i]['name']!.text.trim().isEmpty) {
+                return 'Indiquez le nom de la catégorie de prix ${i + 1}.';
+              }
+              if (_priceCategories[i]['price']!.text.trim().isEmpty) {
+                return 'Indiquez le prix de la catégorie "${_priceCategories[i]['name']!.text.trim()}".';
+              }
+            }
+          }
         }
         break;
       
@@ -790,9 +864,19 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       'coverage_area': _disponibleChezController.text.trim(),
       'is_nationwide': _touteLaFrance,
       'price_type': priceType,
-      'price_amount': priceType == 'payant'
+      'price_amount': priceType == 'payant' && _selectedPricingMode == 'Prix unique'
           ? double.tryParse(_prixEntreeController.text.replaceAll(',', '.'))
           : null,
+      // New pricing fields — only sent when using categories
+      if (priceType == 'payant') ...{
+        'pricing_mode': _selectedPricingMode == 'Catégories' ? 'categories' : 'unique',
+      },
+      if (priceType == 'payant' && _selectedPricingMode == 'Catégories') ...{
+        'price_categories': _priceCategories.map((c) => {
+              'name': c['name']!.text.trim(),
+              'price': double.tryParse(c['price']!.text.replaceAll(',', '.')),
+            }).toList(),
+      },
       'reservation_mode': reservationMode,
       'website_url': _siteWebController.text.trim().isEmpty ? null : _siteWebController.text.trim(),
       'duration_type': durationType,
@@ -828,6 +912,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
     try {
       final payload = _buildEventPayload();
+      debugPrint('========== EVENT SUBMIT PAYLOAD ==========');
+      payload.forEach((key, value) {
+        debugPrint('  $key: $value (${value.runtimeType})');
+      });
+      debugPrint('==========================================');
       Map<String, dynamic> response;
 
       if (_isEditMode) {
@@ -1795,46 +1884,141 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               title: "Prix d'entrée: *",
               values: ["Gratuit", "Payant"],
               selectedValue: _selectedPrixEntree,
-              onChanged: (val) => setState(() => _selectedPrixEntree = val),
+              onChanged: (val) => setState(() {
+                _selectedPrixEntree = val;
+                if (val == 'Gratuit') {
+                  _selectedPricingMode = null;
+                }
+              }),
               labelBuilder: (value) => value,
             ),
-            const SizedBox(width: 16),
-            // Champ prix
-            if (_selectedPrixEntree == "Payant")
-              Row(
-                children: [
-                  Container(
-                    width: 250,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                    ),
-                    child: TextField(
-                      controller: _prixEntreeController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        hintText: '',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
-                  ),
-
-                  const Padding(
-                    padding: EdgeInsets.only(left: 8),
-                    child: Text(
-                      '€',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2E9B5B),
-                      ),
-                    ),
-                  ),
-                ],
+            if (_selectedPrixEntree == "Payant") ...[
+              const SizedBox(height: 16),
+              _buildRadioGroup(
+                title: "Type de tarification: *",
+                values: ["Prix unique", "Catégories"],
+                selectedValue: _selectedPricingMode,
+                onChanged: (val) => setState(() {
+                  _selectedPricingMode = val;
+                  if (val == 'Catégories' && _priceCategories.isEmpty) {
+                    _addPriceCategory();
+                  }
+                }),
+                labelBuilder: (value) => value,
               ),
+              const SizedBox(height: 12),
+              // Prix unique input
+              if (_selectedPricingMode == "Prix unique")
+                Row(
+                  children: [
+                    Container(
+                      width: 250,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      ),
+                      child: TextField(
+                        controller: _prixEntreeController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          hintText: 'Prix',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: Text(
+                        '€',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2E9B5B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              // Catégories de prix
+              if (_selectedPricingMode == "Catégories") ...[
+                ...List.generate(_priceCategories.length, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                            ),
+                            child: TextField(
+                              controller: _priceCategories[index]['name'],
+                              decoration: InputDecoration(
+                                hintText: 'ex: Enfant, VIP...',
+                                hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 100,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                            ),
+                            child: TextField(
+                              controller: _priceCategories[index]['price'],
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                hintText: '€',
+                                hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text('€', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF2E9B5B))),
+                        if (_priceCategories.length > 1)
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 22),
+                            onPressed: () => _removePriceCategory(index),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _addPriceCategory,
+                    icon: const Icon(Icons.add_circle_outline, size: 20, color: Color(0xFFEF8A40)),
+                    label: const Text(
+                      'Ajouter une catégorie de prix',
+                      style: TextStyle(color: Color(0xFFEF8A40), fontSize: 13),
+                    ),
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  ),
+                ),
+              ],
+            ],
 
             const SizedBox(height: 20),
             // Mode de reservation
@@ -2109,8 +2293,15 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             ),
             _buildReviewRow('Toute la France', _touteLaFrance ? 'Oui' : 'Non'),
             _buildReviewRow('Prix d\'entrée', _selectedPrixEntree ?? '-'),
-            if (_selectedPrixEntree == 'Payant')
-              _buildReviewRow('Montant', '${_prixEntreeController.text} €'),
+            if (_selectedPrixEntree == 'Payant') ...[
+              _buildReviewRow('Type de tarification', _selectedPricingMode ?? '-'),
+              if (_selectedPricingMode == 'Prix unique')
+                _buildReviewRow('Montant', '${_prixEntreeController.text} €'),
+              if (_selectedPricingMode == 'Catégories')
+                ..._priceCategories.map((c) =>
+                  _buildReviewRow(c['name']!.text.isEmpty ? '-' : c['name']!.text, '${c['price']!.text} €'),
+                ),
+            ],
             _buildReviewRow('Mode de réservation', _selectedModeReservation ?? '-'),
             _buildReviewRow(
               'Site web',

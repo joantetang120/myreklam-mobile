@@ -1,0 +1,172 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/models/story_model.dart';
+import 'package:myreklam/services/token_storage.dart';
+
+class StoryService {
+  static final StoryService _instance = StoryService._internal();
+  factory StoryService() => _instance;
+  StoryService._internal();
+
+  Future<Map<String, String>> _authHeaders() async {
+    final token = await TokenStorage.getAccessToken();
+    return {
+      'Accept': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  /// Upload a new story (multipart image + optional caption).
+  Future<StoryModel?> uploadStory({
+    required Uint8List imageBytes,
+    required String fileName,
+    String? caption,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/stories');
+      final request = http.MultipartRequest('POST', uri);
+
+      final headers = await _authHeaders();
+      request.headers.addAll(headers);
+
+      request.files.add(http.MultipartFile.fromBytes(
+        'media',
+        imageBytes,
+        filename: fileName.isNotEmpty ? fileName : 'story_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      ));
+
+      if (caption != null && caption.trim().isNotEmpty) {
+        request.fields['caption'] = caption.trim();
+      }
+
+      final streamedResponse = await request.send().timeout(ApiConfig.connectTimeout);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('Story upload status: ${response.statusCode}');
+      debugPrint('Story upload body: ${response.body}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        if (body['success'] == true && body['data'] != null) {
+          return StoryModel.fromJson(body['data'] as Map<String, dynamic>);
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error uploading story: $e');
+      return null;
+    }
+  }
+
+  /// Get the story feed (all active stories grouped by user).
+  Future<List<StoryUserGroup>> getFeed() async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/stories/feed'),
+        headers: headers,
+      ).timeout(ApiConfig.connectTimeout);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        if (body['success'] == true && body['data'] != null) {
+          return (body['data'] as List)
+              .map((g) => StoryUserGroup.fromJson(g as Map<String, dynamic>))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching story feed: $e');
+      return [];
+    }
+  }
+
+  /// Get current user's stories with viewer details.
+  Future<List<StoryModel>> getMyStories() async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/stories/mine'),
+        headers: headers,
+      ).timeout(ApiConfig.connectTimeout);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        if (body['success'] == true && body['data'] != null) {
+          return (body['data'] as List)
+              .map((s) => StoryModel.fromJson(s as Map<String, dynamic>))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching my stories: $e');
+      return [];
+    }
+  }
+
+  /// Record a view on a story.
+  Future<int?> recordView(int storyId) async {
+    try {
+      final headers = await _authHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/stories/$storyId/view'),
+        headers: headers,
+      ).timeout(ApiConfig.connectTimeout);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        return body['views_count'] as int?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error recording story view: $e');
+      return null;
+    }
+  }
+
+  /// Get viewers list for a story (owner only).
+  Future<List<StoryViewer>> getViewers(int storyId) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/stories/$storyId/viewers'),
+        headers: headers,
+      ).timeout(ApiConfig.connectTimeout);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        if (body['success'] == true && body['data'] != null) {
+          return (body['data'] as List)
+              .map((v) => StoryViewer.fromJson(v as Map<String, dynamic>))
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching story viewers: $e');
+      return [];
+    }
+  }
+
+  /// Delete a story.
+  Future<bool> deleteStory(int storyId) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.baseUrl}/stories/$storyId'),
+        headers: headers,
+      ).timeout(ApiConfig.connectTimeout);
+
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (e) {
+      debugPrint('Error deleting story: $e');
+      return false;
+    }
+  }
+}

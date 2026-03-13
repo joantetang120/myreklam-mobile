@@ -33,7 +33,9 @@ class EventDetailScreen extends StatelessWidget {
   final String? startTime;
   final String? endTime;
   final String? priceType;
+  final String? pricingMode;
   final String? priceAmount;
+  final List<Map<String, dynamic>> priceCategories;
   final String? reservationMode;
   final String? coverageArea;
   final bool isNationwide;
@@ -68,7 +70,9 @@ class EventDetailScreen extends StatelessWidget {
     this.startTime,
     this.endTime,
     this.priceType,
+    this.pricingMode,
     this.priceAmount,
+    this.priceCategories = const [],
     this.reservationMode,
     this.coverageArea,
     this.isNationwide = false,
@@ -195,12 +199,10 @@ class EventDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Image Carousel
-            ImageCarousel(
-              images: images.isNotEmpty
-                  ? images
-                  : const ['assets/images/default_event.png'],
-            ),
-            const SizedBox(height: 16),
+            if (images.isNotEmpty) ...[
+              ImageCarousel(images: images),
+              const SizedBox(height: 16),
+            ],
 
             // 2. User Detail Card
             Padding(
@@ -379,19 +381,90 @@ class EventDetailScreen extends StatelessWidget {
             // 9. Price Section
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
+              padding: const EdgeInsets.all(16),
+              decoration: _cardDecoration(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Prix', style: TextStyle(fontSize: 13, color: Colors.grey)),
-                  const SizedBox(width: 12),
-                  Text(
-                    _buildPriceDisplay(),
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF3AAE5E),
-                    ),
+                  Row(
+                    children: [
+                      const Icon(Icons.euro_outlined, color: Color(0xFF3AAE5E), size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Tarification',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 12),
+                  if (priceType == 'gratuit')
+                    const Text(
+                      'Gratuit',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF3AAE5E),
+                      ),
+                    )
+                  else if (pricingMode == 'categories' && priceCategories.isNotEmpty) ...[
+                    ...priceCategories.map((cat) {
+                      final name = cat['name']?.toString() ?? '-';
+                      final price = cat['price'];
+                      final priceStr = price != null
+                          ? '${price.toString().replaceAll(RegExp(r'\.0+$'), '')} €'
+                          : '-';
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF3AAE5E),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  name,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              priceStr,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF3AAE5E),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ] else ...[
+                    Text(
+                      _buildPriceDisplay(),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF3AAE5E),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

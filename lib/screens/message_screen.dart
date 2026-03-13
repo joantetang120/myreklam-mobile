@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/widgets/avatars_story.dart';
 import 'package:myreklam/widgets/chat_item_widget.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -16,6 +17,7 @@ class MessageScreen extends StatefulWidget {
 }
 
 class _MessageScreenState extends State<MessageScreen> {
+
   bool _showAllMessages = true;
   final StoryStore _storyStore = StoryStore();
 
@@ -82,7 +84,7 @@ class _MessageScreenState extends State<MessageScreen> {
         _storyStore.addStory(result);
       }
     } else {
-      final updatedStories = await Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => MyStoriesScreen(
@@ -92,33 +94,50 @@ class _MessageScreenState extends State<MessageScreen> {
           ),
         ),
       );
-      if (updatedStories is List<StoryModel>) {
-        _storyStore.replaceStories(updatedStories);
-      }
     }
   }
 
-  void _openStory(BuildContext context, String name, String avatar) {
+  static const _defaultAvatar = 'assets/images/dashboard_particulier/Ellipse 10.png';
+
+  @override
+  void initState() {
+    super.initState();
+    _storyStore.loadFeed();
+  }
+
+  void _openStory(BuildContext context, StoryUserGroup group) {
+    final storyMaps = group.stories.map((s) {
+      final resolvedImage = ApiConfig.resolveMediaUrl(s.mediaUrl);
+      final diff = DateTime.now().difference(s.timestamp);
+      String time;
+      if (diff.inMinutes < 1) {
+        time = "À l'instant";
+      } else if (diff.inMinutes < 60) {
+        time = "il y a ${diff.inMinutes} min";
+      } else if (diff.inHours < 24) {
+        time = "il y a ${diff.inHours}h";
+      } else {
+        time = "il y a ${diff.inDays}j";
+      }
+      return {
+        'image': resolvedImage ?? '',
+        'text': s.caption,
+        'time': time,
+        'id': s.id,
+        'views_count': s.viewsCount,
+      };
+    }).toList();
+
+    final resolvedAvatar = ApiConfig.resolveMediaUrl(group.userAvatar);
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => StoryViewerScreen(
-          name: name,
-          avatar: avatar,
-          stories: const [
-            {
-              'image': 'assets/images/story/Rectangle 113.png',
-              'text':
-                  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-              'time': 'Aujourd\'hui 10 : 30',
-            },
-            {
-              'image': 'assets/images/story/Rectangle 113.png',
-              'text':
-                  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-              'time': 'Aujourd\'hui 11 : 00',
-            },
-          ],
+          name: group.userName,
+          avatar: resolvedAvatar ?? _defaultAvatar,
+          stories: storyMaps,
+          isOwnStory: group.isOwn,
         ),
       ),
     );
@@ -190,12 +209,15 @@ class _MessageScreenState extends State<MessageScreen> {
               // Story Section
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: ValueListenableBuilder<List<StoryModel>>(
-                  valueListenable: _storyStore.storiesNotifier,
-                  builder: (_, userStories, __) {
-                    final hasStories = userStories.isNotEmpty;
+                child: ValueListenableBuilder<List<StoryUserGroup>>(
+                  valueListenable: _storyStore.feedNotifier,
+                  builder: (_, feedGroups, __) {
+                    final ownGroup = feedGroups.where((g) => g.isOwn).toList();
+                    final otherGroups = feedGroups.where((g) => !g.isOwn).toList();
+                    final hasOwnStories = ownGroup.isNotEmpty && ownGroup.first.stories.isNotEmpty;
+
                     return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         GestureDetector(
                           onTap: _handleStoryEntryTap,
@@ -207,16 +229,16 @@ class _MessageScreenState extends State<MessageScreen> {
                                   GestureDetector(
                                     onTap: _handleStoryEntryTap,
                                     child: Container(
-                                      padding: EdgeInsets.all(hasStories ? 2 : 10),
+                                      padding: EdgeInsets.all(hasOwnStories ? 2 : 10),
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         color: const Color(0xFFE6F7EF),
                                         border: Border.all(
                                           color: const Color(0xFF3AAE5E),
-                                          width: hasStories ? 2.5 : 1,
+                                          width: hasOwnStories ? 2.5 : 1,
                                         ),
                                       ),
-                                      child: hasStories
+                                      child: hasOwnStories
                                           ? const CircleAvatar(
                                               radius: 22,
                                               backgroundImage: AssetImage(
@@ -231,7 +253,7 @@ class _MessageScreenState extends State<MessageScreen> {
                                             ),
                                     ),
                                   ),
-                                  if (hasStories)
+                                  if (hasOwnStories)
                                     Positioned(
                                       bottom: -2,
                                       right: -2,
@@ -276,49 +298,15 @@ class _MessageScreenState extends State<MessageScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        AvatarsStory(
-                          name: "Selena",
-                          imageName:
-                              'assets/images/dashboard_particulier/Ellipse 10.png',
-                          onTap: () => _openStory(
-                            context,
-                            'Selena',
-                            'assets/images/dashboard_particulier/Ellipse 10.png',
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        AvatarsStory(
-                          name: "Slime",
-                          imageName:
-                              'assets/images/dashboard_particulier/Ellipse 10 (1).png',
-                          onTap: () => _openStory(
-                            context,
-                            'Slime',
-                            'assets/images/dashboard_particulier/Ellipse 10 (1).png',
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        AvatarsStory(
-                          name: "Joe",
-                          imageName:
-                              'assets/images/dashboard_particulier/Ellipse 10 (2).png',
-                          onTap: () => _openStory(
-                            context,
-                            'Joe',
-                            'assets/images/dashboard_particulier/Ellipse 10 (2).png',
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        AvatarsStory(
-                          name: "Joe",
-                          imageName:
-                              'assets/images/dashboard_particulier/Ellipse 10 (3).png',
-                          onTap: () => _openStory(
-                            context,
-                            'Joe',
-                            'assets/images/dashboard_particulier/Ellipse 10 (3).png',
-                          ),
-                        ),
+                        // Other users' stories from API feed
+                        ...otherGroups.map((group) => Padding(
+                              padding: const EdgeInsets.only(left: 12),
+                              child: AvatarsStory(
+                                name: group.userName.split(' ').first,
+                                imageName: group.userAvatar ?? _defaultAvatar,
+                                onTap: () => _openStory(context, group),
+                              ),
+                            )),
                       ],
                     );
                   },

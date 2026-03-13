@@ -176,12 +176,10 @@ class DemandeDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Image Carousel
-            ImageCarousel(
-              images: images.isNotEmpty
-                  ? images
-                  : const ['assets/images/default_event.png'],
-            ),
-            const SizedBox(height: 16),
+            if (images.isNotEmpty) ...[
+              ImageCarousel(images: images),
+              const SizedBox(height: 16),
+            ],
 
             // 2. User Detail Card
             Padding(
