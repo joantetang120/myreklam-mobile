@@ -24,4 +24,28 @@ class ApiConfig {
   // Google OAuth (Web client ID from google-services.json oauth_client with client_type: 3)
   static const String googleClientId =
       '166441708619-tt4a3fg0ah3g5ol3mmt0f5a65hgif4f8.apps.googleusercontent.com';
+
+  static String _apiHost() {
+    final Uri uri = Uri.parse(baseUrl);
+    final portPart = uri.hasPort ? ':${uri.port}' : '';
+    return '${uri.scheme}://${uri.host}$portPart';
+  }
+
+  /// Resolves backend media/storage URLs (which may be relative) into
+  /// fully-qualified URLs reachable by the client.
+  static String? resolveMediaUrl(String? path) {
+    if (path == null) return null;
+    final trimmed = path.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.startsWith('http')) return trimmed;
+
+    final host = _apiHost();
+    if (trimmed.startsWith('/')) {
+      return '$host$trimmed';
+    }
+    if (trimmed.startsWith('storage/')) {
+      return '$host/$trimmed';
+    }
+    return trimmed;
+  }
 }

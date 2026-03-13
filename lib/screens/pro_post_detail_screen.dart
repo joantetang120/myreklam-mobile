@@ -197,8 +197,10 @@ class ProPostDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ImageCarousel(images: images, discount: discount),
-            const SizedBox(height: 16),
+            if (images.isNotEmpty) ...[
+              ImageCarousel(images: images, discount: discount),
+              const SizedBox(height: 16),
+            ],
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 5),
               child: UserDetailCard(

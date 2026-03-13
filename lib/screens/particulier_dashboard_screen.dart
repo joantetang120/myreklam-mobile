@@ -98,25 +98,39 @@ class _ParticulierDashboardScreenState
     'demande': 'demandes',
   };
 
-  void _openStory(BuildContext context, String name, String avatar) {
+  void _openStory(BuildContext context, StoryUserGroup group) {
+    final storyMaps = group.stories.map((s) {
+      final resolvedImage = ApiConfig.resolveMediaUrl(s.mediaUrl);
+      final diff = DateTime.now().difference(s.timestamp);
+      String time;
+      if (diff.inMinutes < 1) {
+        time = "À l'instant";
+      } else if (diff.inMinutes < 60) {
+        time = "il y a ${diff.inMinutes} min";
+      } else if (diff.inHours < 24) {
+        time = "il y a ${diff.inHours}h";
+      } else {
+        time = "il y a ${diff.inDays}j";
+      }
+      return {
+        'image': resolvedImage ?? '',
+        'text': s.caption,
+        'time': time,
+        'id': s.id,
+        'views_count': s.viewsCount,
+      };
+    }).toList();
+
+    final avatarUrl = ApiConfig.resolveMediaUrl(group.userAvatar);
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => StoryViewerScreen(
-          name: name,
-          avatar: avatar,
-          stories: [
-            {
-              'image': 'assets/images/story/Rectangle 113.png',
-              'text': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum. Excepteur sint occaecat cupidatat non',
-              'time': 'Aujourd\'hui 10 : 30',
-            },
-            {
-              'image': 'assets/images/story/Rectangle 113.png',
-              'text': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
-              'time': 'Aujourd\'hui 11 : 00',
-            },
-          ],
+          name: group.userName,
+          avatar: avatarUrl ?? _defaultAvatar,
+          stories: storyMaps,
+          isOwnStory: group.isOwn,
         ),
       ),
     );
@@ -128,6 +142,7 @@ class _ParticulierDashboardScreenState
     _scrollController.addListener(_onFeedScroll);
     _prefetchCurrentUser();
     _loadUnifiedFeed(reset: true);
+    _storyStore.loadFeed();
   }
 
   @override
@@ -149,7 +164,7 @@ class _ParticulierDashboardScreenState
         _storyStore.addStory(result);
       }
     } else {
-      final updatedStories = await Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => MyStoriesScreen(
@@ -159,9 +174,8 @@ class _ParticulierDashboardScreenState
           ),
         ),
       );
-      if (updatedStories is List<StoryModel>) {
-        _storyStore.replaceStories(updatedStories);
-      }
+      // Refresh stories after returning from MyStoriesScreen
+      _storyStore.loadMyStories();
     }
   }
 
@@ -2078,7 +2092,11 @@ class _ParticulierDashboardScreenState
       final startTime = data['start_time']?.toString();
       final endTime = data['end_time']?.toString();
       final priceType = data['price_type']?.toString();
+      final pricingMode = data['pricing_mode']?.toString();
       final priceAmount = data['price_amount']?.toString();
+      final priceCategories = (data['price_categories'] as List?)
+          ?.map<Map<String, dynamic>>((c) => Map<String, dynamic>.from(c as Map))
+          .toList() ?? <Map<String, dynamic>>[];
       final reservationMode = data['reservation_mode']?.toString();
       final coverageArea = data['coverage_area']?.toString();
       final isNationwide = data['is_nationwide'] == true;
@@ -2133,7 +2151,9 @@ class _ParticulierDashboardScreenState
             startTime: startTime,
             endTime: endTime,
             priceType: priceType,
+            pricingMode: pricingMode,
             priceAmount: priceAmount,
+            priceCategories: priceCategories,
             reservationMode: reservationMode,
             coverageArea: coverageArea,
             isNationwide: isNationwide,
@@ -2607,135 +2627,112 @@ class _ParticulierDashboardScreenState
                 //story
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: ValueListenableBuilder<List<StoryModel>>(
-                    valueListenable: _storyStore.storiesNotifier,
-                    builder: (_, userStories, __) {
-                      final hasStories = userStories.isNotEmpty;
-                      return SingleChildScrollView(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            GestureDetector(
-                              onTap: _handleStoryEntryTap,
-                              child: Column(
-                                spacing: 5,
-                                children: [
-                                  Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      GestureDetector(
-                                        onTap: _handleStoryEntryTap,
-                                        child: Container(
-                                          padding: EdgeInsets.all(hasStories ? 2 : 10),
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: const Color(0xFFE6F7EF),
-                                            border: Border.all(
-                                              color: const Color(0xFF3AAE5E),
-                                              width: hasStories ? 2.5 : 1,
-                                            ),
-                                          ),
-                                          child: hasStories
-                                              ? const CircleAvatar(
-                                                  radius: 22,
-                                                  backgroundImage: AssetImage(
-                                                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                                                  ),
-                                                )
-                                              : const Center(
-                                                  child: Icon(
-                                                    Icons.add,
-                                                    color: Color(0xFF3AAE5E),
-                                                  ),
-                                                ),
-                                        ),
-                                      ),
-                                      if (hasStories)
-                                        Positioned(
-                                          bottom: -2,
-                                          right: -2,
-                                          child: GestureDetector(
-                                            onTap: () async {
-                                              final result = await Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) => const AddStoryScreen(),
-                                                ),
-                                              );
-                                              if (result is StoryModel) {
-                                                _storyStore.addStory(result);
-                                              }
-                                            },
-                                            child: Container(
-                                              padding: const EdgeInsets.all(3),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF3AAE5E),
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: Colors.white,
-                                                  width: 2,
-                                                ),
-                                              ),
-                                              child: const Icon(
-                                                Icons.add,
-                                                color: Colors.white,
-                                                size: 12,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                  const Text(
-                                    "Votre story",
-                                    style: TextStyle(fontSize: 10),
-                                  ),
-                                ],
-                              ),
-                            ),
+                  child: ValueListenableBuilder<List<StoryUserGroup>>(
+                    valueListenable: _storyStore.feedNotifier,
+                    builder: (_, feedGroups, __) {
+                      final ownGroup = feedGroups.where((g) => g.isOwn).toList();
+                      final otherGroups = feedGroups.where((g) => !g.isOwn).toList();
+                      final hasOwnStories = ownGroup.isNotEmpty && ownGroup.first.stories.isNotEmpty;
 
-                            // avatars
-                            AvatarsStory(
-                              name: "Selena",
-                              imageName:
-                                  'assets/images/dashboard_particulier/Ellipse 10.png',
-                              onTap: () => _openStory(
-                                context,
-                                'Selena',
-                                'assets/images/dashboard_particulier/Ellipse 10.png',
+                      return Align(
+                        alignment: Alignment.centerLeft,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // "Votre story" entry
+                              GestureDetector(
+                                onTap: _handleStoryEntryTap,
+                                child: Column(
+                                  spacing: 5,
+                                  children: [
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        GestureDetector(
+                                          onTap: _handleStoryEntryTap,
+                                          child: Container(
+                                            padding: EdgeInsets.all(hasOwnStories ? 2 : 10),
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: const Color(0xFFE6F7EF),
+                                              border: Border.all(
+                                                color: const Color(0xFF3AAE5E),
+                                                width: hasOwnStories ? 2.5 : 1,
+                                              ),
+                                            ),
+                                            child: hasOwnStories
+                                                ? const CircleAvatar(
+                                                    radius: 22,
+                                                    backgroundImage: AssetImage(
+                                                      'assets/images/dashboard_particulier/Ellipse 10.png',
+                                                    ),
+                                                  )
+                                                : const Center(
+                                                    child: Icon(
+                                                      Icons.add,
+                                                      color: Color(0xFF3AAE5E),
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                        if (hasOwnStories)
+                                          Positioned(
+                                            bottom: -2,
+                                            right: -2,
+                                            child: GestureDetector(
+                                              onTap: () async {
+                                                final result = await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => const AddStoryScreen(),
+                                                  ),
+                                                );
+                                                if (result is StoryModel) {
+                                                  _storyStore.addStory(result);
+                                                }
+                                              },
+                                              child: Container(
+                                                padding: const EdgeInsets.all(3),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFF3AAE5E),
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: Colors.white,
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.add,
+                                                  color: Colors.white,
+                                                  size: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const Text(
+                                      "Votre story",
+                                      style: TextStyle(fontSize: 10),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            AvatarsStory(
-                              name: "Slime",
-                              imageName:
-                                  'assets/images/dashboard_particulier/Ellipse 10 (1).png',
-                              onTap: () => _openStory(
-                                context,
-                                'Slime',
-                                'assets/images/dashboard_particulier/Ellipse 10 (1).png',
-                              ),
-                            ),
-                            AvatarsStory(
-                              name: "Joe",
-                              imageName:
-                                  'assets/images/dashboard_particulier/Ellipse 10 (2).png',
-                              onTap: () => _openStory(
-                                context,
-                                'Joe',
-                                'assets/images/dashboard_particulier/Ellipse 10 (2).png',
-                              ),
-                            ),
-                            AvatarsStory(
-                              name: "Joe",
-                              imageName:
-                                  'assets/images/dashboard_particulier/Ellipse 10 (3).png',
-                              onTap: () => _openStory(
-                                context,
-                                'Joe',
-                                'assets/images/dashboard_particulier/Ellipse 10 (3).png',
-                              ),
-                            ),
-                          ],
+                              const SizedBox(width: 12),
+
+                              // Other users' stories from API feed
+                              ...otherGroups.map((group) => Padding(
+                                padding: const EdgeInsets.only(left: 12),
+                                child: AvatarsStory(
+                                  name: group.userName.split(' ').first,
+                                  imageName: ApiConfig.resolveMediaUrl(group.userAvatar) ?? _defaultAvatar,
+                                  onTap: () => _openStory(context, group),
+                                ),
+                              )),
+                            ],
+                          ),
                         ),
                       );
                     },

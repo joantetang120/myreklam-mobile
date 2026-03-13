@@ -183,8 +183,10 @@ class JobDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Image Carousel
-            ImageCarousel(images: images, discount: 'Job'),
-            const SizedBox(height: 16),
+            if (images.isNotEmpty) ...[
+              ImageCarousel(images: images, discount: 'Job'),
+              const SizedBox(height: 16),
+            ],
 
             // 2. User Detail Card
             Padding(

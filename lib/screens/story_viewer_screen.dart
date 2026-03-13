@@ -1,6 +1,6 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:myreklam/screens/chat_conversation_screen.dart';
+import 'package:myreklam/models/story_model.dart';
+import 'package:myreklam/services/story_service.dart';
 
 class StoryViewerScreen extends StatefulWidget {
   final String name;
@@ -27,6 +27,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   late int _currentIndex;
   late AnimationController _progressController;
   bool _isLiked = false;
+  final StoryService _storyService = StoryService();
 
   @override
   void initState() {
@@ -41,12 +42,22 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         }
       });
     _progressController.forward();
+    _recordCurrentView();
   }
 
   @override
   void dispose() {
     _progressController.dispose();
     super.dispose();
+  }
+
+  void _recordCurrentView() {
+    if (!widget.isOwnStory) {
+      final storyId = widget.stories[_currentIndex]['id'];
+      if (storyId is int) {
+        _storyService.recordView(storyId);
+      }
+    }
   }
 
   void _nextStory() {
@@ -56,6 +67,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       });
       _progressController.reset();
       _progressController.forward();
+      _recordCurrentView();
     } else {
       Navigator.pop(context);
     }
@@ -68,10 +80,16 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       });
       _progressController.reset();
       _progressController.forward();
+      _recordCurrentView();
     }
   }
 
   void _showViewersModal() {
+    final storyId = widget.stories[_currentIndex]['id'];
+    if (storyId is! int) return;
+
+    _progressController.stop();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -79,93 +97,163 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    Icon(Icons.remove_red_eye_outlined, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Vu par 100 personnes',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Icon(Icons.close, size: 22),
-                    ),
-                  ],
-                ),
+        return FutureBuilder<List<StoryViewer>>(
+          future: _storyService.getViewers(storyId),
+          builder: (context, snapshot) {
+            final viewers = snapshot.data ?? [];
+            final viewsCount = widget.stories[_currentIndex]['views_count'] ?? viewers.length;
+
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.5,
               ),
-              const Divider(height: 1),
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: 5,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      leading: CircleAvatar(
-                        radius: 20,
-                        backgroundImage: AssetImage(
-                          'assets/images/dashboard_particulier/Ellipse 10.png',
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.remove_red_eye_outlined, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Vu par $viewsCount personne${viewsCount > 1 ? 's' : ''}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      title: Text(
-                        'Esther Howard',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: const Icon(Icons.close, size: 22),
                         ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  if (snapshot.connectionState == ConnectionState.waiting)
+                    const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(),
+                    )
+                  else if (viewers.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Text(
+                        'Aucune vue pour le moment',
+                        style: TextStyle(color: Colors.grey),
                       ),
-                      subtitle: Text(
-                        'il y a ${index + 1} minute${index > 0 ? 's' : ''}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      trailing: GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatConversationScreen(
-                                name: 'Esther Howard',
-                                avatar: 'assets/images/dashboard_particulier/Ellipse 10.png',
-                                status: 'En ligne',
+                    )
+                  else
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: viewers.length,
+                        itemBuilder: (context, index) {
+                          final viewer = viewers[index];
+                          return ListTile(
+                            leading: CircleAvatar(
+                              radius: 20,
+                              backgroundImage: viewer.userAvatar != null
+                                  ? NetworkImage(viewer.userAvatar!)
+                                  : const AssetImage(
+                                      'assets/images/dashboard_particulier/Ellipse 10.png',
+                                    ) as ImageProvider,
+                            ),
+                            title: Text(
+                              viewer.userName,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            subtitle: Text(
+                              _getTimeAgo(viewer.viewedAt),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
                               ),
                             ),
                           );
                         },
-                        child: Icon(
-                          Icons.chat_bubble_outline,
-                          color: Colors.grey[600],
-                          size: 20,
-                        ),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
+    ).whenComplete(() {
+      _progressController.forward();
+    });
+  }
+
+  String _getTimeAgo(DateTime timestamp) {
+    final diff = DateTime.now().difference(timestamp);
+    if (diff.inMinutes < 1) return "À l'instant";
+    if (diff.inMinutes < 60) return "il y a ${diff.inMinutes} min";
+    if (diff.inHours < 24) return "il y a ${diff.inHours}h";
+    return "il y a ${diff.inDays}j";
+  }
+
+  Widget _buildStoryImage(Map<String, dynamic> story) {
+    final image = story['image'];
+
+    if (image is String && image.startsWith('http')) {
+      return Image.network(
+        image,
+        width: double.infinity,
+        height: MediaQuery.of(context).size.height * 0.4,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return SizedBox(
+            height: MediaQuery.of(context).size.height * 0.4,
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          );
+        },
+        errorBuilder: (_, __, ___) => SizedBox(
+          height: MediaQuery.of(context).size.height * 0.4,
+          child: const Center(
+            child: Icon(Icons.broken_image, color: Colors.white54, size: 48),
+          ),
+        ),
+      );
+    }
+
+    // Fallback for asset images
+    if (image is String && image.isNotEmpty) {
+      return Image.asset(
+        image,
+        width: double.infinity,
+        height: MediaQuery.of(context).size.height * 0.4,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => SizedBox(
+          height: MediaQuery.of(context).size.height * 0.4,
+          child: const Center(
+            child: Icon(Icons.broken_image, color: Colors.white54, size: 48),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.4,
+      child: const Center(
+        child: Icon(Icons.image, color: Colors.white54, size: 48),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final story = widget.stories[_currentIndex];
+    final viewsCount = story['views_count'] ?? 0;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -245,10 +333,14 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                             color: const Color(0xFF3AAE5E), width: 1.5),
                       ),
                       child: ClipOval(
-                        child: Image.asset(
-                          widget.avatar,
-                          fit: BoxFit.cover,
-                        ),
+                        child: widget.avatar.startsWith('http')
+                            ? Image.network(widget.avatar, fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Image.asset(
+                                  'assets/images/dashboard_particulier/Ellipse 10.png',
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : Image.asset(widget.avatar, fit: BoxFit.cover),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -265,7 +357,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                             ),
                           ),
                           Text(
-                            story['time'] ?? 'Aujourd\'hui 10 : 30',
+                            story['time'] ?? '',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.7),
                               fontSize: 11,
@@ -286,40 +378,28 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               const Spacer(),
 
               // Story image
-              story['image'] is Uint8List
-                  ? Image.memory(
-                      story['image'],
-                      width: double.infinity,
-                      height: MediaQuery.of(context).size.height * 0.4,
-                      fit: BoxFit.cover,
-                    )
-                  : Image.asset(
-                      story['image'] ?? 'assets/images/story/Rectangle 113.png',
-                      width: double.infinity,
-                      height: MediaQuery.of(context).size.height * 0.4,
-                      fit: BoxFit.cover,
-                    ),
+              _buildStoryImage(story),
 
               const SizedBox(height: 16),
 
               // Story text
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  story['text'] ??
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum. Excepteur sint occaecat cupidatat non',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 13,
-                    height: 1.5,
+              if (story['text'] != null && (story['text'] as String).isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    story['text'],
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
                   ),
                 ),
-              ),
 
               const Spacer(),
 
-              // Bottom bar: reply/view count, like, share
+              // Bottom bar
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -327,20 +407,18 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                     ? Row(
                         children: [
                           GestureDetector(
-                            onTap: () {
-                              _showViewersModal();
-                            },
+                            onTap: _showViewersModal,
                             child: Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.remove_red_eye_outlined,
                                   color: Colors.white,
                                   size: 22,
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  '100 Vues',
-                                  style: TextStyle(
+                                  '$viewsCount Vue${viewsCount > 1 ? 's' : ''}',
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
@@ -351,9 +429,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                           ),
                           const Spacer(),
                           GestureDetector(
-                            onTap: () {
-                              // Handle share
-                            },
+                            onTap: () {},
                             child: const Icon(
                               Icons.share_outlined,
                               color: Colors.white,
@@ -404,9 +480,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                           ),
                           const SizedBox(width: 16),
                           GestureDetector(
-                            onTap: () {
-                              // Handle share
-                            },
+                            onTap: () {},
                             child: const Icon(
                               Icons.share_outlined,
                               color: Colors.white,

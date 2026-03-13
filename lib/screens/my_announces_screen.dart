@@ -1405,7 +1405,11 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       final startTime = data['start_time']?.toString();
       final endTime = data['end_time']?.toString();
       final priceType = data['price_type']?.toString();
+      final pricingMode = data['pricing_mode']?.toString();
       final priceAmount = data['price_amount']?.toString();
+      final priceCategories = (data['price_categories'] as List?)
+          ?.map<Map<String, dynamic>>((c) => Map<String, dynamic>.from(c as Map))
+          .toList() ?? <Map<String, dynamic>>[];
       final reservationMode = data['reservation_mode']?.toString();
       final coverageArea = data['coverage_area']?.toString();
       final isNationwide = data['is_nationwide'] == true;
@@ -1455,7 +1459,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
             startTime: startTime,
             endTime: endTime,
             priceType: priceType,
+            pricingMode: pricingMode,
             priceAmount: priceAmount,
+            priceCategories: priceCategories,
             reservationMode: reservationMode,
             coverageArea: coverageArea,
             isNationwide: isNationwide,
