@@ -742,6 +742,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   }
 
   void _nextStep() {
+    final error = _validateCurrentStep();
+    if (error != null) {
+      _showSnack(error, isError: true);
+      return;
+    }
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
     }
@@ -751,6 +756,44 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
     }
+  }
+
+  String? _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Step 1: Catégories
+        if (_selectedCategory == null) {
+          return 'Veuillez sélectionner une catégorie.';
+        }
+        if (_selectedType == null) {
+          return 'Veuillez sélectionner un type de demande.';
+        }
+        break;
+      
+      case 1: // Step 2: Description
+        if (_titleController.text.trim().length < 5) {
+          return 'Le titre doit contenir au moins 5 caractères.';
+        }
+        if (_descriptionQuillController.document.toPlainText().trim().length < 20) {
+          return 'La description doit contenir au moins 20 caractères.';
+        }
+        break;
+      
+      case 2: // Step 3: Détails
+        if (_startDate == null) {
+          return 'Sélectionnez une date de début.';
+        }
+        if (_endDate == null) {
+          return 'Sélectionnez une date de fin.';
+        }
+        if (_endDate!.isBefore(_startDate!)) {
+          return 'La date de fin doit être postérieure à la date de début.';
+        }
+        break;
+      
+      case 3: // Step 4: Photos (optional)
+        break;
+    }
+    return null;
   }
 
   void _showSuccessDialog() {
@@ -1286,7 +1329,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ),
               SizedBox(height: 20),
               Text(
-                'Vos photos',
+                'Vos photos (non-obligatoires)',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF424242)),
               ),
             ],
@@ -1601,7 +1644,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           child: Column(
             children: [
               const Text(
-                'Accepter de recevoir des messages concernant cette annonce',
+                'Accepter de recevoir des messages à propos de cette demande',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -1611,7 +1654,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Les autres utilisateurs pourront vous contacter pour poser des questions sur ce bon plan',
+                'Les utilisateurs intéressés pourront vous écrire pour clarifier un besoin ou proposer une solution adaptée.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
