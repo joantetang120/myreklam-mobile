@@ -1031,6 +1031,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   }
 
   void _nextStep() {
+    final error = _validateCurrentStep();
+    if (error != null) {
+      _showSnack(error, isError: true);
+      return;
+    }
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
     }
@@ -1040,6 +1045,70 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
     }
+  }
+
+  String? _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Step 1: Informations
+        if (_selectedCategory == null) {
+          return 'Veuillez sélectionner une catégorie.';
+        }
+        if (_selectedSubCategory == null) {
+          return 'Veuillez sélectionner une sous-catégorie.';
+        }
+        if (_selectedType == null) {
+          return 'Veuillez choisir un type de bon plan.';
+        }
+        break;
+      
+      case 1: // Step 2: Lien (optional)
+        break;
+      
+      case 2: // Step 3: Description
+        if (_titleController.text.trim().length < 5) {
+          return 'Le titre doit contenir au moins 5 caractères.';
+        }
+        if (_descriptionQuillController.document.toPlainText().trim().length < 20) {
+          return 'La description doit contenir au moins 20 caractères.';
+        }
+        if (_disponibleChezController.text.trim().isEmpty) {
+          return 'Indiquez chez qui le bon plan est disponible.';
+        }
+        if (_selectedDisponibleLocation == null) {
+          return 'Précisez où est disponible cette offre.';
+        }
+        break;
+      
+      case 3: // Step 4: Prix et détails
+        if (_selectedType != 'Gratuit') {
+          final prixAvant = _parsePrice(_prixAvantReductionController.text);
+          final prixFinal = _parsePrice(_prixFinalController.text);
+          if (prixAvant != null && prixFinal != null && prixFinal > prixAvant) {
+            return 'Le prix final doit être inférieur ou égal au prix avant réduction.';
+          }
+        }
+        if (_validityType == 'dates') {
+          if (_validFrom == null || _validUntil == null) {
+            return 'Sélectionnez une date de début et une date de fin.';
+          }
+          if (_validUntil!.isBefore(_validFrom!)) {
+            return 'La date de fin doit être postérieure à la date de début.';
+          }
+        }
+        if (!_isOnlineOnly) {
+          if (_locationController.text.trim().isEmpty && !_touteFrance) {
+            return 'Renseignez une ville ou activez "Toute la France".';
+          }
+          if (!_moyenRetraitMagasin && !_moyenRetraitEnLigne && !_moyenRetraitDrive) {
+            return 'Sélectionnez au moins un moyen de retrait.';
+          }
+        }
+        break;
+      
+      case 4: // Step 5: Médias (optional)
+        break;
+    }
+    return null;
   }
 
   String? _validateForm() {
@@ -1625,7 +1694,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               ),
               SizedBox(height: 8),
               Text(
-                'Ajoutez un maximum de photos pour augmenter le nombre de contacts',
+                'Ajoutez des photos de votre bon plan pour le rendre plus attractif et inspirer confiance.',
                 style: TextStyle(
                   fontSize: 14,
                   color: Color(0xFF666666),
@@ -1634,7 +1703,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               ),
               SizedBox(height: 20),
               Text(
-                'Vos photos *',
+                'Vos photos (non-obligatoires)',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1961,13 +2030,13 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           icon: Icons.link,
           title: 'Lien',
           subtitle:
-              "Entrez le lien de la page où vous pouvez bénéficier de ce bon plan ou obtenir plus d'informations à son sujet.",
+              "Collez le lien de la page du bon plan. Nous l'utiliserons pour récupérer automatiquement les informations et pré-remplir votre annonce.",
           children: [
             _buildTextField(
               label: 'Ajouter un lien',
               controller: _linkController,
               fieldKey: 'link',
-              helperText: 'Ajoutez l\'URL complète de la page du bon plan (ex: https://www.exemple.fr/promo).',
+              helperText: 'Le lien permettra d\'extraire automatiquement le titre, la description, les prix et autres détails du bon plan pour faciliter la création de votre annonce.',
             ),
           ],
         ),
@@ -2579,7 +2648,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           child: Column(
             children: [
               const Text(
-                'Accepter de recevoir des messages concernant cette annonce',
+                'Accepter de recevoir des messages à propos de ce bon plan',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -2589,7 +2658,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Les autres utilisateurs pourront vous contacter pour poser des questions sur ce bon plan',
+                'Les intéressés pourront vous écrire pour en savoir plus sur les conditions ou la disponibilité de votre bon plan.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
@@ -2912,6 +2981,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     IconData? prefixIcon,
     String? fieldKey,
     String? helperText,
+    bool enabled = true,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2928,6 +2999,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             maxLines: maxLines,
             minLines: minLines,
             keyboardType: keyboardType,
+            enabled: enabled,
+            onChanged: onChanged,
             onTap: () {
               if (fieldKey != null) {
                 setState(() => _focusedField = fieldKey);

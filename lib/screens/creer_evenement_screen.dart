@@ -100,7 +100,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   bool get _isEditMode => widget.eventId != null && widget.eventId!.isNotEmpty;
 
   final List<String> _types = [
-    'Présentielonline',
+    'Présentiel',
     'En ligne',
     'Hybride',
   ];
@@ -600,6 +600,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   }
 
   void _nextStep() {
+    final error = _validateCurrentStep();
+    if (error != null) {
+      _showSnack(error, isError: true);
+      return;
+    }
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
     }
@@ -609,6 +614,59 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
     }
+  }
+
+  String? _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Step 1: Catégories
+        if (_selectedCategory == null) {
+          return 'Veuillez sélectionner une catégorie.';
+        }
+        if (_selectedSubCategory == null) {
+          return 'Veuillez sélectionner une sous-catégorie.';
+        }
+        break;
+      
+      case 1: // Step 2: Lien (optional)
+        break;
+      
+      case 2: // Step 3: Description
+        if (_titleController.text.trim().length < 5) {
+          return 'Le titre doit contenir au moins 5 caractères.';
+        }
+        if (_descriptionQuillController.document.toPlainText().trim().length < 20) {
+          return 'La description doit contenir au moins 20 caractères.';
+        }
+        if (_disponibleChezController.text.trim().isEmpty) {
+          return 'Indiquez le lieu de l\'événement.';
+        }
+        if (_selectedPrixEntree == null) {
+          return 'Précisez si l\'événement est gratuit ou payant.';
+        }
+        if (_selectedPrixEntree == 'Payant' && _prixEntreeController.text.trim().isEmpty) {
+          return 'Indiquez le prix d\'entrée.';
+        }
+        break;
+      
+      case 3: // Step 4: Dates et horaires
+        if (selectedDate == null) {
+          return 'Sélectionnez une date pour l\'événement.';
+        }
+        break;
+      
+      case 4: // Step 5: Médias (optional)
+        break;
+    }
+    return null;
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? Colors.red.shade700 : const Color(0xFF3AAE5E),
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 4),
+    ));
   }
 
   Future<void> _selectTime(BuildContext context, bool isStartTime) async {
@@ -1167,7 +1225,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               ),
               SizedBox(height: 8),
               Text(
-                'Ajoutez un maximum de photos pour augmenter le nombre de contacts',
+                'Ajoutez des photos de votre événement pour donner envie aux participants et mettre l’ambiance en avant.',
                 style: TextStyle(
                   fontSize: 14,
                   color: Color(0xFF666666),
@@ -1176,7 +1234,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               ),
               SizedBox(height: 20),
               Text(
-                'Vos photos *',
+                'Vos photos (non-obligatoires)',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1612,13 +1670,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           icon: Icons.link,
           title: 'Lien',
           subtitle:
-              "Entrez le lien de la page où se trouve les informations de l'événement.",
+              "Collez le lien de la page de l'événement. Nous l'utiliserons pour récupérer automatiquement les informations et pré-remplir votre annonce.",
           children: [
             _buildTextField(
               label: 'Ajouter un lien',
               controller: _linkController,
               fieldKey: 'link',
-              helperText: 'Ajoutez l\'URL complète de la page de l\'événement (ex: https://www.exemple.fr/evenement).',
+              helperText: 'Le lien permettra d\'extraire automatiquement le titre, la description, les dates, le lieu et autres détails de l\'événement pour faciliter la création de votre annonce.',
             ),
           ],
         ),
@@ -2103,7 +2161,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           child: Column(
             children: [
               const Text(
-                'Accepter de recevoir des messages concernant cette annonce',
+                'Accepter de recevoir des messages à propos de cet événement',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -2113,7 +2171,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Les autres utilisateurs pourront vous contacter pour poser des questions sur cet événement',
+                'Les intéressés pourront vous contacter pour connaître le programme, l’accès ou les modalités pratiques de l’événement.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
