@@ -74,7 +74,8 @@ class _ParticulierDashboardScreenState
 
   final StoryStore _storyStore = StoryStore();
   final ScrollController _scrollController = ScrollController();
-  static const _defaultAvatar = 'assets/images/dashboard_particulier/Ellipse 10.png';
+  static const _defaultAvatar =
+      'assets/images/dashboard_particulier/Ellipse 10.png';
 
   List<Map<String, dynamic>> _feedItems = [];
   bool _isLoadingFeed = true;
@@ -108,12 +109,14 @@ class _ParticulierDashboardScreenState
           stories: [
             {
               'image': 'assets/images/story/Rectangle 113.png',
-              'text': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum. Excepteur sint occaecat cupidatat non',
+              'text':
+                  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum. Excepteur sint occaecat cupidatat non',
               'time': 'Aujourd\'hui 10 : 30',
             },
             {
               'image': 'assets/images/story/Rectangle 113.png',
-              'text': 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
+              'text':
+                  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
               'time': 'Aujourd\'hui 11 : 00',
             },
           ],
@@ -141,9 +144,7 @@ class _ParticulierDashboardScreenState
     if (_storyStore.stories.isEmpty) {
       final result = await Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => const AddStoryScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const AddStoryScreen()),
       );
       if (result is StoryModel) {
         _storyStore.addStory(result);
@@ -174,11 +175,14 @@ class _ParticulierDashboardScreenState
       return _currentUserId;
     }
     try {
-      final response = await ApiClient().authenticatedGet('/user/profile');
-      final data = response['data'] as Map<String, dynamic>?;
+      final response = await ApiClient().authenticatedGet('/profile/me');
+      final data = response['user'] as Map<String, dynamic>?;
+      print("User data: $data");
       final id = data?['id']?.toString();
+      print("Id: $id");
       if (mounted) {
         setState(() => _currentUserId = id);
+        print("CurrentUser: $_currentUserId");
       } else {
         _currentUserId = id;
       }
@@ -289,12 +293,15 @@ class _ParticulierDashboardScreenState
         else ...[
           Builder(
             builder: (_) {
-              final items =
-                  _feedItems.where((item) => item['feed_type'] != 'post').toList();
+              final items = _feedItems
+                  .where((item) => item['feed_type'] != 'post')
+                  .toList();
               if (items.isEmpty) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _buildEmptyState('Aucun contenu disponible pour le moment.'),
+                  child: _buildEmptyState(
+                    'Aucun contenu disponible pour le moment.',
+                  ),
                 );
               }
               return Column(children: items.map(_buildFeedItemCard).toList());
@@ -304,7 +311,7 @@ class _ParticulierDashboardScreenState
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(child: CircularProgressIndicator()),
-            )
+            ),
         ],
       ],
     );
@@ -354,7 +361,9 @@ class _ParticulierDashboardScreenState
     final locationType = bp['available_location_type']?.toString() ?? '';
     final createdAt = bp['created_at']?.toString();
     final mediaFiles = bp['media_files'] as List? ?? [];
-    final imageUrl = mediaFiles.isNotEmpty ? mediaFiles.first['url']?.toString() : null;
+    final imageUrl = mediaFiles.isNotEmpty
+        ? mediaFiles.first['url']?.toString()
+        : null;
 
     return Container(
       margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
@@ -402,7 +411,9 @@ class _ParticulierDashboardScreenState
                   return Container(
                     height: 180,
                     color: Colors.grey[100],
-                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   );
                 },
                 errorBuilder: (_, error, ___) {
@@ -410,7 +421,12 @@ class _ParticulierDashboardScreenState
                   return Container(
                     height: 100,
                     color: Colors.grey[200],
-                    child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey)),
+                    child: const Center(
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey,
+                      ),
+                    ),
                   );
                 },
               ),
@@ -422,8 +438,10 @@ class _ParticulierDashboardScreenState
             spacing: 8,
             runSpacing: 6,
             children: [
-              if (category.isNotEmpty) _buildBonPlanTag(category, Icons.local_offer_outlined),
-              if (subCategory.isNotEmpty) _buildBonPlanTag(subCategory, Icons.subdirectory_arrow_right),
+              if (category.isNotEmpty)
+                _buildBonPlanTag(category, Icons.local_offer_outlined),
+              if (subCategory.isNotEmpty)
+                _buildBonPlanTag(subCategory, Icons.subdirectory_arrow_right),
               if (type.isNotEmpty) _buildBonPlanTag(type, Icons.label_outline),
             ],
           ),
@@ -488,7 +506,8 @@ class _ParticulierDashboardScreenState
     final companyName = job['company_name']?.toString() ?? 'Entreprise';
     final jobTitle = job['title']?.toString() ?? 'Offre d\'emploi';
     final description = _stripHtml(job['description']?.toString() ?? '');
-    final location = job['location']?.toString() ??
+    final location =
+        job['location']?.toString() ??
         job['city']?.toString() ??
         'Non spécifié';
     final contract = job['contract_type']?.toString() ?? '';
@@ -497,34 +516,21 @@ class _ParticulierDashboardScreenState
 
     final tags = <JobDetailTag>[
       if (contract.isNotEmpty)
-        JobDetailTag(
-          icon: Icons.description_outlined,
-          text: contract,
-        ),
+        JobDetailTag(icon: Icons.description_outlined, text: contract),
       if (location.isNotEmpty)
-        JobDetailTag(
-          icon: Icons.location_on_outlined,
-          text: location,
-        ),
+        JobDetailTag(icon: Icons.location_on_outlined, text: location),
       if (experience.isNotEmpty)
-        JobDetailTag(
-          icon: Icons.work_history_outlined,
-          text: experience,
-        ),
+        JobDetailTag(icon: Icons.work_history_outlined, text: experience),
       if (salary != null && salary.isNotEmpty)
-        JobDetailTag(
-          icon: Icons.euro,
-          text: salary,
-          isSpecial: true,
-        ),
+        JobDetailTag(icon: Icons.euro, text: salary, isSpecial: true),
     ];
 
     final advantages = <String>[];
     if (job['advantages'] is List) {
       advantages.addAll(
-        (job['advantages'] as List)
-            .whereType<String>()
-            .where((element) => element.isNotEmpty),
+        (job['advantages'] as List).whereType<String>().where(
+          (element) => element.isNotEmpty,
+        ),
       );
     }
     if (advantages.isEmpty) {
@@ -537,8 +543,9 @@ class _ParticulierDashboardScreenState
           companyLogo: 'assets/images/dashboard_particulier/Rectangle 13.png',
           companyName: companyName,
           jobTitle: jobTitle,
-          description:
-              description.isNotEmpty ? description : 'Description non disponible.',
+          description: description.isNotEmpty
+              ? description
+              : 'Description non disponible.',
           tags: tags,
           advantages: advantages,
           timeAgo: _buildTimeAgo(job['created_at']?.toString()),
@@ -578,11 +585,7 @@ class _ParticulierDashboardScreenState
           text: '$duration h${durationUnit != null ? ' / $durationUnit' : ''}',
         ),
       if (price != null)
-        FormationTag(
-          icon: Icons.euro,
-          text: '$price €',
-          isSpecial: true,
-        ),
+        FormationTag(icon: Icons.euro, text: '$price €', isSpecial: true),
     ];
 
     return Column(
@@ -591,8 +594,9 @@ class _ParticulierDashboardScreenState
           companyLogo: 'assets/images/Formation.png',
           companyName: provider,
           formationTitle: title,
-          description:
-              description.isNotEmpty ? description : 'Description non disponible.',
+          description: description.isNotEmpty
+              ? description
+              : 'Description non disponible.',
           tags: tags,
           timeAgo: _buildTimeAgo(training['created_at']?.toString()),
           onApply: () => _navigateToTrainingDetail(training),
@@ -621,7 +625,8 @@ class _ParticulierDashboardScreenState
         event['sub_category_label'].toString(),
     ];
     final price = _formatPrice(event['price_amount'] ?? event['price_label']);
-    final coverageArea = event['coverage_area']?.toString() ??
+    final coverageArea =
+        event['coverage_area']?.toString() ??
         event['location']?.toString() ??
         'Non spécifié';
 
@@ -661,10 +666,12 @@ class _ParticulierDashboardScreenState
     final username = user?['name']?.toString() ?? 'Utilisateur';
     final title = demande['title']?.toString() ?? 'Demande';
     final description = _stripHtml(demande['description']?.toString() ?? '');
-    final categoryLabel = demande['category_label']?.toString() ??
+    final categoryLabel =
+        demande['category_label']?.toString() ??
         demande['category']?.toString() ??
         'Demande';
-    final location = demande['location_label']?.toString() ??
+    final location =
+        demande['location_label']?.toString() ??
         demande['city']?.toString() ??
         'Non spécifié';
     final postImage = _extractMediaUrl(demande);
@@ -679,8 +686,9 @@ class _ParticulierDashboardScreenState
           categoryLabel: categoryLabel,
           categoryColor: _categoryColor(categoryLabel),
           title: title,
-          description:
-              description.isNotEmpty ? description : 'Description non disponible.',
+          description: description.isNotEmpty
+              ? description
+              : 'Description non disponible.',
           location: location,
           postImage: postImage,
           likesCount: _asInt(demande['likes_count']),
@@ -742,7 +750,9 @@ class _ParticulierDashboardScreenState
     if (durationType == 'permanent') return 'Permanent';
     if (durationType == 'multi_day') {
       final formatted = formatDate(startDate);
-      return formatted.isNotEmpty ? 'À partir du $formatted' : 'À partir de bientôt';
+      return formatted.isNotEmpty
+          ? 'À partir du $formatted'
+          : 'À partir de bientôt';
     }
     final formatted = formatDate(eventDate);
     return formatted.isNotEmpty ? formatted : 'Date annoncée prochainement';
@@ -813,24 +823,15 @@ class _ParticulierDashboardScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          message,
-          style: const TextStyle(color: Colors.red),
-        ),
+        Text(message, style: const TextStyle(color: Colors.red)),
         if (onRetry != null)
-          TextButton(
-            onPressed: onRetry,
-            child: const Text('Réessayer'),
-          ),
+          TextButton(onPressed: onRetry, child: const Text('Réessayer')),
       ],
     );
   }
 
   Widget _buildEmptyState(String message) {
-    return Text(
-      message,
-      style: const TextStyle(color: Color(0xFF9E9E9E)),
-    );
+    return Text(message, style: const TextStyle(color: Color(0xFF9E9E9E)));
   }
 
   // ── Reaction helpers ──────────────────────────────────────────────
@@ -842,7 +843,11 @@ class _ParticulierDashboardScreenState
     return _reactions.putIfAbsent(key, () => _ReactionData());
   }
 
-  void _seedReactionFromFeed(String apiSlug, String entityId, Map<String, dynamic> resource) {
+  void _seedReactionFromFeed(
+    String apiSlug,
+    String entityId,
+    Map<String, dynamic> resource,
+  ) {
     final key = _reactionKey(apiSlug, entityId);
     if (_reactions.containsKey(key)) return;
     _reactions[key] = _ReactionData(
@@ -852,7 +857,11 @@ class _ParticulierDashboardScreenState
     );
   }
 
-  Future<void> _toggleReaction(String apiSlug, String entityId, String type) async {
+  Future<void> _toggleReaction(
+    String apiSlug,
+    String entityId,
+    String type,
+  ) async {
     final data = _getReaction(apiSlug, entityId);
 
     // Optimistic update
@@ -899,10 +908,73 @@ class _ParticulierDashboardScreenState
     }
   }
 
+  Future<void> _repostPost(String postId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Republier cette publication'),
+        content: const Text(
+          'Voulez-vous partager cette publication sur votre profil ?',
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3AAE5E),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Republier',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ApiClient().authenticatedPost('/posts/$postId/repost', body: {});
+
+      // Recharger le feed pour afficher le repost
+      await _loadUnifiedFeed(reset: true);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Publication republiée avec succès'),
+            backgroundColor: Color(0xFF3AAE5E),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Repost error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la republication: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildReactionBar(String apiSlug, String entityId) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
     final isDisliked = data.userReaction == 'dislike';
+    final isPost = apiSlug == 'posts';
 
     return Row(
       children: [
@@ -928,14 +1000,16 @@ class _ParticulierDashboardScreenState
             ],
           ),
         ),
-        const SizedBox(width: 18),
+        const SizedBox(width: 10),
         // Dislike
         GestureDetector(
           onTap: () => _toggleReaction(apiSlug, entityId, 'dislike'),
           child: Row(
             children: [
               Icon(
-                isDisliked ? Icons.thumb_down_alt : Icons.thumb_down_alt_outlined,
+                isDisliked
+                    ? Icons.thumb_down_alt
+                    : Icons.thumb_down_alt_outlined,
                 size: 18,
                 color: isDisliked ? Colors.redAccent : Colors.grey[500],
               ),
@@ -957,7 +1031,11 @@ class _ParticulierDashboardScreenState
           onTap: () => _showEntityCommentsSheet(apiSlug, entityId),
           child: Row(
             children: [
-              Icon(Icons.chat_bubble_outline, size: 17, color: Colors.grey[500]),
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 17,
+                color: Colors.grey[500],
+              ),
               const SizedBox(width: 4),
               Text(
                 'Commenter',
@@ -966,6 +1044,23 @@ class _ParticulierDashboardScreenState
             ],
           ),
         ),
+        if (isPost) ...[
+          const SizedBox(width: 10),
+          // Repost
+          GestureDetector(
+            onTap: () => _repostPost(entityId),
+            child: Row(
+              children: [
+                Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Text(
+                  'Republier',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -992,23 +1087,26 @@ class _ParticulierDashboardScreenState
               ApiClient()
                   .authenticatedGet('/$apiSlug/$entityId/comments?per_page=50')
                   .then((response) {
-                final data = response['data'];
-                List<Map<String, dynamic>> fetched = [];
-                if (data is Map && data['data'] is List) {
-                  fetched = List<Map<String, dynamic>>.from(data['data'] as List);
-                } else if (data is List) {
-                  fetched = List<Map<String, dynamic>>.from(data);
-                }
-                modalSetState(() {
-                  comments = fetched;
-                  isLoading = false;
-                });
-              }).catchError((e) {
-                modalSetState(() {
-                  error = e.toString();
-                  isLoading = false;
-                });
-              });
+                    final data = response['data'];
+                    List<Map<String, dynamic>> fetched = [];
+                    if (data is Map && data['data'] is List) {
+                      fetched = List<Map<String, dynamic>>.from(
+                        data['data'] as List,
+                      );
+                    } else if (data is List) {
+                      fetched = List<Map<String, dynamic>>.from(data);
+                    }
+                    modalSetState(() {
+                      comments = fetched;
+                      isLoading = false;
+                    });
+                  })
+                  .catchError((e) {
+                    modalSetState(() {
+                      error = e.toString();
+                      isLoading = false;
+                    });
+                  });
             }
 
             Future<void> submitComment() async {
@@ -1056,9 +1154,9 @@ class _ParticulierDashboardScreenState
                 FocusScope.of(ctx).unfocus();
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erreur: $e')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
                 }
               }
             }
@@ -1086,21 +1184,189 @@ class _ParticulierDashboardScreenState
               }
             }
 
-            Widget buildCommentItem(Map<String, dynamic> comment, {bool isReply = false}) {
+            Future<void> editComment(Map<String, dynamic> comment) async {
+              final commentId = comment['id'];
+              final currentBody = comment['body']?.toString() ?? '';
+              final editController = TextEditingController(text: currentBody);
+
+              final newText = await showDialog<String>(
+                context: ctx,
+                builder: (context) => AlertDialog(
+                  title: const Text('Modifier le commentaire'),
+                  content: TextField(
+                    controller: editController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Votre commentaire...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () =>
+                          Navigator.pop(context, editController.text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3AAE5E),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Enregistrer',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (newText == null ||
+                  newText.trim().isEmpty ||
+                  newText == currentBody)
+                return;
+
+              try {
+                final response = await ApiClient().authenticatedPut(
+                  '/comments/$commentId',
+                  body: {'body': newText.trim()},
+                );
+                final updatedComment =
+                    response['data'] as Map<String, dynamic>?;
+                if (updatedComment != null) {
+                  modalSetState(() {
+                    comment['body'] = updatedComment['body'];
+                    comment['updated_at'] = updatedComment['updated_at'];
+                  });
+
+                  // Recharger le feed pour actualiser les commentaires
+                  await _loadUnifiedFeed(reset: true);
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Erreur lors de la modification: ${e.toString()}',
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
+            Future<void> deleteComment(
+              Map<String, dynamic> comment,
+              bool isReply,
+            ) async {
+              final commentId = comment['id'];
+              final confirmed = await showDialog<bool>(
+                context: ctx,
+                builder: (context) => AlertDialog(
+                  title: const Text('Supprimer le commentaire'),
+                  content: const Text(
+                    'Êtes-vous sûr de vouloir supprimer ce commentaire ?',
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Supprimer',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed != true) return;
+
+              try {
+                await ApiClient().authenticatedDelete('/comments/$commentId');
+
+                // Recharger le feed pour actualiser les commentaires
+                await _loadUnifiedFeed(reset: true);
+
+                modalSetState(() {
+                  if (isReply) {
+                    final parentId =
+                        comment['parent_id'] ?? comment['comment_id'];
+                    final parent = comments.firstWhere(
+                      (c) => c['id'] == parentId,
+                      orElse: () => <String, dynamic>{},
+                    );
+                    if (parent.isNotEmpty) {
+                      final replies = List<Map<String, dynamic>>.from(
+                        (parent['replies'] as List?) ?? [],
+                      );
+                      replies.removeWhere((r) => r['id'] == commentId);
+                      parent['replies'] = replies;
+                      parent['replies_count'] = replies.length;
+                    }
+                  } else {
+                    comments.removeWhere((c) => c['id'] == commentId);
+                  }
+                });
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Erreur lors de la suppression: ${e.toString()}',
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
+            Widget buildCommentItem(
+              Map<String, dynamic> comment, {
+              bool isReply = false,
+            }) {
               final user = comment['user'] as Map<String, dynamic>? ?? {};
-              final userId = user['id']?.toString();
+              final userId = user['id']?.toString(); // Convertir en String
               final email = user['email']?.toString() ?? '';
               final displayName = (userId != null && userId == _currentUserId)
                   ? 'Vous'
                   : (user['display_name']?.toString() ??
-                      user['name']?.toString() ??
-                      email.split('@').first);
+                        user['name']?.toString() ??
+                        email.split('@').first);
               final body = comment['body']?.toString() ?? '';
               final createdAt = comment['created_at']?.toString();
               final likes = _asInt(comment['likes_count']);
               final dislikes = _asInt(comment['dislikes_count']);
               final userReaction = comment['user_reaction']?.toString();
-              final replies = (comment['replies'] as List?)
+              final isOwner = userId != null && userId == _currentUserId;
+              final replies =
+                  (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
                       .toList() ??
                   [];
@@ -1117,7 +1383,9 @@ class _ParticulierDashboardScreenState
                           radius: isReply ? 14 : 18,
                           backgroundColor: const Color(0xFFE6F7EF),
                           child: Text(
-                            displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                            displayName.isNotEmpty
+                                ? displayName[0].toUpperCase()
+                                : '?',
                             style: TextStyle(
                               fontSize: isReply ? 11 : 13,
                               fontWeight: FontWeight.w600,
@@ -1148,6 +1416,64 @@ class _ParticulierDashboardScreenState
                                       color: Colors.grey[400],
                                     ),
                                   ),
+                                  if (isOwner) ...[
+                                    const Spacer(),
+                                    GestureDetector(
+                                      onTapDown: (TapDownDetails details) {
+                                        showMenu<String>(
+                                          context: context,
+                                          position: RelativeRect.fromLTRB(
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                          ),
+                                          items: [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit, size: 18),
+                                                  SizedBox(width: 8),
+                                                  Text('Modifier'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.delete,
+                                                    size: 18,
+                                                    color: Colors.redAccent,
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'Supprimer',
+                                                    style: TextStyle(
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ).then((value) {
+                                          if (value == 'edit') {
+                                            editComment(comment);
+                                          } else if (value == 'delete') {
+                                            deleteComment(comment, isReply);
+                                          }
+                                        });
+                                      },
+                                      child: Icon(
+                                        Icons.more_horiz,
+                                        size: 18,
+                                        color: Colors.grey[400],
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -1163,7 +1489,8 @@ class _ParticulierDashboardScreenState
                               Row(
                                 children: [
                                   GestureDetector(
-                                    onTap: () => toggleCommentReaction(comment, 'like'),
+                                    onTap: () =>
+                                        toggleCommentReaction(comment, 'like'),
                                     child: Row(
                                       children: [
                                         Icon(
@@ -1190,7 +1517,10 @@ class _ParticulierDashboardScreenState
                                   ),
                                   const SizedBox(width: 14),
                                   GestureDetector(
-                                    onTap: () => toggleCommentReaction(comment, 'dislike'),
+                                    onTap: () => toggleCommentReaction(
+                                      comment,
+                                      'dislike',
+                                    ),
                                     child: Row(
                                       children: [
                                         Icon(
@@ -1223,7 +1553,9 @@ class _ParticulierDashboardScreenState
                                           replyingToId = comment['id'] as int?;
                                           replyingToName = displayName;
                                         });
-                                        FocusScope.of(ctx).requestFocus(FocusNode());
+                                        FocusScope.of(
+                                          ctx,
+                                        ).requestFocus(FocusNode());
                                       },
                                       child: Text(
                                         'Répondre',
@@ -1245,10 +1577,12 @@ class _ParticulierDashboardScreenState
                     // Nested replies
                     if (!isReply && replies.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      ...replies.map((r) => Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: buildCommentItem(r, isReply: true),
-                          )),
+                      ...replies.map(
+                        (r) => Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: buildCommentItem(r, isReply: true),
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -1282,7 +1616,10 @@ class _ParticulierDashboardScreenState
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       child: Row(
                         children: [
                           const Expanded(
@@ -1298,7 +1635,11 @@ class _ParticulierDashboardScreenState
                           ),
                           GestureDetector(
                             onTap: () => Navigator.pop(ctx),
-                            child: const Icon(Icons.close, color: Colors.grey, size: 22),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.grey,
+                              size: 22,
+                            ),
                           ),
                         ],
                       ),
@@ -1309,43 +1650,49 @@ class _ParticulierDashboardScreenState
                       child: isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : error != null
-                              ? Center(
-                                  child: Text(
-                                    'Erreur: $error',
-                                    style: const TextStyle(color: Colors.red),
-                                  ),
-                                )
-                              : comments.isEmpty
-                                  ? const Center(
-                                      child: Text(
-                                        'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
-                                    )
-                                  : ListView.separated(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 12,
-                                      ),
-                                      itemCount: comments.length,
-                                      separatorBuilder: (_, __) =>
-                                          const SizedBox(height: 16),
-                                      itemBuilder: (_, i) =>
-                                          buildCommentItem(comments[i]),
-                                    ),
+                          ? Center(
+                              child: Text(
+                                'Erreur: $error',
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            )
+                          : comments.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              itemCount: comments.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 16),
+                              itemBuilder: (_, i) =>
+                                  buildCommentItem(comments[i]),
+                            ),
                     ),
                     Divider(height: 1, color: Colors.grey[200]),
                     // Reply indicator
                     if (replyingToId != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
                         color: const Color(0xFFF5F5F5),
                         child: Row(
                           children: [
                             Text(
                               'Répondre à $replyingToName',
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
                             ),
                             const Spacer(),
                             GestureDetector(
@@ -1353,7 +1700,11 @@ class _ParticulierDashboardScreenState
                                 replyingToId = null;
                                 replyingToName = null;
                               }),
-                              child: const Icon(Icons.close, size: 16, color: Colors.grey),
+                              child: const Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
                             ),
                           ],
                         ),
@@ -1365,7 +1716,9 @@ class _ParticulierDashboardScreenState
                         children: [
                           Expanded(
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF5F5F5),
                                 borderRadius: BorderRadius.circular(24),
@@ -1374,10 +1727,15 @@ class _ParticulierDashboardScreenState
                                 controller: commentCtrl,
                                 decoration: const InputDecoration(
                                   isCollapsed: true,
-                                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
                                   border: InputBorder.none,
                                   hintText: 'Écrire un commentaire...',
-                                  hintStyle: TextStyle(color: Color(0xFF9E9E9E), fontSize: 14),
+                                  hintStyle: TextStyle(
+                                    color: Color(0xFF9E9E9E),
+                                    fontSize: 14,
+                                  ),
                                 ),
                                 textInputAction: TextInputAction.send,
                                 onSubmitted: (_) => submitComment(),
@@ -1393,7 +1751,11 @@ class _ParticulierDashboardScreenState
                                 color: Color(0xFF3AAE5E),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.send, size: 18, color: Colors.white),
+                              child: const Icon(
+                                Icons.send,
+                                size: 18,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
@@ -1411,7 +1773,11 @@ class _ParticulierDashboardScreenState
 
   Widget _buildPostsCarousel() {
     final posts = _feedItems
-        .where((item) => item['feed_type'] == 'post' && item['resource'] is Map<String, dynamic>)
+        .where(
+          (item) =>
+              item['feed_type'] == 'post' &&
+              item['resource'] is Map<String, dynamic>,
+        )
         .map((item) => item['resource'] as Map<String, dynamic>)
         .toList();
 
@@ -1431,11 +1797,27 @@ class _ParticulierDashboardScreenState
               final raw = posts[index];
               final postId = raw['id']?.toString() ?? '';
               _seedReactionFromFeed('posts', postId, raw);
-              final author = _extractPostAuthorInfo(raw);
-              final content = raw['content']?.toString() ?? '';
-              final createdAt = raw['created_at']?.toString();
+
+              // Détecter si c'est un repost
+              final isRepost = raw['original_post_id'] != null;
+
+              // Si c'est un repost, utiliser les données du post original
+              final originalPost = isRepost
+                  ? (raw['original_post'] as Map<String, dynamic>? ?? {})
+                  : raw;
+
+              // L'auteur du repost (celui qui a republié)
+              final reposter = _extractPostAuthorInfo(raw);
+
+              // L'auteur du post original
+              final author = isRepost
+                  ? _extractPostAuthorInfo(originalPost)
+                  : reposter;
+
+              final content = originalPost['content']?.toString() ?? '';
+              final createdAt = originalPost['created_at']?.toString();
               final timeAgo = _buildTimeAgo(createdAt);
-              final postImageUrl = _extractMediaUrl(raw);
+              final postImageUrl = _extractMediaUrl(originalPost);
 
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 6),
@@ -1455,6 +1837,42 @@ class _ParticulierDashboardScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Header de republication si c'est un repost
+                    if (isRepost) ...[
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 12,
+                            backgroundImage: reposter.avatar.startsWith('http')
+                                ? NetworkImage(reposter.avatar) as ImageProvider
+                                : AssetImage(reposter.avatar),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: RichText(
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              text: TextSpan(
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: reposter.displayName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const TextSpan(text: ' a republié ceci'),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                     Row(
                       children: [
                         CircleAvatar(
@@ -1491,11 +1909,18 @@ class _ParticulierDashboardScreenState
                         Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.access_time, size: 13, color: Colors.grey[400]),
+                            Icon(
+                              Icons.access_time,
+                              size: 13,
+                              color: Colors.grey[400],
+                            ),
                             const SizedBox(width: 3),
                             Text(
                               timeAgo,
-                              style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[400],
+                              ),
                             ),
                           ],
                         ),
@@ -1528,8 +1953,7 @@ class _ParticulierDashboardScreenState
                       ),
                     ),
                     const SizedBox(height: 8),
-                    if (postId.isNotEmpty)
-                      _buildReactionBar('posts', postId),
+                    if (postId.isNotEmpty) _buildReactionBar('posts', postId),
                   ],
                 ),
               );
@@ -1543,29 +1967,80 @@ class _ParticulierDashboardScreenState
 
   Widget _buildPostCard(Map<String, dynamic> raw) {
     final postId = raw['id']?.toString() ?? '';
-    final author = _extractPostAuthorInfo(raw);
-    final content = raw['content']?.toString() ?? '';
-    final createdAt = raw['created_at']?.toString();
+    final isRepost = raw['original_post_id'] != null;
+
+    // Si c'est un repost, utiliser les infos du post original pour le contenu
+    final originalPost = isRepost
+        ? (raw['original_post'] as Map<String, dynamic>? ?? {})
+        : raw;
+
+    // L'auteur du repost (celui qui a republié)
+    final reposter = _extractPostAuthorInfo(raw);
+
+    // L'auteur du post original
+    final originalAuthor = isRepost
+        ? _extractPostAuthorInfo(originalPost)
+        : reposter;
+
+    final content = originalPost['content']?.toString() ?? '';
+    final createdAt = originalPost['created_at']?.toString();
     final timeAgo = _buildTimeAgo(createdAt);
-    final postImageUrl = _extractMediaUrl(raw);
+    final postImageUrl = _extractMediaUrl(originalPost);
 
     final tags = <PostTag>[
       PostTag(
-        title: author.accountType,
-        icon: author.accountType == 'Professionnel' ? Icons.business : Icons.person,
-        color: author.accountType == 'Professionnel'
+        title: originalAuthor.accountType,
+        icon: originalAuthor.accountType == 'Professionnel'
+            ? Icons.business
+            : Icons.person,
+        color: originalAuthor.accountType == 'Professionnel'
             ? const Color(0xFF2E9B5B)
             : const Color(0xFF3AAE5E),
       ),
     ];
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Header de republication si c'est un repost
+        if (isRepost)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 12,
+                  backgroundImage: reposter.avatar.startsWith('http')
+                      ? NetworkImage(reposter.avatar) as ImageProvider
+                      : AssetImage(reposter.avatar),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.repeat_rounded, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: RichText(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    text: TextSpan(
+                      style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                      children: [
+                        TextSpan(
+                          text: reposter.displayName,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const TextSpan(text: ' a republié ce contenu'),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         PostContentCard(
           tags: tags,
           title: content.isNotEmpty
               ? content
-              : '${author.displayName} a partagé une publication',
+              : '${originalAuthor.displayName} a partagé une publication',
           time: timeAgo,
           imageUrl: postImageUrl,
           onLike: postId.isNotEmpty
@@ -1584,7 +2059,10 @@ class _ParticulierDashboardScreenState
 
   _PostAuthorInfo _extractPostAuthorInfo(Map<String, dynamic> raw) {
     final authorMap = (raw['author'] ?? raw['user']) as Map<String, dynamic>?;
-    final authorId = authorMap?['id']?.toString() ?? raw['author_id']?.toString() ?? raw['user_id']?.toString();
+    final authorId =
+        authorMap?['id']?.toString() ??
+        raw['author_id']?.toString() ??
+        raw['user_id']?.toString();
 
     final nameCandidates = [
       authorMap?['display_name'],
@@ -1608,15 +2086,21 @@ class _ParticulierDashboardScreenState
       }
     }
 
-    if (_currentUserId != null && authorId != null && authorId == _currentUserId) {
+    if (_currentUserId != null &&
+        authorId != null &&
+        authorId == _currentUserId) {
       resolvedName = 'Vous';
     }
 
-    final rawType = (authorMap?['account_type'] ?? authorMap?['profiletype'] ?? raw['author_account_type'])
+    final rawType =
+        (authorMap?['account_type'] ??
+                authorMap?['profiletype'] ??
+                raw['author_account_type'])
             ?.toString()
             .toLowerCase() ??
         '';
-    final accountType = rawType.contains('pro') || rawType.contains('professionnel')
+    final accountType =
+        rawType.contains('pro') || rawType.contains('professionnel')
         ? 'Professionnel'
         : 'Particulier';
 
@@ -1649,10 +2133,14 @@ class _ParticulierDashboardScreenState
   String? _joinNames(dynamic first, dynamic last) {
     final firstName = first?.toString().trim();
     final lastName = last?.toString().trim();
-    if ((firstName == null || firstName.isEmpty) && (lastName == null || lastName.isEmpty)) {
+    if ((firstName == null || firstName.isEmpty) &&
+        (lastName == null || lastName.isEmpty)) {
       return null;
     }
-    if (firstName != null && firstName.isNotEmpty && lastName != null && lastName.isNotEmpty) {
+    if (firstName != null &&
+        firstName.isNotEmpty &&
+        lastName != null &&
+        lastName.isNotEmpty) {
       return '$firstName $lastName';
     }
     return firstName?.isNotEmpty == true ? firstName : lastName;
@@ -1675,27 +2163,35 @@ class _ParticulierDashboardScreenState
     );
 
     try {
-      final response = await ApiClient().authenticatedGet('/bonplans/$bonPlanId');
+      final response = await ApiClient().authenticatedGet(
+        '/bonplans/$bonPlanId',
+      );
       if (!mounted) return;
       Navigator.pop(context); // dismiss loading
 
       final data = response['data'] as Map<String, dynamic>? ?? response;
       final user = data['user'] as Map<String, dynamic>?;
-      final profileImage = _buildStorageUrl(user?['avatar']?.toString()) ?? _defaultAvatar;
+      final profileImage =
+          _buildStorageUrl(user?['avatar']?.toString()) ?? _defaultAvatar;
       final username = user?['name']?.toString() ?? 'Utilisateur';
       final userType = user?['account_type']?.toString() ?? 'Particulier';
       final title = data['title']?.toString() ?? 'Bon plan';
-      
+
       // Check if current user is the owner by comparing user_id from feed data
-      final bonPlanUserId = bp['user_id']?.toString() ?? data['user_id']?.toString();
+      final bonPlanUserId =
+          bp['user_id']?.toString() ?? data['user_id']?.toString();
       final currentUserId = await _getCurrentUserId();
-      final isOwner = bonPlanUserId != null && currentUserId != null && bonPlanUserId == currentUserId;
+      final isOwner =
+          bonPlanUserId != null &&
+          currentUserId != null &&
+          bonPlanUserId == currentUserId;
       final description = _stripHtml(data['description']?.toString() ?? '');
       final descriptionDelta = data['description_delta'];
       final category = data['category']?.toString() ?? '';
       final subCategory = data['sub_category']?.toString() ?? '';
       final type = data['type']?.toString() ?? '';
-      final availableAt = data['available_at_name']?.toString() ?? 'Non spécifié';
+      final availableAt =
+          data['available_at_name']?.toString() ?? 'Non spécifié';
       final validityType = data['validity_type']?.toString() ?? 'permanent';
       final validFrom = data['valid_from']?.toString();
       final validUntil = data['valid_until']?.toString();
@@ -1709,11 +2205,23 @@ class _ParticulierDashboardScreenState
 
       final tags = <PostTag>[
         if (category.isNotEmpty)
-          PostTag(title: category, icon: Icons.local_offer_outlined, color: Colors.orange),
+          PostTag(
+            title: category,
+            icon: Icons.local_offer_outlined,
+            color: Colors.orange,
+          ),
         if (subCategory.isNotEmpty)
-          PostTag(title: subCategory, icon: Icons.grid_view_outlined, color: Colors.grey),
+          PostTag(
+            title: subCategory,
+            icon: Icons.grid_view_outlined,
+            color: Colors.grey,
+          ),
         if (type.isNotEmpty)
-          PostTag(title: type, icon: Icons.check_circle_outline, color: Colors.green),
+          PostTag(
+            title: type,
+            icon: Icons.check_circle_outline,
+            color: Colors.green,
+          ),
       ];
 
       if (!mounted) return;
@@ -1749,9 +2257,9 @@ class _ParticulierDashboardScreenState
       if (!mounted) return;
       Navigator.pop(context); // dismiss loading
       debugPrint('Error fetching bon plan detail: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors du chargement: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur lors du chargement: $e')));
     }
   }
 
@@ -1769,7 +2277,9 @@ class _ParticulierDashboardScreenState
     final jobId = job['id']?.toString();
     if (jobId == null || jobId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible d\'ouvrir cette offre d\'emploi')),
+        const SnackBar(
+          content: Text('Impossible d\'ouvrir cette offre d\'emploi'),
+        ),
       );
       return;
     }
@@ -1788,13 +2298,18 @@ class _ParticulierDashboardScreenState
       final data = response['data'] as Map<String, dynamic>? ?? response;
 
       debugPrint('JOB DETAIL API response keys: ${data.keys.toList()}');
-      debugPrint('JOB DETAIL description type: ${data['description']?.runtimeType}');
+      debugPrint(
+        'JOB DETAIL description type: ${data['description']?.runtimeType}',
+      );
       debugPrint('JOB DETAIL description value: ${data['description']}');
       debugPrint('JOB DETAIL description_delta: ${data['description_delta']}');
       // Check all keys that contain 'desc'
       data.forEach((key, value) {
-        if (key.toLowerCase().contains('desc') || key.toLowerCase().contains('delta')) {
-          debugPrint('JOB DETAIL key=$key type=${value?.runtimeType} value=$value');
+        if (key.toLowerCase().contains('desc') ||
+            key.toLowerCase().contains('delta')) {
+          debugPrint(
+            'JOB DETAIL key=$key type=${value?.runtimeType} value=$value',
+          );
         }
       });
 
@@ -1802,31 +2317,52 @@ class _ParticulierDashboardScreenState
       final title = data['title']?.toString() ?? '';
       final descriptionRaw = data['description'];
       final description = descriptionRaw?.toString() ?? '';
-      final descriptionDelta = data['description_delta'] ?? (descriptionRaw is List ? descriptionRaw : null);
+      final descriptionDelta =
+          data['description_delta'] ??
+          (descriptionRaw is List ? descriptionRaw : null);
       final profileDescription = data['profile_description']?.toString();
       final companyName = data['company_name']?.toString() ?? 'Entreprise';
       final companyWebsite = data['company_website']?.toString() ?? '';
       final contractTypeRaw = data['contract_type'];
-      final contractType = contractTypeRaw is Map ? (contractTypeRaw['name'] ?? contractTypeRaw.toString()) : (contractTypeRaw?.toString() ?? '');
+      final contractType = contractTypeRaw is Map
+          ? (contractTypeRaw['name'] ?? contractTypeRaw.toString())
+          : (contractTypeRaw?.toString() ?? '');
       final workTimeRaw = data['work_time'];
-      final workTime = workTimeRaw is Map ? (workTimeRaw['name'] ?? workTimeRaw.toString()) : (workTimeRaw?.toString() ?? '');
+      final workTime = workTimeRaw is Map
+          ? (workTimeRaw['name'] ?? workTimeRaw.toString())
+          : (workTimeRaw?.toString() ?? '');
       final locationRaw = data['location'];
-      final location = locationRaw is Map ? (locationRaw['city'] ?? locationRaw['name'] ?? locationRaw.toString()) : (locationRaw?.toString() ?? '');
+      final location = locationRaw is Map
+          ? (locationRaw['city'] ??
+                locationRaw['name'] ??
+                locationRaw.toString())
+          : (locationRaw?.toString() ?? '');
       final categoryRaw = data['category'];
-      final category = categoryRaw is Map ? (categoryRaw['name'] ?? categoryRaw.toString()) : (categoryRaw?.toString() ?? '');
+      final category = categoryRaw is Map
+          ? (categoryRaw['name'] ?? categoryRaw.toString())
+          : (categoryRaw?.toString() ?? '');
       final salaryMin = data['salary_min'];
       final salaryMax = data['salary_max'];
       final advantagesRaw = data['advantages'];
       final advantages = advantagesRaw is List
-          ? advantagesRaw.map((a) => a is Map ? (a['name'] ?? a.toString()) : a.toString()).toList()
+          ? advantagesRaw
+                .map(
+                  (a) => a is Map ? (a['name'] ?? a.toString()) : a.toString(),
+                )
+                .toList()
           : <String>[];
       final createdAt = data['created_at']?.toString();
-      final mediaRaw = data['media'] as List? ?? data['media_files'] as List? ?? [];
+      final mediaRaw =
+          data['media'] as List? ?? data['media_files'] as List? ?? [];
       final remoteWork = data['remote_work'] == true;
       final educationLevelRaw = data['education_level'];
-      final educationLevel = educationLevelRaw is Map ? (educationLevelRaw['name'] ?? educationLevelRaw.toString()) : educationLevelRaw?.toString();
+      final educationLevel = educationLevelRaw is Map
+          ? (educationLevelRaw['name'] ?? educationLevelRaw.toString())
+          : educationLevelRaw?.toString();
       final experienceLevelRaw = data['experience_level'];
-      final experienceLevel = experienceLevelRaw is Map ? (experienceLevelRaw['name'] ?? experienceLevelRaw.toString()) : experienceLevelRaw?.toString();
+      final experienceLevel = experienceLevelRaw is Map
+          ? (experienceLevelRaw['name'] ?? experienceLevelRaw.toString())
+          : experienceLevelRaw?.toString();
 
       // Build images list
       final images = mediaRaw
@@ -1858,12 +2394,19 @@ class _ParticulierDashboardScreenState
       ];
 
       // Build advantages list
-      final advantagesList = advantages.take(3).map((a) => a.toString()).toList();
+      final advantagesList = advantages
+          .take(3)
+          .map((a) => a.toString())
+          .toList();
 
       // Check ownership
-      final jobUserId = job['user_id']?.toString() ?? data['user_id']?.toString();
+      final jobUserId =
+          job['user_id']?.toString() ?? data['user_id']?.toString();
       final currentUserId = await _getCurrentUserId();
-      final isOwner = jobUserId != null && currentUserId != null && jobUserId == currentUserId;
+      final isOwner =
+          jobUserId != null &&
+          currentUserId != null &&
+          jobUserId == currentUserId;
 
       // Navigate to detail screen
       final result = await Navigator.push(
@@ -1917,7 +2460,9 @@ class _ParticulierDashboardScreenState
     );
 
     try {
-      final response = await ApiClient().authenticatedGet('/trainings/$trainingId');
+      final response = await ApiClient().authenticatedGet(
+        '/trainings/$trainingId',
+      );
       Navigator.pop(context);
 
       final data = response['data'] as Map<String, dynamic>? ?? response;
@@ -1925,7 +2470,10 @@ class _ParticulierDashboardScreenState
       final title = data['title']?.toString() ?? '';
       final description = _stripHtml(data['description']?.toString() ?? '');
       final descriptionDelta = data['description_delta'];
-      final companyName = data['company_name']?.toString() ?? data['provider_name']?.toString() ?? 'Organisme';
+      final companyName =
+          data['company_name']?.toString() ??
+          data['provider_name']?.toString() ??
+          'Organisme';
       final website = data['website']?.toString();
       final trainingType = data['training_type']?.toString();
       final trainingCategory = data['training_category']?.toString();
@@ -1966,7 +2514,8 @@ class _ParticulierDashboardScreenState
           ? certificationRaw.map((e) => e.toString()).toList()
           : <String>[];
       final createdAt = data['created_at']?.toString();
-      final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+      final mediaFiles =
+          data['media_files'] as List? ?? data['media'] as List? ?? [];
 
       final images = mediaFiles
           .where((m) => m is Map && m['url'] != null)
@@ -1978,7 +2527,10 @@ class _ParticulierDashboardScreenState
         if (trainingCategory != null && trainingCategory.isNotEmpty)
           FormationTag(icon: Icons.category_outlined, text: trainingCategory),
         if (trainingSubCategory != null && trainingSubCategory.isNotEmpty)
-          FormationTag(icon: Icons.subdirectory_arrow_right, text: trainingSubCategory),
+          FormationTag(
+            icon: Icons.subdirectory_arrow_right,
+            text: trainingSubCategory,
+          ),
         if (trainingType != null && trainingType.isNotEmpty)
           FormationTag(icon: Icons.school_outlined, text: trainingType),
         if (durationInH != null)
@@ -1988,9 +2540,13 @@ class _ParticulierDashboardScreenState
       ];
 
       // Check ownership
-      final trainingUserId = tr['user_id']?.toString() ?? data['user_id']?.toString();
+      final trainingUserId =
+          tr['user_id']?.toString() ?? data['user_id']?.toString();
       final currentUserId = await _getCurrentUserId();
-      final isOwner = trainingUserId != null && currentUserId != null && trainingUserId == currentUserId;
+      final isOwner =
+          trainingUserId != null &&
+          currentUserId != null &&
+          trainingUserId == currentUserId;
 
       final result = await Navigator.push(
         context,
@@ -2062,7 +2618,8 @@ class _ParticulierDashboardScreenState
       final data = response['data'] as Map<String, dynamic>? ?? response;
 
       final user = ev['user'] as Map<String, dynamic>?;
-      final profileImage = _buildStorageUrl(user?['avatar']?.toString()) ?? _defaultAvatar;
+      final profileImage =
+          _buildStorageUrl(user?['avatar']?.toString()) ?? _defaultAvatar;
       final userName = user?['name']?.toString() ?? 'Organisateur';
 
       final title = data['title']?.toString() ?? '';
@@ -2088,7 +2645,8 @@ class _ParticulierDashboardScreenState
       final landingUrl = data['landing_url']?.toString();
       final acceptMessages = data['accept_messages'] == true;
       final createdAt = data['created_at']?.toString();
-      final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+      final mediaFiles =
+          data['media_files'] as List? ?? data['media'] as List? ?? [];
 
       final images = mediaFiles
           .where((m) => m is Map && m['url'] != null)
@@ -2098,17 +2656,33 @@ class _ParticulierDashboardScreenState
 
       final tags = <PostTag>[
         if (categoryCode != null && categoryCode.isNotEmpty)
-          PostTag(title: categoryCode, icon: Icons.local_offer_outlined, color: Colors.green),
+          PostTag(
+            title: categoryCode,
+            icon: Icons.local_offer_outlined,
+            color: Colors.green,
+          ),
         if (subCategoryCode != null && subCategoryCode.isNotEmpty)
-          PostTag(title: subCategoryCode, icon: Icons.grid_view_outlined, color: Colors.grey),
+          PostTag(
+            title: subCategoryCode,
+            icon: Icons.grid_view_outlined,
+            color: Colors.grey,
+          ),
         if (formatType != null && formatType.isNotEmpty)
-          PostTag(title: formatType, icon: Icons.videocam_outlined, color: Colors.blue),
+          PostTag(
+            title: formatType,
+            icon: Icons.videocam_outlined,
+            color: Colors.blue,
+          ),
       ];
 
       // Check ownership
-      final eventUserId = ev['user_id']?.toString() ?? data['user_id']?.toString();
+      final eventUserId =
+          ev['user_id']?.toString() ?? data['user_id']?.toString();
       final currentUserId = await _getCurrentUserId();
-      final isOwner = eventUserId != null && currentUserId != null && eventUserId == currentUserId;
+      final isOwner =
+          eventUserId != null &&
+          currentUserId != null &&
+          eventUserId == currentUserId;
 
       final result = await Navigator.push(
         context,
@@ -2116,7 +2690,9 @@ class _ParticulierDashboardScreenState
           builder: (_) => EventDetailScreen(
             images: images,
             avatar: profileImage,
-            username: isOrganizer ? userName : (organizerName ?? 'Organisateur'),
+            username: isOrganizer
+                ? userName
+                : (organizerName ?? 'Organisateur'),
             userType: 'Évènement',
             eventTitle: title,
             description: description,
@@ -2172,13 +2748,16 @@ class _ParticulierDashboardScreenState
     );
 
     try {
-      final response = await ApiClient().authenticatedGet('/demandes/$demandeId');
+      final response = await ApiClient().authenticatedGet(
+        '/demandes/$demandeId',
+      );
       Navigator.pop(context);
 
       final data = response['data'] as Map<String, dynamic>? ?? response;
 
       final user = demande['user'] as Map<String, dynamic>?;
-      final profileImage = _buildStorageUrl(user?['avatar']?.toString()) ?? _defaultAvatar;
+      final profileImage =
+          _buildStorageUrl(user?['avatar']?.toString()) ?? _defaultAvatar;
       final userName = user?['name']?.toString() ?? 'Utilisateur';
 
       final title = data['title']?.toString() ?? '';
@@ -2195,7 +2774,8 @@ class _ParticulierDashboardScreenState
       final showGoogleLocation = data['show_google_location'] == true;
       final acceptMessages = data['accept_messages'] == true;
       final createdAt = data['created_at']?.toString();
-      final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+      final mediaFiles =
+          data['media_files'] as List? ?? data['media'] as List? ?? [];
 
       final images = mediaFiles
           .where((m) => m is Map && m['url'] != null)
@@ -2208,17 +2788,33 @@ class _ParticulierDashboardScreenState
           : (nature != null && nature.isNotEmpty ? nature : 'Demande');
 
       final tags = <PostTag>[
-        PostTag(title: categoryLabel, icon: Icons.label_outline, color: Colors.orange),
+        PostTag(
+          title: categoryLabel,
+          icon: Icons.label_outline,
+          color: Colors.orange,
+        ),
         if (urgent)
-          PostTag(title: 'Urgent', icon: Icons.warning_amber_rounded, color: Colors.red),
+          PostTag(
+            title: 'Urgent',
+            icon: Icons.warning_amber_rounded,
+            color: Colors.red,
+          ),
         if (nationwide)
-          PostTag(title: 'Toute la France', icon: Icons.public, color: Colors.blue),
+          PostTag(
+            title: 'Toute la France',
+            icon: Icons.public,
+            color: Colors.blue,
+          ),
       ];
 
       // Check ownership
-      final demandeUserId = demande['user_id']?.toString() ?? data['user_id']?.toString();
+      final demandeUserId =
+          demande['user_id']?.toString() ?? data['user_id']?.toString();
       final currentUserId = await _getCurrentUserId();
-      final isOwner = demandeUserId != null && currentUserId != null && demandeUserId == currentUserId;
+      final isOwner =
+          demandeUserId != null &&
+          currentUserId != null &&
+          demandeUserId == currentUserId;
 
       final result = await Navigator.push(
         context,
@@ -2277,7 +2873,7 @@ class _ParticulierDashboardScreenState
         .map((m) => _buildStorageUrl(m['url']?.toString()) ?? '')
         .where((url) => url.isNotEmpty)
         .toList();
-    
+
     // Ensure we always have at least one image
     if (images.isEmpty) {
       return ['assets/images/details_bon_plans/Rectangle 35.png'];
@@ -2366,7 +2962,11 @@ class _ParticulierDashboardScreenState
 
     return Text(
       _stripHtml(descriptionPlain.toString()),
-      style: const TextStyle(fontSize: 13, color: Color(0xFF666666), height: 1.5),
+      style: const TextStyle(
+        fontSize: 13,
+        color: Color(0xFF666666),
+        height: 1.5,
+      ),
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
     );
@@ -2418,8 +3018,9 @@ class _ParticulierDashboardScreenState
     return '$serverBase$url';
   }
 
-  Future<void> _refreshFeed() {
-    return _loadUnifiedFeed(reset: true);
+  Future<void> _refreshFeed() async {
+    await _getCurrentUserId();
+    await _loadUnifiedFeed(reset: true);
   }
 
   @override
@@ -2431,445 +3032,468 @@ class _ParticulierDashboardScreenState
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-          SliverAppBar(
-  expandedHeight: 100,
-  floating: false,
-  pinned: true,
-  snap: false,
-  stretch: true,
-  backgroundColor: const Color(0xFF2A8143),
-  automaticallyImplyLeading: false,
-  elevation: 0,
-  collapsedHeight: kToolbarHeight,
-  flexibleSpace: LayoutBuilder(
-    builder: (BuildContext context, BoxConstraints constraints) {
-      final double appBarHeight = constraints.maxHeight;
-      final double opacity = (appBarHeight - kToolbarHeight) / (100 - kToolbarHeight);
-      final double clampedOpacity = opacity.clamp(0.0, 1.0);
-      final double titleOpacity = 1 - clampedOpacity;
-      final double dynamicRadius = 40 * clampedOpacity;
-      final bool showExpandedElements = clampedOpacity > 0.01;
-      final bool showCollapsedElements = titleOpacity > 0.01;
-      
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: greenGradient,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(dynamicRadius),
-                bottomRight: Radius.circular(dynamicRadius),
-              ),
-            ),
-          ),
-          if (showExpandedElements)
-            Positioned(
-              bottom: 20,
-              left: 20,
-              child: Opacity(
-                opacity: clampedOpacity,
-                child: Image.asset(
-                  'assets/images/LOGO VERT.png',
-                  height: 32,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-          if (showExpandedElements)
-            Positioned(
-              bottom: 20,
-              right: 20,
-              child: Opacity(
-                opacity: clampedOpacity,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const FavoriteScreen(),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFFF8FDF0).withOpacity(0.3),
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.favorite_border,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const NotificationsScreen(),
-                          ),
-                        );
-                      },
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: const Color(0xFFF8FDF0).withOpacity(0.3),
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.notifications_none,
-                              size: 18,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Positioned(
-                            top: -6,
-                            right: -6,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 4,
-                                vertical: 1,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Text(
-                                '10',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          if (showCollapsedElements)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Opacity(
-                opacity: titleOpacity,
-                child: Container(
-                  height: kToolbarHeight,
-                  decoration: const BoxDecoration(
-                    gradient: greenGradient,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      );
-    },
-  ),
-  shape: const RoundedRectangleBorder(
-    borderRadius: BorderRadius.only(
-      bottomLeft: Radius.circular(40),
-      bottomRight: Radius.circular(40),
-    ),
-  ),
-),
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
+            SliverAppBar(
+              expandedHeight: 100,
+              floating: false,
+              pinned: true,
+              snap: false,
+              stretch: true,
+              backgroundColor: const Color(0xFF2A8143),
+              automaticallyImplyLeading: false,
+              elevation: 0,
+              collapsedHeight: kToolbarHeight,
+              flexibleSpace: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  final double appBarHeight = constraints.maxHeight;
+                  final double opacity =
+                      (appBarHeight - kToolbarHeight) / (100 - kToolbarHeight);
+                  final double clampedOpacity = opacity.clamp(0.0, 1.0);
+                  final double titleOpacity = 1 - clampedOpacity;
+                  final double dynamicRadius = 40 * clampedOpacity;
+                  final bool showExpandedElements = clampedOpacity > 0.01;
+                  final bool showCollapsedElements = titleOpacity > 0.01;
 
-                //story
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: ValueListenableBuilder<List<StoryModel>>(
-                    valueListenable: _storyStore.storiesNotifier,
-                    builder: (_, userStories, __) {
-                      final hasStories = userStories.isNotEmpty;
-                      return SingleChildScrollView(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            GestureDetector(
-                              onTap: _handleStoryEntryTap,
-                              child: Column(
-                                spacing: 5,
-                                children: [
-                                  Stack(
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: greenGradient,
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(dynamicRadius),
+                            bottomRight: Radius.circular(dynamicRadius),
+                          ),
+                        ),
+                      ),
+                      if (showExpandedElements)
+                        Positioned(
+                          bottom: 20,
+                          left: 20,
+                          child: Opacity(
+                            opacity: clampedOpacity,
+                            child: Image.asset(
+                              'assets/images/LOGO VERT.png',
+                              height: 32,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      if (showExpandedElements)
+                        Positioned(
+                          bottom: 20,
+                          right: 20,
+                          child: Opacity(
+                            opacity: clampedOpacity,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const FavoriteScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: const Color(
+                                        0xFFF8FDF0,
+                                      ).withOpacity(0.3),
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.favorite_border,
+                                      size: 18,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const NotificationsScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: Stack(
                                     clipBehavior: Clip.none,
                                     children: [
-                                      GestureDetector(
-                                        onTap: _handleStoryEntryTap,
-                                        child: Container(
-                                          padding: EdgeInsets.all(hasStories ? 2 : 10),
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: const Color(0xFFE6F7EF),
-                                            border: Border.all(
-                                              color: const Color(0xFF3AAE5E),
-                                              width: hasStories ? 2.5 : 1,
-                                            ),
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: const Color(
+                                            0xFFF8FDF0,
+                                          ).withOpacity(0.3),
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 1.5,
                                           ),
-                                          child: hasStories
-                                              ? const CircleAvatar(
-                                                  radius: 22,
-                                                  backgroundImage: AssetImage(
-                                                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                                                  ),
-                                                )
-                                              : const Center(
-                                                  child: Icon(
-                                                    Icons.add,
-                                                    color: Color(0xFF3AAE5E),
-                                                  ),
-                                                ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.notifications_none,
+                                          size: 18,
+                                          color: Colors.white,
                                         ),
                                       ),
-                                      if (hasStories)
-                                        Positioned(
-                                          bottom: -2,
-                                          right: -2,
-                                          child: GestureDetector(
-                                            onTap: () async {
-                                              final result = await Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) => const AddStoryScreen(),
-                                                ),
-                                              );
-                                              if (result is StoryModel) {
-                                                _storyStore.addStory(result);
-                                              }
-                                            },
-                                            child: Container(
-                                              padding: const EdgeInsets.all(3),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF3AAE5E),
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: Colors.white,
-                                                  width: 2,
-                                                ),
-                                              ),
-                                              child: const Icon(
-                                                Icons.add,
-                                                color: Colors.white,
-                                                size: 12,
-                                              ),
+                                      Positioned(
+                                        top: -6,
+                                        right: -6,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 4,
+                                            vertical: 1,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red,
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            '10',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                         ),
+                                      ),
                                     ],
                                   ),
-                                  const Text(
-                                    "Votre story",
-                                    style: TextStyle(fontSize: 10),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-
-                            // avatars
-                            AvatarsStory(
-                              name: "Selena",
-                              imageName:
-                                  'assets/images/dashboard_particulier/Ellipse 10.png',
-                              onTap: () => _openStory(
-                                context,
-                                'Selena',
-                                'assets/images/dashboard_particulier/Ellipse 10.png',
-                              ),
-                            ),
-                            AvatarsStory(
-                              name: "Slime",
-                              imageName:
-                                  'assets/images/dashboard_particulier/Ellipse 10 (1).png',
-                              onTap: () => _openStory(
-                                context,
-                                'Slime',
-                                'assets/images/dashboard_particulier/Ellipse 10 (1).png',
-                              ),
-                            ),
-                            AvatarsStory(
-                              name: "Joe",
-                              imageName:
-                                  'assets/images/dashboard_particulier/Ellipse 10 (2).png',
-                              onTap: () => _openStory(
-                                context,
-                                'Joe',
-                                'assets/images/dashboard_particulier/Ellipse 10 (2).png',
-                              ),
-                            ),
-                            AvatarsStory(
-                              name: "Joe",
-                              imageName:
-                                  'assets/images/dashboard_particulier/Ellipse 10 (3).png',
-                              onTap: () => _openStory(
-                                context,
-                                'Joe',
-                                'assets/images/dashboard_particulier/Ellipse 10 (3).png',
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      );
-                    },
-                  ),
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ), // space on sides
-                  child: Container(
-                    height: 1, // thin line
-                    color: Colors.grey[300], // light gray
-                  ),
-                ),
-
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Catégories"),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CategoriesScreen(),
+                      if (showCollapsedElements)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: Opacity(
+                            opacity: titleOpacity,
+                            child: Container(
+                              height: kToolbarHeight,
+                              decoration: const BoxDecoration(
+                                gradient: greenGradient,
+                              ),
                             ),
-                          );
-                        },
-                        child: const Text("voir tout"),
-                      ),
+                          ),
+                        ),
                     ],
-                  ),
+                  );
+                },
+              ),
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
                 ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
 
-                const SizedBox(height: 16),
+                  //story
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: ValueListenableBuilder<List<StoryModel>>(
+                      valueListenable: _storyStore.storiesNotifier,
+                      builder: (_, userStories, __) {
+                        final hasStories = userStories.isNotEmpty;
+                        return SingleChildScrollView(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              GestureDetector(
+                                onTap: _handleStoryEntryTap,
+                                child: Column(
+                                  spacing: 5,
+                                  children: [
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        GestureDetector(
+                                          onTap: _handleStoryEntryTap,
+                                          child: Container(
+                                            padding: EdgeInsets.all(
+                                              hasStories ? 2 : 10,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: const Color(0xFFE6F7EF),
+                                              border: Border.all(
+                                                color: const Color(0xFF3AAE5E),
+                                                width: hasStories ? 2.5 : 1,
+                                              ),
+                                            ),
+                                            child: hasStories
+                                                ? const CircleAvatar(
+                                                    radius: 22,
+                                                    backgroundImage: AssetImage(
+                                                      'assets/images/dashboard_particulier/Ellipse 10.png',
+                                                    ),
+                                                  )
+                                                : const Center(
+                                                    child: Icon(
+                                                      Icons.add,
+                                                      color: Color(0xFF3AAE5E),
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                        if (hasStories)
+                                          Positioned(
+                                            bottom: -2,
+                                            right: -2,
+                                            child: GestureDetector(
+                                              onTap: () async {
+                                                final result =
+                                                    await Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (_) =>
+                                                            const AddStoryScreen(),
+                                                      ),
+                                                    );
+                                                if (result is StoryModel) {
+                                                  _storyStore.addStory(result);
+                                                }
+                                              },
+                                              child: Container(
+                                                padding: const EdgeInsets.all(
+                                                  3,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(
+                                                    0xFF3AAE5E,
+                                                  ),
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: Colors.white,
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.add,
+                                                  color: Colors.white,
+                                                  size: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const Text(
+                                      "Votre story",
+                                      style: TextStyle(fontSize: 10),
+                                    ),
+                                  ],
+                                ),
+                              ),
 
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
+                              // avatars
+                              AvatarsStory(
+                                name: "Selena",
+                                imageName:
+                                    'assets/images/dashboard_particulier/Ellipse 10.png',
+                                onTap: () => _openStory(
+                                  context,
+                                  'Selena',
+                                  'assets/images/dashboard_particulier/Ellipse 10.png',
+                                ),
+                              ),
+                              AvatarsStory(
+                                name: "Slime",
+                                imageName:
+                                    'assets/images/dashboard_particulier/Ellipse 10 (1).png',
+                                onTap: () => _openStory(
+                                  context,
+                                  'Slime',
+                                  'assets/images/dashboard_particulier/Ellipse 10 (1).png',
+                                ),
+                              ),
+                              AvatarsStory(
+                                name: "Joe",
+                                imageName:
+                                    'assets/images/dashboard_particulier/Ellipse 10 (2).png',
+                                onTap: () => _openStory(
+                                  context,
+                                  'Joe',
+                                  'assets/images/dashboard_particulier/Ellipse 10 (2).png',
+                                ),
+                              ),
+                              AvatarsStory(
+                                name: "Joe",
+                                imageName:
+                                    'assets/images/dashboard_particulier/Ellipse 10 (3).png',
+                                onTap: () => _openStory(
+                                  context,
+                                  'Joe',
+                                  'assets/images/dashboard_particulier/Ellipse 10 (3).png',
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ), // space on sides
+                    child: Container(
+                      height: 1, // thin line
+                      color: Colors.grey[300], // light gray
+                    ),
+                  ),
+
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        CategoriesIcon(
-                          title: "Bons plans",
-                          iconColor: const Color.fromARGB(255, 252, 116, 37),
-                          bgColor: Color(0xFFFFE0B2).withOpacity(0.2),
-                          icon: Icons.card_giftcard_outlined,
+                        const Text("Catégories"),
+                        GestureDetector(
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const BonsPlansScreen(),
+                                builder: (context) => const CategoriesScreen(),
                               ),
                             );
                           },
-                        ),
-                        const SizedBox(width: 15),
-                        CategoriesIcon(
-                          title: "Offre d'emploi",
-                          iconColor: Colors.lightBlueAccent,
-                          bgColor: Color(0xFFB3E5FC).withOpacity(0.2),
-                          iconAsset: 'assets/images/offres.png',
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const OffresEmploiScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 15),
-                        CategoriesIcon(
-                          title: "Formations",
-                          iconColor: Colors.purple,
-                          bgColor: Color(0xFFE1BEE7).withOpacity(0.1),
-                          iconAsset: 'assets/images/Formation.png',
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const FormationScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 15),
-                        CategoriesIcon(
-                          title: "Evenements",
-                          iconColor: Colors.green,
-                          bgColor: Color(0xFFE6F7EF).withOpacity(0.5),
-                          icon: Icons.event_outlined,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const EvenementsScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 15),
-                        CategoriesIcon(
-                          title: "Demandes",
-                          iconColor: const Color.fromARGB(255, 252, 231, 49),
-                          bgColor: Color.fromARGB(255, 255, 250, 178).withOpacity(0.2),
-                          icon: Icons.chat_outlined,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const DemandesScreen(),
-                              ),
-                            );
-                          },
+                          child: const Text("voir tout"),
                         ),
                       ],
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 24),
+                  const SizedBox(height: 16),
 
-                _buildPostsCarousel(),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          CategoriesIcon(
+                            title: "Bons plans",
+                            iconColor: const Color.fromARGB(255, 252, 116, 37),
+                            bgColor: Color(0xFFFFE0B2).withOpacity(0.2),
+                            icon: Icons.card_giftcard_outlined,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const BonsPlansScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 15),
+                          CategoriesIcon(
+                            title: "Offre d'emploi",
+                            iconColor: Colors.lightBlueAccent,
+                            bgColor: Color(0xFFB3E5FC).withOpacity(0.2),
+                            iconAsset: 'assets/images/offres.png',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const OffresEmploiScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 15),
+                          CategoriesIcon(
+                            title: "Formations",
+                            iconColor: Colors.purple,
+                            bgColor: Color(0xFFE1BEE7).withOpacity(0.1),
+                            iconAsset: 'assets/images/Formation.png',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const FormationScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 15),
+                          CategoriesIcon(
+                            title: "Evenements",
+                            iconColor: Colors.green,
+                            bgColor: Color(0xFFE6F7EF).withOpacity(0.5),
+                            icon: Icons.event_outlined,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const EvenementsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 15),
+                          CategoriesIcon(
+                            title: "Demandes",
+                            iconColor: const Color.fromARGB(255, 252, 231, 49),
+                            bgColor: Color.fromARGB(
+                              255,
+                              255,
+                              250,
+                              178,
+                            ).withOpacity(0.2),
+                            icon: Icons.chat_outlined,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const DemandesScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
-                _buildFeedSection(),
+                  const SizedBox(height: 24),
 
-              ],
+                  _buildPostsCarousel(),
+
+                  _buildFeedSection(),
+                ],
+              ),
             ),
-          ),
           ],
         ),
       ),

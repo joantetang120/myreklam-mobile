@@ -5,8 +5,14 @@ import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/add_story_screen.dart';
 import 'package:myreklam/screens/my_stories_screen.dart';
 import 'package:myreklam/screens/story_viewer_screen.dart';
+import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/models/story_model.dart';
+import 'package:myreklam/models/chat_conversation.dart';
 import 'package:myreklam/services/story_store.dart';
+import 'package:myreklam/services/conversation_service.dart';
+import 'package:myreklam/services/api_chat_service.dart';
+import 'package:myreklam/services/api_client.dart';
+import 'package:intl/intl.dart';
 
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
@@ -18,65 +24,139 @@ class MessageScreen extends StatefulWidget {
 class _MessageScreenState extends State<MessageScreen> {
   bool _showAllMessages = true;
   final StoryStore _storyStore = StoryStore();
+  final ConversationService _conversationService = ConversationService();
+  final ApiChatService _chatService = ApiChatService();
+  final TextEditingController _searchController = TextEditingController();
 
-  // Sample chat data
-  final List<Map<String, dynamic>> _allChats = [
-    {
-      'name': 'Theresa Webb',
-      'message': 'Lorem ipsum dolor sit amet, consectetur adipiscing...',
-      'image': 'assets/images/dashboard_particulier/Ellipse 10.png',
-      'time': '27 min',
-      'isRead': true,
-    },
-    {
-      'name': 'Jenny Wilson',
-      'message': 'Lorem ipsum dolor sit amet, consectetur adipiscing...',
-      'image': 'assets/images/dashboard_particulier/Ellipse 10 (1).png',
-      'time': '30 min',
-      'isRead': false,
-    },
-    {
-      'name': 'Devon Lane',
-      'message': 'Lorem ipsum dolor sit amet, consectetur adipiscing...',
-      'image': 'assets/images/dashboard_particulier/Ellipse 10 (2).png',
-      'time': '45min',
-      'isRead': true,
-    },
-    {
-      'name': 'Darrell Steward',
-      'message': 'Lorem ipsum dolor sit amet, consectetur adipiscing...',
-      'image': 'assets/images/dashboard_particulier/Ellipse 10 (3).png',
-      'time': '1h',
-      'isRead': false,
-    },
-    {
-      'name': 'Kathryn Murphy',
-      'message': 'Lorem ipsum dolor sit amet, consectetur adipiscing...',
-      'image': 'assets/images/dashboard_particulier/Ellipse 11.png',
-      'time': '2h',
-      'isRead': true,
-    },
-  ];
+  int? _currentUserId;
+  List<ChatConversation> _allConversations = [];
+  List<ChatConversation> _filteredConversations = [];
+  bool _isLoading = true;
+  String _searchQuery = '';
 
-  List<Map<String, dynamic>> get _filteredChats {
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    try {
+      final response = await ApiClient().authenticatedGet('/user');
+      final userId = response['data']?['id'] as int?;
+      if (mounted && userId != null) {
+        setState(() {
+          _currentUserId = userId;
+        });
+        await _loadConversations();
+      }
+    } catch (e) {
+      debugPrint('Error loading user: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _loadConversations() async {
+    try {
+      final conversations = await _conversationService.getConversations();
+      if (mounted) {
+        setState(() {
+          _allConversations = conversations;
+          _filteredConversations = conversations;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading conversations: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  List<ChatConversation> get _displayedConversations {
     if (_showAllMessages) {
-      return _allChats;
+      return _filteredConversations;
     } else {
-      return _allChats.where((chat) => !chat['isRead']).toList();
+      return _filteredConversations.where((conv) {
+        return conv.unreadCount > 0;
+      }).toList();
     }
   }
 
   int get _unreadCount {
-    return _allChats.where((chat) => !chat['isRead']).length;
+    return _allConversations.where((conv) {
+      return conv.unreadCount > 0;
+    }).length;
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+      if (query.isEmpty) {
+        _filteredConversations = _allConversations;
+      } else {
+        _filteredConversations = _allConversations.where((conv) {
+          final otherUserName = conv.getOtherUserName().toLowerCase();
+          final lastMessage = conv.lastMessage?.toLowerCase() ?? '';
+          return otherUserName.contains(query.toLowerCase()) ||
+              lastMessage.contains(query.toLowerCase());
+        }).toList();
+      }
+    });
+  }
+
+  String _formatTime(DateTime? dateTime) {
+    if (dateTime == null) return '';
+
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} min';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}j';
+    } else {
+      return DateFormat('dd/MM').format(dateTime);
+    }
+  }
+
+  void _openConversation(ChatConversation conversation) async {
+    if (_currentUserId == null) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ChatConversationScreen(
+          conversationId: conversation.id.toString(),
+          name: conversation.getOtherUserName(),
+          avatar: conversation.getOtherUserAvatar(),
+        ),
+      ),
+    );
+
+    // Marquer les messages comme lus
+    await _chatService.markAsRead(conversation.id);
+
+    // Recharger les conversations pour mettre à jour le compteur
+    await _loadConversations();
   }
 
   Future<void> _handleStoryEntryTap() async {
     if (_storyStore.stories.isEmpty) {
       final result = await Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => const AddStoryScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const AddStoryScreen()),
       );
       if (result is StoryModel) {
         _storyStore.addStory(result);
@@ -142,9 +222,8 @@ class _MessageScreenState extends State<MessageScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => const ParticulierMainScreen(
-                  initialIndex: 0,
-                ),
+                builder: (context) =>
+                    const ParticulierMainScreen(initialIndex: 0),
               ),
             );
           },
@@ -174,8 +253,10 @@ class _MessageScreenState extends State<MessageScreen> {
                     color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const TextField(
-                    decoration: InputDecoration(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    decoration: const InputDecoration(
                       hintText: 'Faites une recherche...',
                       hintStyle: TextStyle(color: Colors.grey),
                       prefixIcon: Icon(Icons.search),
@@ -207,7 +288,9 @@ class _MessageScreenState extends State<MessageScreen> {
                                   GestureDetector(
                                     onTap: _handleStoryEntryTap,
                                     child: Container(
-                                      padding: EdgeInsets.all(hasStories ? 2 : 10),
+                                      padding: EdgeInsets.all(
+                                        hasStories ? 2 : 10,
+                                      ),
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         color: const Color(0xFFE6F7EF),
@@ -240,7 +323,8 @@ class _MessageScreenState extends State<MessageScreen> {
                                           final result = await Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (_) => const AddStoryScreen(),
+                                              builder: (_) =>
+                                                  const AddStoryScreen(),
                                             ),
                                           );
                                           if (result is StoryModel) {
@@ -344,9 +428,13 @@ class _MessageScreenState extends State<MessageScreen> {
               // Filter Tabs
               Row(
                 children: [
-                  _buildTab('Tout (${_allChats.length})', _showAllMessages, () {
-                    setState(() => _showAllMessages = true);
-                  }),
+                  _buildTab(
+                    'Tout (${_allConversations.length})',
+                    _showAllMessages,
+                    () {
+                      setState(() => _showAllMessages = true);
+                    },
+                  ),
                   const SizedBox(width: 12),
                   _buildTab('Non-lues ($_unreadCount)', !_showAllMessages, () {
                     setState(() => _showAllMessages = false);
@@ -355,35 +443,83 @@ class _MessageScreenState extends State<MessageScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Chat List with dividers
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _filteredChats.length,
-                  separatorBuilder: (context, index) => const Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: Color(0xFFF0F0F0),
-                    indent: 16,
-                    endIndent: 16,
+              // Chat List with Firebase StreamBuilder
+              if (_isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: CircularProgressIndicator(),
                   ),
-                  itemBuilder: (context, index) {
-                    final chat = _filteredChats[index];
-                    return ChatItemWidget(
-                      image: chat['image'],
-                      name: chat['name'],
-                      text: chat['message'],
-                      time: chat['time'],
-                      isRead: chat['isRead'],
+                )
+              else if (_currentUserId == null)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: Text(
+                      'Erreur de chargement',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                )
+              else
+                Builder(
+                  builder: (context) {
+                    final displayedConvs = _displayedConversations;
+
+                    if (displayedConvs.isEmpty) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32.0),
+                          child: Text(
+                            _showAllMessages
+                                ? 'Aucune conversation'
+                                : 'Aucun message non lu',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: displayedConvs.length,
+                        separatorBuilder: (context, index) => const Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Color(0xFFF0F0F0),
+                          indent: 16,
+                          endIndent: 16,
+                        ),
+                        itemBuilder: (context, index) {
+                          final conversation = displayedConvs[index];
+                          final otherUserName = conversation.getOtherUserName();
+                          final otherUserAvatar = conversation
+                              .getOtherUserAvatar();
+                          final unreadCount = conversation.unreadCount;
+
+                          return GestureDetector(
+                            onTap: () => _openConversation(conversation),
+                            child: ChatItemWidget(
+                              image:
+                                  otherUserAvatar ??
+                                  'assets/images/dashboard_particulier/Ellipse 10.png',
+                              name: otherUserName,
+                              text: conversation.lastMessage ?? 'Aucun message',
+                              time: _formatTime(conversation.lastMessageTime),
+                              isRead: unreadCount == 0,
+                            ),
+                          );
+                        },
+                      ),
                     );
                   },
                 ),
-              ),
 
               const SizedBox(height: 20),
             ],

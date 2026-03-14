@@ -54,6 +54,12 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   # Facebook Login
   flutter_facebook_auth: ^7.1.1
+  # Pusher pour chat temps réel
+  pusher_channels_flutter: ^2.2.0
+  # Provider pour gestion d'état
+  provider: ^6.1.5
+  # Time formatting
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:

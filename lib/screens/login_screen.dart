@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (response['user'] != null) {
-        AuthNavigator.navigateAfterAuth(context, response['user']);
+        AuthNavigator.navigateToMain(context);
       }
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -259,12 +259,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           _buildSocialButton(
                             'assets/images/auth/flat-color-icons_google.png',
-                            onTap: _isLoading ? null : () => _handleGoogleLogin(),
+                            onTap: _isLoading
+                                ? null
+                                : () => _handleGoogleLogin(),
                           ),
                           const SizedBox(width: 20),
                           _buildSocialButton(
                             'assets/images/auth/logos_facebook.png',
-                            onTap: _isLoading ? null : () => _handleFacebookLogin(),
+                            onTap: _isLoading
+                                ? null
+                                : () => _handleFacebookLogin(),
                           ),
                         ],
                       ),
@@ -379,24 +383,15 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: Color(0xFF1B8D4B),
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFF1B8D4B), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: Color(0xFFD32F2F),
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: Color(0xFFD32F2F),
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
         ),
         errorStyle: const TextStyle(
           fontSize: 12,
