@@ -100,7 +100,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
           future: _storyService.getViewers(storyId),
           builder: (context, snapshot) {
             final viewers = snapshot.data ?? [];
-            final viewsCount = widget.stories[_currentIndex]['views_count'] ?? viewers.length;
+            final viewsCount =
+                widget.stories[_currentIndex]['views_count'] ?? viewers.length;
 
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -111,7 +112,10 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Row(
                       children: [
                         const Icon(Icons.remove_red_eye_outlined, size: 20),
@@ -158,8 +162,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                               backgroundImage: viewer.userAvatar != null
                                   ? NetworkImage(viewer.userAvatar!)
                                   : const AssetImage(
-                                      'assets/images/dashboard_particulier/Ellipse 10.png',
-                                    ) as ImageProvider,
+                                          'assets/images/dashboard_particulier/Ellipse 10.png',
+                                        )
+                                        as ImageProvider,
                             ),
                             title: Text(
                               viewer.userName,
@@ -344,7 +349,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                       ),
                       child: ClipOval(
                         child: widget.avatar.startsWith('http')
-                            ? Image.network(widget.avatar, fit: BoxFit.cover,
+                            ? Image.network(
+                                widget.avatar,
+                                fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => Image.asset(
                                   'assets/images/dashboard_particulier/Ellipse 10.png',
                                   fit: BoxFit.cover,

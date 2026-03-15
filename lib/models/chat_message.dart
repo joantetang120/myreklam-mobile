@@ -1,3 +1,12 @@
+// Utilitaire pour convertir dynamiquement en int
+int _parseInt(dynamic value) {
+  if (value == null) return 0;
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) return int.tryParse(value) ?? 0;
+  return 0;
+}
+
 class ChatMessage {
   final int id;
   final int conversationId;
@@ -27,12 +36,12 @@ class ChatMessage {
     final senderData = json['sender'] as Map<String, dynamic>?;
 
     return ChatMessage(
-      id: messageData['id'] as int,
-      conversationId: messageData['conversation_id'] as int,
-      senderId: messageData['sender_id'] as int,
-      text: messageData['text'] as String,
-      createdAt: DateTime.parse(messageData['created_at'] as String),
-      isMe: (messageData['sender_id'] as int) == currentUserId,
+      id: _parseInt(messageData['id']),
+      conversationId: _parseInt(messageData['conversation_id']),
+      senderId: _parseInt(messageData['sender_id']),
+      text: messageData['text']?.toString() ?? '',
+      createdAt: DateTime.parse(messageData['created_at']?.toString() ?? ''),
+      isMe: _parseInt(messageData['sender_id']) == currentUserId,
       isRead: messageData['is_read'] as bool? ?? false,
       senderName: senderData?['name'] as String?,
       senderAvatar: senderData?['avatar'] as String?,

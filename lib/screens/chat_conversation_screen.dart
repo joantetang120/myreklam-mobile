@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:myreklam/config/api_config.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:myreklam/widgets/message_bubble.dart';
-import 'package:myreklam/models/chat_message.dart';
-import 'package:myreklam/providers/chat_provider.dart';
+import 'package:myreklam/providers/conversation_provider.dart';
 import 'package:myreklam/services/api_client.dart';
 
 class ChatConversationScreen extends StatefulWidget {
@@ -31,6 +32,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   int? _currentUserId;
   bool _isLoading = true;
   bool _isSending = false;
+  late ConversationProvider _conversationProvider;
 
   @override
   void initState() {
@@ -39,8 +41,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     // Écouter les changements de messages pour auto-scroll
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-      chatProvider.addListener(_onMessagesChanged);
+      _conversationProvider = Provider.of<ConversationProvider>(
+        context,
+        listen: false,
+      );
+      _conversationProvider.loadMessages(int.parse(widget.conversationId));
+      _conversationProvider.addListener(_onMessagesChanged);
     });
   }
 
@@ -53,19 +59,29 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   Future<void> _loadCurrentUser() async {
     try {
-      final response = await ApiClient().authenticatedGet('/user');
-      final userData = response['data'];
+      final response = await ApiClient().authenticatedGet('/profile/me');
+      final userData = response['user'];
       if (mounted && userData != null) {
         setState(() {
-          _currentUserId = userData['id'] as int?;
+          _currentUserId = int.tryParse(userData['id']);
           _isLoading = false;
         });
 
         // Charger les messages de la conversation
-        final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+        final conversationProvider = Provider.of<ConversationProvider>(
+          context,
+          listen: false,
+        );
         final conversationId = int.tryParse(widget.conversationId);
+        print("DEBUG: Conversation ID: $conversationId");
         if (conversationId != null) {
-          await chatProvider.loadMessages(conversationId);
+          try {
+            print("DEBUG: Starting to load messages...");
+            await conversationProvider.loadMessages(conversationId);
+            print("DEBUG: Messages loaded successfully");
+          } catch (e) {
+            print("DEBUG: Error loading messages: $e");
+          }
         }
       }
     } catch (e) {
@@ -87,11 +103,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     setState(() => _isSending = true);
 
     try {
-      final chatProvider = Provider.of<ChatProvider>(context, listen: false);
       final conversationId = int.tryParse(widget.conversationId);
 
       if (conversationId != null) {
-        await chatProvider.sendMessage(conversationId, messageText);
+        await _conversationProvider.sendMessage(conversationId, messageText);
         _scrollToBottom();
       }
     } catch (e) {
@@ -99,7 +114,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de l\'envoi: ${e.toString()}'),
+            content: Text('Echec de l\'envoi'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -141,12 +156,17 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   @override
   void dispose() {
-    final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-    chatProvider.removeListener(_onMessagesChanged);
+    // Utiliser la référence sauvegardée au lieu d'accéder à Provider
+    try {
+      _conversationProvider.removeListener(_onMessagesChanged);
 
-    final conversationId = int.tryParse(widget.conversationId);
-    if (conversationId != null) {
-      chatProvider.unsubscribeFromConversation(conversationId);
+      // final conversationId = int.tryParse(widget.conversationId);
+      // if (conversationId != null) {
+      //   _conversationProvider.unsubscribeFromConversation(conversationId);
+      // }
+    } catch (e) {
+      // Ignorer les erreurs lors du dispose
+      debugPrint('Error in dispose: $e');
     }
 
     _messageController.dispose();
@@ -175,13 +195,18 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 color: Colors.white,
                 image: widget.avatar != null
                     ? DecorationImage(
-                        image: AssetImage(widget.avatar!),
+                        image: NetworkImage(
+                          "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${widget.avatar!}",
+                        ),
                         fit: BoxFit.cover,
                       )
                     : null,
               ),
               child: widget.avatar == null
-                  ? const Icon(Icons.person, color: Colors.grey)
+                  ? Image.asset(
+                      "assets/images/dashboard_particulier/Ellipse 10.png",
+                      fit: BoxFit.cover,
+                    )
                   : null,
             ),
             const SizedBox(width: 12),
@@ -196,6 +221,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                   Text(
                     widget.status,
@@ -286,19 +313,52 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             ),
           ),
 
-          // Date Divider
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                'Dec 23-12-2025',
-                style: TextStyle(fontSize: 11, color: Color(0xFF616161)),
-              ),
-            ),
+          // Date Divider - Dynamique basé sur les messages
+          Consumer<ConversationProvider>(
+            builder: (context, chatProvider, child) {
+              final messages = chatProvider.getMessages(
+                int.tryParse(widget.conversationId) ?? 0,
+              );
+
+              String dateText = "Aujourd'hui";
+              if (messages.isNotEmpty) {
+                final firstMessage = messages.first;
+                final now = DateTime.now();
+                final messageDate = firstMessage.createdAt;
+
+                if (messageDate.year == now.year &&
+                    messageDate.month == now.month &&
+                    messageDate.day == now.day) {
+                  dateText = "Aujourd'hui";
+                } else if (messageDate.year == now.year &&
+                    messageDate.month == now.month &&
+                    messageDate.day == now.day - 1) {
+                  dateText = "Hier";
+                } else {
+                  dateText = DateFormat('dd MMM yyyy').format(messageDate);
+                }
+              }
+
+              return Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    dateText,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF616161),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 16),
 
@@ -306,7 +366,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           Expanded(
             child: _isLoading || _currentUserId == null
                 ? const Center(child: CircularProgressIndicator())
-                : Consumer<ChatProvider>(
+                : Consumer<ConversationProvider>(
                     builder: (context, chatProvider, child) {
                       final conversationId = int.tryParse(
                         widget.conversationId,
@@ -327,10 +387,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       }
 
                       if (messages.isEmpty) {
-                        return const Center(
+                        return Center(
                           child: Text(
-                            'Aucun message',
-                            style: TextStyle(color: Colors.grey),
+                            'Commencer a discuter avec ${widget.name}',
+                            style: const TextStyle(color: Colors.grey),
                           ),
                         );
                       }
@@ -341,6 +401,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
                       return ListView.builder(
                         controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         itemCount: messages.length,
                         itemBuilder: (context, index) {

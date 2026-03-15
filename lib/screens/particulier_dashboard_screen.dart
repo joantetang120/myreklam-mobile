@@ -29,6 +29,8 @@ import 'package:myreklam/models/story_model.dart';
 import 'package:myreklam/screens/my_stories_screen.dart';
 import 'package:myreklam/services/story_store.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
+import 'package:myreklam/screens/chat_conversation_screen.dart';
+import 'package:myreklam/services/conversation_service.dart';
 
 class ParticulierDashboardScreen extends StatefulWidget {
   const ParticulierDashboardScreen({super.key});
@@ -187,7 +189,7 @@ class _ParticulierDashboardScreenState
       return _currentUserId;
     }
     try {
-      final response = await ApiClient().authenticatedGet('/user/profile');
+      final response = await ApiClient().authenticatedGet('/profile/me');
       final data = response['data'] as Map<String, dynamic>?;
       final id = data?['id']?.toString();
       if (mounted) {
@@ -483,7 +485,13 @@ class _ParticulierDashboardScreenState
           const SizedBox(height: 12),
           const Divider(height: 1),
           const SizedBox(height: 10),
-          if (bpId.isNotEmpty) _buildReactionBar('bon-plans', bpId),
+          if (bpId.isNotEmpty)
+            _buildReactionBar(
+              'bon-plans',
+              bpId,
+              acceptedMessages: bp['accept_messages'] == true,
+              authorData: bp['user'] as Map<String, dynamic>?,
+            ),
           const SizedBox(height: 10),
           const Divider(height: 1),
           const SizedBox(height: 12),
@@ -917,10 +925,78 @@ class _ParticulierDashboardScreenState
     }
   }
 
-  Widget _buildReactionBar(String apiSlug, String entityId) {
+  Future<void> _repostPost(String postId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Republier cette publication'),
+        content: const Text(
+          'Voulez-vous partager cette publication sur votre profil ?',
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3AAE5E),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Republier',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ApiClient().authenticatedPost('/posts/$postId/repost', body: {});
+
+      // Recharger le feed pour afficher le repost
+      await _loadUnifiedFeed(reset: true);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Publication republiée avec succès'),
+            backgroundColor: Color(0xFF3AAE5E),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Repost error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la republication: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildReactionBar(
+    String apiSlug,
+    String entityId, {
+    bool? acceptedMessages,
+    Map<String, dynamic>? authorData,
+  }) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
     final isDisliked = data.userReaction == 'dislike';
+    final isPost = apiSlug == 'posts';
 
     return Row(
       children: [
@@ -946,7 +1022,7 @@ class _ParticulierDashboardScreenState
             ],
           ),
         ),
-        const SizedBox(width: 18),
+        const SizedBox(width: 10),
         // Dislike
         GestureDetector(
           onTap: () => _toggleReaction(apiSlug, entityId, 'dislike'),
@@ -990,6 +1066,57 @@ class _ParticulierDashboardScreenState
             ],
           ),
         ),
+        if (isPost) ...[
+          const SizedBox(width: 10),
+          // Repost
+          GestureDetector(
+            onTap: () => _repostPost(entityId),
+            child: Row(
+              children: [
+                Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Text(
+                  'Republier',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
+        // Chat icon - only if accepted_messages is true
+        if (acceptedMessages == true && authorData != null) ...[
+          const Spacer(),
+          GestureDetector(
+            onTap: () => _startConversationWithAuthor(authorData),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3AAE5E).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFF3AAE5E), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.chat_outlined,
+                    size: 16,
+                    color: Color(0xFF3AAE5E),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Contacter',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: const Color(0xFF3AAE5E),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -1113,12 +1240,175 @@ class _ParticulierDashboardScreenState
               }
             }
 
+            Future<void> editComment(Map<String, dynamic> comment) async {
+              final commentId = comment['id'];
+              final currentBody = comment['body']?.toString() ?? '';
+              final editController = TextEditingController(text: currentBody);
+
+              final newText = await showDialog<String>(
+                context: ctx,
+                builder: (context) => AlertDialog(
+                  title: const Text('Modifier le commentaire'),
+                  content: TextField(
+                    controller: editController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Votre commentaire...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () =>
+                          Navigator.pop(context, editController.text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3AAE5E),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Enregistrer',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (newText == null ||
+                  newText.trim().isEmpty ||
+                  newText == currentBody)
+                return;
+
+              try {
+                final response = await ApiClient().authenticatedPut(
+                  '/comments/$commentId',
+                  body: {'body': newText.trim()},
+                );
+                final updatedComment =
+                    response['data'] as Map<String, dynamic>?;
+                if (updatedComment != null) {
+                  modalSetState(() {
+                    comment['body'] = updatedComment['body'];
+                    comment['updated_at'] = updatedComment['updated_at'];
+                  });
+
+                  // Recharger le feed pour actualiser les commentaires
+                  await _loadUnifiedFeed(reset: true);
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Erreur lors de la modification: ${e.toString()}',
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
+            Future<void> deleteComment(
+              Map<String, dynamic> comment,
+              bool isReply,
+            ) async {
+              final commentId = comment['id'];
+              final confirmed = await showDialog<bool>(
+                context: ctx,
+                builder: (context) => AlertDialog(
+                  title: const Text('Supprimer le commentaire'),
+                  content: const Text(
+                    'Êtes-vous sûr de vouloir supprimer ce commentaire ?',
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Supprimer',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed != true) return;
+
+              try {
+                await ApiClient().authenticatedDelete('/comments/$commentId');
+
+                // Recharger le feed pour actualiser les commentaires
+                await _loadUnifiedFeed(reset: true);
+
+                modalSetState(() {
+                  if (isReply) {
+                    final parentId =
+                        comment['parent_id'] ?? comment['comment_id'];
+                    final parent = comments.firstWhere(
+                      (c) => c['id'] == parentId,
+                      orElse: () => <String, dynamic>{},
+                    );
+                    if (parent.isNotEmpty) {
+                      final replies = List<Map<String, dynamic>>.from(
+                        (parent['replies'] as List?) ?? [],
+                      );
+                      replies.removeWhere((r) => r['id'] == commentId);
+                      parent['replies'] = replies;
+                      parent['replies_count'] = replies.length;
+                    }
+                  } else {
+                    comments.removeWhere((c) => c['id'] == commentId);
+                  }
+                });
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Erreur lors de la suppression: ${e.toString()}',
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
             Widget buildCommentItem(
               Map<String, dynamic> comment, {
               bool isReply = false,
             }) {
               final user = comment['user'] as Map<String, dynamic>? ?? {};
-              final userId = user['id']?.toString();
+              final userId = user['id']?.toString(); // Convertir en String
               final email = user['email']?.toString() ?? '';
               final displayName = (userId != null && userId == _currentUserId)
                   ? 'Vous'
@@ -1130,6 +1420,7 @@ class _ParticulierDashboardScreenState
               final likes = _asInt(comment['likes_count']);
               final dislikes = _asInt(comment['dislikes_count']);
               final userReaction = comment['user_reaction']?.toString();
+              final isOwner = userId != null && userId == _currentUserId;
               final replies =
                   (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
@@ -1181,6 +1472,64 @@ class _ParticulierDashboardScreenState
                                       color: Colors.grey[400],
                                     ),
                                   ),
+                                  if (isOwner) ...[
+                                    const Spacer(),
+                                    GestureDetector(
+                                      onTapDown: (TapDownDetails details) {
+                                        showMenu<String>(
+                                          context: context,
+                                          position: RelativeRect.fromLTRB(
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                          ),
+                                          items: [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit, size: 18),
+                                                  SizedBox(width: 8),
+                                                  Text('Modifier'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.delete,
+                                                    size: 18,
+                                                    color: Colors.redAccent,
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'Supprimer',
+                                                    style: TextStyle(
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ).then((value) {
+                                          if (value == 'edit') {
+                                            editComment(comment);
+                                          } else if (value == 'delete') {
+                                            deleteComment(comment, isReply);
+                                          }
+                                        });
+                                      },
+                                      child: Icon(
+                                        Icons.more_horiz,
+                                        size: 18,
+                                        color: Colors.grey[400],
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -1504,11 +1853,27 @@ class _ParticulierDashboardScreenState
               final raw = posts[index];
               final postId = raw['id']?.toString() ?? '';
               _seedReactionFromFeed('posts', postId, raw);
-              final author = _extractPostAuthorInfo(raw);
-              final content = raw['content']?.toString() ?? '';
-              final createdAt = raw['created_at']?.toString();
+
+              // Détecter si c'est un repost
+              final isRepost = raw['original_post_id'] != null;
+
+              // Si c'est un repost, utiliser les données du post original
+              final originalPost = isRepost
+                  ? (raw['original_post'] as Map<String, dynamic>? ?? {})
+                  : raw;
+
+              // L'auteur du repost (celui qui a republié)
+              final reposter = _extractPostAuthorInfo(raw);
+
+              // L'auteur du post original
+              final author = isRepost
+                  ? _extractPostAuthorInfo(originalPost)
+                  : reposter;
+
+              final content = originalPost['content']?.toString() ?? '';
+              final createdAt = originalPost['created_at']?.toString();
               final timeAgo = _buildTimeAgo(createdAt);
-              final postImageUrl = _extractMediaUrl(raw);
+              final postImageUrl = _extractMediaUrl(originalPost);
 
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 6),
@@ -1528,6 +1893,42 @@ class _ParticulierDashboardScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Header de republication si c'est un repost
+                    if (isRepost) ...[
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 12,
+                            backgroundImage: reposter.avatar.startsWith('http')
+                                ? NetworkImage(reposter.avatar) as ImageProvider
+                                : AssetImage(reposter.avatar),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: RichText(
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              text: TextSpan(
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: reposter.displayName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const TextSpan(text: ' a republié ceci'),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                     Row(
                       children: [
                         CircleAvatar(
@@ -2627,11 +3028,122 @@ class _ParticulierDashboardScreenState
 
   String? _buildStorageUrl(String? url) {
     if (url == null || url.isEmpty) return null;
+    if (url.startsWith('http')) return url;
     final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
-    if (url.startsWith('http')) {
-      return url.replaceFirst(RegExp(r'https?://[^/]+'), serverBase);
-    }
     return '$serverBase$url';
+  }
+
+  Future<void> _startConversationWithAuthor(
+    Map<String, dynamic> authorData,
+  ) async {
+    final authorId = authorData['id']?.toString();
+
+    // Extraire le nom depuis le profil particulier
+    String authorName = 'Utilisateur';
+    if (authorData['particulier_profile'] != null) {
+      final particulierProfile =
+          authorData['particulier_profile'] as Map<String, dynamic>;
+      authorName =
+          particulierProfile['pseudo']?.toString() ??
+          authorData['email']?.toString().split('@').first ??
+          'Utilisateur';
+    } else if (authorData['pro_profile'] != null) {
+      final proProfile = authorData['pro_profile'] as Map<String, dynamic>;
+      authorName =
+          proProfile['company_name']?.toString() ??
+          (proProfile['first_name']?.toString() != null &&
+                  proProfile['last_name']?.toString() != null
+              ? '${proProfile['first_name']} ${proProfile['last_name']}'
+              : authorData['email']?.toString().split('@').first) ??
+          'Utilisateur';
+    }
+
+    // Extraire l'avatar depuis le profil approprié
+    String? authorAvatar;
+    if (authorData['particulier_profile'] != null) {
+      final particulierProfile =
+          authorData['particulier_profile'] as Map<String, dynamic>;
+      authorAvatar = particulierProfile['avatar_url']?.toString();
+    } else if (authorData['pro_profile'] != null) {
+      final proProfile = authorData['pro_profile'] as Map<String, dynamic>;
+      authorAvatar = proProfile['avatar_url']?.toString();
+    }
+
+    if (authorId == null || authorId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible de démarrer la conversation'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final otherUserId = int.tryParse(authorId);
+    if (otherUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ID utilisateur invalide'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Create or get conversation
+      final conversationService = ConversationService();
+      final conversation = await conversationService.getOrCreateConversation(
+        otherUserId,
+      );
+
+      // Close loading indicator
+      if (mounted) Navigator.pop(context);
+
+      // Navigate to chat conversation screen
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatConversationScreen(
+              conversationId: conversation.id.toString(),
+              name: authorName,
+              avatar:
+                  authorAvatar ??
+                  'assets/images/dashboard_particulier/Ellipse 10.png',
+              status: 'En ligne',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading indicator
+      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        // Extract error message from exception
+        String errorMessage = 'Échec, veuillez réessayer';
+        final exceptionString = e.toString();
+        if (exceptionString.startsWith('Exception: ')) {
+          errorMessage = exceptionString.substring('Exception: '.length);
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _refreshFeed() {

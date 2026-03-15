@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/profile_service.dart';
 
@@ -177,7 +178,9 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                   ),
                   image: _avatarUrl != null
                       ? DecorationImage(
-                          image: NetworkImage(_avatarUrl!),
+                          image: NetworkImage(
+                            "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${_avatarUrl!}",
+                          ),
                           fit: BoxFit.cover,
                         )
                       : null,

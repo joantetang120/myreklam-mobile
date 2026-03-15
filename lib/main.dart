@@ -1,18 +1,25 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:provider/provider.dart';
+import 'package:myreklam/services/chat_service.dart';
+import 'package:myreklam/services/chat_notification_service.dart';
 import 'package:myreklam/screens/login_screen.dart';
-import 'package:myreklam/screens/splash_screen.dart';
-import 'package:myreklam/providers/chat_provider.dart';
-import 'package:myreklam/services/websocket_service.dart';
+import 'package:myreklam/providers/conversation_provider.dart';
+import 'package:provider/provider.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialiser le WebSocket Service
-  await WebSocketService.init();
-  await WebSocketService.connect();
+  // Initialisation de pusher
+  await ChatService.initializePusher();
+  print('✅ Pusher initialisé');
+
+  // Initialisation du service de notifications chat
+  await ChatNotificationService.instance.init();
+  print('✅ ChatNotificationService initialisé');
 
   runApp(const MyApp());
 }
@@ -23,8 +30,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ChatProvider(),
+      create: (_) => ConversationProvider(),
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         debugShowCheckedModeBanner: false,
         title: 'Myreklam',
         localizationsDelegates: const [

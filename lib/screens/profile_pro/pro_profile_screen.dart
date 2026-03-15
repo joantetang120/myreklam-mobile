@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/profile_pro/pro_reward_screen.dart';
 import 'package:myreklam/screens/publier_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_post_screen.dart';
@@ -124,7 +125,9 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                               color: Colors.grey[300],
                               image: _avatarUrl != null
                                   ? DecorationImage(
-                                      image: NetworkImage(_avatarUrl!),
+                                      image: NetworkImage(
+                                        "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${_avatarUrl!}",
+                                      ),
                                       fit: BoxFit.cover,
                                     )
                                   : null,
@@ -216,7 +219,9 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
-                                    UserSession().subscriptionPlan?.toUpperCase() ?? 'FREE',
+                                    UserSession().subscriptionPlan
+                                            ?.toUpperCase() ??
+                                        'FREE',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 11,
@@ -690,9 +695,10 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                       height: 28,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          Color(0xFF2E9B5B),
-                                        ),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Color(0xFF2E9B5B),
+                                            ),
                                       ),
                                     )
                                   : const Icon(
@@ -704,7 +710,9 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: Text(
-                                _isLoggingOut ? 'Déconnexion...' : 'Deconnexion',
+                                _isLoggingOut
+                                    ? 'Déconnexion...'
+                                    : 'Deconnexion',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
