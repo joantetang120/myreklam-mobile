@@ -33,14 +33,13 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
-    _progressController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 5),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _nextStory();
-        }
-      });
+    _progressController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 5))
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              _nextStory();
+            }
+          });
     _progressController.forward();
     _recordCurrentView();
   }
@@ -101,7 +100,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
           future: _storyService.getViewers(storyId),
           builder: (context, snapshot) {
             final viewers = snapshot.data ?? [];
-            final viewsCount = widget.stories[_currentIndex]['views_count'] ?? viewers.length;
+            final viewsCount =
+                widget.stories[_currentIndex]['views_count'] ?? viewers.length;
 
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -112,7 +112,10 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Row(
                       children: [
                         const Icon(Icons.remove_red_eye_outlined, size: 20),
@@ -159,8 +162,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                               backgroundImage: viewer.userAvatar != null
                                   ? NetworkImage(viewer.userAvatar!)
                                   : const AssetImage(
-                                      'assets/images/dashboard_particulier/Ellipse 10.png',
-                                    ) as ImageProvider,
+                                          'assets/images/dashboard_particulier/Ellipse 10.png',
+                                        )
+                                        as ImageProvider,
                             ),
                             title: Text(
                               viewer.userName,
@@ -287,22 +291,26 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                                   builder: (context, child) {
                                     return LinearProgressIndicator(
                                       value: _progressController.value,
-                                      backgroundColor:
-                                          Colors.white.withOpacity(0.3),
+                                      backgroundColor: Colors.white.withOpacity(
+                                        0.3,
+                                      ),
                                       valueColor:
                                           const AlwaysStoppedAnimation<Color>(
-                                              Colors.white),
+                                            Colors.white,
+                                          ),
                                       minHeight: 2.5,
                                     );
                                   },
                                 )
                               : LinearProgressIndicator(
                                   value: index < _currentIndex ? 1.0 : 0.0,
-                                  backgroundColor:
-                                      Colors.white.withOpacity(0.3),
+                                  backgroundColor: Colors.white.withOpacity(
+                                    0.3,
+                                  ),
                                   valueColor:
                                       const AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
+                                        Colors.white,
+                                      ),
                                   minHeight: 2.5,
                                 ),
                         ),
@@ -314,14 +322,19 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
 
               // Header: avatar, name, time, close
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 child: Row(
                   children: [
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.arrow_back,
-                          color: Colors.white, size: 22),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Container(
@@ -330,11 +343,15 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                            color: const Color(0xFF3AAE5E), width: 1.5),
+                          color: const Color(0xFF3AAE5E),
+                          width: 1.5,
+                        ),
                       ),
                       child: ClipOval(
                         child: widget.avatar.startsWith('http')
-                            ? Image.network(widget.avatar, fit: BoxFit.cover,
+                            ? Image.network(
+                                widget.avatar,
+                                fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => Image.asset(
                                   'assets/images/dashboard_particulier/Ellipse 10.png',
                                   fit: BoxFit.cover,
@@ -368,8 +385,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                     ),
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.close,
-                          color: Colors.white, size: 22),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
                   ],
                 ),
@@ -401,8 +421,10 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
 
               // Bottom bar
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 child: widget.isOwnStory
                     ? Row(
                         children: [
@@ -443,15 +465,20 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                           Expanded(
                             child: Container(
                               height: 44,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                    color: Colors.white.withOpacity(0.3)),
+                                  color: Colors.white.withOpacity(0.3),
+                                ),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: TextField(
                                 style: const TextStyle(
-                                    color: Colors.white, fontSize: 14),
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
                                 decoration: InputDecoration(
                                   hintText: 'Répondre',
                                   hintStyle: TextStyle(
@@ -459,8 +486,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                                     fontSize: 14,
                                   ),
                                   border: InputBorder.none,
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(vertical: 10),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
                                 ),
                               ),
                             ),

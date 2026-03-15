@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/my_posts_screen.dart';
 import 'package:myreklam/screens/followers_screen.dart';
@@ -144,7 +145,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         radius: 45,
                         backgroundColor: Colors.grey[300],
                         backgroundImage: _avatarUrl != null
-                            ? NetworkImage(_avatarUrl!)
+                            ? NetworkImage(
+                                "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${_avatarUrl!}",
+                              )
                             : null,
                         child: _avatarUrl == null
                             ? const Icon(
@@ -295,7 +298,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const FollowersScreen(initialShowFollowers: false),
+                          builder: (context) => const FollowersScreen(
+                            initialShowFollowers: false,
+                          ),
                         ),
                       );
                     },
@@ -360,7 +365,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: const Icon(Icons.visibility_outlined, size: 14),
                       label: const Text(
                         'Voir mon profil public',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFFF9800),
@@ -527,7 +535,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const MonProfilParticulierScreen(),
+                          builder: (context) =>
+                              const MonProfilParticulierScreen(),
                         ),
                       );
                     },
@@ -648,8 +657,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     final bool showShadow = useProStyle;
     final Color containerColor = useProStyle ? Colors.white : Colors.grey[50]!;
-    final Color effectiveIconColor = useProStyle ? const Color(0xFF2E9B5B) : iconColor;
-    final Border? border = useProStyle ? null : Border.all(color: Colors.grey[200]!);
+    final Color effectiveIconColor = useProStyle
+        ? const Color(0xFF2E9B5B)
+        : iconColor;
+    final Border? border = useProStyle
+        ? null
+        : Border.all(color: Colors.grey[200]!);
 
     return GestureDetector(
       onTap: onTap,
@@ -691,12 +704,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ).copyWith(
-                  color: useProStyle ? Colors.black.withOpacity(0.5) : const Color(0xFF616161),
-                ),
+                style:
+                    const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ).copyWith(
+                      color: useProStyle
+                          ? Colors.black.withOpacity(0.5)
+                          : const Color(0xFF616161),
+                    ),
               ),
             ),
             Icon(
