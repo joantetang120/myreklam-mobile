@@ -73,7 +73,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   String? selectedOptionOrg = "Oui";
   bool _touteLaFrance = false;
   String? _selectedPrixEntree = "Gratuit";
+  String? _selectedPricingMode; // 'Prix unique' or 'Catégories'
   final TextEditingController _prixEntreeController = TextEditingController();
+  List<Map<String, TextEditingController>> _priceCategories = [];
   String? _selectedModeReservation = "Sans inscription";
   final TextEditingController _siteWebController = TextEditingController();
   bool _isSubmitting = false;
@@ -100,7 +102,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   bool get _isEditMode => widget.eventId != null && widget.eventId!.isNotEmpty;
 
   final List<String> _types = [
-    'Présentielonline',
+    'Présentiel',
     'En ligne',
     'Hybride',
   ];
@@ -145,8 +147,29 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     _prixFinalController.dispose();
     _reductionController.dispose();
     _prixEntreeController.dispose();
+    for (final cat in _priceCategories) {
+      cat['name']!.dispose();
+      cat['price']!.dispose();
+    }
     _siteWebController.dispose();
     super.dispose();
+  }
+
+  void _addPriceCategory() {
+    setState(() {
+      _priceCategories.add({
+        'name': TextEditingController(),
+        'price': TextEditingController(),
+      });
+    });
+  }
+
+  void _removePriceCategory(int index) {
+    setState(() {
+      _priceCategories[index]['name']!.dispose();
+      _priceCategories[index]['price']!.dispose();
+      _priceCategories.removeAt(index);
+    });
   }
 
   Future<void> _checkForSavedProgress() async {
@@ -191,12 +214,26 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       final priceType = data['price_type']?.toString();
       if (priceType == 'payant') {
         _selectedPrixEntree = 'Payant';
-        final amount = data['price_amount'];
-        if (amount != null) {
-          _prixEntreeController.text = amount.toString().replaceAll(RegExp(r'\.00$'), '');
+        final pricingMode = data['pricing_mode']?.toString();
+        if (pricingMode == 'categories') {
+          _selectedPricingMode = 'Catégories';
+          final cats = data['price_categories'] as List? ?? [];
+          _priceCategories = cats.map<Map<String, TextEditingController>>((c) {
+            return {
+              'name': TextEditingController(text: c['name']?.toString() ?? ''),
+              'price': TextEditingController(text: c['price']?.toString().replaceAll(RegExp(r'\.00$'), '') ?? ''),
+            };
+          }).toList();
+        } else {
+          _selectedPricingMode = 'Prix unique';
+          final amount = data['price_amount'];
+          if (amount != null) {
+            _prixEntreeController.text = amount.toString().replaceAll(RegExp(r'\.00$'), '');
+          }
         }
       } else {
         _selectedPrixEntree = 'Gratuit';
+        _selectedPricingMode = null;
       }
 
       // Reservation mode
@@ -421,7 +458,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         'disponible_chez': _disponibleChezController.text,
         'toute_la_france': _touteLaFrance,
         'prix_entree': _selectedPrixEntree,
+        'pricing_mode': _selectedPricingMode,
         'prix_entree_montant': _prixEntreeController.text,
+        'price_categories': _priceCategories.map((c) => {
+          'name': c['name']!.text,
+          'price': c['price']!.text,
+        }).toList(),
         'mode_reservation': _selectedModeReservation,
         'site_web': _siteWebController.text,
         'duree': _selectedTimeEvenement,
@@ -458,7 +500,21 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         _disponibleChezController.text = formData['disponible_chez'] ?? '';
         _touteLaFrance = formData['toute_la_france'] ?? false;
         _selectedPrixEntree = formData['prix_entree'] ?? 'Gratuit';
+        _selectedPricingMode = formData['pricing_mode'];
         _prixEntreeController.text = formData['prix_entree_montant'] ?? '';
+        // Restore price categories
+        for (final cat in _priceCategories) {
+          cat['name']!.dispose();
+          cat['price']!.dispose();
+        }
+        _priceCategories = [];
+        final savedCats = formData['price_categories'] as List? ?? [];
+        for (final c in savedCats) {
+          _priceCategories.add({
+            'name': TextEditingController(text: c['name']?.toString() ?? ''),
+            'price': TextEditingController(text: c['price']?.toString() ?? ''),
+          });
+        }
         _selectedModeReservation = formData['mode_reservation'] ?? 'Sans inscription';
         _siteWebController.text = formData['site_web'] ?? '';
         _selectedTimeEvenement = formData['duree'] ?? 'Sur une journée';
@@ -600,6 +656,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   }
 
   void _nextStep() {
+    final error = _validateCurrentStep();
+    if (error != null) {
+      _showSnack(error, isError: true);
+      return;
+    }
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
     }
@@ -609,6 +670,77 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
     }
+  }
+
+  String? _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Step 1: Catégories
+        if (_selectedCategory == null) {
+          return 'Veuillez sélectionner une catégorie.';
+        }
+        if (_selectedSubCategory == null) {
+          return 'Veuillez sélectionner une sous-catégorie.';
+        }
+        break;
+      
+      case 1: // Step 2: Lien (optional)
+        break;
+      
+      case 2: // Step 3: Description
+        if (_titleController.text.trim().length < 5) {
+          return 'Le titre doit contenir au moins 5 caractères.';
+        }
+        if (_descriptionQuillController.document.toPlainText().trim().length < 20) {
+          return 'La description doit contenir au moins 20 caractères.';
+        }
+        if (_disponibleChezController.text.trim().isEmpty) {
+          return 'Indiquez le lieu de l\'événement.';
+        }
+        if (_selectedPrixEntree == null) {
+          return 'Précisez si l\'événement est gratuit ou payant.';
+        }
+        if (_selectedPrixEntree == 'Payant') {
+          if (_selectedPricingMode == null) {
+            return 'Veuillez choisir un type de tarification.';
+          }
+          if (_selectedPricingMode == 'Prix unique' && _prixEntreeController.text.trim().isEmpty) {
+            return 'Indiquez le prix d\'entrée.';
+          }
+          if (_selectedPricingMode == 'Catégories') {
+            if (_priceCategories.isEmpty) {
+              return 'Ajoutez au moins une catégorie de prix.';
+            }
+            for (int i = 0; i < _priceCategories.length; i++) {
+              if (_priceCategories[i]['name']!.text.trim().isEmpty) {
+                return 'Indiquez le nom de la catégorie de prix ${i + 1}.';
+              }
+              if (_priceCategories[i]['price']!.text.trim().isEmpty) {
+                return 'Indiquez le prix de la catégorie "${_priceCategories[i]['name']!.text.trim()}".';
+              }
+            }
+          }
+        }
+        break;
+      
+      case 3: // Step 4: Dates et horaires
+        if (selectedDate == null) {
+          return 'Sélectionnez une date pour l\'événement.';
+        }
+        break;
+      
+      case 4: // Step 5: Médias (optional)
+        break;
+    }
+    return null;
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? Colors.red.shade700 : const Color(0xFF3AAE5E),
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 4),
+    ));
   }
 
   Future<void> _selectTime(BuildContext context, bool isStartTime) async {
@@ -732,9 +864,19 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       'coverage_area': _disponibleChezController.text.trim(),
       'is_nationwide': _touteLaFrance,
       'price_type': priceType,
-      'price_amount': priceType == 'payant'
+      'price_amount': priceType == 'payant' && _selectedPricingMode == 'Prix unique'
           ? double.tryParse(_prixEntreeController.text.replaceAll(',', '.'))
           : null,
+      // New pricing fields — only sent when using categories
+      if (priceType == 'payant') ...{
+        'pricing_mode': _selectedPricingMode == 'Catégories' ? 'categories' : 'unique',
+      },
+      if (priceType == 'payant' && _selectedPricingMode == 'Catégories') ...{
+        'price_categories': _priceCategories.map((c) => {
+              'name': c['name']!.text.trim(),
+              'price': double.tryParse(c['price']!.text.replaceAll(',', '.')),
+            }).toList(),
+      },
       'reservation_mode': reservationMode,
       'website_url': _siteWebController.text.trim().isEmpty ? null : _siteWebController.text.trim(),
       'duration_type': durationType,
@@ -770,6 +912,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
     try {
       final payload = _buildEventPayload();
+      debugPrint('========== EVENT SUBMIT PAYLOAD ==========');
+      payload.forEach((key, value) {
+        debugPrint('  $key: $value (${value.runtimeType})');
+      });
+      debugPrint('==========================================');
       Map<String, dynamic> response;
 
       if (_isEditMode) {
@@ -1167,7 +1314,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               ),
               SizedBox(height: 8),
               Text(
-                'Ajoutez un maximum de photos pour augmenter le nombre de contacts',
+                'Ajoutez des photos de votre événement pour donner envie aux participants et mettre l’ambiance en avant.',
                 style: TextStyle(
                   fontSize: 14,
                   color: Color(0xFF666666),
@@ -1176,7 +1323,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               ),
               SizedBox(height: 20),
               Text(
-                'Vos photos *',
+                'Vos photos (non-obligatoires)',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1612,13 +1759,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           icon: Icons.link,
           title: 'Lien',
           subtitle:
-              "Entrez le lien de la page où se trouve les informations de l'événement.",
+              "Collez le lien de la page de l'événement. Nous l'utiliserons pour récupérer automatiquement les informations et pré-remplir votre annonce.",
           children: [
             _buildTextField(
               label: 'Ajouter un lien',
               controller: _linkController,
               fieldKey: 'link',
-              helperText: 'Ajoutez l\'URL complète de la page de l\'événement (ex: https://www.exemple.fr/evenement).',
+              helperText: 'Le lien permettra d\'extraire automatiquement le titre, la description, les dates, le lieu et autres détails de l\'événement pour faciliter la création de votre annonce.',
             ),
           ],
         ),
@@ -1691,6 +1838,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               controller: _disponibleChezController,
               fieldKey: 'disponible_chez',
               helperText: 'Indiquez la ville, la région ou le lieu précis de l\'événement.',
+              enabled: !_touteLaFrance,
+              onChanged: (value) {
+                if (value.trim().isNotEmpty && _touteLaFrance) {
+                  setState(() => _touteLaFrance = false);
+                }
+              },
             ),
             const SizedBox(height: 16),
             // Toute la France switch
@@ -1710,7 +1863,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   ),
                   Switch(
                     value: _touteLaFrance,
-                    onChanged: (val) => setState(() => _touteLaFrance = val),
+                    onChanged: _disponibleChezController.text.trim().isEmpty
+                        ? (val) {
+                            setState(() {
+                              _touteLaFrance = val;
+                              if (val) {
+                                _disponibleChezController.clear();
+                              }
+                            });
+                          }
+                        : null,
                     activeThumbColor: Colors.white,
                     activeTrackColor: const Color(0xFFEF8A40),
                   ),
@@ -1722,46 +1884,141 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               title: "Prix d'entrée: *",
               values: ["Gratuit", "Payant"],
               selectedValue: _selectedPrixEntree,
-              onChanged: (val) => setState(() => _selectedPrixEntree = val),
+              onChanged: (val) => setState(() {
+                _selectedPrixEntree = val;
+                if (val == 'Gratuit') {
+                  _selectedPricingMode = null;
+                }
+              }),
               labelBuilder: (value) => value,
             ),
-            const SizedBox(width: 16),
-            // Champ prix
-            if (_selectedPrixEntree == "Payant")
-              Row(
-                children: [
-                  Container(
-                    width: 250,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                    ),
-                    child: TextField(
-                      controller: _prixEntreeController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        hintText: '',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
-                  ),
-
-                  const Padding(
-                    padding: EdgeInsets.only(left: 8),
-                    child: Text(
-                      '€',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2E9B5B),
-                      ),
-                    ),
-                  ),
-                ],
+            if (_selectedPrixEntree == "Payant") ...[
+              const SizedBox(height: 16),
+              _buildRadioGroup(
+                title: "Type de tarification: *",
+                values: ["Prix unique", "Catégories"],
+                selectedValue: _selectedPricingMode,
+                onChanged: (val) => setState(() {
+                  _selectedPricingMode = val;
+                  if (val == 'Catégories' && _priceCategories.isEmpty) {
+                    _addPriceCategory();
+                  }
+                }),
+                labelBuilder: (value) => value,
               ),
+              const SizedBox(height: 12),
+              // Prix unique input
+              if (_selectedPricingMode == "Prix unique")
+                Row(
+                  children: [
+                    Container(
+                      width: 250,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      ),
+                      child: TextField(
+                        controller: _prixEntreeController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          hintText: 'Prix',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: Text(
+                        '€',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2E9B5B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              // Catégories de prix
+              if (_selectedPricingMode == "Catégories") ...[
+                ...List.generate(_priceCategories.length, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                            ),
+                            child: TextField(
+                              controller: _priceCategories[index]['name'],
+                              decoration: InputDecoration(
+                                hintText: 'ex: Enfant, VIP...',
+                                hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 100,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                            ),
+                            child: TextField(
+                              controller: _priceCategories[index]['price'],
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                hintText: '€',
+                                hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text('€', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF2E9B5B))),
+                        if (_priceCategories.length > 1)
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 22),
+                            onPressed: () => _removePriceCategory(index),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _addPriceCategory,
+                    icon: const Icon(Icons.add_circle_outline, size: 20, color: Color(0xFFEF8A40)),
+                    label: const Text(
+                      'Ajouter une catégorie de prix',
+                      style: TextStyle(color: Color(0xFFEF8A40), fontSize: 13),
+                    ),
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  ),
+                ),
+              ],
+            ],
 
             const SizedBox(height: 20),
             // Mode de reservation
@@ -2036,8 +2293,15 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             ),
             _buildReviewRow('Toute la France', _touteLaFrance ? 'Oui' : 'Non'),
             _buildReviewRow('Prix d\'entrée', _selectedPrixEntree ?? '-'),
-            if (_selectedPrixEntree == 'Payant')
-              _buildReviewRow('Montant', '${_prixEntreeController.text} €'),
+            if (_selectedPrixEntree == 'Payant') ...[
+              _buildReviewRow('Type de tarification', _selectedPricingMode ?? '-'),
+              if (_selectedPricingMode == 'Prix unique')
+                _buildReviewRow('Montant', '${_prixEntreeController.text} €'),
+              if (_selectedPricingMode == 'Catégories')
+                ..._priceCategories.map((c) =>
+                  _buildReviewRow(c['name']!.text.isEmpty ? '-' : c['name']!.text, '${c['price']!.text} €'),
+                ),
+            ],
             _buildReviewRow('Mode de réservation', _selectedModeReservation ?? '-'),
             _buildReviewRow(
               'Site web',
@@ -2088,7 +2352,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           child: Column(
             children: [
               const Text(
-                'Accepter de recevoir des messages concernant cette annonce',
+                'Accepter de recevoir des messages à propos de cet événement',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -2098,7 +2362,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Les autres utilisateurs pourront vous contacter pour poser des questions sur cet événement',
+                'Les intéressés pourront vous contacter pour connaître le programme, l’accès ou les modalités pratiques de l’événement.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
@@ -2200,7 +2464,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             DateTime? pickedDate = await showDatePicker(
               context: context,
               initialDate: selectedDate ?? DateTime.now(),
-              firstDate: DateTime(1900),
+              firstDate: DateTime.now().subtract(const Duration(days: 1)),
               lastDate: DateTime(2100),
             );
 
@@ -2475,6 +2739,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     IconData? prefixIcon,
     String? fieldKey,
     String? helperText,
+    bool enabled = true,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2490,6 +2756,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             controller: controller,
             maxLines: maxLines,
             keyboardType: keyboardType,
+            enabled: enabled,
+            onChanged: onChanged,
             onTap: () {
               if (fieldKey != null) {
                 setState(() => _focusedField = fieldKey);

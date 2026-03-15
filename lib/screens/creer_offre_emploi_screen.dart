@@ -893,6 +893,11 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     });
   }
   void _nextStep() {
+    final error = _validateCurrentStep();
+    if (error != null) {
+      _showSnack(error, isError: true);
+      return;
+    }
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
     }
@@ -902,6 +907,73 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
     }
+  }
+
+  String? _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Step 1: Informations
+        if (_selectedCategoryId == null) {
+          return 'Veuillez sélectionner une catégorie.';
+        }
+        if (_selectedFunctionId == null) {
+          return 'Veuillez sélectionner une fonction.';
+        }
+        break;
+      
+      case 1: // Step 2: Lien (optional)
+        break;
+      
+      case 2: // Step 3: Description
+        if (_titleController.text.trim().length < 5) {
+          return 'Le titre doit contenir au moins 5 caractères.';
+        }
+        if (_descriptionQuillController.document.toPlainText().trim().length < 20) {
+          return 'La description doit contenir au moins 20 caractères.';
+        }
+        if (_selectedContractType == null) {
+          return 'Veuillez sélectionner un type de contrat.';
+        }
+        if (_selectedWorkTime == null) {
+          return 'Veuillez sélectionner un temps de travail.';
+        }
+        if (_selectedSalaryType == null) {
+          return 'Veuillez indiquer le type de rémunération.';
+        }
+        if (_selectedSalaryType == 'RANGE') {
+          if (_salaryMinController.text.trim().isEmpty) {
+            return 'Veuillez indiquer le salaire minimum.';
+          }
+          if (_salaryMaxController.text.trim().isEmpty) {
+            return 'Veuillez indiquer le salaire maximum.';
+          }
+        }
+        if (_selectedSalaryType == 'EXACT' && _salaryExactController.text.trim().isEmpty) {
+          return 'Veuillez indiquer le salaire exact.';
+        }
+        if (_selectedAvailabilityType == null) {
+          return 'Veuillez préciser la disponibilité souhaitée.';
+        }
+        if (_locationController.text.trim().isEmpty && !_nationwide) {
+          return 'Renseignez une ville ou activez "Toute la France".';
+        }
+        if (_companyNameController.text.trim().isEmpty) {
+          return 'Veuillez indiquer le nom de l\'entreprise.';
+        }
+        break;
+      
+      case 3: // Step 4: Profil
+        if (_selectedEducationLevel == null) {
+          return 'Veuillez sélectionner un niveau d\'études requis.';
+        }
+        if (_selectedExperienceLevel == null) {
+          return 'Veuillez sélectionner un niveau d\'expérience requis.';
+        }
+        break;
+      
+      case 4: // Step 5: Médias (optional)
+        break;
+    }
+    return null;
   }
 
   Future<void> _pickMedia() async {
@@ -1420,7 +1492,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               ),
               SizedBox(height: 8),
               Text(
-                'Ajoutez un maximum de photos pour augmenter le nombre de contacts',
+                'Ajoutez des photos de votre entreprise ou de l’équipe pour donner un aperçu concret aux candidats.',
                 style: TextStyle(
                   fontSize: 14,
                   color: Color(0xFF666666),
@@ -1429,7 +1501,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               ),
               SizedBox(height: 20),
               Text(
-                'Vos photos *',
+                'Vos photos (non-obligatoires)',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1801,13 +1873,13 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           icon: Icons.link,
           title: 'Lien',
           subtitle:
-              "Entrez le lien de la page où vous pouvez bénéficier de ce bon plan ou obtenir plus d'informations à son sujet.",
+              "Collez le lien de la page de l'offre d'emploi. Nous l'utiliserons pour récupérer automatiquement les informations et pré-remplir votre annonce.",
           children: [
             _buildTextField(
               label: 'Ajouter un lien',
               controller: _linkController,
               fieldKey: 'link',
-              helperText: 'Ajoutez l\'URL de la page de candidature ou d\'informations complémentaires.',
+              helperText: 'Le lien permettra d\'extraire automatiquement le titre, la description, le salaire, le type de contrat et autres détails de l\'offre pour faciliter la création de votre annonce.',
             ),
           ],
         ),
@@ -1873,7 +1945,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Décrivez le profil idéal pour ce poste: compétences techniques, qualités humaines, expériences spécifiques',
+                      'Décrivez le poste, les missions et l\'environnement de travail.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
@@ -2011,12 +2083,27 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               controller: _locationController,
               fieldKey: 'location',
               helperText: 'Indiquez la ville ou la région où le poste est basé.',
+              enabled: !_nationwide,
+              onChanged: (value) {
+                if (value.trim().isNotEmpty && _nationwide) {
+                  setState(() => _nationwide = false);
+                }
+              },
             ),
             const SizedBox(height: 16),
             _buildCheckOption(
               'Toute la France',
               _nationwide,
-              () => setState(() => _nationwide = !_nationwide),
+              _locationController.text.trim().isEmpty
+                  ? () {
+                      setState(() {
+                        _nationwide = !_nationwide;
+                        if (_nationwide) {
+                          _locationController.clear();
+                        }
+                      });
+                    }
+                  : null,
             ),
             const SizedBox(height: 16),
             _buildCheckOption(
@@ -2128,6 +2215,32 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               controller: _profileDescQuillController,
               fieldKey: 'profile_description',
               helperText: 'Décrivez les compétences, qualités et expériences recherchées pour ce poste.',
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Décrivez le profil idéal pour ce poste: compétences techniques, qualités humaines, expériences spécifiques',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -2287,7 +2400,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           child: Column(
             children: [
               const Text(
-                'Accepter de recevoir des messages concernant cette annonce',
+                'Accepter de recevoir des messages à propos de cette offre',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -2297,7 +2410,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Les autres utilisateurs pourront vous contacter pour poser des questions sur ce bon plan',
+                'Les candidats pourront vous contacter pour en savoir plus sur le poste, le processus de recrutement ou les conditions proposées.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
@@ -2516,7 +2629,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             DateTime? pickedDate = await showDatePicker(
               context: context,
               initialDate: selectedDate ?? DateTime.now(),
-              firstDate: DateTime(1900),
+              firstDate: DateTime.now().subtract(const Duration(days: 1)),
               lastDate: DateTime(2100),
             );
 
@@ -2763,6 +2876,8 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     String? suffix,
     String? fieldKey,
     String? helperText,
+    bool enabled = true,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2778,6 +2893,8 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             controller: controller,
             maxLines: maxLines,
             keyboardType: keyboardType,
+            enabled: enabled,
+            onChanged: onChanged,
             onTap: () {
               if (fieldKey != null) {
                 setState(() => _focusedField = fieldKey);
@@ -2998,9 +3115,9 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     );
   }
 
-  Widget _buildCheckOption(String label, bool isSelected, VoidCallback onTap) {
+  Widget _buildCheckOption(String label, bool isSelected, VoidCallback? onTap) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap ?? () {},
       child: Row(
         children: [
           Container(

@@ -58,6 +58,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   final TextEditingController _siteWebController = TextEditingController();
   final TextEditingController _prixAvantReductionController = TextEditingController();
   final TextEditingController _prixFinalController = TextEditingController();
+  final FocusNode _prixAvantFocusNode = FocusNode();
+  final FocusNode _prixFinalFocusNode = FocusNode();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _conditionsController = TextEditingController();
   String _validityType = 'permanent'; // 'permanent' or 'dates'
@@ -70,6 +72,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   bool _moyenRetraitDrive = false;
   String _discountMode = 'percent';
   double? _calculatedDiscount;
+  
+  // Shipping options for online availability
+  String _shippingOption = 'free'; // 'free' or 'paid'
+  final TextEditingController _shippingCostController = TextEditingController();
 
   bool _acceptMessages = false;
   final ApiClient _apiClient = ApiClient();
@@ -89,6 +95,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   String? _metaError;
 
   bool get _isEditMode => widget.isEditMode;
+  bool get _isFreeType => (_selectedType ?? '').toLowerCase() == 'gratuit';
+  bool get _isOnlineOnly => (_selectedDisponibleLocation ?? '').toLowerCase() == 'en ligne';
 
   @override
   void initState() {
@@ -99,6 +107,43 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     } else {
       _checkForSavedProgress();
     }
+
+    _prixAvantFocusNode.addListener(_onPriceFocusChanged);
+    _prixFinalFocusNode.addListener(_onPriceFocusChanged);
+  }
+
+  void _onPriceFocusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Widget _buildGreenHelperBox(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F5E9),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        message,
+        style: const TextStyle(
+          fontSize: 12,
+          color: Color(0xFF1B5E20),
+          height: 1.4,
+        ),
+      ),
+    );
+  }
+
+  void _handleTypeChanged(String? newType) {
+    setState(() {
+      _selectedType = newType;
+      if (_isFreeType) {
+        _prixAvantReductionController.clear();
+        _prixFinalController.clear();
+        _calculatedDiscount = null;
+      }
+    });
   }
 
   void _prefillFromInitialData() {
@@ -142,6 +187,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     if (prixAvant != null) _prixAvantReductionController.text = prixAvant.toString();
     if (prixFinal != null) _prixFinalController.text = prixFinal.toString();
     _discountMode = data['discount_type']?.toString() ?? 'percent';
+    
+    // Shipping fields
+    _shippingOption = data['shipping_option']?.toString() ?? 'free';
+    final shippingCost = data['shipping_cost'];
+    if (shippingCost != null) _shippingCostController.text = shippingCost.toString();
 
     // Load existing media URLs
     final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
@@ -471,6 +521,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               child: _buildPriceInput(
                 controller: _prixAvantReductionController,
                 label: "Prix avant réduction",
+                focusNode: _prixAvantFocusNode,
                 onChanged: (_) => _recalculateDiscount(),
               ),
             ),
@@ -497,6 +548,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             ),
           ],
         ),
+        if (_prixAvantFocusNode.hasFocus) ...[
+          const SizedBox(height: 8),
+          _buildGreenHelperBox(
+            'Indiquez le prix public avant toute réduction. Cela nous permet de calculer automatiquement le pourcentage d\'économie.',
+          ),
+        ],
         const SizedBox(height: 14),
         Row(
           children: [
@@ -547,8 +604,15 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         _buildPriceInput(
           controller: _prixFinalController,
           label: 'Prix final',
+          focusNode: _prixFinalFocusNode,
           onChanged: (_) => _recalculateDiscount(),
         ),
+        if (_prixFinalFocusNode.hasFocus) ...[
+          const SizedBox(height: 8),
+          _buildGreenHelperBox(
+            'Saisissez le montant réellement payé après l\'offre. Ce prix apparaîtra dans la fiche visible par les utilisateurs.',
+          ),
+        ],
       ],
     );
   }
@@ -557,6 +621,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     required TextEditingController controller,
     required String label,
     ValueChanged<String>? onChanged,
+    FocusNode? focusNode,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -567,6 +632,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       ),
       child: TextField(
         controller: controller,
+        focusNode: focusNode,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         onChanged: onChanged,
         decoration: InputDecoration(
@@ -901,7 +967,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     final initialDate = isStart
         ? _validFrom ?? DateTime.now()
         : _validUntil ?? _validFrom ?? DateTime.now().add(const Duration(days: 1));
-    final firstDate = DateTime.now().subtract(const Duration(days: 365 * 2));
+    final firstDate = DateTime.now().subtract(const Duration(days: 1));
     final lastDate = DateTime.now().add(const Duration(days: 365 * 2));
 
     final picked = await showDatePicker(
@@ -948,6 +1014,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
   @override
   void dispose() {
+    _prixAvantFocusNode.removeListener(_onPriceFocusChanged);
+    _prixFinalFocusNode.removeListener(_onPriceFocusChanged);
+    _prixAvantFocusNode.dispose();
+    _prixFinalFocusNode.dispose();
     _titleController.dispose();
     _descriptionQuillController.dispose();
     _disponibleChezController.dispose();
@@ -961,6 +1031,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   }
 
   void _nextStep() {
+    final error = _validateCurrentStep();
+    if (error != null) {
+      _showSnack(error, isError: true);
+      return;
+    }
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
     }
@@ -970,6 +1045,70 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
     }
+  }
+
+  String? _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Step 1: Informations
+        if (_selectedCategory == null) {
+          return 'Veuillez sélectionner une catégorie.';
+        }
+        if (_selectedSubCategory == null) {
+          return 'Veuillez sélectionner une sous-catégorie.';
+        }
+        if (_selectedType == null) {
+          return 'Veuillez choisir un type de bon plan.';
+        }
+        break;
+      
+      case 1: // Step 2: Lien (optional)
+        break;
+      
+      case 2: // Step 3: Description
+        if (_titleController.text.trim().length < 5) {
+          return 'Le titre doit contenir au moins 5 caractères.';
+        }
+        if (_descriptionQuillController.document.toPlainText().trim().length < 20) {
+          return 'La description doit contenir au moins 20 caractères.';
+        }
+        if (_disponibleChezController.text.trim().isEmpty) {
+          return 'Indiquez chez qui le bon plan est disponible.';
+        }
+        if (_selectedDisponibleLocation == null) {
+          return 'Précisez où est disponible cette offre.';
+        }
+        break;
+      
+      case 3: // Step 4: Prix et détails
+        if (_selectedType != 'Gratuit') {
+          final prixAvant = _parsePrice(_prixAvantReductionController.text);
+          final prixFinal = _parsePrice(_prixFinalController.text);
+          if (prixAvant != null && prixFinal != null && prixFinal > prixAvant) {
+            return 'Le prix final doit être inférieur ou égal au prix avant réduction.';
+          }
+        }
+        if (_validityType == 'dates') {
+          if (_validFrom == null || _validUntil == null) {
+            return 'Sélectionnez une date de début et une date de fin.';
+          }
+          if (_validUntil!.isBefore(_validFrom!)) {
+            return 'La date de fin doit être postérieure à la date de début.';
+          }
+        }
+        if (!_isOnlineOnly) {
+          if (_locationController.text.trim().isEmpty && !_touteFrance) {
+            return 'Renseignez une ville ou activez "Toute la France".';
+          }
+          if (!_moyenRetraitMagasin && !_moyenRetraitEnLigne && !_moyenRetraitDrive) {
+            return 'Sélectionnez au moins un moyen de retrait.';
+          }
+        }
+        break;
+      
+      case 4: // Step 5: Médias (optional)
+        break;
+    }
+    return null;
   }
 
   String? _validateForm() {
@@ -1555,7 +1694,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               ),
               SizedBox(height: 8),
               Text(
-                'Ajoutez un maximum de photos pour augmenter le nombre de contacts',
+                'Ajoutez des photos de votre bon plan pour le rendre plus attractif et inspirer confiance.',
                 style: TextStyle(
                   fontSize: 14,
                   color: Color(0xFF666666),
@@ -1564,7 +1703,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               ),
               SizedBox(height: 20),
               Text(
-                'Vos photos *',
+                'Vos photos (non-obligatoires)',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1869,7 +2008,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               label: "De quel type de bon plan s'agit-il?*",
               value: _selectedType,
               items: _types,
-              onChanged: (val) => setState(() => _selectedType = val),
+              onChanged: _handleTypeChanged,
               hint: _buildRequiredHint("De quel type de bon plan s'agit-il?"),
               backgroundColor: const Color(0xFFF9FAFB),
             ),
@@ -1891,13 +2030,13 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           icon: Icons.link,
           title: 'Lien',
           subtitle:
-              "Entrez le lien de la page où vous pouvez bénéficier de ce bon plan ou obtenir plus d'informations à son sujet.",
+              "Collez le lien de la page du bon plan. Nous l'utiliserons pour récupérer automatiquement les informations et pré-remplir votre annonce.",
           children: [
             _buildTextField(
               label: 'Ajouter un lien',
               controller: _linkController,
               fieldKey: 'link',
-              helperText: 'Ajoutez l\'URL complète de la page du bon plan (ex: https://www.exemple.fr/promo).',
+              helperText: 'Le lien permettra d\'extraire automatiquement le titre, la description, les prix et autres détails du bon plan pour faciliter la création de votre annonce.',
             ),
           ],
         ),
@@ -1984,8 +2123,27 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           icon: Icons.location_on_outlined,
           title: 'Localisation et validité',
           children: [
-            _buildPriceSection(),
-            const SizedBox(height: 20),
+            if (!_isFreeType) ...[
+              _buildPriceSection(),
+              const SizedBox(height: 20),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'Cette offre est gratuite, aucune information tarifaire n\'est requise.',
+                  style: TextStyle(
+                    color: Color(0xFF1B5E20),
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
             // Site web de l'enseigne
             _buildTextField(
               label: 'Site web de l\'enseigne',
@@ -2060,130 +2218,216 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             ],
             const SizedBox(height: 16),
             
-            // Location section
-            const Text(
-              'Lieu :',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF424242),
+            // Location section (hidden when 'En ligne' is selected)
+            if (!_isOnlineOnly) ...[
+              const Text(
+                'Lieu :',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            _buildTextField(
-              label: 'Rechercher par ville ou code postal...',
-              controller: _locationController,
-              prefixIcon: Icons.search,
-              fieldKey: 'location',
-              helperText: 'Entrez la ville ou le code postal où ce bon plan est valable.',
-            ),
-            const SizedBox(height: 12),
-            
-            // Toute la France toggle
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
-                borderRadius: BorderRadius.circular(8),
+              const SizedBox(height: 8),
+              _buildTextField(
+                label: 'Rechercher par ville ou code postal...',
+                controller: _locationController,
+                prefixIcon: Icons.search,
+                fieldKey: 'location',
+                helperText: 'Entrez la ville ou le code postal où ce bon plan est valable.',
+                enabled: !_touteFrance,
+                onChanged: (value) {
+                  if (value.trim().isNotEmpty && _touteFrance) {
+                    setState(() => _touteFrance = false);
+                  }
+                },
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Toute la France',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF424242)),
-                  ),
-                  Switch(
-                    value: _touteFrance,
-                    onChanged: (val) => setState(() => _touteFrance = val),
-                    activeColor: const Color(0xFF3AAE5E),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            
-            // Google location toggle
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Afficher la localisation Google sur l\'annonce.',
+              const SizedBox(height: 12),
+              
+              // Toute la France toggle
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9FAFB),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Toute la France',
                       style: TextStyle(fontSize: 13, color: Color(0xFF424242)),
                     ),
-                  ),
-                  Switch(
-                    value: _afficherGoogleLocation,
-                    onChanged: (val) => setState(() => _afficherGoogleLocation = val),
-                    activeColor: const Color(0xFF3AAE5E),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            // Moyen de retrait checkboxes
-            const Text(
-              'Moyen de retrait :',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF424242),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: CheckboxListTile(
-                        title: const Text(
-                          'En magasin',
-                          style: TextStyle(fontSize: 13),
-                        ),
-                        value: _moyenRetraitMagasin,
-                        onChanged: (val) => setState(() => _moyenRetraitMagasin = val ?? false),
-                        contentPadding: EdgeInsets.zero,
-                        controlAffinity: ListTileControlAffinity.leading,
-                        activeColor: const Color(0xFF3AAE5E),
-                      ),
-                    ),
-                    Expanded(
-                      child: CheckboxListTile(
-                        title: const Text(
-                          'En livraison',
-                          style: TextStyle(fontSize: 13),
-                        ),
-                        value: _moyenRetraitEnLigne,
-                        onChanged: (val) => setState(() => _moyenRetraitEnLigne = val ?? false),
-                        contentPadding: EdgeInsets.zero,
-                        controlAffinity: ListTileControlAffinity.leading,
-                        activeColor: const Color(0xFF3AAE5E),
-                      ),
+                    Switch(
+                      value: _touteFrance,
+                      onChanged: _locationController.text.trim().isEmpty
+                          ? (val) {
+                              setState(() {
+                                _touteFrance = val;
+                                if (val) {
+                                  _locationController.clear();
+                                }
+                              });
+                            }
+                          : null,
+                      activeColor: const Color(0xFF3AAE5E),
                     ),
                   ],
                 ),
-                CheckboxListTile(
-                  title: const Text(
-                    'Drive',
-                    style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              
+              // Google location toggle
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9FAFB),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Afficher la localisation Google sur l\'annonce.',
+                        style: TextStyle(fontSize: 13, color: Color(0xFF424242)),
+                      ),
+                    ),
+                    Switch(
+                      value: _afficherGoogleLocation,
+                      onChanged: (val) => setState(() => _afficherGoogleLocation = val),
+                      activeColor: const Color(0xFF3AAE5E),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Moyen de retrait checkboxes (hidden when 'En ligne')
+              const Text(
+                'Moyen de retrait :',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CheckboxListTile(
+                          title: const Text(
+                            'En magasin',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                          value: _moyenRetraitMagasin,
+                          onChanged: (val) => setState(() => _moyenRetraitMagasin = val ?? false),
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          activeColor: const Color(0xFF3AAE5E),
+                        ),
+                      ),
+                      Expanded(
+                        child: CheckboxListTile(
+                          title: const Text(
+                            'En livraison',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                          value: _moyenRetraitEnLigne,
+                          onChanged: (val) => setState(() => _moyenRetraitEnLigne = val ?? false),
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          activeColor: const Color(0xFF3AAE5E),
+                        ),
+                      ),
+                    ],
                   ),
-                  value: _moyenRetraitDrive,
-                  onChanged: (val) => setState(() => _moyenRetraitDrive = val ?? false),
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
-                  activeColor: const Color(0xFF3AAE5E),
+                  CheckboxListTile(
+                    title: const Text(
+                      'Drive',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                    value: _moyenRetraitDrive,
+                    onChanged: (val) => setState(() => _moyenRetraitDrive = val ?? false),
+                    contentPadding: EdgeInsets.zero,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    activeColor: const Color(0xFF3AAE5E),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ] else ...[
+              // Livraison section (shown when 'En ligne' is selected)
+              const Text(
+                'Livraison :',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 8),
+              RadioListTile<String>(
+                title: const Text(
+                  'Livraison gratuite',
+                  style: TextStyle(fontSize: 13),
+                ),
+                value: 'free',
+                groupValue: _shippingOption,
+                onChanged: (val) {
+                  setState(() {
+                    _shippingOption = val!;
+                    if (val == 'free') {
+                      _shippingCostController.clear();
+                    }
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+                activeColor: const Color(0xFF3AAE5E),
+              ),
+              RadioListTile<String>(
+                title: const Text(
+                  'Frais de port',
+                  style: TextStyle(fontSize: 13),
+                ),
+                value: 'paid',
+                groupValue: _shippingOption,
+                onChanged: (val) => setState(() => _shippingOption = val!),
+                contentPadding: EdgeInsets.zero,
+                activeColor: const Color(0xFF3AAE5E),
+              ),
+              if (_shippingOption == 'paid') ...[
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                  ),
+                  child: TextField(
+                    controller: _shippingCostController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'Montant des frais de port',
+                      labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF757575)),
+                      suffixText: '€',
+                      suffixStyle: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF424242),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                    style: const TextStyle(fontSize: 14, color: Color(0xFF424242)),
+                  ),
                 ),
               ],
-            ),
+              const SizedBox(height: 16),
+            ],
             const SizedBox(height: 16),
             
             // Conditions field
@@ -2404,7 +2648,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           child: Column(
             children: [
               const Text(
-                'Accepter de recevoir des messages concernant cette annonce',
+                'Accepter de recevoir des messages à propos de ce bon plan',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -2414,7 +2658,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Les autres utilisateurs pourront vous contacter pour poser des questions sur ce bon plan',
+                'Les intéressés pourront vous écrire pour en savoir plus sur les conditions ou la disponibilité de votre bon plan.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
@@ -2737,6 +2981,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     IconData? prefixIcon,
     String? fieldKey,
     String? helperText,
+    bool enabled = true,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2753,6 +2999,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             maxLines: maxLines,
             minLines: minLines,
             keyboardType: keyboardType,
+            enabled: enabled,
+            onChanged: onChanged,
             onTap: () {
               if (fieldKey != null) {
                 setState(() => _focusedField = fieldKey);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/config/api_config.dart';
 
 
 class AvatarsStory extends StatelessWidget {
@@ -7,6 +8,14 @@ class AvatarsStory extends StatelessWidget {
   final VoidCallback? onTap;
 
   const AvatarsStory({super.key, required this.name, required this.imageName, this.onTap});
+
+  ImageProvider _getImageProvider() {
+    final resolved = ApiConfig.resolveMediaUrl(imageName);
+    if (resolved != null && resolved.startsWith('http')) {
+      return NetworkImage(resolved);
+    }
+    return AssetImage(imageName);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +33,7 @@ class AvatarsStory extends StatelessWidget {
             ),
             child: Padding(padding: EdgeInsets.all(4),
               child: CircleAvatar(
-                backgroundImage:  AssetImage(imageName),),
+                backgroundImage: _getImageProvider(),),
             ),
           ),
            Text(name, style: TextStyle(fontSize: 10))

@@ -99,27 +99,39 @@ class _ParticulierDashboardScreenState
     'demande': 'demandes',
   };
 
-  void _openStory(BuildContext context, String name, String avatar) {
+  void _openStory(BuildContext context, StoryUserGroup group) {
+    final storyMaps = group.stories.map((s) {
+      final resolvedImage = ApiConfig.resolveMediaUrl(s.mediaUrl);
+      final diff = DateTime.now().difference(s.timestamp);
+      String time;
+      if (diff.inMinutes < 1) {
+        time = "À l'instant";
+      } else if (diff.inMinutes < 60) {
+        time = "il y a ${diff.inMinutes} min";
+      } else if (diff.inHours < 24) {
+        time = "il y a ${diff.inHours}h";
+      } else {
+        time = "il y a ${diff.inDays}j";
+      }
+      return {
+        'image': resolvedImage ?? '',
+        'text': s.caption,
+        'time': time,
+        'id': s.id,
+        'views_count': s.viewsCount,
+      };
+    }).toList();
+
+    final avatarUrl = ApiConfig.resolveMediaUrl(group.userAvatar);
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => StoryViewerScreen(
-          name: name,
-          avatar: avatar,
-          stories: [
-            {
-              'image': 'assets/images/story/Rectangle 113.png',
-              'text':
-                  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum. Excepteur sint occaecat cupidatat non',
-              'time': 'Aujourd\'hui 10 : 30',
-            },
-            {
-              'image': 'assets/images/story/Rectangle 113.png',
-              'text':
-                  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.',
-              'time': 'Aujourd\'hui 11 : 00',
-            },
-          ],
+          name: group.userName,
+          avatar: avatarUrl ?? _defaultAvatar,
+          stories: storyMaps,
+          isOwnStory: group.isOwn,
         ),
       ),
     );
@@ -131,6 +143,7 @@ class _ParticulierDashboardScreenState
     _scrollController.addListener(_onFeedScroll);
     _prefetchCurrentUser();
     _loadUnifiedFeed(reset: true);
+    _storyStore.loadFeed();
   }
 
   @override
@@ -150,7 +163,7 @@ class _ParticulierDashboardScreenState
         _storyStore.addStory(result);
       }
     } else {
-      final updatedStories = await Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => MyStoriesScreen(
@@ -160,9 +173,8 @@ class _ParticulierDashboardScreenState
           ),
         ),
       );
-      if (updatedStories is List<StoryModel>) {
-        _storyStore.replaceStories(updatedStories);
-      }
+      // Refresh stories after returning from MyStoriesScreen
+      _storyStore.loadMyStories();
     }
   }
 
@@ -175,14 +187,11 @@ class _ParticulierDashboardScreenState
       return _currentUserId;
     }
     try {
-      final response = await ApiClient().authenticatedGet('/profile/me');
-      final data = response['user'] as Map<String, dynamic>?;
-      print("User data: $data");
+      final response = await ApiClient().authenticatedGet('/user/profile');
+      final data = response['data'] as Map<String, dynamic>?;
       final id = data?['id']?.toString();
-      print("Id: $id");
       if (mounted) {
         setState(() => _currentUserId = id);
-        print("CurrentUser: $_currentUserId");
       } else {
         _currentUserId = id;
       }
@@ -908,73 +917,10 @@ class _ParticulierDashboardScreenState
     }
   }
 
-  Future<void> _repostPost(String postId) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Republier cette publication'),
-        content: const Text(
-          'Voulez-vous partager cette publication sur votre profil ?',
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Republier',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      await ApiClient().authenticatedPost('/posts/$postId/repost', body: {});
-
-      // Recharger le feed pour afficher le repost
-      await _loadUnifiedFeed(reset: true);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Publication republiée avec succès'),
-            backgroundColor: Color(0xFF3AAE5E),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('Repost error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors de la republication: ${e.toString()}'),
-            backgroundColor: Colors.redAccent,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
   Widget _buildReactionBar(String apiSlug, String entityId) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
     final isDisliked = data.userReaction == 'dislike';
-    final isPost = apiSlug == 'posts';
 
     return Row(
       children: [
@@ -1000,7 +946,7 @@ class _ParticulierDashboardScreenState
             ],
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 18),
         // Dislike
         GestureDetector(
           onTap: () => _toggleReaction(apiSlug, entityId, 'dislike'),
@@ -1044,23 +990,6 @@ class _ParticulierDashboardScreenState
             ],
           ),
         ),
-        if (isPost) ...[
-          const SizedBox(width: 10),
-          // Repost
-          GestureDetector(
-            onTap: () => _repostPost(entityId),
-            child: Row(
-              children: [
-                Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Text(
-                  'Republier',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-        ],
       ],
     );
   }
@@ -1184,175 +1113,12 @@ class _ParticulierDashboardScreenState
               }
             }
 
-            Future<void> editComment(Map<String, dynamic> comment) async {
-              final commentId = comment['id'];
-              final currentBody = comment['body']?.toString() ?? '';
-              final editController = TextEditingController(text: currentBody);
-
-              final newText = await showDialog<String>(
-                context: ctx,
-                builder: (context) => AlertDialog(
-                  title: const Text('Modifier le commentaire'),
-                  content: TextField(
-                    controller: editController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      hintText: 'Votre commentaire...',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () =>
-                          Navigator.pop(context, editController.text),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Enregistrer',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-
-              if (newText == null ||
-                  newText.trim().isEmpty ||
-                  newText == currentBody)
-                return;
-
-              try {
-                final response = await ApiClient().authenticatedPut(
-                  '/comments/$commentId',
-                  body: {'body': newText.trim()},
-                );
-                final updatedComment =
-                    response['data'] as Map<String, dynamic>?;
-                if (updatedComment != null) {
-                  modalSetState(() {
-                    comment['body'] = updatedComment['body'];
-                    comment['updated_at'] = updatedComment['updated_at'];
-                  });
-
-                  // Recharger le feed pour actualiser les commentaires
-                  await _loadUnifiedFeed(reset: true);
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Erreur lors de la modification: ${e.toString()}',
-                      ),
-                      backgroundColor: Colors.redAccent,
-                    ),
-                  );
-                }
-              }
-            }
-
-            Future<void> deleteComment(
-              Map<String, dynamic> comment,
-              bool isReply,
-            ) async {
-              final commentId = comment['id'];
-              final confirmed = await showDialog<bool>(
-                context: ctx,
-                builder: (context) => AlertDialog(
-                  title: const Text('Supprimer le commentaire'),
-                  content: const Text(
-                    'Êtes-vous sûr de vouloir supprimer ce commentaire ?',
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text(
-                        'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Supprimer',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-
-              if (confirmed != true) return;
-
-              try {
-                await ApiClient().authenticatedDelete('/comments/$commentId');
-
-                // Recharger le feed pour actualiser les commentaires
-                await _loadUnifiedFeed(reset: true);
-
-                modalSetState(() {
-                  if (isReply) {
-                    final parentId =
-                        comment['parent_id'] ?? comment['comment_id'];
-                    final parent = comments.firstWhere(
-                      (c) => c['id'] == parentId,
-                      orElse: () => <String, dynamic>{},
-                    );
-                    if (parent.isNotEmpty) {
-                      final replies = List<Map<String, dynamic>>.from(
-                        (parent['replies'] as List?) ?? [],
-                      );
-                      replies.removeWhere((r) => r['id'] == commentId);
-                      parent['replies'] = replies;
-                      parent['replies_count'] = replies.length;
-                    }
-                  } else {
-                    comments.removeWhere((c) => c['id'] == commentId);
-                  }
-                });
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Erreur lors de la suppression: ${e.toString()}',
-                      ),
-                      backgroundColor: Colors.redAccent,
-                    ),
-                  );
-                }
-              }
-            }
-
             Widget buildCommentItem(
               Map<String, dynamic> comment, {
               bool isReply = false,
             }) {
               final user = comment['user'] as Map<String, dynamic>? ?? {};
-              final userId = user['id']?.toString(); // Convertir en String
+              final userId = user['id']?.toString();
               final email = user['email']?.toString() ?? '';
               final displayName = (userId != null && userId == _currentUserId)
                   ? 'Vous'
@@ -1364,7 +1130,6 @@ class _ParticulierDashboardScreenState
               final likes = _asInt(comment['likes_count']);
               final dislikes = _asInt(comment['dislikes_count']);
               final userReaction = comment['user_reaction']?.toString();
-              final isOwner = userId != null && userId == _currentUserId;
               final replies =
                   (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
@@ -1416,64 +1181,6 @@ class _ParticulierDashboardScreenState
                                       color: Colors.grey[400],
                                     ),
                                   ),
-                                  if (isOwner) ...[
-                                    const Spacer(),
-                                    GestureDetector(
-                                      onTapDown: (TapDownDetails details) {
-                                        showMenu<String>(
-                                          context: context,
-                                          position: RelativeRect.fromLTRB(
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                          ),
-                                          items: [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('Modifier'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.delete,
-                                                    size: 18,
-                                                    color: Colors.redAccent,
-                                                  ),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    'Supprimer',
-                                                    style: TextStyle(
-                                                      color: Colors.redAccent,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ).then((value) {
-                                          if (value == 'edit') {
-                                            editComment(comment);
-                                          } else if (value == 'delete') {
-                                            deleteComment(comment, isReply);
-                                          }
-                                        });
-                                      },
-                                      child: Icon(
-                                        Icons.more_horiz,
-                                        size: 18,
-                                        color: Colors.grey[400],
-                                      ),
-                                    ),
-                                  ],
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -1797,27 +1504,11 @@ class _ParticulierDashboardScreenState
               final raw = posts[index];
               final postId = raw['id']?.toString() ?? '';
               _seedReactionFromFeed('posts', postId, raw);
-
-              // Détecter si c'est un repost
-              final isRepost = raw['original_post_id'] != null;
-
-              // Si c'est un repost, utiliser les données du post original
-              final originalPost = isRepost
-                  ? (raw['original_post'] as Map<String, dynamic>? ?? {})
-                  : raw;
-
-              // L'auteur du repost (celui qui a republié)
-              final reposter = _extractPostAuthorInfo(raw);
-
-              // L'auteur du post original
-              final author = isRepost
-                  ? _extractPostAuthorInfo(originalPost)
-                  : reposter;
-
-              final content = originalPost['content']?.toString() ?? '';
-              final createdAt = originalPost['created_at']?.toString();
+              final author = _extractPostAuthorInfo(raw);
+              final content = raw['content']?.toString() ?? '';
+              final createdAt = raw['created_at']?.toString();
               final timeAgo = _buildTimeAgo(createdAt);
-              final postImageUrl = _extractMediaUrl(originalPost);
+              final postImageUrl = _extractMediaUrl(raw);
 
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 6),
@@ -1837,42 +1528,6 @@ class _ParticulierDashboardScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header de republication si c'est un repost
-                    if (isRepost) ...[
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundImage: reposter.avatar.startsWith('http')
-                                ? NetworkImage(reposter.avatar) as ImageProvider
-                                : AssetImage(reposter.avatar),
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: RichText(
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              text: TextSpan(
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                                children: [
-                                  TextSpan(
-                                    text: reposter.displayName,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const TextSpan(text: ' a republié ceci'),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                    ],
                     Row(
                       children: [
                         CircleAvatar(
@@ -1967,80 +1622,31 @@ class _ParticulierDashboardScreenState
 
   Widget _buildPostCard(Map<String, dynamic> raw) {
     final postId = raw['id']?.toString() ?? '';
-    final isRepost = raw['original_post_id'] != null;
-
-    // Si c'est un repost, utiliser les infos du post original pour le contenu
-    final originalPost = isRepost
-        ? (raw['original_post'] as Map<String, dynamic>? ?? {})
-        : raw;
-
-    // L'auteur du repost (celui qui a republié)
-    final reposter = _extractPostAuthorInfo(raw);
-
-    // L'auteur du post original
-    final originalAuthor = isRepost
-        ? _extractPostAuthorInfo(originalPost)
-        : reposter;
-
-    final content = originalPost['content']?.toString() ?? '';
-    final createdAt = originalPost['created_at']?.toString();
+    final author = _extractPostAuthorInfo(raw);
+    final content = raw['content']?.toString() ?? '';
+    final createdAt = raw['created_at']?.toString();
     final timeAgo = _buildTimeAgo(createdAt);
-    final postImageUrl = _extractMediaUrl(originalPost);
+    final postImageUrl = _extractMediaUrl(raw);
 
     final tags = <PostTag>[
       PostTag(
-        title: originalAuthor.accountType,
-        icon: originalAuthor.accountType == 'Professionnel'
+        title: author.accountType,
+        icon: author.accountType == 'Professionnel'
             ? Icons.business
             : Icons.person,
-        color: originalAuthor.accountType == 'Professionnel'
+        color: author.accountType == 'Professionnel'
             ? const Color(0xFF2E9B5B)
             : const Color(0xFF3AAE5E),
       ),
     ];
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header de republication si c'est un repost
-        if (isRepost)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 12,
-                  backgroundImage: reposter.avatar.startsWith('http')
-                      ? NetworkImage(reposter.avatar) as ImageProvider
-                      : AssetImage(reposter.avatar),
-                ),
-                const SizedBox(width: 8),
-                Icon(Icons.repeat_rounded, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: RichText(
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    text: TextSpan(
-                      style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                      children: [
-                        TextSpan(
-                          text: reposter.displayName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const TextSpan(text: ' a republié ce contenu'),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         PostContentCard(
           tags: tags,
           title: content.isNotEmpty
               ? content
-              : '${originalAuthor.displayName} a partagé une publication',
+              : '${author.displayName} a partagé une publication',
           time: timeAgo,
           imageUrl: postImageUrl,
           onLike: postId.isNotEmpty
@@ -2635,7 +2241,15 @@ class _ParticulierDashboardScreenState
       final startTime = data['start_time']?.toString();
       final endTime = data['end_time']?.toString();
       final priceType = data['price_type']?.toString();
+      final pricingMode = data['pricing_mode']?.toString();
       final priceAmount = data['price_amount']?.toString();
+      final priceCategories =
+          (data['price_categories'] as List?)
+              ?.map<Map<String, dynamic>>(
+                (c) => Map<String, dynamic>.from(c as Map),
+              )
+              .toList() ??
+          <Map<String, dynamic>>[];
       final reservationMode = data['reservation_mode']?.toString();
       final coverageArea = data['coverage_area']?.toString();
       final isNationwide = data['is_nationwide'] == true;
@@ -2709,7 +2323,9 @@ class _ParticulierDashboardScreenState
             startTime: startTime,
             endTime: endTime,
             priceType: priceType,
+            pricingMode: pricingMode,
             priceAmount: priceAmount,
+            priceCategories: priceCategories,
             reservationMode: reservationMode,
             coverageArea: coverageArea,
             isNationwide: isNationwide,
@@ -3018,9 +2634,8 @@ class _ParticulierDashboardScreenState
     return '$serverBase$url';
   }
 
-  Future<void> _refreshFeed() async {
-    await _getCurrentUserId();
-    await _loadUnifiedFeed(reset: true);
+  Future<void> _refreshFeed() {
+    return _loadUnifiedFeed(reset: true);
   }
 
   @override
@@ -3217,143 +2832,140 @@ class _ParticulierDashboardScreenState
                   //story
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: ValueListenableBuilder<List<StoryModel>>(
-                      valueListenable: _storyStore.storiesNotifier,
-                      builder: (_, userStories, __) {
-                        final hasStories = userStories.isNotEmpty;
-                        return SingleChildScrollView(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              GestureDetector(
-                                onTap: _handleStoryEntryTap,
-                                child: Column(
-                                  spacing: 5,
-                                  children: [
-                                    Stack(
-                                      clipBehavior: Clip.none,
-                                      children: [
-                                        GestureDetector(
-                                          onTap: _handleStoryEntryTap,
-                                          child: Container(
-                                            padding: EdgeInsets.all(
-                                              hasStories ? 2 : 10,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              color: const Color(0xFFE6F7EF),
-                                              border: Border.all(
-                                                color: const Color(0xFF3AAE5E),
-                                                width: hasStories ? 2.5 : 1,
+                    child: ValueListenableBuilder<List<StoryUserGroup>>(
+                      valueListenable: _storyStore.feedNotifier,
+                      builder: (_, feedGroups, __) {
+                        final ownGroup = feedGroups
+                            .where((g) => g.isOwn)
+                            .toList();
+                        final otherGroups = feedGroups
+                            .where((g) => !g.isOwn)
+                            .toList();
+                        final hasOwnStories =
+                            ownGroup.isNotEmpty &&
+                            ownGroup.first.stories.isNotEmpty;
+
+                        return Align(
+                          alignment: Alignment.centerLeft,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // "Votre story" entry
+                                GestureDetector(
+                                  onTap: _handleStoryEntryTap,
+                                  child: Column(
+                                    spacing: 5,
+                                    children: [
+                                      Stack(
+                                        clipBehavior: Clip.none,
+                                        children: [
+                                          GestureDetector(
+                                            onTap: _handleStoryEntryTap,
+                                            child: Container(
+                                              padding: EdgeInsets.all(
+                                                hasOwnStories ? 2 : 10,
                                               ),
-                                            ),
-                                            child: hasStories
-                                                ? const CircleAvatar(
-                                                    radius: 22,
-                                                    backgroundImage: AssetImage(
-                                                      'assets/images/dashboard_particulier/Ellipse 10.png',
-                                                    ),
-                                                  )
-                                                : const Center(
-                                                    child: Icon(
-                                                      Icons.add,
-                                                      color: Color(0xFF3AAE5E),
-                                                    ),
-                                                  ),
-                                          ),
-                                        ),
-                                        if (hasStories)
-                                          Positioned(
-                                            bottom: -2,
-                                            right: -2,
-                                            child: GestureDetector(
-                                              onTap: () async {
-                                                final result =
-                                                    await Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (_) =>
-                                                            const AddStoryScreen(),
-                                                      ),
-                                                    );
-                                                if (result is StoryModel) {
-                                                  _storyStore.addStory(result);
-                                                }
-                                              },
-                                              child: Container(
-                                                padding: const EdgeInsets.all(
-                                                  3,
-                                                ),
-                                                decoration: BoxDecoration(
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: const Color(0xFFE6F7EF),
+                                                border: Border.all(
                                                   color: const Color(
                                                     0xFF3AAE5E,
                                                   ),
-                                                  shape: BoxShape.circle,
-                                                  border: Border.all(
-                                                    color: Colors.white,
-                                                    width: 2,
-                                                  ),
+                                                  width: hasOwnStories
+                                                      ? 2.5
+                                                      : 1,
                                                 ),
-                                                child: const Icon(
-                                                  Icons.add,
-                                                  color: Colors.white,
-                                                  size: 12,
+                                              ),
+                                              child: hasOwnStories
+                                                  ? const CircleAvatar(
+                                                      radius: 22,
+                                                      backgroundImage: AssetImage(
+                                                        'assets/images/dashboard_particulier/Ellipse 10.png',
+                                                      ),
+                                                    )
+                                                  : const Center(
+                                                      child: Icon(
+                                                        Icons.add,
+                                                        color: Color(
+                                                          0xFF3AAE5E,
+                                                        ),
+                                                      ),
+                                                    ),
+                                            ),
+                                          ),
+                                          if (hasOwnStories)
+                                            Positioned(
+                                              bottom: -2,
+                                              right: -2,
+                                              child: GestureDetector(
+                                                onTap: () async {
+                                                  final result =
+                                                      await Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (_) =>
+                                                              const AddStoryScreen(),
+                                                        ),
+                                                      );
+                                                  if (result is StoryModel) {
+                                                    _storyStore.addStory(
+                                                      result,
+                                                    );
+                                                  }
+                                                },
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(
+                                                    3,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(
+                                                      0xFF3AAE5E,
+                                                    ),
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                      color: Colors.white,
+                                                      width: 2,
+                                                    ),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.add,
+                                                    color: Colors.white,
+                                                    size: 12,
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                      ],
-                                    ),
-                                    const Text(
-                                      "Votre story",
-                                      style: TextStyle(fontSize: 10),
-                                    ),
-                                  ],
+                                        ],
+                                      ),
+                                      const Text(
+                                        "Votre story",
+                                        style: TextStyle(fontSize: 10),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 12),
 
-                              // avatars
-                              AvatarsStory(
-                                name: "Selena",
-                                imageName:
-                                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                                onTap: () => _openStory(
-                                  context,
-                                  'Selena',
-                                  'assets/images/dashboard_particulier/Ellipse 10.png',
+                                // Other users' stories from API feed
+                                ...otherGroups.map(
+                                  (group) => Padding(
+                                    padding: const EdgeInsets.only(left: 12),
+                                    child: AvatarsStory(
+                                      name: group.userName.split(' ').first,
+                                      imageName:
+                                          ApiConfig.resolveMediaUrl(
+                                            group.userAvatar,
+                                          ) ??
+                                          _defaultAvatar,
+                                      onTap: () => _openStory(context, group),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              AvatarsStory(
-                                name: "Slime",
-                                imageName:
-                                    'assets/images/dashboard_particulier/Ellipse 10 (1).png',
-                                onTap: () => _openStory(
-                                  context,
-                                  'Slime',
-                                  'assets/images/dashboard_particulier/Ellipse 10 (1).png',
-                                ),
-                              ),
-                              AvatarsStory(
-                                name: "Joe",
-                                imageName:
-                                    'assets/images/dashboard_particulier/Ellipse 10 (2).png',
-                                onTap: () => _openStory(
-                                  context,
-                                  'Joe',
-                                  'assets/images/dashboard_particulier/Ellipse 10 (2).png',
-                                ),
-                              ),
-                              AvatarsStory(
-                                name: "Joe",
-                                imageName:
-                                    'assets/images/dashboard_particulier/Ellipse 10 (3).png',
-                                onTap: () => _openStory(
-                                  context,
-                                  'Joe',
-                                  'assets/images/dashboard_particulier/Ellipse 10 (3).png',
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         );
                       },

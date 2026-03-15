@@ -192,13 +192,10 @@ class TrainingDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Image Carousel
-            ImageCarousel(
-              images: images.isNotEmpty
-                  ? images
-                  : const ['assets/images/Formation.png'],
-              discount: 'Formation',
-            ),
-            const SizedBox(height: 16),
+            if (images.isNotEmpty) ...[
+              ImageCarousel(images: images, discount: 'Formation'),
+              const SizedBox(height: 16),
+            ],
 
             // 2. User Detail Card
             Padding(

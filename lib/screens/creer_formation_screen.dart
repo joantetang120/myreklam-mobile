@@ -677,6 +677,11 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   }
 
   void _nextStep() {
+    final error = _validateCurrentStep();
+    if (error != null) {
+      _showSnack(error, isError: true);
+      return;
+    }
     _saveDraft();
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
@@ -687,6 +692,38 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
     }
+  }
+
+  String? _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Step 1: Type
+        if (_selectedTrainingType == null) {
+          return 'Veuillez sélectionner un type de formation.';
+        }
+        break;
+      
+      case 1: // Step 2: Lien France Travail (optional)
+        break;
+      
+      case 2: // Step 3: Description
+        return _validateStep3();
+      
+      case 3: // Step 4: Médias et documents (optional)
+        break;
+      
+      case 4: // Step 5: Review (no validation needed)
+        break;
+    }
+    return null;
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? Colors.red.shade700 : const Color(0xFF3AAE5E),
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 4),
+    ));
   }
 
   String? _validateStep3() {
@@ -1406,28 +1443,38 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE6F7EF),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.perm_media_outlined,
-                  color: Color(0xFF3AAE5E),
-                  size: 20,
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE6F7EF),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.perm_media_outlined,
+                      color: Color(0xFF3AAE5E),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Photos et vidéos (non-obligatoires)',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF424242),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              const Text(
-                'Photos et vidéos',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
-                ),
+              const SizedBox(height: 6),
+              Text(
+                'Ajoutez des visuels de votre formation (salles, intervenants, participants) pour projeter les apprenants dans l’expérience.',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -1811,16 +1858,16 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       children: [
         _buildFormCard(
           icon: Icons.link,
-          title: 'Lien France Travail (Optionnel)',
+          title: 'Lien ',
           subtitle:
-              "Entrez le lien de la page de la formation pour récupérer automatiquement les informations.",
+              "Collez le lien France Travail de la formation. Nous l'utiliserons pour récupérer automatiquement les informations et pré-remplir votre annonce.",
           children: [
             _buildTextField(
               label: 'Ajouter un lien',
               controller: _linkController,
               keyboardType: TextInputType.url,
               fieldKey: 'link',
-              helperText: 'Collez ici le lien France Travail de la formation pour importer automatiquement les informations.',
+              helperText: 'Le lien permettra d\'extraire automatiquement le titre, la description, les dates, le lieu, le prix et autres détails de la formation pour faciliter la création de votre annonce.',
             ),
           ],
         ),
@@ -2477,7 +2524,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           child: Column(
             children: [
               const Text(
-                'Accepter de recevoir des messages concernant cette annonce',
+                'Accepter de recevoir des messages à propos de cette formation',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -2487,7 +2534,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Les autres utilisateurs pourront vous contacter pour poser des questions sur ce bon plan',
+                'Les candidats pourront vous écrire pour obtenir des précisions sur le programme, les financements ou les modalités d’inscription.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
@@ -2712,18 +2759,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             child: Icon(Icons.cloud_upload_outlined, color: color, size: 28),
           ),
           const SizedBox(height: 16),
-          // Texte principal
-          const Text(
-            'Glissez-déposez vos fichiers ici',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF424242),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text('ou', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
-          const SizedBox(height: 12),
+
           // Bouton parcourir
           InkWell(
             onTap: onTap ?? () {
@@ -2791,7 +2827,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             DateTime? pickedDate = await showDatePicker(
               context: context,
               initialDate: selectedDate ?? DateTime.now(),
-              firstDate: DateTime(1900),
+              firstDate: DateTime.now().subtract(const Duration(days: 1)),
               lastDate: DateTime(2100),
             );
 
