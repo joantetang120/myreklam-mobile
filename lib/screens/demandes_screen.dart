@@ -2,9 +2,85 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/config/api_config.dart';
 
-class DemandesScreen extends StatelessWidget {
+class DemandesScreen extends StatefulWidget {
   const DemandesScreen({super.key});
+
+  @override
+  State<DemandesScreen> createState() => _DemandesScreenState();
+}
+
+class _DemandesScreenState extends State<DemandesScreen> {
+  List<Map<String, dynamic>> _items = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final response = await ApiClient().get('/feed/latest?type=demande&limit=20');
+      final data = response['data'];
+      List<Map<String, dynamic>> fetched = [];
+      if (data is Map<String, dynamic> && data['items'] is List) {
+        fetched = List<Map<String, dynamic>>.from(data['items'] as List);
+      }
+      if (mounted) {
+        setState(() {
+          _items = fetched;
+          _isLoading = false;
+        });
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Impossible de charger les demandes.';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String? _buildStorageUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    return ApiConfig.resolveMediaUrl(path);
+  }
+
+  String _buildTimeAgo(String? dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      final diff = DateTime.now().difference(date);
+      if (diff.inDays > 7) return 'il y a ${diff.inDays ~/ 7} semaine(s)';
+      if (diff.inDays > 0) return 'il y a ${diff.inDays} jour(s)';
+      if (diff.inHours > 0) return 'il y a ${diff.inHours} heure(s)';
+      return 'il y a ${diff.inMinutes} min';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _stripHtml(String html) {
+    return html.replaceAll(RegExp(r'<[^>]*>'), '').trim();
+  }
 
   Widget _buildNotifBubble() {
     return GestureDetector(
@@ -193,60 +269,81 @@ class DemandesScreen extends StatelessWidget {
           ),
 
           // Demande cards
-          SliverList(
-            delegate: SliverChildListDelegate([
-              DemandeCard(
-                profileImage:
-                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                username: 'User 12',
-                categoryLabel: 'Immobilier',
-                categoryColor: const Color(0xFF3AAE5E),
-                title: 'Local commercial Nancy',
-                description:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad.',
-                location: 'France, Marseille, Rayon 5km',
-                likesCount: 125,
-                commentsCount: 10,
-                timeAgo: 'il y a 2 jours',
-                onTapCTA: () {},
+          if (_isLoading)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(child: CircularProgressIndicator()),
               ),
-              DemandeCard(
-                profileImage:
-                    'assets/images/dashboard_particulier/Ellipse 12.png',
-                username: 'Eleanor Pena',
-                categoryLabel: 'Services',
-                categoryColor: const Color(0xFF3AAE5E),
-                title: 'Recherche Playstation',
-                description:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad.',
-                location: 'France, Paris, Rayon 10km',
-                postImage:
-                    'assets/images/dashboard_particulier/Rectangle 12.png',
-                likesCount: 89,
-                commentsCount: 5,
-                timeAgo: 'il y a 3 jours',
-                onTapCTA: () {},
+            )
+          else if (_error != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Text(_error!, style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _loadData,
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
               ),
-              DemandeCard(
-                profileImage:
-                    'assets/images/dashboard_particulier/Ellipse 11.png',
-                username: 'Robert Fox',
-                categoryLabel: 'Automobile',
-                categoryColor: Colors.blue,
-                title: 'Recherche mécanicien',
-                description:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-                location: 'France, Lyon, Rayon 15km',
-                likesCount: 45,
-                commentsCount: 3,
-                timeAgo: 'il y a 5 jours',
-                onTapCTA: () {},
+            )
+          else if (_items.isEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(
+                  child: Text(
+                    'Aucune demande disponible pour le moment.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
               ),
-              const SizedBox(height: 20),
-            ]),
-          ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = _items[index];
+                  final resource = item['resource'] as Map<String, dynamic>? ?? {};
+                  return _buildDemandeCard(resource);
+                },
+                childCount: _items.length,
+              ),
+            ),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
       ),
+    );
+  }
+
+  Widget _buildDemandeCard(Map<String, dynamic> demande) {
+    final title = demande['title']?.toString() ?? 'Demande';
+    final description = _stripHtml(demande['description']?.toString() ?? '');
+    final category = demande['category']?.toString() ?? '';
+    final location = demande['location']?.toString() ?? demande['city']?.toString() ?? '';
+    final createdAt = demande['created_at']?.toString();
+    final mediaFiles = demande['media'] as List? ?? [];
+    final imageUrl = mediaFiles.isNotEmpty ? mediaFiles.first['url']?.toString() : null;
+    final username = demande['user']?['email']?.toString().split('@').first ?? 'Utilisateur';
+
+    return DemandeCard(
+      profileImage: 'assets/images/dashboard_particulier/Ellipse 10.png',
+      username: username,
+      categoryLabel: category.isNotEmpty ? category : 'Demande',
+      categoryColor: const Color(0xFF3AAE5E),
+      title: title,
+      description: description,
+      location: location.isNotEmpty ? location : 'Non spécifié',
+      postImage: _buildStorageUrl(imageUrl),
+      likesCount: demande['likes_count'] ?? 0,
+      commentsCount: demande['comments_count'] ?? 0,
+      timeAgo: _buildTimeAgo(createdAt),
+      onTapCTA: () {},
     );
   }
 }

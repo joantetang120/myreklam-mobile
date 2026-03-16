@@ -3,9 +3,79 @@ import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
+import 'package:myreklam/services/api_client.dart';
 
-class OffresEmploiScreen extends StatelessWidget {
+class OffresEmploiScreen extends StatefulWidget {
   const OffresEmploiScreen({super.key});
+
+  @override
+  State<OffresEmploiScreen> createState() => _OffresEmploiScreenState();
+}
+
+class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
+  List<Map<String, dynamic>> _items = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final response = await ApiClient().get('/feed/latest?type=job_offer&limit=20');
+      final data = response['data'];
+      List<Map<String, dynamic>> fetched = [];
+      if (data is Map<String, dynamic> && data['items'] is List) {
+        fetched = List<Map<String, dynamic>>.from(data['items'] as List);
+      }
+      if (mounted) {
+        setState(() {
+          _items = fetched;
+          _isLoading = false;
+        });
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = "Impossible de charger les offres d'emploi.";
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _buildTimeAgo(String? dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      final diff = DateTime.now().difference(date);
+      if (diff.inDays > 7) return 'il y a ${diff.inDays ~/ 7} semaine(s)';
+      if (diff.inDays > 0) return 'il y a ${diff.inDays} jour(s)';
+      if (diff.inHours > 0) return 'il y a ${diff.inHours} heure(s)';
+      return 'il y a ${diff.inMinutes} min';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _stripHtml(String html) {
+    return html.replaceAll(RegExp(r'<[^>]*>'), '').trim();
+  }
 
   Widget _buildNotifBubble() {
     return GestureDetector(
@@ -192,280 +262,104 @@ class OffresEmploiScreen extends StatelessWidget {
           ),
 
           // Job cards
-          SliverList(
-            delegate: SliverChildListDelegate([
-                  JobAnnouncementCard(
-                    companyLogo:
-                        'assets/images/dashboard_particulier/Rectangle 13.png',
-                    companyName: 'The North Face Sarl',
-                    jobTitle: 'Développeur Fullstack PHP',
-                    description:
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit',
-                    tags: const [
-                      JobDetailTag(
-                        icon: Icons.description_outlined,
-                        text: 'Contrat à durée indéterminée',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.location_on_outlined,
-                        text: 'Luxembourg',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.school_outlined,
-                        text: 'Bac+2 / autre diplôme equivalent',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.work_history_outlined,
-                        text: "intermédiaire : 1 an d'expérience",
-                      ),
-                      JobDetailTag(
-                        icon: Icons.access_time,
-                        text: 'Temps plein',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.home_work_outlined,
-                        text: 'Présentiel uniquement',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.monetization_on_outlined,
-                        text: 'Selon le profil',
-                        isSpecial: true,
-                      ),
-                    ],
-                    advantages: const ['Primes', 'Heures supplementaires'],
-                    timeAgo: 'il y a 2 jours',
-                    onApply: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const JobDetailScreen(
-                            companyLogo:
-                                'assets/images/dashboard_particulier/Rectangle 13.png',
-                            companyName: 'The North Face Sarl',
-                            jobTitle: 'Développeur Fullstack PHP',
-                            description:
-                                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit',
-                            tags: [
-                              JobDetailTag(
-                                icon: Icons.description_outlined,
-                                text: 'Contrat à durée indéterminée',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.location_on_outlined,
-                                text: 'Luxembourg',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.school_outlined,
-                                text: 'Bac+2 / autre diplôme equivalent',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.work_history_outlined,
-                                text: "intermédiaire : 1 an d'expérience",
-                              ),
-                              JobDetailTag(
-                                icon: Icons.access_time,
-                                text: 'Temps plein',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.home_work_outlined,
-                                text: 'Présentiel uniquement',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.monetization_on_outlined,
-                                text: 'Selon le profil',
-                                isSpecial: true,
-                              ),
-                            ],
-                            advantages: ['Primes', 'Heures supplementaires'],
-                            timeAgo: 'il y a 2 jours',
-                          ),
-                        ),
-                      );
-                    },
+          if (_isLoading)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            )
+          else if (_error != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Text(_error!, style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _loadData,
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (_items.isEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(
+                  child: Text(
+                    "Aucune offre d'emploi disponible pour le moment.",
+                    style: TextStyle(color: Colors.grey),
                   ),
-                  JobAnnouncementCard(
-                    companyLogo:
-                        'assets/images/dashboard_particulier/Rectangle 13.png',
-                    companyName: 'Dyson Sarl',
-                    jobTitle: 'Designer UI/UX Senior',
-                    description:
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.',
-                    tags: const [
-                      JobDetailTag(
-                        icon: Icons.description_outlined,
-                        text: 'Contrat à durée déterminée',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.location_on_outlined,
-                        text: 'Paris',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.school_outlined,
-                        text: 'Bac+5 / Master',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.work_history_outlined,
-                        text: "Senior : 3 ans d'expérience",
-                      ),
-                      JobDetailTag(
-                        icon: Icons.access_time,
-                        text: 'Temps plein',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.home_work_outlined,
-                        text: 'Télétravail partiel',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.monetization_on_outlined,
-                        text: '45 000€ - 55 000€',
-                        isSpecial: true,
-                      ),
-                    ],
-                    advantages: const ['Télétravail', 'Tickets restaurant', 'Mutuelle'],
-                    timeAgo: 'il y a 1 semaine',
-                    onApply: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const JobDetailScreen(
-                            companyLogo:
-                                'assets/images/dashboard_particulier/Rectangle 13.png',
-                            companyName: 'Dyson Sarl',
-                            jobTitle: 'Designer UI/UX Senior',
-                            description:
-                                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.',
-                            tags: [
-                              JobDetailTag(
-                                icon: Icons.description_outlined,
-                                text: 'Contrat à durée déterminée',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.location_on_outlined,
-                                text: 'Paris',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.school_outlined,
-                                text: 'Bac+5 / Master',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.work_history_outlined,
-                                text: "Senior : 3 ans d'expérience",
-                              ),
-                              JobDetailTag(
-                                icon: Icons.access_time,
-                                text: 'Temps plein',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.home_work_outlined,
-                                text: 'Télétravail partiel',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.monetization_on_outlined,
-                                text: '45 000€ - 55 000€',
-                                isSpecial: true,
-                              ),
-                            ],
-                            advantages: ['Télétravail', 'Tickets restaurant', 'Mutuelle'],
-                            timeAgo: 'il y a 1 semaine',
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  JobAnnouncementCard(
-                    companyLogo:
-                        'assets/images/dashboard_particulier/Rectangle 13.png',
-                    companyName: 'Amazon France',
-                    jobTitle: 'Chef de Projet Digital',
-                    description:
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-                    tags: const [
-                      JobDetailTag(
-                        icon: Icons.description_outlined,
-                        text: 'Contrat à durée indéterminée',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.location_on_outlined,
-                        text: 'Lyon',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.school_outlined,
-                        text: 'Bac+3 / Licence',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.work_history_outlined,
-                        text: "intermédiaire : 2 ans d'expérience",
-                      ),
-                      JobDetailTag(
-                        icon: Icons.access_time,
-                        text: 'Temps plein',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.home_work_outlined,
-                        text: 'Présentiel uniquement',
-                      ),
-                      JobDetailTag(
-                        icon: Icons.monetization_on_outlined,
-                        text: '35 000€ - 42 000€',
-                        isSpecial: true,
-                      ),
-                    ],
-                    advantages: const ['Primes', 'Formation continue'],
-                    timeAgo: 'il y a 3 jours',
-                    onApply: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const JobDetailScreen(
-                            companyLogo:
-                                'assets/images/dashboard_particulier/Rectangle 13.png',
-                            companyName: 'Amazon France',
-                            jobTitle: 'Chef de Projet Digital',
-                            description:
-                                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-                            tags: [
-                              JobDetailTag(
-                                icon: Icons.description_outlined,
-                                text: 'Contrat à durée indéterminée',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.location_on_outlined,
-                                text: 'Lyon',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.school_outlined,
-                                text: 'Bac+3 / Licence',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.work_history_outlined,
-                                text: "intermédiaire : 2 ans d'expérience",
-                              ),
-                              JobDetailTag(
-                                icon: Icons.access_time,
-                                text: 'Temps plein',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.home_work_outlined,
-                                text: 'Présentiel uniquement',
-                              ),
-                              JobDetailTag(
-                                icon: Icons.monetization_on_outlined,
-                                text: '35 000€ - 42 000€',
-                                isSpecial: true,
-                              ),
-                            ],
-                            advantages: ['Primes', 'Formation continue'],
-                            timeAgo: 'il y a 3 jours',
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-              const SizedBox(height: 20),
-            ]),
-          ),
+                ),
+              ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = _items[index];
+                  final resource = item['resource'] as Map<String, dynamic>? ?? {};
+                  return _buildJobCard(resource);
+                },
+                childCount: _items.length,
+              ),
+            ),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
       ),
+    );
+  }
+
+  Widget _buildJobCard(Map<String, dynamic> job) {
+    final companyName = job['company_name']?.toString() ?? 'Entreprise';
+    final jobTitle = job['title']?.toString() ?? "Offre d'emploi";
+    final description = _stripHtml(job['description']?.toString() ?? '');
+    final location = job['location']?.toString() ?? job['city']?.toString() ?? 'Non spécifié';
+    final contract = job['contract_type']?.toString() ?? '';
+    final experience = job['experience_level']?.toString() ?? '';
+    final salary = job['salary_label']?.toString() ?? job['salary']?.toString();
+    final createdAt = job['created_at']?.toString();
+    final advantages = (job['advantages'] as List?)?.map((e) => e.toString()).toList() ?? [];
+
+    final tags = <JobDetailTag>[
+      if (contract.isNotEmpty)
+        JobDetailTag(icon: Icons.description_outlined, text: contract),
+      if (location.isNotEmpty)
+        JobDetailTag(icon: Icons.location_on_outlined, text: location),
+      if (experience.isNotEmpty)
+        JobDetailTag(icon: Icons.work_history_outlined, text: experience),
+      if (salary != null && salary.isNotEmpty)
+        JobDetailTag(icon: Icons.monetization_on_outlined, text: salary, isSpecial: true),
+    ];
+
+    return JobAnnouncementCard(
+      companyLogo: 'assets/images/dashboard_particulier/Rectangle 13.png',
+      companyName: companyName,
+      jobTitle: jobTitle,
+      description: description,
+      tags: tags,
+      advantages: advantages.isNotEmpty ? advantages : ['Non spécifié'],
+      timeAgo: _buildTimeAgo(createdAt),
+      onApply: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => JobDetailScreen(
+              companyLogo: 'assets/images/dashboard_particulier/Rectangle 13.png',
+              companyName: companyName,
+              jobTitle: jobTitle,
+              description: description,
+              tags: tags,
+              advantages: advantages.isNotEmpty ? advantages : ['Non spécifié'],
+              timeAgo: _buildTimeAgo(createdAt),
+            ),
+          ),
+        );
+      },
     );
   }
 }
