@@ -28,6 +28,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   late AnimationController _progressController;
   bool _isLiked = false;
   final StoryService _storyService = StoryService();
+  late FocusNode _replyFocusNode;
 
   @override
   void initState() {
@@ -42,11 +43,21 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
           });
     _progressController.forward();
     _recordCurrentView();
+
+    _replyFocusNode = FocusNode()
+      ..addListener(() {
+        if (_replyFocusNode.hasFocus) {
+          _progressController.stop();
+        } else {
+          _progressController.forward();
+        }
+      });
   }
 
   @override
   void dispose() {
     _progressController.dispose();
+    _replyFocusNode.dispose();
     super.dispose();
   }
 
@@ -259,22 +270,27 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     final story = widget.stories[_currentIndex];
     final viewsCount = story['views_count'] ?? 0;
 
+    final mediaQuery = MediaQuery.of(context);
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
         onTapUp: (details) {
-          final screenWidth = MediaQuery.of(context).size.width;
+          final screenWidth = mediaQuery.size.width;
           if (details.globalPosition.dx < screenWidth / 3) {
             _previousStory();
           } else {
             _nextStory();
           }
         },
+        onTap: () => FocusScope.of(context).unfocus(),
         onLongPressStart: (_) => _progressController.stop(),
         onLongPressEnd: (_) => _progressController.forward(),
-        child: SafeArea(
-          child: Column(
-            children: [
+        child: Stack(
+          children: [
+            SafeArea(
+              child: Column(
+                children: [
               // Progress bars
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -320,8 +336,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 ),
               ),
 
-              // Header: avatar, name, time, close
-              Padding(
+                  // Header: avatar, name, time, close
+                  Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 4,
@@ -395,128 +411,209 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 ),
               ),
 
-              const Spacer(),
-
-              // Story image
-              _buildStoryImage(story),
-
-              const SizedBox(height: 16),
-
-              // Story text
-              if (story['text'] != null && (story['text'] as String).isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
-                    story['text'],
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 13,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-
-              const Spacer(),
-
-              // Bottom bar
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
-                child: widget.isOwnStory
-                    ? Row(
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          GestureDetector(
-                            onTap: _showViewersModal,
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.remove_red_eye_outlined,
-                                  color: Colors.white,
-                                  size: 22,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '$viewsCount Vue${viewsCount > 1 ? 's' : ''}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Spacer(),
-                          GestureDetector(
-                            onTap: () {},
-                            child: const Icon(
-                              Icons.share_outlined,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              height: 44,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
-                                ),
-                                borderRadius: BorderRadius.circular(24),
-                              ),
-                              child: TextField(
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: 'Répondre',
-                                  hintStyle: TextStyle(
-                                    color: Colors.white.withOpacity(0.5),
-                                    fontSize: 14,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
+                          // Story image
+                          _buildStoryImage(story),
+
+                          const SizedBox(height: 16),
+
+                          // Story text
+                          if (story['text'] != null &&
+                              (story['text'] as String).isNotEmpty)
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              child: Text(
+                                story['text'],
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 13,
+                                  height: 1.5,
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _isLiked = !_isLiked;
-                              });
-                            },
-                            child: Icon(
-                              _isLiked ? Icons.favorite : Icons.favorite_border,
-                              color: _isLiked ? Colors.red : Colors.white,
-                              size: 26,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          GestureDetector(
-                            onTap: () {},
-                            child: const Icon(
-                              Icons.share_outlined,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
                         ],
                       ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (widget.isOwnStory)
+              _OwnStoryOverlay(
+                viewsCount: viewsCount,
+                onShowViewers: _showViewersModal,
+              )
+            else
+              _ReplyOverlay(
+                isLiked: _isLiked,
+                focusNode: _replyFocusNode,
+                onToggleLike: () {
+                  setState(() => _isLiked = !_isLiked);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReplyOverlay extends StatelessWidget {
+  final bool isLiked;
+  final FocusNode focusNode;
+  final VoidCallback onToggleLike;
+
+  const _ReplyOverlay({
+    required this.isLiked,
+    required this.focusNode,
+    required this.onToggleLike,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: SafeArea(
+            top: false,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.9),
+                    Colors.black.withOpacity(0.0),
+                  ],
+                ),
+              ),
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                        color: Colors.black.withOpacity(0.3),
+                      ),
+                      child: TextField(
+                        focusNode: focusNode,
+                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        decoration: const InputDecoration(
+                          hintText: 'Répondre',
+                          hintStyle: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 14,
+                          ),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: onToggleLike,
+                    child: Icon(
+                      isLiked ? Icons.favorite : Icons.favorite_border,
+                      color: isLiked ? Colors.red : Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  GestureDetector(
+                    onTap: () {},
+                    child: const Icon(
+                      Icons.share_outlined,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OwnStoryOverlay extends StatelessWidget {
+  final int viewsCount;
+  final VoidCallback onShowViewers;
+
+  const _OwnStoryOverlay({
+    required this.viewsCount,
+    required this.onShowViewers,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [
+                Colors.black.withOpacity(0.9),
+                Colors.black.withOpacity(0.0),
+              ],
+            ),
+          ),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: onShowViewers,
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.remove_red_eye_outlined,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$viewsCount Vue${viewsCount > 1 ? 's' : ''}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () {},
+                child: const Icon(
+                  Icons.share_outlined,
+                  color: Colors.white,
+                  size: 26,
+                ),
               ),
             ],
           ),
