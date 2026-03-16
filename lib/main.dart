@@ -1,9 +1,26 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:myreklam/screens/splash_screen.dart';
+import 'package:myreklam/services/chat_service.dart';
+import 'package:myreklam/services/chat_notification_service.dart';
+import 'package:myreklam/screens/login_screen.dart';
+import 'package:myreklam/providers/conversation_provider.dart';
+import 'package:provider/provider.dart';
 
-void main() {
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialisation de pusher
+  await ChatService.initializePusher();
+  print('✅ Pusher initialisé');
+
+  // Initialisation du service de notifications chat
+  await ChatNotificationService.instance.init();
+  print('✅ ChatNotificationService initialisé');
+
   runApp(const MyApp());
 }
 
@@ -12,25 +29,26 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Myreklam',
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        FlutterQuillLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('fr'),
-        Locale('en'),
-      ],
-      locale: const Locale('fr'),
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B8D4B)),
-        useMaterial3: true,
+    return ChangeNotifierProvider(
+      create: (_) => ConversationProvider(),
+      child: MaterialApp(
+        navigatorKey: navigatorKey,
+        debugShowCheckedModeBanner: false,
+        title: 'Myreklam',
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          FlutterQuillLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('fr'), Locale('en')],
+        locale: const Locale('fr'),
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B8D4B)),
+          useMaterial3: true,
+        ),
+        home: const LoginScreen(),
       ),
-      home: const SplashScreen(),
     );
   }
 }

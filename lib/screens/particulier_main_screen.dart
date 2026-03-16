@@ -8,10 +8,13 @@ import 'package:myreklam/screens/search_screen.dart';
 import 'package:myreklam/screens/search_results_screen.dart';
 import 'package:myreklam/screens/profile_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_profile_screen.dart';
+import 'package:myreklam/services/chat_notification_service.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:provider/provider.dart';
 
 class ParticulierMainScreen extends StatefulWidget {
+  static const String routeName = '/particulier_main';
   final int initialIndex;
   final bool showPublishOptions;
   final bool showCreatePost;
@@ -37,10 +40,15 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
   @override
   void initState() {
     super.initState();
+
     _currentIndex = widget.initialIndex;
     _showPublishOptions = widget.showPublishOptions;
     _showCreatePost = widget.showCreatePost;
     _showSearchResults = widget.showSearchResults;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ChatNotificationService.instance.init();
+    });
   }
 
   List<Widget> get _pages => [
