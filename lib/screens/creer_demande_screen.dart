@@ -1112,16 +1112,17 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           return 'Veuillez sélectionner un type de demande.';
         }
         break;
-      
+
       case 1: // Step 2: Description
         if (_titleController.text.trim().length < 5) {
           return 'Le titre doit contenir au moins 5 caractères.';
         }
-        if (_descriptionQuillController.document.toPlainText().trim().length < 20) {
+        if (_descriptionQuillController.document.toPlainText().trim().length <
+            20) {
           return 'La description doit contenir au moins 20 caractères.';
         }
         break;
-      
+
       case 2: // Step 3: Détails
         if (_startDate == null) {
           return 'Sélectionnez une date de début.';
@@ -1133,7 +1134,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           return 'La date de fin doit être postérieure à la date de début.';
         }
         break;
-      
+
       case 3: // Step 4: Photos (optional)
         break;
     }
@@ -1491,8 +1492,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                             final picked = await showDatePicker(
                               context: context,
                               initialDate: _startDate ?? DateTime.now(),
-                              firstDate: DateTime.now().subtract(const Duration(days: 1)),
-                              lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                              firstDate: DateTime.now().subtract(
+                                const Duration(days: 1),
+                              ),
+                              lastDate: DateTime.now().add(
+                                const Duration(days: 365 * 2),
+                              ),
                             );
                             if (picked != null)
                               setState(() => _startDate = picked);
@@ -1553,9 +1558,16 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                           onTap: () async {
                             final picked = await showDatePicker(
                               context: context,
-                              initialDate: _endDate ?? _startDate ?? DateTime.now(),
-                              firstDate: _startDate ?? DateTime.now().subtract(const Duration(days: 1)),
-                              lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                              initialDate:
+                                  _endDate ?? _startDate ?? DateTime.now(),
+                              firstDate:
+                                  _startDate ??
+                                  DateTime.now().subtract(
+                                    const Duration(days: 1),
+                                  ),
+                              lastDate: DateTime.now().add(
+                                const Duration(days: 365 * 2),
+                              ),
                             );
                             if (picked != null)
                               setState(() => _endDate = picked);
@@ -3535,7 +3547,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               SizedBox(height: 20),
               Text(
                 'Vos photos (non-obligatoires)',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF424242)),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
               ),
             ],
           ),

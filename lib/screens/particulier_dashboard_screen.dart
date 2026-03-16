@@ -190,7 +190,7 @@ class _ParticulierDashboardScreenState
     }
     try {
       final response = await ApiClient().authenticatedGet('/profile/me');
-      final data = response['data'] as Map<String, dynamic>?;
+      final data = response['user'] as Map<String, dynamic>?;
       final id = data?['id']?.toString();
       if (mounted) {
         setState(() => _currentUserId = id);
@@ -803,13 +803,13 @@ class _ParticulierDashboardScreenState
       if (first is Map<String, dynamic>) {
         final url = first['url']?.toString();
         if (url != null && url.isNotEmpty) {
-          return _buildStorageUrl(url);
+          return "${ApiConfig.baseUrl.replaceFirst('/api', '')}$url";
         }
       }
     }
     final cover = resource['cover_url']?.toString();
     if (cover != null && cover.isNotEmpty) {
-      return _buildStorageUrl(cover);
+      return "${ApiConfig.baseUrl.replaceFirst('/api', '')}$cover";
     }
     return null;
   }
@@ -1421,6 +1421,9 @@ class _ParticulierDashboardScreenState
               final dislikes = _asInt(comment['dislikes_count']);
               final userReaction = comment['user_reaction']?.toString();
               final isOwner = userId != null && userId == _currentUserId;
+              print("UserId: $userId");
+              print("_currentUserId: $_currentUserId");
+              print("isOwner: $isOwner");
               final replies =
                   (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
@@ -3030,7 +3033,7 @@ class _ParticulierDashboardScreenState
     if (url == null || url.isEmpty) return null;
     if (url.startsWith('http')) return url;
     final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
-    return '$serverBase$url';
+    return '$serverBase/storage/$url';
   }
 
   Future<void> _startConversationWithAuthor(
