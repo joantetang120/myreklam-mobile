@@ -77,10 +77,13 @@ class ConversationService {
   Future<ChatMessage> sendMessage(
     int conversationId,
     String text,
-    int currentUserId,
-  ) async {
+    int currentUserId, {
+    Map<String, dynamic>? attachments,
+  }) async {
     try {
       final token = await TokenStorage.getAccessToken();
+      final body = <String, dynamic>{'text': text};
+      if (attachments != null) body['attachments'] = attachments;
       final response = await http.post(
         Uri.parse(
           '${ApiConfig.baseUrl}/conversations/$conversationId/messages',
@@ -90,7 +93,7 @@ class ConversationService {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        body: json.encode({'text': text}),
+        body: json.encode(body),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -101,6 +104,74 @@ class ConversationService {
       }
     } catch (e) {
       print('❌ Error sending message: $e');
+      rethrow;
+    }
+  }
+
+  // Modifier un message
+  Future<ChatMessage> editMessage(
+    int conversationId,
+    int messageId,
+    String newText,
+    int currentUserId,
+  ) async {
+    try {
+      final token = await TokenStorage.getAccessToken();
+      final response = await http.put(
+        Uri.parse(
+          '${ApiConfig.baseUrl}/conversations/$conversationId/messages/$messageId',
+        ),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({'text': newText}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return ChatMessage.fromJson(data['data'], currentUserId);
+      } else {
+        final data = json.decode(response.body);
+        throw Exception(data['message'] ?? 'Failed to edit message');
+      }
+    } catch (e) {
+      print('❌ Error editing message: $e');
+      rethrow;
+    }
+  }
+
+  // Supprimer un message
+  Future<void> deleteMessage(
+    int conversationId,
+    int messageId,
+    String deleteType,
+  ) async {
+    try {
+      final token = await TokenStorage.getAccessToken();
+      final request = http.Request(
+        'DELETE',
+        Uri.parse(
+          '${ApiConfig.baseUrl}/conversations/$conversationId/messages/$messageId',
+        ),
+      );
+      request.headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      });
+      request.body = json.encode({'type': deleteType});
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode != 200) {
+        final data = json.decode(response.body);
+        throw Exception(data['message'] ?? 'Failed to delete message');
+      }
+    } catch (e) {
+      print('❌ Error deleting message: $e');
       rethrow;
     }
   }

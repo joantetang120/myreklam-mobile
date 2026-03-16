@@ -134,6 +134,7 @@ class _ParticulierDashboardScreenState
           avatar: avatarUrl ?? _defaultAvatar,
           stories: storyMaps,
           isOwnStory: group.isOwn,
+          ownerId: group.userId,
         ),
       ),
     );

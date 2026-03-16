@@ -62,6 +62,10 @@ dependencies:
   intl: ^0.20.2
   #Package Notifications
   flutter_local_notifications: ^18.0.1
+  # Local database for offline messages
+  sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0
+  path: ^1.8.3
 
 dev_dependencies:
   flutter_test:

@@ -4,6 +4,7 @@ import 'package:myreklam/config/api_config.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:myreklam/widgets/message_bubble.dart';
+import 'package:myreklam/models/chat_message.dart';
 import 'package:myreklam/providers/conversation_provider.dart';
 import 'package:myreklam/services/api_client.dart';
 
@@ -45,7 +46,6 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         context,
         listen: false,
       );
-      _conversationProvider.loadMessages(int.parse(widget.conversationId));
       _conversationProvider.addListener(_onMessagesChanged);
     });
   }
@@ -95,12 +95,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty || _currentUserId == null)
       return;
+    
+    // Prevent duplicate sends with synchronous check
     if (_isSending) return;
+    _isSending = true;
 
     final messageText = _messageController.text.trim();
     _messageController.clear();
-
-    setState(() => _isSending = true);
+    setState(() {});
 
     try {
       final conversationId = int.tryParse(widget.conversationId);
@@ -121,7 +123,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isSending = false);
+        _isSending = false;
+        setState(() {});
       }
     }
   }
@@ -152,6 +155,146 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
   String _formatMessageTime(DateTime dateTime) {
     return DateFormat('HH:mm').format(dateTime);
+  }
+
+  void _showMessageOptions(ChatMessage message) {
+    final conversationId = int.tryParse(widget.conversationId);
+    if (conversationId == null) return;
+
+    final canEdit = message.isMe &&
+        DateTime.now().difference(message.createdAt).inMinutes <= 2;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              if (canEdit)
+                ListTile(
+                  leading: const Icon(Icons.edit, color: Color(0xFF3AAE5E)),
+                  title: const Text('Modifier'),
+                  subtitle: const Text(
+                    'Disponible dans les 2 premi\u00e8res minutes',
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showEditDialog(conversationId, message);
+                  },
+                ),
+              if (message.isMe)
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: Colors.red),
+                  title: const Text('Supprimer pour tout le monde'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _confirmDelete(conversationId, message.id, 'for_everyone');
+                  },
+                ),
+              ListTile(
+                leading: Icon(Icons.delete_sweep_outlined, color: Colors.grey[700]),
+                title: const Text('Supprimer pour moi'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _confirmDelete(conversationId, message.id, 'for_me');
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditDialog(int conversationId, ChatMessage message) {
+    final editController = TextEditingController(text: message.text);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Modifier le message'),
+        content: TextField(
+          controller: editController,
+          autofocus: true,
+          maxLines: null,
+          decoration: const InputDecoration(
+            hintText: 'Nouveau message...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newText = editController.text.trim();
+              if (newText.isEmpty || newText == message.text) {
+                Navigator.pop(ctx);
+                return;
+              }
+              Navigator.pop(ctx);
+              try {
+                await _conversationProvider.editMessage(
+                  conversationId,
+                  message.id,
+                  newText,
+                );
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('$e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Modifier',
+              style: TextStyle(color: Color(0xFF3AAE5E)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(int conversationId, int messageId, String deleteType) async {
+    try {
+      await _conversationProvider.deleteMessage(
+        conversationId,
+        messageId,
+        deleteType,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -408,12 +551,22 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           final message = messages[index];
                           final isSent = message.isMe;
 
+                          // Calculer si supprimé pour moi
+                          final isDeletedForMe = isSent
+                              ? message.deletedForSender
+                              : message.deletedForReceiver;
+
                           // Afficher le message texte
                           return MessageBubble(
                             message: message.text,
                             time: _formatMessageTime(message.createdAt),
                             isSent: isSent,
                             isRead: message.isRead,
+                            attachments: message.attachments,
+                            isEdited: message.isEdited,
+                            deletedForEveryone: message.deletedForEveryone,
+                            isDeletedForMe: isDeletedForMe,
+                            onLongPress: () => _showMessageOptions(message),
                           );
                         },
                       );
