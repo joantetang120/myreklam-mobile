@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/models/story_model.dart';
+import 'package:myreklam/screens/chat_conversation_screen.dart';
+import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/story_service.dart';
+import 'package:myreklam/services/api_client.dart';
 
 class StoryViewerScreen extends StatefulWidget {
   final String name;
@@ -8,6 +11,7 @@ class StoryViewerScreen extends StatefulWidget {
   final List<Map<String, dynamic>> stories;
   final int initialIndex;
   final bool isOwnStory;
+  final int ownerId;
 
   const StoryViewerScreen({
     super.key,
@@ -16,6 +20,7 @@ class StoryViewerScreen extends StatefulWidget {
     required this.stories,
     this.initialIndex = 0,
     this.isOwnStory = false,
+    this.ownerId = 0,
   });
 
   @override
@@ -453,6 +458,10 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               _ReplyOverlay(
                 isLiked: _isLiked,
                 focusNode: _replyFocusNode,
+                ownerId: widget.ownerId,
+                ownerName: widget.name,
+                storyId: story['id'] is int ? story['id'] as int : 0,
+                storyImage: story['image'] as String? ?? '',
                 onToggleLike: () {
                   setState(() => _isLiked = !_isLiked);
                 },
@@ -464,16 +473,114 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   }
 }
 
-class _ReplyOverlay extends StatelessWidget {
+class _ReplyOverlay extends StatefulWidget {
   final bool isLiked;
   final FocusNode focusNode;
   final VoidCallback onToggleLike;
+  final int ownerId;
+  final String ownerName;
+  final int storyId;
+  final String storyImage;
 
   const _ReplyOverlay({
     required this.isLiked,
     required this.focusNode,
     required this.onToggleLike,
+    required this.ownerId,
+    required this.ownerName,
+    required this.storyId,
+    required this.storyImage,
   });
+
+  @override
+  State<_ReplyOverlay> createState() => _ReplyOverlayState();
+}
+
+class _ReplyOverlayState extends State<_ReplyOverlay> {
+  final TextEditingController _controller = TextEditingController();
+  final ConversationService _conversationService = ConversationService();
+  bool _isSending = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendReply() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+    
+    // Prevent duplicate sends with synchronous check
+    if (_isSending) return;
+    _isSending = true;
+    
+    setState(() {});
+    FocusScope.of(context).unfocus();
+
+    try {
+      // Get current user id
+      final response = await ApiClient().authenticatedGet('/profile/me');
+      final currentUserId = int.tryParse(response['user']['id'].toString()) ?? 0;
+
+      // Get or create conversation with story owner
+      final conversation = await _conversationService.getOrCreateConversation(widget.ownerId);
+
+      // Build story attachment metadata
+      final attachments = <String, dynamic>{
+        'type': 'story_reply',
+        'story_id': widget.storyId,
+        'story_image': widget.storyImage,
+        'story_author': widget.ownerName,
+      };
+
+      // Send message with story reference
+      await _conversationService.sendMessage(
+        conversation.id,
+        text,
+        currentUserId,
+        attachments: attachments,
+      );
+
+      _controller.clear();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Message envoyé'),
+            backgroundColor: Color(0xFF3AAE5E),
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // Navigate to the conversation
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatConversationScreen(
+              conversationId: conversation.id.toString(),
+              name: widget.ownerName,
+              avatar: null,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        _isSending = false;
+        setState(() {});
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -500,7 +607,7 @@ class _ReplyOverlay extends StatelessWidget {
                   ],
                 ),
               ),
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
               child: Row(
                 children: [
                   Expanded(
@@ -515,10 +622,13 @@ class _ReplyOverlay extends StatelessWidget {
                         color: Colors.black.withOpacity(0.3),
                       ),
                       child: TextField(
-                        focusNode: focusNode,
+                        controller: _controller,
+                        focusNode: widget.focusNode,
                         style: const TextStyle(color: Colors.white, fontSize: 14),
+                        textInputAction: TextInputAction.send,
+                        onSubmitted: (_) => _sendReply(),
                         decoration: const InputDecoration(
-                          hintText: 'Répondre',
+                          hintText: 'Répondre à la story...',
                           hintStyle: TextStyle(
                             color: Colors.white54,
                             fontSize: 14,
@@ -528,23 +638,38 @@ class _ReplyOverlay extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: _isSending ? null : _sendReply,
+                    child: _isSending
+                        ? const SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.send_rounded,
+                            color: Color(0xFF3AAE5E),
+                            size: 28,
+                          ),
+                  ),
                   const SizedBox(width: 12),
                   GestureDetector(
-                    onTap: onToggleLike,
+                    onTap: widget.onToggleLike,
                     child: Icon(
-                      isLiked ? Icons.favorite : Icons.favorite_border,
-                      color: isLiked ? Colors.red : Colors.white,
+                      widget.isLiked ? Icons.favorite : Icons.favorite_border,
+                      color: widget.isLiked ? Colors.red : Colors.white,
                       size: 28,
                     ),
                   ),
                   const SizedBox(width: 16),
-                  GestureDetector(
-                    onTap: () {},
-                    child: const Icon(
-                      Icons.share_outlined,
-                      color: Colors.white,
-                      size: 26,
-                    ),
+                  const Icon(
+                    Icons.share_outlined,
+                    color: Colors.white,
+                    size: 26,
                   ),
                 ],
               ),

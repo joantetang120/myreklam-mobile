@@ -75,15 +75,20 @@ class _MessageScreenState extends State<MessageScreen> {
   void dispose() {
     _conversationProvider?.removeListener(_onConversationsUpdated);
     _refreshTimer?.cancel();
+    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
+  Timer? _debounceTimer;
+
   void _onConversationsUpdated() {
     if (mounted) {
-      // Le ConversationProvider ne gère que les messages, pas les conversations
-      // On recharge les conversations pour mettre à jour les compteurs de messages non lus
-      _loadConversations();
+      // Debounce pour éviter de spammer /api/conversations
+      _debounceTimer?.cancel();
+      _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+        if (mounted) _loadConversations();
+      });
     }
   }
 
@@ -266,6 +271,7 @@ class _MessageScreenState extends State<MessageScreen> {
           avatar: resolvedAvatar ?? _defaultAvatar,
           stories: storyMaps,
           isOwnStory: group.isOwn,
+          ownerId: group.userId,
         ),
       ),
     );

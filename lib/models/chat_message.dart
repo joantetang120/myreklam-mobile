@@ -17,6 +17,12 @@ class ChatMessage {
   final bool isRead;
   final String? senderName;
   final String? senderAvatar;
+  final Map<String, dynamic>? attachments;
+  final bool isEdited;
+  final DateTime? editedAt;
+  final bool deletedForEveryone;
+  final bool deletedForSender;
+  final bool deletedForReceiver;
 
   ChatMessage({
     required this.id,
@@ -28,12 +34,26 @@ class ChatMessage {
     this.isRead = false,
     this.senderName,
     this.senderAvatar,
+    this.attachments,
+    this.isEdited = false,
+    this.editedAt,
+    this.deletedForEveryone = false,
+    this.deletedForSender = false,
+    this.deletedForReceiver = false,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json, int currentUserId) {
     // Support pour les données du message direct ou depuis l'événement Pusher
     final messageData = json['message'] ?? json;
     final senderData = json['sender'] as Map<String, dynamic>?;
+
+    final rawAttachments = messageData['attachments'];
+    Map<String, dynamic>? attachments;
+    if (rawAttachments is Map<String, dynamic>) {
+      attachments = rawAttachments;
+    } else if (rawAttachments is List && rawAttachments.isNotEmpty) {
+      attachments = rawAttachments.first as Map<String, dynamic>?;
+    }
 
     return ChatMessage(
       id: _parseInt(messageData['id']),
@@ -45,6 +65,14 @@ class ChatMessage {
       isRead: messageData['is_read'] as bool? ?? false,
       senderName: senderData?['name'] as String?,
       senderAvatar: senderData?['avatar'] as String?,
+      attachments: attachments,
+      isEdited: messageData['edited_at'] != null,
+      editedAt: messageData['edited_at'] != null
+          ? DateTime.tryParse(messageData['edited_at'].toString())
+          : null,
+      deletedForEveryone: messageData['deleted_for_everyone'] as bool? ?? false,
+      deletedForSender: messageData['deleted_for_sender'] as bool? ?? false,
+      deletedForReceiver: messageData['deleted_for_receiver'] as bool? ?? false,
     );
   }
 
@@ -69,6 +97,12 @@ class ChatMessage {
     bool? isRead,
     String? senderName,
     String? senderAvatar,
+    Map<String, dynamic>? attachments,
+    bool? isEdited,
+    DateTime? editedAt,
+    bool? deletedForEveryone,
+    bool? deletedForSender,
+    bool? deletedForReceiver,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -80,6 +114,12 @@ class ChatMessage {
       isRead: isRead ?? this.isRead,
       senderName: senderName ?? this.senderName,
       senderAvatar: senderAvatar ?? this.senderAvatar,
+      attachments: attachments ?? this.attachments,
+      isEdited: isEdited ?? this.isEdited,
+      editedAt: editedAt ?? this.editedAt,
+      deletedForEveryone: deletedForEveryone ?? this.deletedForEveryone,
+      deletedForSender: deletedForSender ?? this.deletedForSender,
+      deletedForReceiver: deletedForReceiver ?? this.deletedForReceiver,
     );
   }
 }

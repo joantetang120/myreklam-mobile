@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:myreklam/models/chat_message.dart';
 import 'package:myreklam/services/chat_service.dart';
 import 'package:myreklam/services/conversation_service.dart';
+import 'package:myreklam/services/message_database.dart';
 
 class ConversationProvider extends ChangeNotifier {
   final ConversationService _chatService = ConversationService();
+  final MessageDatabase _db = MessageDatabase.instance;
   final Map<int, List<ChatMessage>> _messagesByConversation = {};
   int? _currentUserId;
   bool _isLoading = false;
@@ -25,23 +27,42 @@ class ConversationProvider extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // 1. Récupérer l'ID utilisateur actuel
+      // 1. Récupérer l'ID utilisateur actuel (toujours frais pour éviter le cache multi-comptes)
       print("DEBUG: Getting current user ID...");
-      _currentUserId ??= await _chatService.getCurrentUserId();
+      _currentUserId = await _chatService.getCurrentUserId();
       print("DEBUG: Current user ID: $_currentUserId");
 
       if (_currentUserId == null) {
         throw Exception('User not authenticated');
       }
 
-      // 2. Charger les messages depuis l'API
+      // 2. Charger les messages depuis le cache local d'abord (offline support)
+      print("DEBUG: Loading messages from local cache...");
+      final cachedMessages = await _db.getMessages(conversationId, _currentUserId!);
+      if (cachedMessages.isNotEmpty) {
+        _messagesByConversation[conversationId] = cachedMessages;
+        _isLoading = false;
+        notifyListeners();
+        print("DEBUG: Loaded ${cachedMessages.length} cached messages");
+      }
+
+      // 3. Charger les messages depuis l'API (sync avec backend)
       print("DEBUG: Fetching messages from API...");
-      final messages = await _chatService.getMessages(
-        conversationId,
-        _currentUserId!,
-      );
-      print("DEBUG: Got ${messages.length} messages");
-      _messagesByConversation[conversationId] = messages;
+      try {
+        final messages = await _chatService.getMessages(
+          conversationId,
+          _currentUserId!,
+        );
+        print("DEBUG: Got ${messages.length} messages from API");
+        
+        // 4. Sauvegarder dans la base locale
+        await _db.saveMessages(messages, conversationId, _currentUserId!);
+        _messagesByConversation[conversationId] = messages;
+      } catch (e) {
+        print("DEBUG: API fetch failed, using cached messages: $e");
+        // Si l'API échoue, on garde les messages en cache
+        if (cachedMessages.isEmpty) rethrow;
+      }
 
       // 3. S'abonner au WebSocket pour les nouveaux messages
       print("DEBUG: Subscribing to WebSocket...");
@@ -78,7 +99,7 @@ class ConversationProvider extends ChangeNotifier {
   }
 
   // Callback pour les nouveaux messages via WebSocket
-  void _onNewMessage(int conversationId, dynamic messageData) {
+  Future<void> _onNewMessage(int conversationId, dynamic messageData) async {
     try {
       print("DEBUG: Processing new message for conversation $conversationId");
 
@@ -90,6 +111,12 @@ class ConversationProvider extends ChangeNotifier {
       // Parser le message
       final message = ChatMessage.fromJson(messageMap, _currentUserId!);
 
+      // Skip own messages - sendMessage() already adds them locally
+      if (message.senderId == _currentUserId) {
+        print("DEBUG: Skipping own message ${message.id} from WebSocket");
+        return;
+      }
+
       // Vérifier si le message n'existe pas déjà
       final existingMessages = _messagesByConversation[conversationId] ?? [];
       final alreadyExists = existingMessages.any((msg) => msg.id == message.id);
@@ -98,6 +125,12 @@ class ConversationProvider extends ChangeNotifier {
         print("DEBUG: Message ${message.id} already exists, skipping");
         return;
       }
+
+      // Sauvegarder le nouveau message dans la DB locale
+      await _db.saveMessage(message, _currentUserId!);
+
+      // Ajouter à la liste en mémoire
+      _addMessageToList(conversationId, message);
 
       // Notifier les listeners pour mettre à jour l'UI
       notifyListeners();
@@ -111,28 +144,107 @@ class ConversationProvider extends ChangeNotifier {
   // Envoyer un message
   Future<void> sendMessage(int conversationId, String text) async {
     try {
-      if (_currentUserId == null) {
-        _currentUserId = await _chatService.getCurrentUserId();
-      }
+      _currentUserId ??= await _chatService.getCurrentUserId();
 
       if (_currentUserId == null) {
         throw Exception('User not authenticated');
       }
 
-      // 1. Appel API pour envoyer le message
-      final newMessage = await _chatService.sendMessage(
+      // 1. Sauvegarder le message en attente localement (pour offline)
+      await _db.savePendingMessage(conversationId, text, _currentUserId!, null);
+
+      // 2. Appel API pour envoyer le message
+      try {
+        final newMessage = await _chatService.sendMessage(
+          conversationId,
+          text,
+          _currentUserId!,
+        );
+
+        // 3. Supprimer le message en attente et sauvegarder le vrai message
+        final pendingMessages = await _db.getPendingMessages(conversationId);
+        for (final pending in pendingMessages) {
+          if (pending['text'] == text) {
+            await _db.deletePendingMessage(pending['id'] as int);
+          }
+        }
+        await _db.saveMessage(newMessage, _currentUserId!);
+
+        // 4. Ajouter le message localement
+        final readMessage = newMessage.copyWith(isRead: false);
+        _addMessageToList(conversationId, readMessage);
+
+        notifyListeners();
+      } catch (e) {
+        print('❌ Failed to send message, will retry when online: $e');
+        // Le message reste en attente dans la DB locale
+        rethrow;
+      }
+    } catch (e) {
+      print('❌ Error sending message: $e');
+      rethrow;
+    }
+  }
+
+  // Modifier un message
+  Future<void> editMessage(int conversationId, int messageId, String newText) async {
+    try {
+      _currentUserId ??= await _chatService.getCurrentUserId();
+      if (_currentUserId == null) throw Exception('User not authenticated');
+
+      await _chatService.editMessage(
         conversationId,
-        text,
+        messageId,
+        newText,
         _currentUserId!,
       );
 
-      // 2. Ajouter le message localement avec statut lu (nos propres messages sont lus)
-      final readMessage = newMessage.copyWith(isRead: false);
-      _addMessageToList(conversationId, readMessage);
-
+      // Mettre à jour le message localement
+      final messages = _messagesByConversation[conversationId];
+      if (messages != null) {
+        final index = messages.indexWhere((msg) => msg.id == messageId);
+        if (index != -1) {
+          messages[index] = messages[index].copyWith(
+            text: newText,
+            isEdited: true,
+            editedAt: DateTime.now(),
+          );
+        }
+      }
       notifyListeners();
     } catch (e) {
-      print('❌ Error sending message: $e');
+      print('❌ Error editing message: $e');
+      rethrow;
+    }
+  }
+
+  // Supprimer un message
+  Future<void> deleteMessage(int conversationId, int messageId, String deleteType) async {
+    try {
+      _currentUserId ??= await _chatService.getCurrentUserId();
+      if (_currentUserId == null) throw Exception('User not authenticated');
+
+      await _chatService.deleteMessage(conversationId, messageId, deleteType);
+
+      // Mettre à jour le message localement
+      final messages = _messagesByConversation[conversationId];
+      if (messages != null) {
+        final index = messages.indexWhere((msg) => msg.id == messageId);
+        if (index != -1) {
+          if (deleteType == 'for_everyone') {
+            messages[index] = messages[index].copyWith(
+              deletedForEveryone: true,
+              text: '',
+            );
+          } else {
+            // Supprimer pour moi: retirer de la liste locale
+            messages.removeAt(index);
+          }
+        }
+      }
+      notifyListeners();
+    } catch (e) {
+      print('❌ Error deleting message: $e');
       rethrow;
     }
   }
@@ -189,13 +301,21 @@ class ConversationProvider extends ChangeNotifier {
     });
   }
 
-  // Ajouter un message à la liste
+  // Ajouter un message à la liste (avec déduplication)
   void _addMessageToList(int conversationId, ChatMessage message) {
     if (!_messagesByConversation.containsKey(conversationId)) {
       _messagesByConversation[conversationId] = [];
     }
+    // Déduplication: ne pas ajouter si le message existe déjà
+    final alreadyExists = _messagesByConversation[conversationId]!.any(
+      (msg) => msg.id == message.id,
+    );
+    if (alreadyExists) {
+      print("DEBUG: Message ${message.id} already in list, skipping add");
+      return;
+    }
     _messagesByConversation[conversationId]!.add(message);
-    print("DEBUG: Message added to conversation $conversationId");
+    print("DEBUG: Message ${message.id} added to conversation $conversationId");
   }
 
   // Se désabonner d'une conversation
