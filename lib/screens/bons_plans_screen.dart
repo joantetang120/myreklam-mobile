@@ -3,9 +3,81 @@ import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/pro_post_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
+import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/config/api_config.dart';
 
-class BonsPlansScreen extends StatelessWidget {
+class BonsPlansScreen extends StatefulWidget {
   const BonsPlansScreen({super.key});
+
+  @override
+  State<BonsPlansScreen> createState() => _BonsPlansScreenState();
+}
+
+class _BonsPlansScreenState extends State<BonsPlansScreen> {
+  List<Map<String, dynamic>> _items = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final response = await ApiClient().get('/feed/latest?type=bon_plan&limit=20');
+      final data = response['data'];
+      List<Map<String, dynamic>> fetched = [];
+      if (data is Map<String, dynamic> && data['items'] is List) {
+        fetched = List<Map<String, dynamic>>.from(data['items'] as List);
+      }
+      if (mounted) {
+        setState(() {
+          _items = fetched;
+          _isLoading = false;
+        });
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Impossible de charger les bons plans.';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String? _buildStorageUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    return ApiConfig.resolveMediaUrl(path);
+  }
+
+  String _buildTimeAgo(String? dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      final diff = DateTime.now().difference(date);
+      if (diff.inDays > 7) return 'il y a ${diff.inDays ~/ 7} semaine(s)';
+      if (diff.inDays > 0) return 'il y a ${diff.inDays} jour(s)';
+      if (diff.inHours > 0) return 'il y a ${diff.inHours} heure(s)';
+      return 'il y a ${diff.inMinutes} min';
+    } catch (_) {
+      return '';
+    }
+  }
 
   Widget _buildNotifBubble() {
     return GestureDetector(
@@ -193,141 +265,98 @@ class BonsPlansScreen extends StatelessWidget {
           ),
 
           // Post cards
-          SliverList(
-            delegate: SliverChildListDelegate([
-              ProPostCard(
-                profileImage:
-                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                username: 'Jane Cooper',
-                userType: 'Particulier',
-                postText:
-                    'Promo Appareil photo Hybride Sony A6400 Noir + Objectif E PZ 16-50 mm',
-                postImage:
-                    'assets/images/dashboard_particulier/Rectangle 12 (1).png',
-                reductionPercentage: '-50%',
-                categoryIcon: Icons.local_offer_outlined,
-                categoryName: 'High-Tech · Matériel',
-                merchantName: 'Amazon',
-                timeAgo: 'il y a 1 semaine',
-                price: '12.90€',
-                likesCount: 675,
-                commentsCount: 2,
-                onTapCTA: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProPostDetailScreen(
-                        avatar:
-                            'assets/images/dashboard_particulier/Ellipse 10.png',
-                        name: 'Jane Cooper',
-                        userType: 'Particulier',
-                        title: 'Appareil photo canon haute definition avec objectif',
-                      ),
-                    ),
-                  );
-                },
+          if (_isLoading)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(child: CircularProgressIndicator()),
               ),
-              ProPostCard(
-                profileImage:
-                    'assets/images/dashboard_particulier/Ellipse 12.png',
-                username: 'Marvin McKinney',
-                userType: 'Pro',
-                postText:
-                    'Porsche : légendaire, luxueuse, sportive. Performances brutes et design iconique. Un rêve de vitesse',
-                postImage:
-                    'assets/images/dashboard_particulier/Rectangle 12 (4).png',
-                reductionPercentage: '-10%',
-                categoryIcon: Icons.account_balance_outlined,
-                categoryName: 'Finances & Assurances',
-                merchantName: 'Go Pro',
-                timeAgo: 'il y a 3 semaine',
-                price: '50.000€',
-                likesCount: 125,
-                commentsCount: 10,
-                onTapCTA: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProPostDetailScreen(
-                        avatar:
-                            'assets/images/dashboard_particulier/Ellipse 12.png',
-                        name: 'Marvin McKinney',
-                        userType: 'Pro',
-                        title: 'Porsche : légendaire, luxueuse, sportive',
-                      ),
+            )
+          else if (_error != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Text(_error!, style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _loadData,
+                      child: const Text('Réessayer'),
                     ),
-                  );
-                },
+                  ],
+                ),
               ),
-              ProPostCard(
-                profileImage:
-                    'assets/images/dashboard_particulier/Ellipse 11.png',
-                username: 'Arlene McCoy',
-                userType: 'Pro',
-                postText:
-                    "Salut, BoursoBank, tu connais ? C'est la banque qui rassemble déjà une communauté de",
-                postImage:
-                    'assets/images/dashboard_particulier/Rectangle 12 (1).png',
-                reductionPercentage: '-10%',
-                categoryIcon: Icons.account_balance_outlined,
-                categoryName: 'Finances & Assurances',
-                merchantName: 'Go Pro',
-                timeAgo: 'il y a 3 semaine',
-                price: 'Gratuit',
-                likesCount: 125,
-                commentsCount: 10,
-                onTapCTA: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProPostDetailScreen(
-                        avatar:
-                            'assets/images/dashboard_particulier/Ellipse 11.png',
-                        name: 'Arlene McCoy',
-                        userType: 'Pro',
-                        title: 'Bon plan exclusif',
-                      ),
-                    ),
-                  );
-                },
+            )
+          else if (_items.isEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(
+                  child: Text(
+                    'Aucun bon plan disponible pour le moment.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
               ),
-              ProPostCard(
-                profileImage:
-                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                username: 'Bessie Cooper',
-                userType: 'Particulier',
-                postText:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore',
-                postImage:
-                    'assets/images/dashboard_particulier/Rectangle 12.png',
-                reductionPercentage: '-30%',
-                categoryIcon: Icons.local_offer_outlined,
-                categoryName: 'High-Tech · Matériel',
-                merchantName: 'Amazon',
-                timeAgo: 'il y a 2 semaine',
-                price: '29.99€',
-                likesCount: 340,
-                commentsCount: 5,
-                onTapCTA: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProPostDetailScreen(
-                        avatar:
-                            'assets/images/dashboard_particulier/Ellipse 10.png',
-                        name: 'Bessie Cooper',
-                        userType: 'Particulier',
-                        title: 'Offre spéciale',
-                      ),
-                    ),
-                  );
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = _items[index];
+                  final resource = item['resource'] as Map<String, dynamic>? ?? {};
+                  return _buildBonPlanCard(resource);
                 },
+                childCount: _items.length,
               ),
-              const SizedBox(height: 20),
-            ]),
-          ),
+            ),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
       ),
+    );
+  }
+
+  Widget _buildBonPlanCard(Map<String, dynamic> bp) {
+    final title = bp['title']?.toString() ?? '';
+    final description = bp['description']?.toString() ?? '';
+    final category = bp['category']?.toString() ?? '';
+    final subCategory = bp['sub_category']?.toString() ?? '';
+    final merchantName = bp['available_at_name']?.toString() ?? '';
+    final createdAt = bp['created_at']?.toString();
+    final mediaFiles = bp['media_files'] as List? ?? [];
+    final imageUrl = mediaFiles.isNotEmpty ? mediaFiles.first['url']?.toString() : null;
+    final price = bp['price']?.toString() ?? bp['original_price']?.toString() ?? '';
+    final discount = bp['discount_percentage'];
+    final reductionStr = discount != null ? '-$discount%' : null;
+
+    return ProPostCard(
+      profileImage: 'assets/images/dashboard_particulier/Ellipse 10.png',
+      username: bp['user']?['email']?.toString().split('@').first ?? 'Utilisateur',
+      userType: 'Pro',
+      postText: title.isNotEmpty ? title : description,
+      postImage: _buildStorageUrl(imageUrl),
+      reductionPercentage: reductionStr,
+      categoryIcon: Icons.local_offer_outlined,
+      categoryName: [category, subCategory].where((s) => s.isNotEmpty).join(' · '),
+      merchantName: merchantName.isNotEmpty ? merchantName : 'En ligne',
+      timeAgo: _buildTimeAgo(createdAt),
+      price: price.isNotEmpty ? '${price}€' : 'Voir offre',
+      likesCount: bp['likes_count'] ?? 0,
+      commentsCount: bp['comments_count'] ?? 0,
+      onTapCTA: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProPostDetailScreen(
+              avatar: 'assets/images/dashboard_particulier/Ellipse 10.png',
+              name: bp['user']?['email']?.toString().split('@').first ?? 'Utilisateur',
+              userType: 'Pro',
+              title: title,
+            ),
+          ),
+        );
+      },
     );
   }
 }

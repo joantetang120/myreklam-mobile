@@ -2,9 +2,79 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/services/api_client.dart';
 
-class FormationScreen extends StatelessWidget {
+class FormationScreen extends StatefulWidget {
   const FormationScreen({super.key});
+
+  @override
+  State<FormationScreen> createState() => _FormationScreenState();
+}
+
+class _FormationScreenState extends State<FormationScreen> {
+  List<Map<String, dynamic>> _items = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final response = await ApiClient().get('/feed/latest?type=training&limit=20');
+      final data = response['data'];
+      List<Map<String, dynamic>> fetched = [];
+      if (data is Map<String, dynamic> && data['items'] is List) {
+        fetched = List<Map<String, dynamic>>.from(data['items'] as List);
+      }
+      if (mounted) {
+        setState(() {
+          _items = fetched;
+          _isLoading = false;
+        });
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Impossible de charger les formations.';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String _buildTimeAgo(String? dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      final diff = DateTime.now().difference(date);
+      if (diff.inDays > 7) return 'il y a ${diff.inDays ~/ 7} semaine(s)';
+      if (diff.inDays > 0) return 'il y a ${diff.inDays} jour(s)';
+      if (diff.inHours > 0) return 'il y a ${diff.inHours} heure(s)';
+      return 'il y a ${diff.inMinutes} min';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _stripHtml(String html) {
+    return html.replaceAll(RegExp(r'<[^>]*>'), '').trim();
+  }
 
   Widget _buildNotifBubble() {
     return GestureDetector(
@@ -193,103 +263,87 @@ class FormationScreen extends StatelessWidget {
           ),
 
           // Formation cards
-          SliverList(
-            delegate: SliverChildListDelegate([
-              FormationCard(
-                companyLogo:
-                    'assets/images/dashboard_particulier/Rectangle 13.png',
-                companyName: 'The North Face Sarl',
-                formationTitle: 'Licence professionnelle Bio-industrie',
-                description:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad.',
-                tags: const [
-                  FormationTag(
-                    icon: Icons.access_time,
-                    text: '550h',
-                  ),
-                  FormationTag(
-                    icon: Icons.location_on_outlined,
-                    text: 'Luxembourg',
-                  ),
-                  FormationTag(
-                    icon: Icons.person_outline,
-                    text: 'Etudiant',
-                    isSpecial: true,
-                  ),
-                  FormationTag(
-                    icon: Icons.school_outlined,
-                    text: 'Formation diplômante',
-                    isSpecial: true,
-                  ),
-                ],
-                timeAgo: 'il y a 2 jours',
-                onApply: () {},
+          if (_isLoading)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(child: CircularProgressIndicator()),
               ),
-              FormationCard(
-                companyLogo:
-                    'assets/images/dashboard_particulier/Ellipse 11.png',
-                companyName: 'Genius School',
-                formationTitle: 'Cybersécurité Red teaming',
-                description:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad.',
-                tags: const [
-                  FormationTag(
-                    icon: Icons.access_time,
-                    text: '320h',
-                  ),
-                  FormationTag(
-                    icon: Icons.location_on_outlined,
-                    text: 'Paris',
-                  ),
-                  FormationTag(
-                    icon: Icons.person_outline,
-                    text: 'Professionnel',
-                    isSpecial: true,
-                  ),
-                  FormationTag(
-                    icon: Icons.school_outlined,
-                    text: 'Formation certifiante',
-                    isSpecial: true,
-                  ),
-                ],
-                timeAgo: 'il y a 5 jours',
-                onApply: () {},
+            )
+          else if (_error != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Text(_error!, style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _loadData,
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
               ),
-              FormationCard(
-                companyLogo:
-                    'assets/images/dashboard_particulier/Ellipse 12.png',
-                companyName: 'Digital Academy',
-                formationTitle: 'Data Science & Machine Learning',
-                description:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-                tags: const [
-                  FormationTag(
-                    icon: Icons.access_time,
-                    text: '400h',
+            )
+          else if (_items.isEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(
+                  child: Text(
+                    'Aucune formation disponible pour le moment.',
+                    style: TextStyle(color: Colors.grey),
                   ),
-                  FormationTag(
-                    icon: Icons.location_on_outlined,
-                    text: 'En ligne',
-                  ),
-                  FormationTag(
-                    icon: Icons.person_outline,
-                    text: 'Tous niveaux',
-                    isSpecial: true,
-                  ),
-                  FormationTag(
-                    icon: Icons.school_outlined,
-                    text: 'Formation diplômante',
-                    isSpecial: true,
-                  ),
-                ],
-                timeAgo: 'il y a 1 semaine',
-                onApply: () {},
+                ),
               ),
-              const SizedBox(height: 20),
-            ]),
-          ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = _items[index];
+                  final resource = item['resource'] as Map<String, dynamic>? ?? {};
+                  return _buildFormationCard(resource);
+                },
+                childCount: _items.length,
+              ),
+            ),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
       ),
+    );
+  }
+
+  Widget _buildFormationCard(Map<String, dynamic> training) {
+    final title = training['title']?.toString() ?? 'Formation';
+    final description = _stripHtml(training['description']?.toString() ?? '');
+    final location = training['location']?.toString() ?? training['city']?.toString() ?? '';
+    final duration = training['duration']?.toString() ?? '';
+    final targetAudience = training['target_audience']?.toString() ?? '';
+    final formationType = training['formation_type']?.toString() ?? '';
+    final createdAt = training['created_at']?.toString();
+    final companyName = training['company_name']?.toString() ?? training['user']?['email']?.toString().split('@').first ?? 'Organisme';
+
+    final tags = <FormationTag>[
+      if (duration.isNotEmpty)
+        FormationTag(icon: Icons.access_time, text: duration),
+      if (location.isNotEmpty)
+        FormationTag(icon: Icons.location_on_outlined, text: location),
+      if (targetAudience.isNotEmpty)
+        FormationTag(icon: Icons.person_outline, text: targetAudience, isSpecial: true),
+      if (formationType.isNotEmpty)
+        FormationTag(icon: Icons.school_outlined, text: formationType, isSpecial: true),
+    ];
+
+    return FormationCard(
+      companyLogo: 'assets/images/dashboard_particulier/Rectangle 13.png',
+      companyName: companyName,
+      formationTitle: title,
+      description: description,
+      tags: tags.isNotEmpty ? tags : [const FormationTag(icon: Icons.info_outline, text: 'Détails disponibles')],
+      timeAgo: _buildTimeAgo(createdAt),
+      onApply: () {},
     );
   }
 }

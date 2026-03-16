@@ -2,9 +2,93 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/config/api_config.dart';
 
-class EvenementsScreen extends StatelessWidget {
+class EvenementsScreen extends StatefulWidget {
   const EvenementsScreen({super.key});
+
+  @override
+  State<EvenementsScreen> createState() => _EvenementsScreenState();
+}
+
+class _EvenementsScreenState extends State<EvenementsScreen> {
+  List<Map<String, dynamic>> _items = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final response = await ApiClient().get('/feed/latest?type=event&limit=20');
+      final data = response['data'];
+      List<Map<String, dynamic>> fetched = [];
+      if (data is Map<String, dynamic> && data['items'] is List) {
+        fetched = List<Map<String, dynamic>>.from(data['items'] as List);
+      }
+      if (mounted) {
+        setState(() {
+          _items = fetched;
+          _isLoading = false;
+        });
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Impossible de charger les évènements.';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String? _buildStorageUrl(String? path) {
+    if (path == null || path.isEmpty) return null;
+    return ApiConfig.resolveMediaUrl(path);
+  }
+
+  String _buildTimeAgo(String? dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      final diff = DateTime.now().difference(date);
+      if (diff.inDays > 7) return 'il y a ${diff.inDays ~/ 7} semaine(s)';
+      if (diff.inDays > 0) return 'il y a ${diff.inDays} jour(s)';
+      if (diff.inHours > 0) return 'il y a ${diff.inHours} heure(s)';
+      return 'il y a ${diff.inMinutes} min';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _formatEventDate(String? dateStr) {
+    if (dateStr == null) return 'Date à confirmer';
+    try {
+      final date = DateTime.parse(dateStr);
+      final months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+      return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
+    } catch (_) {
+      return dateStr;
+    }
+  }
 
   Widget _buildNotifBubble() {
     return GestureDetector(
@@ -193,79 +277,90 @@ class EvenementsScreen extends StatelessWidget {
           ),
 
           // Event cards
-          SliverList(
-            delegate: SliverChildListDelegate([
-              EvenementCard(
-                profileImage:
-                    'assets/images/dashboard_particulier/Ellipse 12.png',
-                username: 'Marvin McKinney',
-                userType: 'Pro',
-                eventTitle:
-                    'LE MUSÉE ÉPHÉMÈRE® DES DINOSAURES À NANCY - TOUR 2025',
-                eventImage:
-                    'assets/images/dashboard_particulier/Rectangle 12 (4).png',
-                badge: 'A venir',
-                categories: const [
-                  'Culture et divertissement',
-                  'Spectacle et Billeterie',
-                ],
-                eventDate: '08 Novembre 2025',
-                location: '67100, Strasbourg France',
-                timeAgo: 'il y a 1 semaine',
-                price: '50€',
-                likesCount: 125,
-                commentsCount: 10,
-                onTapCTA: () {},
+          if (_isLoading)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(child: CircularProgressIndicator()),
               ),
-              EvenementCard(
-                profileImage:
-                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                username: 'Esther Howard',
-                userType: 'Pro',
-                eventTitle:
-                    'Festival de Jazz de Paris - Edition 2025',
-                eventImage:
-                    'assets/images/dashboard_particulier/Rectangle 12 (1).png',
-                badge: 'A venir',
-                categories: const [
-                  'Musique',
-                  'Festival',
-                ],
-                eventDate: '15 Décembre 2025',
-                location: '75001, Paris France',
-                timeAgo: 'il y a 3 jours',
-                price: '35€',
-                likesCount: 340,
-                commentsCount: 25,
-                onTapCTA: () {},
+            )
+          else if (_error != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Text(_error!, style: const TextStyle(color: Colors.red)),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _loadData,
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
               ),
-              EvenementCard(
-                profileImage:
-                    'assets/images/dashboard_particulier/Ellipse 11.png',
-                username: 'Jenny Wilson',
-                userType: 'Pro',
-                eventTitle:
-                    'Salon de la Tech & Innovation - Luxembourg 2025',
-                eventImage:
-                    'assets/images/dashboard_particulier/Rectangle 12.png',
-                badge: 'A venir',
-                categories: const [
-                  'Technologie',
-                  'Innovation',
-                ],
-                eventDate: '20 Janvier 2026',
-                location: 'Luxembourg Ville',
-                timeAgo: 'il y a 5 jours',
-                price: 'Gratuit',
-                likesCount: 560,
-                commentsCount: 42,
-                onTapCTA: () {},
+            )
+          else if (_items.isEmpty)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(
+                  child: Text(
+                    'Aucun évènement disponible pour le moment.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
               ),
-              const SizedBox(height: 20),
-            ]),
-          ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final item = _items[index];
+                  final resource = item['resource'] as Map<String, dynamic>? ?? {};
+                  return _buildEventCard(resource);
+                },
+                childCount: _items.length,
+              ),
+            ),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
       ),
+    );
+  }
+
+  Widget _buildEventCard(Map<String, dynamic> event) {
+    final title = event['title']?.toString() ?? 'Évènement';
+    final location = event['location']?.toString() ?? event['city']?.toString() ?? '';
+    final eventDate = event['event_date']?.toString() ?? event['start_date']?.toString();
+    final createdAt = event['created_at']?.toString();
+    final price = event['price']?.toString() ?? event['ticket_price']?.toString();
+    final category = event['category']?.toString() ?? '';
+    final subCategory = event['sub_category']?.toString() ?? '';
+    final mediaFiles = event['media'] as List? ?? [];
+    final imageUrl = mediaFiles.isNotEmpty ? mediaFiles.first['url']?.toString() : null;
+    final username = event['user']?['email']?.toString().split('@').first ?? 'Organisateur';
+
+    final categories = <String>[
+      if (category.isNotEmpty) category,
+      if (subCategory.isNotEmpty) subCategory,
+    ];
+
+    return EvenementCard(
+      profileImage: 'assets/images/dashboard_particulier/Ellipse 12.png',
+      username: username,
+      userType: 'Pro',
+      eventTitle: title,
+      eventImage: _buildStorageUrl(imageUrl) ?? 'assets/images/dashboard_particulier/Rectangle 12 (4).png',
+      badge: 'A venir',
+      categories: categories.isNotEmpty ? categories : ['Évènement'],
+      eventDate: _formatEventDate(eventDate),
+      location: location.isNotEmpty ? location : 'Lieu à confirmer',
+      timeAgo: _buildTimeAgo(createdAt),
+      price: price != null && price.isNotEmpty ? '${price}€' : 'Gratuit',
+      likesCount: event['likes_count'] ?? 0,
+      commentsCount: event['comments_count'] ?? 0,
+      onTapCTA: () {},
     );
   }
 }
