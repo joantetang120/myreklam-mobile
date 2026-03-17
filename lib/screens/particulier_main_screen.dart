@@ -19,12 +19,22 @@ class ParticulierMainScreen extends StatefulWidget {
   final bool showPublishOptions;
   final bool showCreatePost;
   final bool showSearchResults;
+  final String? searchQuery;
+  final String? searchCategory;
+  final String? searchLocation;
+  final double? searchRadius;
+  final bool? searchAllFrance;
   const ParticulierMainScreen({
     super.key,
     this.initialIndex = 0,
     this.showPublishOptions = false,
     this.showCreatePost = false,
     this.showSearchResults = false,
+    this.searchQuery,
+    this.searchCategory,
+    this.searchLocation,
+    this.searchRadius,
+    this.searchAllFrance,
   });
 
   @override
@@ -90,7 +100,13 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
       body = const CreatePostScreen();
       displayIndex = 2;
     } else if (_showSearchResults) {
-      body = const SearchResultsScreen();
+      body = SearchResultsScreen(
+        query: widget.searchQuery ?? '',
+        category: widget.searchCategory,
+        location: widget.searchLocation ?? '',
+        radius: widget.searchRadius ?? 0,
+        allFrance: widget.searchAllFrance ?? false,
+      );
       displayIndex = 3;
     } else {
       body = IndexedStack(index: _currentIndex, children: _pages);
