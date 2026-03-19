@@ -48,46 +48,76 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   final Map<String, String> _categoryCodeToId = {};
   final Map<String, List<Map<String, String>>> _subsByParentId = {};
 
-  // Catégories de formation statiques
+  // Catégories de formation statiques (codes uniques avec préfixe)
   final List<Map<String, String>> _formationCategories = [
     {
-      'code': 'agriculture',
+      'code': 'formation_agriculture',
       'label': 'Agriculture, Agroalimentaire, Environnement',
     },
-    {'code': 'art', 'label': 'Art, Arts appliqués, Artisanat'},
-    {'code': 'commerce', 'label': 'Commerce, Vente, Marketing'},
+    {'code': 'formation_art', 'label': 'Art, Arts appliqués, Artisanat'},
+    {'code': 'formation_commerce', 'label': 'Commerce, Vente, Marketing'},
     {
-      'code': 'communication',
+      'code': 'formation_communication',
       'label': 'Communication, Information, Journalisme',
     },
-    {'code': 'comptabilite', 'label': 'Comptabilité, Gestion, Finance, Audit'},
     {
-      'code': 'construction',
+      'code': 'formation_comptabilite',
+      'label': 'Comptabilité, Gestion, Finance, Audit',
+    },
+    {
+      'code': 'formation_construction',
       'label': 'Construction, Bâtiment, Travaux publics',
     },
-    {'code': 'developpement', 'label': 'Développement personnel, Coaching'},
-    {'code': 'droit', 'label': 'Droit, Sciences Politiques'},
-    {'code': 'education', 'label': 'Éducation, Enseignement, Formation'},
-    {'code': 'hotellerie', 'label': 'Hôtellerie, Restauration, Tourisme'},
-    {'code': 'industrie', 'label': 'Industrie, Production, Maintenance'},
     {
-      'code': 'informatique',
+      'code': 'formation_developpement',
+      'label': 'Développement personnel, Coaching',
+    },
+    {'code': 'formation_droit', 'label': 'Droit, Sciences politiques'},
+    {
+      'code': 'formation_education',
+      'label': 'Éducation, Enseignement, Formation',
+    },
+    {
+      'code': 'formation_hotellerie',
+      'label': 'Hôtellerie, Restauration, Tourisme',
+    },
+    {
+      'code': 'formation_industrie',
+      'label': 'Industrie, Production, Maintenance',
+    },
+    {
+      'code': 'formation_informatique',
       'label': 'Informatique, Numerique, Telecommunications',
     },
-    {'code': 'sante', 'label': 'Sante, Social, Services a la personne'},
-    {'code': 'transport', 'label': 'Transport, Logistique, Sécurité'},
-    {'code': 'formations_reglementaires', 'label': 'Formations réglementaires'},
-    {'code': 'energie', 'label': 'Énergie, Énergies renouvelables, Nucléaire'},
     {
-      'code': 'mecanique',
+      'code': 'formation_sante',
+      'label': 'Sante, Social, Services a la personne',
+    },
+    {'code': 'formation_transport', 'label': 'Transport, Logistique, Sécurité'},
+    {
+      'code': 'formation_formations_reglementaires',
+      'label': 'Formations réglementaires',
+    },
+    {
+      'code': 'formation_energie',
+      'label': 'Énergie, Énergies renouvelables, Nucléaire',
+    },
+    {
+      'code': 'formation_mecanique',
       'label': 'Mécanique de précision, Aéronautique, Ferroviaire',
     },
-    {'code': 'fonction_publique', 'label': 'Fonction publique, Collectivités'},
-    {'code': 'jeux_video', 'label': 'Jeux vidéo, Animation, Multimédia'},
-    {'code': 'sciences', 'label': 'Sciences, Recherche, Qualité'},
-    {'code': 'langues', 'label': 'Langues étrangères'},
     {
-      'code': 'neurosciences',
+      'code': 'formation_fonction_publique',
+      'label': 'Fonction publique, Collectivités',
+    },
+    {
+      'code': 'formation_jeux_video',
+      'label': 'Jeux vidéo, Animation, Multimédia',
+    },
+    {'code': 'formation_sciences', 'label': 'Sciences, Recherche, Qualité'},
+    {'code': 'formation_langues', 'label': 'Langues étrangères'},
+    {
+      'code': 'formation_neurosciences',
       'label': 'Neurosciences, Apprentissage, Pédagogie innovante',
     },
     {
@@ -113,77 +143,95 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     {'code': 'stage', 'label': 'Stage/Immersion professionelle'},
   ];
 
-  // Secteurs d'activité pour Emploi/Stage
+  // Secteurs d'activité pour Emploi/Stage (codes uniques avec préfixe)
   final List<Map<String, String>> _secteursActivite = [
-    {'code': 'achats', 'label': 'Achats'},
-    {'code': 'administratif', 'label': 'Administratif'},
-    {'code': 'aeronautique', 'label': 'Aéronautique'},
-    {'code': 'agriculture', 'label': 'Agriculture'},
-    {'code': 'agroalimentaire', 'label': 'Agroalimentaire'},
-    {'code': 'architecture', 'label': 'Architecture'},
-    {'code': 'artisanat', 'label': 'Artisanat'},
-    {'code': 'assurances', 'label': 'Assurances'},
-    {'code': 'audiovisuel', 'label': 'Audiovisuel'},
-    {'code': 'audit', 'label': 'Audit'},
-    {'code': 'automobile', 'label': 'Automobile'},
-    {'code': 'banque', 'label': 'Banque'},
-    {'code': 'batiment', 'label': 'Bâtiment'},
-    {'code': 'beaute', 'label': 'Beauté'},
-    {'code': 'bois', 'label': 'Bois'},
-    {'code': 'chimie', 'label': 'Chimie'},
-    {'code': 'commerce', 'label': 'Commerce'},
-    {'code': 'communication', 'label': 'Communication'},
-    {'code': 'comptabilite', 'label': 'Comptabilité'},
-    {'code': 'conseil', 'label': 'Conseil'},
-    {'code': 'construction', 'label': 'Construction'},
-    {'code': 'culture', 'label': 'Culture'},
-    {'code': 'defense', 'label': 'Défense'},
-    {'code': 'design', 'label': 'Design'},
-    {'code': 'distribution', 'label': 'Distribution'},
-    {'code': 'droit', 'label': 'Droit'},
-    {'code': 'edition', 'label': 'Édition'},
-    {'code': 'education', 'label': 'Éducation'},
-    {'code': 'electronique', 'label': 'Électronique'},
-    {'code': 'energie', 'label': 'Énergie'},
-    {'code': 'enseignement', 'label': 'Enseignement'},
-    {'code': 'environnement', 'label': 'Environnement'},
-    {'code': 'evenementiel', 'label': 'Événementiel'},
-    {'code': 'finance', 'label': 'Finance'},
-    {'code': 'fonction_publique', 'label': 'Fonction publique'},
-    {'code': 'hotellerie', 'label': 'Hôtellerie'},
-    {'code': 'immobilier', 'label': 'Immobilier'},
-    {'code': 'industrie', 'label': 'Industrie'},
-    {'code': 'informatique', 'label': 'Informatique'},
-    {'code': 'ingenierie', 'label': 'Ingénierie'},
-    {'code': 'internet', 'label': 'Internet'},
-    {'code': 'journalisme', 'label': 'Journalisme'},
-    {'code': 'juridique', 'label': 'Juridique'},
-    {'code': 'logistique', 'label': 'Logistique'},
-    {'code': 'luxe', 'label': 'Luxe'},
-    {'code': 'marketing', 'label': 'Marketing'},
-    {'code': 'mecanique', 'label': 'Mécanique'},
-    {'code': 'medical', 'label': 'Médical'},
-    {'code': 'mode', 'label': 'Mode'},
-    {'code': 'multimedia', 'label': 'Multimédia'},
-    {'code': 'naval', 'label': 'Naval'},
-    {'code': 'pharmaceutique', 'label': 'Pharmaceutique'},
-    {'code': 'production', 'label': 'Production'},
-    {'code': 'publicite', 'label': 'Publicité'},
-    {'code': 'qualite', 'label': 'Qualité'},
-    {'code': 'recherche', 'label': 'Recherche'},
-    {'code': 'restauration', 'label': 'Restauration'},
-    {'code': 'ressources_humaines', 'label': 'Ressources humaines'},
-    {'code': 'sante', 'label': 'Santé'},
-    {'code': 'securite', 'label': 'Sécurité'},
-    {'code': 'services', 'label': 'Services'},
-    {'code': 'social', 'label': 'Social'},
-    {'code': 'sport', 'label': 'Sport'},
-    {'code': 'telecommunication', 'label': 'Télécommunication'},
-    {'code': 'textile', 'label': 'Textile'},
-    {'code': 'tourisme', 'label': 'Tourisme'},
-    {'code': 'transport', 'label': 'Transport'},
-    {'code': 'travail_temporaire', 'label': 'Travail temporaire'},
-    {'code': 'vente', 'label': 'Vente'},
+    {'code': 'secteur_achats', 'label': 'Achats'},
+    {'code': 'secteur_administratif', 'label': 'Administratif'},
+    {'code': 'secteur_aeronautique', 'label': 'Aéronautique'},
+    {'code': 'secteur_agriculture', 'label': 'Agriculture'},
+    {'code': 'secteur_agroalimentaire', 'label': 'Agroalimentaire'},
+    {'code': 'secteur_architecture', 'label': 'Architecture'},
+    {'code': 'secteur_artisanat', 'label': 'Artisanat'},
+    {'code': 'secteur_assurances', 'label': 'Assurances'},
+    {'code': 'secteur_audiovisuel', 'label': 'Audiovisuel'},
+    {'code': 'secteur_audit', 'label': 'Audit'},
+    {'code': 'secteur_automobile', 'label': 'Automobile'},
+    {'code': 'secteur_banque', 'label': 'Banque'},
+    {'code': 'secteur_batiment', 'label': 'Bâtiment'},
+    {'code': 'secteur_beaute', 'label': 'Beauté'},
+    {'code': 'secteur_bois', 'label': 'Bois'},
+    {'code': 'secteur_chimie', 'label': 'Chimie'},
+    {'code': 'secteur_commerce', 'label': 'Commerce'},
+    {'code': 'secteur_communication', 'label': 'Communication'},
+    {'code': 'secteur_comptabilite', 'label': 'Comptabilité'},
+    {'code': 'secteur_conseil', 'label': 'Conseil'},
+    {'code': 'secteur_construction', 'label': 'Construction'},
+    {'code': 'secteur_culture', 'label': 'Culture'},
+    {'code': 'secteur_defense', 'label': 'Défense'},
+    {'code': 'secteur_design', 'label': 'Design'},
+    {'code': 'secteur_distribution', 'label': 'Distribution'},
+    {'code': 'secteur_droit', 'label': 'Droit'},
+    {'code': 'secteur_edition', 'label': 'Édition'},
+    {'code': 'secteur_education', 'label': 'Éducation'},
+    {'code': 'secteur_electronique', 'label': 'Électronique'},
+    {'code': 'secteur_energie', 'label': 'Énergie'},
+    {'code': 'secteur_enseignement', 'label': 'Enseignement'},
+    {'code': 'secteur_environnement', 'label': 'Environnement'},
+    {'code': 'secteur_evenementiel', 'label': 'Événementiel'},
+    {'code': 'secteur_finance', 'label': 'Finance'},
+    {'code': 'secteur_fonction_publique', 'label': 'Fonction publique'},
+    {'code': 'secteur_hotellerie', 'label': 'Hôtellerie'},
+    {'code': 'secteur_immobilier', 'label': 'Immobilier'},
+    {'code': 'secteur_industrie', 'label': 'Industrie'},
+    {'code': 'secteur_informatique', 'label': 'Informatique'},
+    {'code': 'secteur_ingenierie', 'label': 'Ingénierie'},
+    {'code': 'secteur_internet', 'label': 'Internet'},
+    {'code': 'secteur_journalisme', 'label': 'Journalisme'},
+    {'code': 'secteur_juridique', 'label': 'Juridique'},
+    {'code': 'secteur_logistique', 'label': 'Logistique'},
+    {'code': 'secteur_luxe', 'label': 'Luxe'},
+    {'code': 'secteur_marketing', 'label': 'Marketing'},
+    {'code': 'secteur_mecanique', 'label': 'Mécanique'},
+    {'code': 'secteur_medical', 'label': 'Médical'},
+    {'code': 'secteur_mode', 'label': 'Mode'},
+    {'code': 'secteur_multimedia', 'label': 'Multimédia'},
+    {'code': 'secteur_naval', 'label': 'Naval'},
+    {'code': 'secteur_pharmaceutique', 'label': 'Pharmaceutique'},
+    {'code': 'secteur_production', 'label': 'Production'},
+    {'code': 'secteur_publicite', 'label': 'Publicité'},
+    {'code': 'secteur_qualite', 'label': 'Qualité'},
+    {'code': 'secteur_recherche', 'label': 'Recherche'},
+    {'code': 'secteur_restauration', 'label': 'Restauration'},
+    {'code': 'secteur_ressources_humaines', 'label': 'Ressources humaines'},
+    {'code': 'secteur_sante', 'label': 'Santé'},
+    {'code': 'secteur_securite', 'label': 'Sécurité'},
+    {'code': 'secteur_services', 'label': 'Services'},
+    {'code': 'secteur_social', 'label': 'Social'},
+    {'code': 'secteur_sport', 'label': 'Sport'},
+    {'code': 'secteur_telecommunication', 'label': 'Télécommunication'},
+    {'code': 'secteur_textile', 'label': 'Textile'},
+    {'code': 'secteur_tourisme', 'label': 'Tourisme'},
+    {'code': 'secteur_transport', 'label': 'Transport'},
+    {'code': 'secteur_travail_temporaire', 'label': 'Travail temporaire'},
+    {'code': 'secteur_vente', 'label': 'Vente'},
+  ];
+
+  // Secteurs d'activité pour Emploi/Stage
+  final List<Map<String, String>> _allFunction = [
+    {'code': 'administratif', 'label': 'Agent de bureau'},
+    {'code': 'aeronautique', 'label': 'Agent de liaison'},
+    {'code': 'agriculture', 'label': 'Adjoint DAF'},
+  ];
+
+  // Options pour le dropdown immobilier (codes uniques)
+  final List<Map<String, String>> _immobilierTypeOptions = [
+    {'code': 'RealEstateInvestment', 'label': 'Investissement immobilier'},
+    {'code': 'LookingForRental', 'label': 'Cherche location'},
+    {'code': 'LookingForSharedHousing', 'label': 'Cherche colocation'},
+    {
+      'code': 'LookingForProfessionalSpace',
+      'label': 'Cherche local professionel',
+    },
   ];
 
   // Step 1 - Nature
@@ -191,6 +239,16 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   String? _selectedType;
   String? _selectedFormationType;
   String? _selectedFormationSector;
+  String? _selectedFunction;
+
+  // Variables séparées pour Emploi/Stage afin d'éviter les conflits
+  String? _selectedSecteurActivite;
+
+  // Variable séparée pour Formation afin d'éviter les conflits
+  String? _selectedFormationCategory;
+
+  // Variable séparée pour Immobilier afin d'éviter les conflits
+  String? _selectedImmobilierType;
 
   // Step 2 - Details
   final TextEditingController _titleController = TextEditingController();
@@ -202,11 +260,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   final TextEditingController _prixFinalController = TextEditingController();
 
   // Formation spécifique
-  final List<String> _selectedTeachingTypes = [];
-  final List<String> _selectedFinancingTypes = [];
+  List<String> _selectedTeachingTypes = [];
+  List<String> _selectedFinancingTypes = [];
   final TextEditingController _nbPersonnesController = TextEditingController();
   final TextEditingController _nbGroupesController = TextEditingController();
   bool _dansImmediat = false;
+  bool _docCand = false;
   bool _aDefinir = false;
 
   // Immobilier spécifique
@@ -224,8 +283,13 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   String? _meuble; // 'meuble', 'non_meuble', 'indifferent'
 
   // Emploi/Stage spécifique
-  final List<String> _selectedTypeContrat = [];
+  List<String> _selectedTypeContrat = [];
   String? _tempsPartielPlein;
+  String? _trancheSalariale;
+  final TextEditingController _salaryMinController = TextEditingController();
+  final TextEditingController _salaryMaxController = TextEditingController();
+  String? _salaryNetOrBrut; // 'net' ou 'brut'
+  String? _salaryIndiceTemporel; // 'annees' ou 'heures'
   String? _niveauEtudes;
   String? _niveauExperience;
   bool _accepteTeletravaill = false;
@@ -240,16 +304,23 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   bool _showGoogleLocation = false;
   double _rayonRecherche = 0;
 
-  // Media
+  // Media (photos from _buildStepPhoto)
   final List<PlatformFile> _selectedMediaFiles = [];
   final List<String> _existingMediaUrls = [];
   bool _isUploadingMedia = false;
+
+  // Documents (CV, lettre de motivation, portfolio from Emploi/Stage forms)
+  final List<PlatformFile> _selectedDocumentFiles = [];
+  final Map<String, PlatformFile> _documentFilesByType = {}; // type -> file
 
   // Review
   bool _acceptMessages = false;
 
   // Submission state
   bool _isSubmitting = false;
+
+  // User Role
+  String? userRole;
 
   bool get _isEditMode => widget.isEditMode;
 
@@ -439,6 +510,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         'step': _currentStep,
         'category': _selectedCategory,
         'type': _selectedType,
+        'function': _selectedFunction,
         'title': _titleController.text,
         'description_delta': jsonEncode(
           _descriptionQuillController.document.toDelta().toJson(),
@@ -454,6 +526,45 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         'show_google_location': _showGoogleLocation,
         'rayon': _rayonRecherche,
         'accept_messages': _acceptMessages,
+        // Nouvelles variables pour Emploi/Stage
+        'temps_partiel_plein': _tempsPartielPlein,
+        'niveau_etudes': _niveauEtudes,
+        'niveau_experience': _niveauExperience,
+        'accepte_teletravail': _accepteTeletravaill,
+        'dans_immediat': _dansImmediat,
+        'type_contrat': _selectedTypeContrat,
+        // Nouvelles variables pour Formation
+        'formation_type': _selectedFormationType,
+        'formation_sector': _selectedFormationSector,
+        'tranche_salariale': _trancheSalariale,
+        'salary_min': _salaryMinController.text,
+        'salary_max': _salaryMaxController.text,
+        'salary_net_or_brut': _salaryNetOrBrut,
+        'salary_indice_temporel': _salaryIndiceTemporel,
+        // Variables Emploi/Stage
+        'secteur_activite': _selectedSecteurActivite,
+        // Variables Formation
+        'formation_category': _selectedFormationCategory,
+        // Variables Immobilier
+        'immobilier_type': _selectedImmobilierType,
+        'type_bien': _selectedTypeBien,
+        'surface_habitable_min': _surfaceHabitableMinController.text,
+        'surface_habitable_max': _surfaceHabitableMaxController.text,
+        'surface_terrain_min': _surfaceTerrainMinController.text,
+        'surface_terrain_max': _surfaceTerrainMaxController.text,
+        'nb_pieces': _nbPieces,
+        'nb_chambres': _nbChambres,
+        'meuble': _meuble,
+        // Documents
+        'doc_cand': _docCand,
+        'selected_cv_options': _selectedCvOptions,
+        'document_files_count': _selectedDocumentFiles.length,
+        // Formation spécifique
+        'nb_personnes': _nbPersonnesController.text,
+        'nb_groupes': _nbGroupesController.text,
+        'a_definir': _aDefinir,
+        'financingTypes': _selectedFinancingTypes,
+        'teachingTypes': _selectedTeachingTypes,
       };
       await prefs.setString(_draftKey, jsonEncode(formData));
     } catch (e) {
@@ -471,6 +582,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         _currentStep = formData['step'] ?? 0;
         _selectedCategory = formData['category'];
         _selectedType = formData['type'];
+        _selectedFunction = formData['function'];
         _titleController.text = formData['title'] ?? '';
         _prixInitialController.text = formData['budget_min'] ?? '';
         _prixFinalController.text = formData['budget_max'] ?? '';
@@ -485,6 +597,75 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         _showGoogleLocation = formData['show_google_location'] ?? false;
         _rayonRecherche = (formData['rayon'] ?? 0).toDouble();
         _acceptMessages = formData['accept_messages'] ?? false;
+
+        // Restaurer les nouvelles variables Emploi/Stage
+        _tempsPartielPlein = formData['temps_partiel_plein'];
+        _niveauEtudes = formData['niveau_etudes'];
+        _niveauExperience = formData['niveau_experience'];
+        _accepteTeletravaill = formData['accepte_teletravail'] ?? false;
+        _dansImmediat = formData['dans_immediat'] ?? false;
+        if (formData['type_contrat'] is List) {
+          _selectedTypeContrat = List<String>.from(formData['type_contrat']);
+        }
+
+        // Restaurer les nouvelles variables Formation
+        _selectedFormationType = formData['formation_type'];
+        _selectedFormationSector = formData['formation_sector'];
+        _trancheSalariale = formData['tranche_salariale'];
+        _salaryMinController.text = formData['salary_min'] ?? '';
+        _salaryMaxController.text = formData['salary_max'] ?? '';
+        _salaryNetOrBrut = formData['salary_net_or_brut'];
+        _salaryIndiceTemporel = formData['salary_indice_temporel'];
+
+        // Restaurer les variables Emploi/Stage
+        _selectedSecteurActivite = formData['secteur_activite'];
+
+        // Restaurer les variables Formation
+        _selectedFormationCategory = formData['formation_category'];
+
+        // Restaurer les variables Immobilier
+        _selectedImmobilierType = formData['immobilier_type'];
+        if (formData['type_bien'] is List) {
+          _selectedTypeBien.clear();
+          _selectedTypeBien.addAll(List<String>.from(formData['type_bien']));
+        }
+        _surfaceHabitableMinController.text =
+            formData['surface_habitable_min'] ?? '';
+        _surfaceHabitableMaxController.text =
+            formData['surface_habitable_max'] ?? '';
+        _surfaceTerrainMinController.text =
+            formData['surface_terrain_min'] ?? '';
+        _surfaceTerrainMaxController.text =
+            formData['surface_terrain_max'] ?? '';
+        _nbPieces = formData['nb_pieces'];
+        _nbChambres = formData['nb_chambres'];
+        _meuble = formData['meuble'];
+
+        if (formData['financingTypes'] is List) {
+          _selectedFinancingTypes = List<String>.from(
+            formData['financingTypes'],
+          );
+        }
+        if (formData['teachingTypes'] is List) {
+          _selectedTeachingTypes = List<String>.from(formData['teachingTypes']);
+        }
+
+        // Restaurer les nouvelles variables documents
+        _docCand = formData['doc_cand'] ?? false;
+        if (formData['selected_cv_options'] is List) {
+          _selectedCvOptions.clear();
+          _selectedCvOptions.addAll(
+            List<String>.from(formData['selected_cv_options']),
+          );
+        }
+        // Note: _selectedDocumentFiles cannot be restored from SharedPreferences
+        // as PlatformFile objects cannot be serialized. User will need to re-select files.
+
+        // Restaurer les variables spécifiques Formation
+        _nbPersonnesController.text = formData['nb_personnes'] ?? '';
+        _nbGroupesController.text = formData['nb_groupes'] ?? '';
+        _aDefinir = formData['a_definir'] ?? false;
+
         if (_selectedCategory != null) {
           _typeOptions = _getSubCategoriesForCode(_selectedCategory);
         }
@@ -651,8 +832,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       }
 
       // Filtrer les catégories selon le type d'utilisateur
-      final userRole = await _getUserRole();
-      final filteredNatures = _filterNatureByRole(parsedNatures, userRole);
+      userRole = await _getUserRole();
+      final filteredNatures = _filterNatureByRole(parsedNatures, userRole!);
 
       // Convertir filteredNatures en List<Map<String, String>>
       final convertedNatures = <Map<String, String>>[];
@@ -735,7 +916,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     if (categoryCode == null) return [];
 
     switch (categoryCode) {
-      case 'langues':
+      case 'formation_langues':
         return [
           {'code': 'anglais', 'label': 'Anglais professionnel'},
           {'code': 'espagnol', 'label': 'Espagnol'},
@@ -745,7 +926,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           {'code': 'arabe', 'label': 'Arabe'},
           {'code': 'japonais', 'label': 'Japonais'},
         ];
-      case 'informatique':
+      case 'formation_informatique':
         return [
           {'code': 'dev_web', 'label': 'Développement web'},
           {'code': 'dev_mobile', 'label': 'Développement mobile'},
@@ -754,14 +935,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           {'code': 'reseaux', 'label': 'Réseaux et systèmes'},
           {'code': 'devops', 'label': 'DevOps'},
         ];
-      case 'commerce':
+      case 'formation_commerce':
         return [
           {'code': 'vente', 'label': 'Techniques de vente'},
           {'code': 'negociation', 'label': 'Négociation commerciale'},
           {'code': 'marketing_digital', 'label': 'Marketing digital'},
           {'code': 'relation_client', 'label': 'Relation client'},
         ];
-      case 'sante':
+      case 'formation_sante':
         return [
           {'code': 'soins_infirmiers', 'label': 'Soins infirmiers'},
           {'code': 'aide_soignant', 'label': 'Aide-soignant'},
@@ -776,7 +957,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   void _onNatureChanged(String? code) {
     setState(() {
       _selectedCategory = code;
-      _selectedType = null;
+      // _selectedType = null;
       _typeOptions = _getSubCategoriesForCode(code);
     });
   }
@@ -854,7 +1035,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         .toJson();
     final payload = <String, dynamic>{
       'nature': _selectedCategory,
-      'type': _selectedType,
+      'function': _selectedFunction,
       'title': _titleController.text.trim(),
       'description': description,
       'description_delta': descriptionDelta,
@@ -868,6 +1049,72 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       'use_current_location': _useCurrentLocation,
       'show_google_location': _showGoogleLocation,
       'status': 'pending',
+
+      // Variables Emploi/Stage
+      if (_tempsPartielPlein != null) 'work_type': _tempsPartielPlein,
+      if (_niveauEtudes != null) 'education_level': _niveauEtudes,
+      if (_niveauExperience != null) 'experience_level': _niveauExperience,
+      if (_accepteTeletravaill != null)
+        'accept_remote_work': _accepteTeletravaill,
+      if (_dansImmediat != null) 'immediate_availability': _dansImmediat,
+      if (_trancheSalariale != null) 'salary_range': _trancheSalariale,
+      if (_salaryMinController.text.trim().isNotEmpty)
+        'salary_min': int.tryParse(_salaryMinController.text.trim()),
+      if (_salaryMaxController.text.trim().isNotEmpty)
+        'salary_max': int.tryParse(_salaryMaxController.text.trim()),
+      if (_salaryNetOrBrut != null) 'salary_net_or_brut': _salaryNetOrBrut,
+      if (_salaryIndiceTemporel != null)
+        'salary_indice_temporel': _salaryIndiceTemporel,
+      if (_selectedSecteurActivite != null)
+        'activity_sector': _selectedSecteurActivite,
+      if (_selectedTypeContrat.isNotEmpty)
+        'contract_types': _selectedTypeContrat,
+
+      // Variables Formation
+      if (_selectedFormationCategory != null)
+        'training_category': _selectedFormationCategory,
+      if (_selectedFormationType != null)
+        'training_type': _selectedFormationType,
+      if (_selectedFormationSector != null)
+        'training_sector': _selectedFormationSector,
+
+      // Variables Immobilier
+      if (_selectedImmobilierType != null)
+        'real_estate_type': _selectedImmobilierType,
+      if (_selectedTypeBien.isNotEmpty) 'property_types': _selectedTypeBien,
+      if (_surfaceHabitableMinController.text.trim().isNotEmpty)
+        'surface_habitable_min': int.tryParse(
+          _surfaceHabitableMinController.text.trim(),
+        ),
+      if (_surfaceHabitableMaxController.text.trim().isNotEmpty)
+        'surface_habitable_max': int.tryParse(
+          _surfaceHabitableMaxController.text.trim(),
+        ),
+      if (_surfaceTerrainMinController.text.trim().isNotEmpty)
+        'surface_terrain_min': int.tryParse(
+          _surfaceTerrainMinController.text.trim(),
+        ),
+      if (_surfaceTerrainMaxController.text.trim().isNotEmpty)
+        'surface_terrain_max': int.tryParse(
+          _surfaceTerrainMaxController.text.trim(),
+        ),
+      if (_nbPieces != null) 'nb_pieces': _nbPieces,
+      if (_nbChambres != null) 'nb_chambres': _nbChambres,
+      if (_meuble != null) 'meuble': _meuble,
+      if (_selectedFinancingTypes.isNotEmpty)
+        'financing_types': _selectedFinancingTypes,
+      if (_selectedTeachingTypes.isNotEmpty)
+        'teaching_types': _selectedTeachingTypes,
+
+      // Documents
+      if (_docCand != null) 'use_candidate_documents': _docCand,
+
+      // Variables spécifiques Formation
+      if (_nbPersonnesController.text.trim().isNotEmpty)
+        'nb_personnes': int.tryParse(_nbPersonnesController.text.trim()),
+      if (_nbGroupesController.text.trim().isNotEmpty)
+        'nb_groupes': int.tryParse(_nbGroupesController.text.trim()),
+      if (_aDefinir != null) 'a_definir': _aDefinir,
     };
     if (_prixInitialController.text.trim().isNotEmpty) {
       final v = double.tryParse(
@@ -928,6 +1175,22 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     }
   }
 
+  Future<void> _pickDocumentMedia() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+        withData: true,
+      );
+      if (result == null) return;
+      setState(() => _selectedDocumentFiles.addAll(result.files));
+      _showSnack('${result.files.length} fichier(s) ajouté(s)');
+    } catch (_) {
+      _showSnack('Impossible d\'accéder aux fichiers.', isError: true);
+    }
+  }
+
   void _removeMedia(int index) {
     setState(() => _selectedMediaFiles.removeAt(index));
   }
@@ -964,7 +1227,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   }
 
   Future<bool> _uploadMediaFiles(String demandeId) async {
-    if (_selectedMediaFiles.isEmpty) return true;
+    if (_selectedMediaFiles.isEmpty && _selectedDocumentFiles.isEmpty)
+      return true;
     setState(() => _isUploadingMedia = true);
     try {
       final token = await TokenStorage.getAccessToken();
@@ -973,6 +1237,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       final request = http.MultipartRequest('POST', uri)
         ..headers['Authorization'] = 'Bearer $token'
         ..headers['Accept'] = 'application/json';
+
+      // Add photos from _selectedMediaFiles
       for (final file in _selectedMediaFiles) {
         if (file.path != null) {
           request.files.add(
@@ -992,16 +1258,43 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           );
         }
       }
+
+      // Add documents from _selectedDocumentFiles
+      for (final file in _selectedDocumentFiles) {
+        if (file.path != null) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'documents[]',
+              file.path!,
+              filename: file.name,
+            ),
+          );
+        } else if (file.bytes != null) {
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'documents[]',
+              file.bytes!,
+              filename: file.name ?? 'document',
+            ),
+          );
+        }
+      }
+
       final streamed = await request.send();
       final body = await streamed.stream.bytesToString();
       if (streamed.statusCode >= 200 && streamed.statusCode < 300) {
-        setState(() => _selectedMediaFiles.clear());
+        setState(() {
+          _selectedMediaFiles.clear();
+          _selectedDocumentFiles.clear();
+          _documentFilesByType.clear();
+        });
         return true;
       }
       final msg =
           _extractErrorMessage(body) ??
           'Impossible d\'envoyer les médias (${streamed.statusCode}).';
       _showSnack(msg, isError: true);
+      print("Erreur upload: $msg");
       return false;
     } catch (_) {
       _showSnack(
@@ -1065,14 +1358,18 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         }
 
         // Insérer "Recherche de stage/Alternance" après "Recherche d'emploi"
-        updatedCategories.insert(
-          1, // Insérer après "Recherche d'emploi"
+        // Vérifier si la liste a au moins 1 élément avant d'insérer à l'index 1
+        final insertIndex = updatedCategories.isNotEmpty ? 1 : 0;
+        updatedCategories.insertAll(insertIndex, [
           {
             'id': '999',
             'code': 'Internship',
             'label': 'Recherche de stage/Alternance',
           },
-        );
+          {'id': '999', 'code': 'SearchJob', 'label': 'Recherche d\'emploi'},
+          {'id': '999', 'code': 'Training', 'label': 'Formation'},
+          {'id': '999', 'code': 'RealEstate', 'label': 'Immoblier'},
+        ]);
 
         // Mettre à jour _natureOptions directement
         setState(() {
@@ -1106,14 +1403,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     switch (_currentStep) {
       case 0: // Step 1: Catégories
         if (_selectedCategory == null) {
-          return 'Veuillez sélectionner une catégorie.';
-        }
-        if (_selectedType == null) {
-          return 'Veuillez sélectionner un type de demande.';
+          return 'Veuillez sélectionner la nature de la demande.';
         }
         break;
 
-      case 1: // Step 2: Description
+      case 1: // Step 2: Détails selon la nature
         if (_titleController.text.trim().length < 5) {
           return 'Le titre doit contenir au moins 5 caractères.';
         }
@@ -1121,17 +1415,50 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             20) {
           return 'La description doit contenir au moins 20 caractères.';
         }
+
+        // Validations spécifiques selon la catégorie
+        if (_selectedCategory == 'SearchJob' ||
+            _selectedCategory == 'Internship') {
+          if (_selectedSecteurActivite == null) {
+            return 'Veuillez sélectionner un secteur d\'activité.';
+          }
+          if (_selectedFunction == null) {
+            return 'Veuillez sélectionner une fonction recherchée.';
+          }
+          if (_niveauExperience == null) {
+            return 'Veuillez sélectionner votre niveau d\'expérience.';
+          }
+          if (_selectedTypeContrat.isEmpty &&
+              _selectedCategory == 'Internship') {
+            return 'Veuillez sélectionner au moins un type de stage.';
+          }
+        }
+
+        if (_selectedCategory == 'Training') {
+          if (_selectedFormationCategory == null) {
+            return 'Veuillez sélectionner une catégorie de formation.';
+          }
+          if (_selectedFormationType == null) {
+            return 'Veuillez sélectionner un type de formation.';
+          }
+          if (_getFormationSectors(_selectedFormationCategory).isNotEmpty &&
+              _selectedFormationSector == null) {
+            return 'Veuillez sélectionner un secteur de formation.';
+          }
+        }
+
+        if (_selectedCategory == 'RealEstate') {
+          if (_selectedImmobilierType == null) {
+            return 'Veuillez sélectionner un type de demande immobilière.';
+          }
+        }
         break;
 
-      case 2: // Step 3: Détails
-        if (_startDate == null) {
-          return 'Sélectionnez une date de début.';
-        }
-        if (_endDate == null) {
-          return 'Sélectionnez une date de fin.';
-        }
-        if (_endDate!.isBefore(_startDate!)) {
-          return 'La date de fin doit être postérieure à la date de début.';
+      case 2: // Step 3: Localisation
+        if (!_touteLaFrance &&
+            _disponibleChezController.text.trim().isEmpty &&
+            !_useCurrentLocation) {
+          return 'Veuillez indiquer une ville/adresse, utiliser votre position ou cocher "Toute la France".';
         }
         break;
 
@@ -1667,22 +1994,26 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           children: [
             _buildDropdownFieldWithMap(
               label: 'Catégorie de la formation recherchée*',
-              value: _selectedType,
+              value: _selectedFormationCategory,
               items: _formationCategories,
               onChanged: (val) => setState(() {
-                _selectedType = val;
+                _selectedFormationCategory = val;
                 _selectedFormationSector = null; // Réinitialiser le secteur
               }),
-              hint: _buildRequiredHint('Sélectionner une catégorie'),
+              hint: _buildRequiredHint(
+                'Sélectionner une catégorie de formation',
+              ),
               backgroundColor: const Color(0xFFF9FAFB),
             ),
             const SizedBox(height: 12),
             // Afficher le champ Secteur si la catégorie a des secteurs
-            if (_getFormationSectors(_selectedType).isNotEmpty) ...[
+            if (_getFormationSectors(
+              _selectedFormationCategory,
+            ).isNotEmpty) ...[
               _buildDropdownFieldWithMap(
                 label: 'Secteur de formation recherché*',
                 value: _selectedFormationSector,
-                items: _getFormationSectors(_selectedType),
+                items: _getFormationSectors(_selectedFormationCategory),
                 onChanged: (val) =>
                     setState(() => _selectedFormationSector = val),
                 hint: _buildRequiredHint('Sélectionner un secteur'),
@@ -1860,15 +2191,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             const SizedBox(height: 12),
             GestureDetector(
               onTap: () {
-                // TODO: Implémenter la sélection de fichiers
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Fonctionnalité d\'upload de fichiers à implémenter',
-                    ),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
+                _pickDocumentMedia();
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
@@ -1914,70 +2237,92 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             const SizedBox(height: 16),
 
             // Nombre de personnes ou groupes
-            Text(
-              "Nombre de personnes ou de groupes à former*",
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
-                fontFamily: 'Manjari',
+            if (userRole == 'pro') ...[
+              Text(
+                "Nombre de personnes ou de groupes à former*",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                  fontFamily: 'Manjari',
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: AbsorbPointer(
-                    absorbing: _aDefinir,
-                    child: Opacity(
-                      opacity: _aDefinir ? 0.5 : 1.0,
-                      child: _buildTextField(
-                        label: 'Nb personne',
-                        controller: _nbPersonnesController,
-                        keyboardType: TextInputType.number,
-                        fieldKey: 'nb_personnes',
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: AbsorbPointer(
+                      absorbing: _aDefinir,
+                      child: Opacity(
+                        opacity: _aDefinir ? 0.5 : 1.0,
+                        child: _buildTextField(
+                          label: 'Nb personne',
+                          controller: _nbPersonnesController,
+                          keyboardType: TextInputType.number,
+                          fieldKey: 'nb_personnes',
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AbsorbPointer(
-                    absorbing: _aDefinir,
-                    child: Opacity(
-                      opacity: _aDefinir ? 0.5 : 1.0,
-                      child: _buildTextField(
-                        label: 'Nb groupes',
-                        controller: _nbGroupesController,
-                        keyboardType: TextInputType.number,
-                        fieldKey: 'nb_groupes',
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AbsorbPointer(
+                      absorbing: _aDefinir,
+                      child: Opacity(
+                        opacity: _aDefinir ? 0.5 : 1.0,
+                        child: _buildTextField(
+                          label: 'Nb groupes',
+                          controller: _nbGroupesController,
+                          keyboardType: TextInputType.number,
+                          fieldKey: 'nb_groupes',
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            Theme(
-              data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
-              child: CheckboxListTile(
-                dense: true,
-                activeColor: const Color(0xFF3AAE5E),
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                title: const Text("À définir", style: TextStyle(fontSize: 15)),
-                value: _aDefinir,
-                onChanged: (checked) {
-                  setState(() {
-                    _aDefinir = checked ?? false;
-                    if (_aDefinir) {
-                      _nbPersonnesController.clear();
-                      _nbGroupesController.clear();
-                    }
-                  });
-                },
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
+              Theme(
+                data: ThemeData(
+                  visualDensity: const VisualDensity(vertical: -4),
+                ),
+                child: CheckboxListTile(
+                  dense: true,
+                  activeColor: const Color(0xFF3AAE5E),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text(
+                    "À définir",
+                    style: TextStyle(fontSize: 15),
+                  ),
+                  value: _aDefinir,
+                  onChanged: (checked) {
+                    setState(() {
+                      _aDefinir = checked ?? false;
+                      if (_aDefinir) {
+                        _nbPersonnesController.clear();
+                        _nbGroupesController.clear();
+                      }
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              // Partager vos réseaux sociaux professionnels
+              Text(
+                'Partager vos réseaux sociaux professionnels (Cela augmente vos chances de vous faire remarquer)',
+                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Vous n\'avez renseigné aucun réseau social. Veuillez mettre à jour votre profil pour que le réseau social s\'affiche ici',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 24),
@@ -1990,16 +2335,17 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   // ─── STEP 2: Immobilier ───
   Widget _buildStep2Immobilier() {
     // Déterminer quel formulaire afficher selon le type sélectionné
-    if (_selectedType == 'RealEstateInvestment') {
-      return _buildStep2ImmobilierInvestissement();
-    } else if (_selectedType == 'LookingForRental' ||
-        _selectedType == 'LookingForSharedHousing') {
-      return _buildStep2ImmobilierLocation();
-    } else if (_selectedType == 'LookingForProfessionalSpace') {
-      return _buildStep2ImmobilierLocalPro();
+    Widget? specificForm;
+
+    if (_selectedImmobilierType == 'RealEstateInvestment') {
+      specificForm = _buildStep2ImmobilierInvestissement();
+    } else if (_selectedImmobilierType == 'LookingForRental' ||
+        _selectedImmobilierType == 'LookingForSharedHousing') {
+      specificForm = _buildStep2ImmobilierLocation();
+    } else if (_selectedImmobilierType == 'LookingForProfessionalSpace') {
+      specificForm = _buildStep2ImmobilierLocalPro();
     }
 
-    // Formulaire par défaut si aucun type n'est sélectionné
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2009,10 +2355,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           children: [
             _buildDropdownFieldWithMap(
               label: 'Type de demande*',
-              value: _selectedType,
-              items: _typeOptions,
+              value: _selectedImmobilierType,
+              items: _immobilierTypeOptions,
               onChanged: (val) => setState(() {
-                _selectedType = val;
+                _selectedImmobilierType = val;
                 _selectedTypeBien.clear();
               }),
               hint: _buildRequiredHint('Sélectionner un type de demande'),
@@ -2020,9 +2366,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
-        _buildNextButton(),
-        const SizedBox(height: 30),
+        if (specificForm != null) ...[
+          const SizedBox(height: 16),
+          specificForm,
+        ] else ...[
+          const SizedBox(height: 24),
+          _buildNextButton(),
+          const SizedBox(height: 30),
+        ],
       ],
     );
   }
@@ -2034,21 +2385,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       children: [
         _buildFormCard(
           icon: Icons.home_outlined,
-          title: 'Détails de votre recherche',
+          title: 'Détails recherche immobiliere',
           children: [
-            _buildDropdownFieldWithMap(
-              label: 'Type de demande*',
-              value: _selectedType,
-              items: _typeOptions,
-              onChanged: (val) => setState(() {
-                _selectedType = val;
-                _selectedTypeBien.clear();
-              }),
-              hint: _buildRequiredHint('Sélectionner un type de demande'),
-              backgroundColor: const Color(0xFFF9FAFB),
-            ),
-            const SizedBox(height: 16),
-
             // Type de bien (choix multiple)
             _buildCheckboxGroup(
               title: "Type de bien* (Choix multiple possible)",
@@ -2307,21 +2645,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       children: [
         _buildFormCard(
           icon: Icons.home_outlined,
-          title: 'Détails de votre recherche',
+          title: 'Détails recherche immobiliere',
           children: [
-            _buildDropdownFieldWithMap(
-              label: 'Type de demande*',
-              value: _selectedType,
-              items: _typeOptions,
-              onChanged: (val) => setState(() {
-                _selectedType = val;
-                _selectedTypeBien.clear();
-              }),
-              hint: _buildRequiredHint('Sélectionner un type de demande'),
-              backgroundColor: const Color(0xFFF9FAFB),
-            ),
-            const SizedBox(height: 16),
-
             // Type de bien (choix multiple)
             _buildCheckboxGroup(
               title: "Type de bien* (Choix multiple possible)",
@@ -2614,21 +2939,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       children: [
         _buildFormCard(
           icon: Icons.home_outlined,
-          title: 'Détails de votre recherche',
+          title: 'Détails recherche immobiliere',
           children: [
-            _buildDropdownFieldWithMap(
-              label: 'Type de demande*',
-              value: _selectedType,
-              items: _typeOptions,
-              onChanged: (val) => setState(() {
-                _selectedType = val;
-                _selectedTypeBien.clear();
-              }),
-              hint: _buildRequiredHint('Sélectionner un type de demande'),
-              backgroundColor: const Color(0xFFF9FAFB),
-            ),
-            const SizedBox(height: 16),
-
             // Type de bien (choix multiple)
             _buildCheckboxGroup(
               title: "Type de bien* (Choix multiple possible)",
@@ -2825,19 +3137,33 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           children: [
             _buildDropdownFieldWithMap(
               label: 'Secteur d\'activité*',
-              value: _selectedType,
+              value: _selectedSecteurActivite,
               items: _secteursActivite,
-              onChanged: (val) => setState(() => _selectedType = val),
+              onChanged: (val) =>
+                  setState(() => _selectedSecteurActivite = val),
               hint: _buildRequiredHint('Sélectionner un secteur d\'activité'),
               backgroundColor: const Color(0xFFF9FAFB),
             ),
             const SizedBox(height: 16),
 
+            // Afficher le champ "Quel est le poste recherché ?" seulement si un secteur est sélectionné
+            if (_selectedSecteurActivite != null) ...[
+              _buildDropdownFieldWithMap(
+                label: 'Fonction recherchée*',
+                value: _selectedFunction,
+                items: _allFunction,
+                onChanged: (val) => setState(() => _selectedFunction = val),
+                hint: _buildRequiredHint('Sélectionner une fonction'),
+                backgroundColor: const Color(0xFFF9FAFB),
+              ),
+              const SizedBox(height: 16),
+            ],
+
             _buildTextField(
               label: 'Quel est le poste recherché ?*',
               controller: _titleController,
               fieldKey: 'title',
-              helperText: 'Titre de l\'annonce (ex: recherche développeur)',
+              helperText: 'Titre (ex: recherche développeur)',
             ),
             const SizedBox(height: 16),
 
@@ -3019,11 +3345,101 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               spacing: 12,
               runSpacing: 8,
               children: [
-                _buildNumberChip('Tranche salariale', null, (val) {}),
-                _buildNumberChip('Salaire exact', null, (val) {}),
-                _buildNumberChip('Aucune', null, (val) {}),
+                _buildNumberChip(
+                  'Tranche salariale',
+                  _trancheSalariale,
+                  (val) => setState(() => _trancheSalariale = val),
+                ),
+                _buildNumberChip(
+                  'Salaire exact',
+                  _trancheSalariale,
+                  (val) => setState(() => _trancheSalariale = val),
+                ),
+                _buildNumberChip(
+                  'Aucune',
+                  _trancheSalariale,
+                  (val) => setState(() => _trancheSalariale = val),
+                ),
               ],
             ),
+
+            // Champs conditionnels pour "Tranche salariale"
+            if (_trancheSalariale == 'Tranche salariale') ...[
+              const SizedBox(height: 16),
+              Text(
+                'Tranche salariale',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      label: 'Min',
+                      controller: _salaryMinController,
+                      keyboardType: TextInputType.number,
+                      suffix: '€',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '-',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildTextField(
+                      label: 'Max',
+                      controller: _salaryMaxController,
+                      keyboardType: TextInputType.number,
+                      suffix: '€',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDropdownFieldWithMap(
+                      label: 'Net ou Brut ?',
+                      value: _salaryNetOrBrut,
+                      items: [
+                        {'code': 'net', 'label': 'Net'},
+                        {'code': 'brut', 'label': 'Brut'},
+                      ],
+                      onChanged: (val) =>
+                          setState(() => _salaryNetOrBrut = val),
+                      hint: const Text('Sélectionner'),
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDropdownFieldWithMap(
+                      label: 'Indice temporel',
+                      value: _salaryIndiceTemporel,
+                      items: [
+                        {'code': 'annees', 'label': 'Années'},
+                        {'code': 'heures', 'label': 'Heures'},
+                      ],
+                      onChanged: (val) =>
+                          setState(() => _salaryIndiceTemporel = val),
+                      hint: const Text('Sélectionner'),
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 16),
 
             // Acceptez-vous une offre en télétravail
@@ -3066,26 +3482,52 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             const SizedBox(height: 16),
 
             // Utiliser les documents de l'espace candidat
-            Text(
-              'Utiliser les documents de l\'espace candidat',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
-                fontFamily: 'Manjari',
+            CheckboxListTile(
+              dense: true,
+              activeColor: const Color(0xFF3AAE5E),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: const Text(
+                "Utiliser les documents de l'espace candidat",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                  fontFamily: 'Manjari',
+                ),
               ),
+              value: _docCand,
+              onChanged: (checked) {
+                setState(() {
+                  _docCand = checked ?? false;
+                });
+              },
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Aucun document dans l\'espace candidat',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-                fontStyle: FontStyle.italic,
+            if (!_docCand) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Aucun document dans l\'espace candidat',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  _buildDocumentChip('Ajouter un CV', 'cv'),
+                  _buildDocumentChip(
+                    'Ajouter une lettre de motivation',
+                    'lettre_motivation',
+                  ),
+                  _buildDocumentChip('Ajouter un portfolio', 'portfolio'),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
             // Ajouter des documents
             Text(
               'Ajouter des documents',
@@ -3097,19 +3539,26 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                _buildDocumentChip('Ajouter un CV', 'cv'),
-                _buildDocumentChip(
-                  'Ajouter une lettre de motivation',
-                  'lettre_motivation',
-                ),
-                _buildDocumentChip('Ajouter un portfolio', 'portfolio'),
-              ],
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1,
+              ),
+              itemCount: _selectedDocumentFiles.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) return _buildAddDocButton();
+                final docIndex = index - 1;
+                return _buildDocumentPreviewCard(
+                  _selectedDocumentFiles[docIndex],
+                  docIndex,
+                );
+              },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 15),
 
             // Partager vos réseaux sociaux professionnels
             Text(
@@ -3145,13 +3594,27 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           children: [
             _buildDropdownFieldWithMap(
               label: 'Secteur d\'activité*',
-              value: _selectedType,
+              value: _selectedSecteurActivite,
               items: _secteursActivite,
-              onChanged: (val) => setState(() => _selectedType = val),
+              onChanged: (val) =>
+                  setState(() => _selectedSecteurActivite = val),
               hint: _buildRequiredHint('Sélectionner un secteur d\'activité'),
               backgroundColor: const Color(0xFFF9FAFB),
             ),
             const SizedBox(height: 16),
+
+            // Afficher le champ "Quel est le poste recherché ?" seulement si un secteur est sélectionné
+            if (_selectedSecteurActivite != null) ...[
+              _buildDropdownFieldWithMap(
+                label: 'Fonction recherchée*',
+                value: _selectedFunction,
+                items: _allFunction,
+                onChanged: (val) => setState(() => _selectedFunction = val),
+                hint: _buildRequiredHint('Sélectionner une fonction'),
+                backgroundColor: const Color(0xFFF9FAFB),
+              ),
+              const SizedBox(height: 16),
+            ],
 
             _buildTextField(
               label: 'Quel est le poste recherché ?*',
@@ -3178,6 +3641,35 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   }
                 });
               },
+            ),
+            const SizedBox(height: 16),
+
+            // Temps plein ou temps partiel
+            Text(
+              'Temps plein ou temps partiel ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  'Temps plein',
+                  _tempsPartielPlein,
+                  (val) => setState(() => _tempsPartielPlein = val),
+                ),
+                _buildNumberChip(
+                  'Temps partiel',
+                  _tempsPartielPlein,
+                  (val) => setState(() => _tempsPartielPlein = val),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 
@@ -3241,28 +3733,25 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Theme(
-              data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
-              child: CheckboxListTile(
-                dense: true,
-                activeColor: const Color(0xFF3AAE5E),
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                title: const Text(
-                  "Dans l'immédiat",
-                  style: TextStyle(fontSize: 15),
-                ),
-                value: _dansImmediat,
-                onChanged: (checked) {
-                  setState(() {
-                    _dansImmediat = checked ?? false;
-                    if (_dansImmediat) {
-                      _startDate = null;
-                      _endDate = null;
-                    }
-                  });
-                },
+            CheckboxListTile(
+              dense: true,
+              activeColor: const Color(0xFF3AAE5E),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: const Text(
+                "Dans l'immédiat",
+                style: TextStyle(fontSize: 15),
               ),
+              value: _dansImmediat,
+              onChanged: (checked) {
+                setState(() {
+                  _dansImmediat = checked ?? false;
+                  if (_dansImmediat) {
+                    _startDate = null;
+                    _endDate = null;
+                  }
+                });
+              },
             ),
             if (!_dansImmediat) ...[
               const SizedBox(height: 8),
@@ -3304,11 +3793,101 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               spacing: 12,
               runSpacing: 8,
               children: [
-                _buildNumberChip('Tranche salariale', null, (val) {}),
-                _buildNumberChip('Salaire exact', null, (val) {}),
-                _buildNumberChip('Aucune', null, (val) {}),
+                _buildNumberChip(
+                  'Tranche salariale',
+                  _trancheSalariale,
+                  (val) => setState(() => _trancheSalariale = val),
+                ),
+                _buildNumberChip(
+                  'Salaire exact',
+                  _trancheSalariale,
+                  (val) => setState(() => _trancheSalariale = val),
+                ),
+                _buildNumberChip(
+                  'Aucune',
+                  _trancheSalariale,
+                  (val) => setState(() => _trancheSalariale = val),
+                ),
               ],
             ),
+
+            // Champs conditionnels pour "Tranche salariale"
+            if (_trancheSalariale == 'Tranche salariale') ...[
+              const SizedBox(height: 16),
+              Text(
+                'Tranche salariale',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      label: 'Min',
+                      controller: _salaryMinController,
+                      keyboardType: TextInputType.number,
+                      suffix: '€',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '-',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildTextField(
+                      label: 'Max',
+                      controller: _salaryMaxController,
+                      keyboardType: TextInputType.number,
+                      suffix: '€',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDropdownFieldWithMap(
+                      label: 'Net ou Brut ?',
+                      value: _salaryNetOrBrut,
+                      items: [
+                        {'code': 'net', 'label': 'Net'},
+                        {'code': 'brut', 'label': 'Brut'},
+                      ],
+                      onChanged: (val) =>
+                          setState(() => _salaryNetOrBrut = val),
+                      hint: const Text('Sélectionner'),
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDropdownFieldWithMap(
+                      label: 'Indice temporel',
+                      value: _salaryIndiceTemporel,
+                      items: [
+                        {'code': 'annees', 'label': 'Années'},
+                        {'code': 'heures', 'label': 'Heures'},
+                      ],
+                      onChanged: (val) =>
+                          setState(() => _salaryIndiceTemporel = val),
+                      hint: const Text('Sélectionner'),
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 16),
 
             // Acceptez-vous une offre en télétravail
@@ -3351,26 +3930,52 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             const SizedBox(height: 16),
 
             // Utiliser les documents de l'espace candidat
-            Text(
-              'Utiliser les documents de l\'espace candidat',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
-                fontFamily: 'Manjari',
+            CheckboxListTile(
+              dense: true,
+              activeColor: const Color(0xFF3AAE5E),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: const Text(
+                "Utiliser les documents de l'espace candidat",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                  fontFamily: 'Manjari',
+                ),
               ),
+              value: _docCand,
+              onChanged: (checked) {
+                setState(() {
+                  _docCand = checked ?? false;
+                });
+              },
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Aucun document dans l\'espace candidat',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-                fontStyle: FontStyle.italic,
+            if (!_docCand) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Aucun document dans l\'espace candidat',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  _buildDocumentChip('Ajouter un CV', 'cv'),
+                  _buildDocumentChip(
+                    'Ajouter une lettre de motivation',
+                    'lettre_motivation',
+                  ),
+                  _buildDocumentChip('Ajouter un portfolio', 'portfolio'),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
             // Ajouter des documents
             Text(
               'Ajouter des documents',
@@ -3382,20 +3987,26 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: [
-                _buildDocumentChip('Ajouter un CV', 'cv'),
-                _buildDocumentChip(
-                  'Ajouter une lettre de motivation',
-                  'lettre_motivation',
-                ),
-                _buildDocumentChip('Ajouter un portfolio', 'portfolio'),
-              ],
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1,
+              ),
+              itemCount: _selectedDocumentFiles.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) return _buildAddDocButton();
+                final docIndex = index - 1;
+                return _buildDocumentPreviewCard(
+                  _selectedDocumentFiles[docIndex],
+                  docIndex,
+                );
+              },
             ),
-            const SizedBox(height: 16),
-
+            const SizedBox(height: 15),
             // Partager vos réseaux sociaux professionnels
             Text(
               'Partager vos réseaux sociaux professionnels (Cela augmente vos chances de vous faire remarquer)',
@@ -3590,6 +4201,44 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     );
   }
 
+  Widget _buildAddDocButton() {
+    return GestureDetector(
+      onTap: _pickDocumentMedia,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F9F4),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF3AAE5E), width: 2),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3AAE5E).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.add, size: 40, color: Color(0xFF3AAE5E)),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _selectedDocumentFiles.isEmpty
+                  ? 'Ajouter des documents'
+                  : 'Ajouter plus',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF3AAE5E),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAddPhotoButton() {
     return GestureDetector(
       onTap: _pickMedia,
@@ -3726,6 +4375,102 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     );
   }
 
+  Widget _buildDocumentPreviewCard(PlatformFile file, int index) {
+    final ext = file.extension?.toLowerCase();
+    final isPdf = ext == 'pdf';
+    final isDoc = ext == 'doc' || ext == 'docx';
+    final isImage = ['jpg', 'jpeg', 'png'].contains(ext);
+
+    Widget contentWidget;
+
+    if (isImage && file.bytes != null) {
+      contentWidget = ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.memory(
+          file.bytes!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+        ),
+      );
+    } else {
+      IconData iconData;
+      Color iconColor;
+      if (isPdf) {
+        iconData = Icons.picture_as_pdf;
+        iconColor = Colors.red;
+      } else if (isDoc) {
+        iconData = Icons.description;
+        iconColor = Colors.blue;
+      } else if (isImage) {
+        iconData = Icons.image;
+        iconColor = Colors.green;
+      } else {
+        iconData = Icons.insert_drive_file;
+        iconColor = Colors.grey;
+      }
+
+      contentWidget = Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(iconData, size: 48, color: iconColor),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                file.name,
+                style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+        color: Colors.grey[50],
+      ),
+      child: Stack(
+        children: [
+          contentWidget,
+          Positioned(
+            top: 8,
+            right: 8,
+            child: GestureDetector(
+              onTap: () => _removeDocument(index),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: 18,
+                  color: Color(0xFF666666),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPhotoPreviewCard(PlatformFile file, int index) {
     final isCover = index == 0 && _existingMediaUrls.isEmpty;
     return Container(
@@ -3806,6 +4551,271 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     );
   }
 
+  // Helper pour obtenir le label à partir d'un code dans une liste de maps
+  String _getLabelFromCode(List<Map<String, String>> items, String? code) {
+    if (code == null) return '-';
+    final match = items.firstWhere(
+      (o) => o['code'] == code,
+      orElse: () => {'label': code},
+    );
+    return match['label'] ?? code;
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '-';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  List<Widget> _buildReviewRowsForCategory() {
+    final rows = <Widget>[];
+
+    // Titre (commun à tous)
+    rows.add(
+      _buildReviewRow(
+        'Titre',
+        _titleController.text.trim().isEmpty
+            ? '-'
+            : _titleController.text.trim(),
+      ),
+    );
+
+    // Description (commun à tous)
+    final descText = _descriptionQuillController.document.toPlainText().trim();
+    rows.add(_buildReviewRow('Description', descText.isEmpty ? '-' : descText));
+
+    // ─── Emploi / Stage ───
+    if (_selectedCategory == 'SearchJob' || _selectedCategory == 'Internship') {
+      rows.add(
+        _buildReviewRow(
+          'Secteur d\'activité',
+          _getLabelFromCode(_secteursActivite, _selectedSecteurActivite),
+        ),
+      );
+      rows.add(
+        _buildReviewRow(
+          'Fonction recherchée',
+          _getLabelFromCode(_allFunction, _selectedFunction),
+        ),
+      );
+      if (_tempsPartielPlein != null) {
+        rows.add(_buildReviewRow('Temps de travail', _tempsPartielPlein!));
+      }
+      if (_niveauEtudes != null) {
+        rows.add(_buildReviewRow('Niveau d\'études', _niveauEtudes!));
+      }
+      if (_niveauExperience != null) {
+        rows.add(_buildReviewRow('Niveau d\'expérience', _niveauExperience!));
+      }
+      if (_trancheSalariale != null) {
+        if (_trancheSalariale == 'Tranche salariale' &&
+            (_salaryMinController.text.trim().isNotEmpty ||
+                _salaryMaxController.text.trim().isNotEmpty)) {
+          String salaryRange = '';
+          if (_salaryMinController.text.trim().isNotEmpty) {
+            salaryRange += _salaryMinController.text.trim();
+          }
+          salaryRange += ' - ';
+          if (_salaryMaxController.text.trim().isNotEmpty) {
+            salaryRange += _salaryMaxController.text.trim();
+          }
+          salaryRange += ' €';
+          if (_salaryNetOrBrut != null) {
+            salaryRange += ' (${_salaryNetOrBrut == 'net' ? 'Net' : 'Brut'})';
+          }
+          if (_salaryIndiceTemporel != null) {
+            salaryRange +=
+                ' / ${_salaryIndiceTemporel == 'annees' ? 'Années' : 'Heures'}';
+          }
+          rows.add(_buildReviewRow('Tranche salariale', salaryRange));
+        } else {
+          rows.add(_buildReviewRow('Prétention salariale', _trancheSalariale!));
+        }
+      }
+      rows.add(
+        _buildReviewRow(
+          'Télétravail accepté',
+          _accepteTeletravaill ? 'Oui' : 'Non',
+        ),
+      );
+      rows.add(
+        _buildReviewRow('Dans l\'immédiat', _dansImmediat ? 'Oui' : 'Non'),
+      );
+      if (!_dansImmediat) {
+        rows.add(_buildReviewRow('À partir du', _formatDate(_startDate)));
+        rows.add(_buildReviewRow('Jusqu\'au', _formatDate(_endDate)));
+      }
+      if (_selectedTypeContrat.isNotEmpty) {
+        rows.add(
+          _buildReviewRow('Type de contrat', _selectedTypeContrat.join(', ')),
+        );
+      }
+      if (_prixInitialController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Budget min',
+            '${_prixInitialController.text.trim()} €',
+          ),
+        );
+      }
+      if (_prixFinalController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Budget max',
+            '${_prixFinalController.text.trim()} €',
+          ),
+        );
+      }
+      // Documents
+      // if (_selectedDocumentFiles.isNotEmpty) {
+      //   final docNames = _selectedDocumentFiles.map((f) => f.name).join(', ');
+      //   rows.add(_buildReviewRow('Documents ajoutés', docNames));
+      // }
+    }
+    // ─── Formation ───
+    else if (_selectedCategory == 'Training') {
+      rows.add(
+        _buildReviewRow(
+          'Catégorie',
+          _getLabelFromCode(_formationCategories, _selectedFormationCategory),
+        ),
+      );
+      if (_selectedFormationType != null) {
+        rows.add(_buildReviewRow('Type de formation', _selectedFormationType!));
+      }
+      if (_selectedFormationSector != null) {
+        rows.add(
+          _buildReviewRow('Secteur de formation', _selectedFormationSector!),
+        );
+      }
+      if (_selectedFinancingTypes.isNotEmpty) {
+        rows.add(
+          _buildReviewRow('Financement', _selectedFinancingTypes.join(', ')),
+        );
+      }
+      if (_selectedTeachingTypes.isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Type d\'enseignement',
+            _selectedTeachingTypes.join(', '),
+          ),
+        );
+      }
+      if (_nbPersonnesController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Nombre de personnes',
+            _nbPersonnesController.text.trim(),
+          ),
+        );
+      }
+      if (_nbGroupesController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Nombre de groupes',
+            _nbGroupesController.text.trim(),
+          ),
+        );
+      }
+      rows.add(_buildReviewRow('À définir', _aDefinir ? 'Oui' : 'Non'));
+      rows.add(
+        _buildReviewRow('Dans l\'immédiat', _dansImmediat ? 'Oui' : 'Non'),
+      );
+      if (!_dansImmediat) {
+        rows.add(_buildReviewRow('À partir du', _formatDate(_startDate)));
+        rows.add(_buildReviewRow('Jusqu\'au', _formatDate(_endDate)));
+      }
+    }
+    // ─── Immobilier ───
+    else if (_selectedCategory == 'RealEstate') {
+      rows.add(
+        _buildReviewRow(
+          'Type de demande',
+          _getLabelFromCode(_immobilierTypeOptions, _selectedImmobilierType),
+        ),
+      );
+      if (_selectedTypeBien.isNotEmpty) {
+        rows.add(_buildReviewRow('Type de bien', _selectedTypeBien.join(', ')));
+      }
+      if (_prixInitialController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Budget min',
+            '${_prixInitialController.text.trim()} €',
+          ),
+        );
+      }
+      if (_prixFinalController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Budget max',
+            '${_prixFinalController.text.trim()} €',
+          ),
+        );
+      }
+      if (_surfaceHabitableMinController.text.trim().isNotEmpty ||
+          _surfaceHabitableMaxController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Surface habitable',
+            '${_surfaceHabitableMinController.text.trim().isNotEmpty ? _surfaceHabitableMinController.text.trim() : '?'} - ${_surfaceHabitableMaxController.text.trim().isNotEmpty ? _surfaceHabitableMaxController.text.trim() : '?'} m²',
+          ),
+        );
+      }
+      if (_surfaceTerrainMinController.text.trim().isNotEmpty ||
+          _surfaceTerrainMaxController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Surface terrain',
+            '${_surfaceTerrainMinController.text.trim().isNotEmpty ? _surfaceTerrainMinController.text.trim() : '?'} - ${_surfaceTerrainMaxController.text.trim().isNotEmpty ? _surfaceTerrainMaxController.text.trim() : '?'} m²',
+          ),
+        );
+      }
+      if (_nbPieces != null) {
+        rows.add(_buildReviewRow('Nombre de pièces', _nbPieces!));
+      }
+      if (_nbChambres != null) {
+        rows.add(_buildReviewRow('Nombre de chambres', _nbChambres!));
+      }
+      if (_meuble != null) {
+        rows.add(_buildReviewRow('Meublé', _meuble!));
+      }
+    }
+    // ─── Défaut (autres catégories) ───
+    else {
+      if (_selectedType != null) {
+        rows.add(
+          _buildReviewRow(
+            'Type',
+            _getLabelFromCode(_typeOptions, _selectedType),
+          ),
+        );
+      }
+      rows.add(_buildReviewRow('Urgent', _acceptDemand ? 'Oui' : 'Non'));
+      if (!_acceptDemand) {
+        rows.add(_buildReviewRow('À partir du', _formatDate(_startDate)));
+        rows.add(_buildReviewRow('Jusqu\'au', _formatDate(_endDate)));
+      }
+      if (_prixInitialController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Budget min',
+            '${_prixInitialController.text.trim()} €',
+          ),
+        );
+      }
+      if (_prixFinalController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Budget max',
+            '${_prixFinalController.text.trim()} €',
+          ),
+        );
+      }
+    }
+
+    return rows;
+  }
+
   // ─── STEP 4: Review ───
   Widget _buildStep4Review() {
     return Column(
@@ -3864,60 +4874,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         ),
         const SizedBox(height: 12),
 
-        // Étape 2 - Détails
+        // Étape 2 - Détails (dynamique selon la catégorie)
         _buildReviewSection(
           title: 'Étape 2 — Détails',
           onEdit: () => setState(() => _currentStep = 1),
-          rows: [
-            _buildReviewRow(
-              'Type',
-              _typeOptions.firstWhere(
-                    (o) => o['code'] == _selectedType,
-                    orElse: () => {'label': '-'},
-                  )['label'] ??
-                  '-',
-            ),
-            _buildReviewRow(
-              'Titre',
-              _titleController.text.trim().isEmpty
-                  ? '-'
-                  : _titleController.text.trim(),
-            ),
-            _buildReviewRow(
-              'Description',
-              _descriptionQuillController.document.toPlainText().trim().isEmpty
-                  ? '-'
-                  : _descriptionQuillController.document.toPlainText().trim(),
-            ),
-            _buildReviewRow('Urgent', _acceptDemand ? 'Oui' : 'Non'),
-            if (!_acceptDemand) ...[
-              _buildReviewRow(
-                'À partir du',
-                _startDate != null
-                    ? '${_startDate!.day.toString().padLeft(2, '0')}/${_startDate!.month.toString().padLeft(2, '0')}/${_startDate!.year}'
-                    : '-',
-              ),
-              _buildReviewRow(
-                'Jusqu\'au',
-                _endDate != null
-                    ? '${_endDate!.day.toString().padLeft(2, '0')}/${_endDate!.month.toString().padLeft(2, '0')}/${_endDate!.year}'
-                    : '-',
-              ),
-            ],
-            _buildReviewRow(
-              'Budget min',
-              _prixInitialController.text.trim().isEmpty
-                  ? '-'
-                  : '${_prixInitialController.text.trim()} €',
-            ),
-            _buildReviewRow(
-              'Budget max',
-              _prixFinalController.text.trim().isEmpty
-                  ? '-'
-                  : '${_prixFinalController.text.trim()} €',
-            ),
-          ],
+          rows: _buildReviewRowsForCategory(),
         ),
+        if (_selectedDocumentFiles.isNotEmpty) const SizedBox(height: 8),
+        if (_selectedDocumentFiles.isNotEmpty) _buildDocumentReviewCards(),
         const SizedBox(height: 12),
 
         // Étape 3 - Localisation
@@ -3926,20 +4890,23 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           onEdit: () => setState(() => _currentStep = 2),
           rows: [
             _buildReviewRow('Toute la France', _touteLaFrance ? 'Oui' : 'Non'),
-            _buildReviewRow(
-              'Ville / Adresse',
-              _disponibleChezController.text.trim().isEmpty
-                  ? '-'
-                  : _disponibleChezController.text.trim(),
-            ),
+            if (!_touteLaFrance) ...[
+              _buildReviewRow(
+                'Ville / Adresse',
+                _disponibleChezController.text.trim().isEmpty
+                    ? '-'
+                    : _disponibleChezController.text.trim(),
+              ),
+            ],
             _buildReviewRow(
               'Utiliser ma position',
               _useCurrentLocation ? 'Oui' : 'Non',
             ),
-            _buildReviewRow(
-              'Rayon de recherche',
-              _rayonRecherche > 0 ? '${_rayonRecherche.toInt()} km' : '-',
-            ),
+            if (!_touteLaFrance)
+              _buildReviewRow(
+                'Rayon de recherche',
+                _rayonRecherche > 0 ? '${_rayonRecherche.toInt()} km' : '-',
+              ),
             _buildReviewRow(
               'Afficher localisation',
               _showGoogleLocation ? 'Oui' : 'Non',
@@ -3961,6 +4928,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             ),
           ],
         ),
+        if (_selectedMediaFiles.isNotEmpty || _existingMediaUrls.isNotEmpty)
+          const SizedBox(height: 8),
+        if (_selectedMediaFiles.isNotEmpty || _existingMediaUrls.isNotEmpty)
+          _buildPhotoReviewCards(),
         const SizedBox(height: 20),
 
         // Accept messages
@@ -4567,21 +5538,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         size: 20,
         color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[600],
       ),
-      onPressed: () {
-        setState(() {
-          if (isSelected) {
+      onPressed: () async {
+        if (isSelected) {
+          setState(() {
             _selectedCvOptions.remove(type);
-          } else {
-            _selectedCvOptions.add(type);
-          }
-        });
-        // TODO: Implémenter la sélection de fichiers
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Fonctionnalité d\'upload de $label à implémenter'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+          });
+        } else {
+          await _pickDocumentFile(type, label);
+        }
       },
       backgroundColor: isSelected
           ? const Color(0xFF3AAE5E).withOpacity(0.1)
@@ -4595,6 +5559,49 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
     );
+  }
+
+  Future<void> _pickDocumentFile(String type, String label) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      setState(() {
+        _selectedCvOptions.add(type);
+        final file = result.files.first;
+        _selectedDocumentFiles.add(file);
+        _documentFilesByType[type] = file;
+      });
+
+      _showSnack('$label ajouté avec succès');
+    } catch (e) {
+      _showSnack('Impossible de sélectionner le fichier', isError: true);
+    }
+  }
+
+  void _removeDocument(int index) {
+    setState(() {
+      final file = _selectedDocumentFiles[index];
+
+      // Find and remove the type from _selectedCvOptions BEFORE removing from _documentFilesByType
+      final typeToRemove = _documentFilesByType.entries
+          .where((entry) => entry.value == file)
+          .map((entry) => entry.key)
+          .toList();
+      for (final type in typeToRemove) {
+        _selectedCvOptions.remove(type);
+      }
+
+      // Remove from _selectedDocumentFiles
+      _selectedDocumentFiles.removeAt(index);
+
+      // Remove from _documentFilesByType
+      _documentFilesByType.removeWhere((key, value) => value == file);
+    });
   }
 
   Widget _buildNextButton() {
@@ -4691,6 +5698,156 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPhotoReviewCards() {
+    if (_selectedMediaFiles.isEmpty && _existingMediaUrls.isEmpty)
+      return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text('Photos', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            // Existing photos from URLs
+            ..._existingMediaUrls.map((url) {
+              return Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: Colors.grey[200],
+                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                    ),
+                  ),
+                ),
+              );
+            }),
+            // New photos from files
+            ..._selectedMediaFiles.map((file) {
+              if (file.bytes != null) {
+                return Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(file.bytes!, fit: BoxFit.cover),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDocumentReviewCards() {
+    if (_selectedDocumentFiles.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text(
+          'Documents ajoutés',
+          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _selectedDocumentFiles.map((file) {
+            final ext = file.extension?.toLowerCase();
+            final isPdf = ext == 'pdf';
+            final isDoc = ext == 'doc' || ext == 'docx';
+            final isImage = ['jpg', 'jpeg', 'png'].contains(ext);
+
+            Widget content;
+
+            if (isImage && file.bytes != null) {
+              // Afficher le preview de l'image
+              content = ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(
+                  file.bytes!,
+                  fit: BoxFit.cover,
+                  width: 80,
+                  height: 80,
+                ),
+              );
+            } else {
+              // Afficher l'icône pour les autres types
+              IconData iconData;
+              Color iconColor;
+              if (isPdf) {
+                iconData = Icons.picture_as_pdf;
+                iconColor = Colors.red;
+              } else if (isDoc) {
+                iconData = Icons.description;
+                iconColor = Colors.blue;
+              } else if (isImage) {
+                iconData = Icons.image;
+                iconColor = Colors.green;
+              } else {
+                iconData = Icons.insert_drive_file;
+                iconColor = Colors.grey;
+              }
+
+              content = Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(iconData, size: 32, color: iconColor),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      file.name,
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: Color(0xFF666666),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                color: Colors.grey[50],
+              ),
+              child: content,
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 

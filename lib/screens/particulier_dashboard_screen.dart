@@ -679,47 +679,63 @@ class _ParticulierDashboardScreenState
 
   Widget _buildDemandeFeedCard(Map<String, dynamic> demande) {
     final user = demande['user'] as Map<String, dynamic>?;
-    final profileImage =
-        _buildStorageUrl(user?['avatar']?.toString()) ?? _defaultAvatar;
-    final username = user?['name']?.toString() ?? 'Utilisateur';
+
+    // Extraire le profil particulier
+    final particulierProfile =
+        user?['particulier_profile'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+
+    // Avatar : particulier_profile.avatar_url ou pro_profile.logo_url
+    final avatarUrl =
+        particulierProfile?['avatar_url']?.toString() ??
+        proProfile?['logo_url']?.toString();
+    final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
+
+    // Username : particulier_profile.pseudo ou pro_profile.company_name
+    final username =
+        particulierProfile?['pseudo']?.toString() ??
+        proProfile?['company_name']?.toString() ??
+        user?['email']?.toString() ??
+        'Utilisateur';
+
     final title = demande['title']?.toString() ?? 'Demande';
     final description = _stripHtml(demande['description']?.toString() ?? '');
-    final categoryLabel =
-        demande['category_label']?.toString() ??
-        demande['category']?.toString() ??
-        'Demande';
-    final location =
-        demande['location_label']?.toString() ??
-        demande['city']?.toString() ??
-        'Non spécifié';
+
+    // Nature de la demande (Internship, SearchJob, Training, RealEstate, etc.)
+    final nature = demande['nature']?.toString() ?? 'Demande';
+    final categoryLabel = _getNatureLabel(nature);
+
+    // Location
+    final location = demande['location']?.toString() ?? 'Non spécifié';
+
+    // Media
     final postImage = _extractMediaUrl(demande);
 
     final demandeId = demande['id']?.toString() ?? '';
 
-    return Column(
-      children: [
-        DemandeCard(
-          profileImage: profileImage,
-          username: username,
-          categoryLabel: categoryLabel,
-          categoryColor: _categoryColor(categoryLabel),
-          title: title,
-          description: description.isNotEmpty
-              ? description
-              : 'Description non disponible.',
-          location: location,
-          postImage: postImage,
-          likesCount: _asInt(demande['likes_count']),
-          commentsCount: _asInt(demande['comments_count']),
-          timeAgo: _buildTimeAgo(demande['created_at']?.toString()),
-          onTapCTA: () => _navigateToDemandeDetail(demande),
-        ),
-        if (demandeId.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-            child: _buildReactionBar('demandes', demandeId),
-          ),
-      ],
+    return DemandeCard(
+      profileImage: profileImage,
+      username: username,
+      categoryLabel: categoryLabel,
+      categoryColor: _categoryColor(categoryLabel),
+      title: title,
+      description: description.isNotEmpty
+          ? description
+          : 'Description non disponible.',
+      location: location,
+      postImage: postImage,
+      likesCount: _asInt(demande['likes_count']),
+      commentsCount: _asInt(demande['comments_count']),
+      timeAgo: _buildTimeAgo(demande['created_at']?.toString()),
+      onTapCTA: () => _navigateToDemandeDetail(demande),
+      reactionBar: demandeId.isNotEmpty
+          ? _buildReactionBar(
+              'demandes',
+              demandeId,
+              acceptedMessages: demande['accept_messages'] == true,
+              authorData: demande['user'],
+            )
+          : null,
     );
   }
 
@@ -776,10 +792,32 @@ class _ParticulierDashboardScreenState
     return formatted.isNotEmpty ? formatted : 'Date annoncée prochainement';
   }
 
+  String _getNatureLabel(String nature) {
+    switch (nature) {
+      case 'SearchJob':
+        return 'Recherche Emploi';
+      case 'Internship':
+        return 'Stage';
+      case 'Training':
+        return 'Formation';
+      case 'RealEstate':
+        return 'Immobilier';
+      case 'Service':
+        return 'Service';
+      case 'Product':
+        return 'Produit';
+      default:
+        return nature;
+    }
+  }
+
   Color _categoryColor(String label) {
     final lower = label.toLowerCase();
     if (lower.contains('urgent')) return Colors.redAccent;
     if (lower.contains('emploi')) return const Color(0xFF3AAE5E);
+    if (lower.contains('stage')) return const Color(0xFF2196F3);
+    if (lower.contains('formation')) return const Color(0xFF9C27B0);
+    if (lower.contains('immobilier')) return const Color(0xFFFF5722);
     if (lower.contains('service')) return const Color(0xFFFF9800);
     return const Color(0xFF3AAE5E);
   }

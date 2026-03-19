@@ -95,7 +95,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   Future<void> _sendMessage() async {
     if (_messageController.text.trim().isEmpty || _currentUserId == null)
       return;
-    
+
     // Prevent duplicate sends with synchronous check
     if (_isSending) return;
     _isSending = true;
@@ -161,7 +161,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     final conversationId = int.tryParse(widget.conversationId);
     if (conversationId == null) return;
 
-    final canEdit = message.isMe &&
+    final canEdit =
+        message.isMe &&
         DateTime.now().difference(message.createdAt).inMinutes <= 2;
 
     showModalBottomSheet(
@@ -208,7 +209,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   },
                 ),
               ListTile(
-                leading: Icon(Icons.delete_sweep_outlined, color: Colors.grey[700]),
+                leading: Icon(
+                  Icons.delete_sweep_outlined,
+                  color: Colors.grey[700],
+                ),
                 title: const Text('Supprimer pour moi'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -260,10 +264,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('$e'),
-                      backgroundColor: Colors.red,
-                    ),
+                    SnackBar(content: Text('$e'), backgroundColor: Colors.red),
                   );
                 }
               }
@@ -278,7 +279,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     );
   }
 
-  void _confirmDelete(int conversationId, int messageId, String deleteType) async {
+  void _confirmDelete(
+    int conversationId,
+    int messageId,
+    String deleteType,
+  ) async {
     try {
       await _conversationProvider.deleteMessage(
         conversationId,
@@ -288,10 +293,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
         );
       }
     }

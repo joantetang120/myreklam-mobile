@@ -15,10 +15,7 @@ class _CategoryLoadResult {
   final List<String> categories;
   final Map<String, List<String>> subCategories;
 
-  _CategoryLoadResult({
-    required this.categories,
-    required this.subCategories,
-  });
+  _CategoryLoadResult({required this.categories, required this.subCategories});
 }
 
 class CreerBonPlanScreen extends StatefulWidget {
@@ -34,7 +31,8 @@ class CreerBonPlanScreen extends StatefulWidget {
 }
 
 class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
-  static const String _categoriesApiUrl = 'https://api.myreklam.fr/Categorie.php';
+  static const String _categoriesApiUrl =
+      'https://api.myreklam.fr/Categorie.php';
   int _currentStep = 0;
   final int _totalSteps = 5;
 
@@ -56,7 +54,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
   // Step 4 - Prix et détails
   final TextEditingController _siteWebController = TextEditingController();
-  final TextEditingController _prixAvantReductionController = TextEditingController();
+  final TextEditingController _prixAvantReductionController =
+      TextEditingController();
   final TextEditingController _prixFinalController = TextEditingController();
   final FocusNode _prixAvantFocusNode = FocusNode();
   final FocusNode _prixFinalFocusNode = FocusNode();
@@ -72,7 +71,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   bool _moyenRetraitDrive = false;
   String _discountMode = 'percent';
   double? _calculatedDiscount;
-  
+
   // Shipping options for online availability
   String _shippingOption = 'free'; // 'free' or 'paid'
   final TextEditingController _shippingCostController = TextEditingController();
@@ -83,7 +82,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   bool _isUploadingMedia = false;
   final List<PlatformFile> _selectedMediaFiles = [];
   final List<String> _existingMediaUrls = [];
-  
+
   // Focus tracking for helper text
   String? _focusedField;
 
@@ -96,7 +95,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
   bool get _isEditMode => widget.isEditMode;
   bool get _isFreeType => (_selectedType ?? '').toLowerCase() == 'gratuit';
-  bool get _isOnlineOnly => (_selectedDisponibleLocation ?? '').toLowerCase() == 'en ligne';
+  bool get _isOnlineOnly =>
+      (_selectedDisponibleLocation ?? '').toLowerCase() == 'en ligne';
 
   @override
   void initState() {
@@ -151,7 +151,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     if (data == null) return;
 
     _titleController.text = data['title']?.toString() ?? '';
-    _disponibleChezController.text = data['available_at_name']?.toString() ?? '';
+    _disponibleChezController.text =
+        data['available_at_name']?.toString() ?? '';
     _linkController.text = data['link']?.toString() ?? '';
     _siteWebController.text = data['brand_website']?.toString() ?? '';
     _locationController.text = data['location_search']?.toString() ?? '';
@@ -164,10 +165,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
     _validityType = data['validity_type']?.toString() ?? 'permanent';
     if (data['valid_from'] != null) {
-      try { _validFrom = DateTime.parse(data['valid_from'].toString()); } catch (_) {}
+      try {
+        _validFrom = DateTime.parse(data['valid_from'].toString());
+      } catch (_) {}
     }
     if (data['valid_until'] != null) {
-      try { _validUntil = DateTime.parse(data['valid_until'].toString()); } catch (_) {}
+      try {
+        _validUntil = DateTime.parse(data['valid_until'].toString());
+      } catch (_) {}
     }
 
     _touteFrance = data['nationwide'] == true;
@@ -184,17 +189,20 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     // Price fields
     final prixAvant = data['prix_avant_reduction'];
     final prixFinal = data['prix_final'];
-    if (prixAvant != null) _prixAvantReductionController.text = prixAvant.toString();
+    if (prixAvant != null)
+      _prixAvantReductionController.text = prixAvant.toString();
     if (prixFinal != null) _prixFinalController.text = prixFinal.toString();
     _discountMode = data['discount_type']?.toString() ?? 'percent';
-    
+
     // Shipping fields
     _shippingOption = data['shipping_option']?.toString() ?? 'free';
     final shippingCost = data['shipping_cost'];
-    if (shippingCost != null) _shippingCostController.text = shippingCost.toString();
+    if (shippingCost != null)
+      _shippingCostController.text = shippingCost.toString();
 
     // Load existing media URLs
-    final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+    final mediaFiles =
+        data['media_files'] as List? ?? data['media'] as List? ?? [];
     final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
     for (final media in mediaFiles) {
       if (media is Map && media['url'] != null) {
@@ -221,7 +229,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
   void _restoreDescription(Map<String, dynamic> data) {
     final descDelta = data['description_delta'];
-    debugPrint('Edit mode description_delta type: ${descDelta.runtimeType}, value: $descDelta');
+    debugPrint(
+      'Edit mode description_delta type: ${descDelta.runtimeType}, value: $descDelta',
+    );
     bool deltaRestored = false;
 
     if (descDelta != null) {
@@ -264,7 +274,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             throw Exception('Unknown delta format: ${rawData.runtimeType}');
           }
         } else {
-          throw Exception('Unsupported descDelta type: ${descDelta.runtimeType}');
+          throw Exception(
+            'Unsupported descDelta type: ${descDelta.runtimeType}',
+          );
         }
 
         // Filter out operations with null insert values
@@ -305,7 +317,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   Future<void> _checkForSavedProgress() async {
     final prefs = await SharedPreferences.getInstance();
     final savedData = prefs.getString('bon_plan_draft');
-    
+
     if (savedData != null && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showContinueOrNewModal();
@@ -348,11 +360,13 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   Future<void> _saveFormProgress() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       final formData = {
         'step': _currentStep,
         'title': _titleController.text,
-        'description_delta': jsonEncode(_descriptionQuillController.document.toDelta().toJson()),
+        'description_delta': jsonEncode(
+          _descriptionQuillController.document.toDelta().toJson(),
+        ),
         'category': _selectedCategory,
         'sub_category': _selectedSubCategory,
         'type': _selectedType,
@@ -369,7 +383,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         'valid_from': _validFrom?.toIso8601String(),
         'valid_until': _validUntil?.toIso8601String(),
       };
-      
+
       await prefs.setString('bon_plan_draft', jsonEncode(formData));
     } catch (e) {
       debugPrint('Error saving form progress: $e');
@@ -380,11 +394,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedData = prefs.getString('bon_plan_draft');
-      
+
       if (savedData == null) return;
-      
+
       final formData = jsonDecode(savedData) as Map<String, dynamic>;
-      
+
       setState(() {
         _currentStep = formData['step'] ?? 0;
         _titleController.text = formData['title'] ?? '';
@@ -394,21 +408,22 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         _disponibleChezController.text = formData['available_at_name'] ?? '';
         _linkController.text = formData['link'] ?? '';
         _siteWebController.text = formData['site_web'] ?? '';
-        _prixAvantReductionController.text = formData['prix_avant_reduction'] ?? '';
+        _prixAvantReductionController.text =
+            formData['prix_avant_reduction'] ?? '';
         _prixFinalController.text = formData['prix_final'] ?? '';
         _discountMode = formData['discount_mode'] ?? 'percent';
         _selectedDisponibleLocation = formData['available_location_type'];
         _locationController.text = formData['location'] ?? '';
         _conditionsController.text = formData['conditions'] ?? '';
         _validityType = formData['validity_type'] ?? 'permanent';
-        
+
         if (formData['valid_from'] != null) {
           _validFrom = DateTime.parse(formData['valid_from']);
         }
         if (formData['valid_until'] != null) {
           _validUntil = DateTime.parse(formData['valid_until']);
         }
-        
+
         // Restore rich text description
         if (formData['description_delta'] != null) {
           try {
@@ -419,7 +434,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           }
         }
       });
-      
+
       _recalculateDiscount();
     } catch (e) {
       debugPrint('Error restoring form data: $e');
@@ -440,7 +455,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             'Quitter la modification ?',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -536,7 +553,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               ),
               child: Center(
                 child: Text(
-                  _discountMode == 'percent' ? '${_calculatedDiscount?.toStringAsFixed(2) ?? '--'} %'
+                  _discountMode == 'percent'
+                      ? '${_calculatedDiscount?.toStringAsFixed(2) ?? '--'} %'
                       : '${_calculatedDiscount?.toStringAsFixed(2) ?? '--'} €',
                   style: const TextStyle(
                     fontSize: 13,
@@ -655,7 +673,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     final prixAvant = _parsePrice(_prixAvantReductionController.text);
     final prixFinal = _parsePrice(_prixFinalController.text);
 
-    if (prixAvant == null || prixFinal == null || prixAvant <= 0 || prixFinal < 0) {
+    if (prixAvant == null ||
+        prixFinal == null ||
+        prixAvant <= 0 ||
+        prixFinal < 0) {
       setState(() => _calculatedDiscount = null);
       return;
     }
@@ -669,7 +690,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       if (value < 0) value = 0;
     }
 
-    setState(() => _calculatedDiscount = double.parse(value!.toStringAsFixed(2)));
+    setState(
+      () => _calculatedDiscount = double.parse(value!.toStringAsFixed(2)),
+    );
   }
 
   double? _parsePrice(String text) {
@@ -705,7 +728,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) {
-        _showSnack('Session expirée. Veuillez vous reconnecter.', isError: true);
+        _showSnack(
+          'Session expirée. Veuillez vous reconnecter.',
+          isError: true,
+        );
         return false;
       }
 
@@ -716,34 +742,43 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
       for (final file in _selectedMediaFiles) {
         if (file.path != null) {
-          request.files.add(await http.MultipartFile.fromPath(
-            'files[]',
-            file.path!,
-            filename: file.name,
-          ));
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'files[]',
+              file.path!,
+              filename: file.name,
+            ),
+          );
         } else if (file.bytes != null) {
-          request.files.add(http.MultipartFile.fromBytes(
-            'files[]',
-            file.bytes!,
-            filename: file.name ?? 'media',
-          ));
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'files[]',
+              file.bytes!,
+              filename: file.name ?? 'media',
+            ),
+          );
         }
       }
 
       final streamedResponse = await request.send();
       final responseBody = await streamedResponse.stream.bytesToString();
 
-      if (streamedResponse.statusCode >= 200 && streamedResponse.statusCode < 300) {
+      if (streamedResponse.statusCode >= 200 &&
+          streamedResponse.statusCode < 300) {
         setState(() => _selectedMediaFiles.clear());
         return true;
       }
 
-      final message = _extractErrorMessage(responseBody) ??
+      final message =
+          _extractErrorMessage(responseBody) ??
           'Impossible d\'envoyer les médias (code ${streamedResponse.statusCode}).';
       _showSnack(message, isError: true);
       return false;
     } catch (_) {
-      _showSnack('Échec de l\'upload des médias. Veuillez réessayer.', isError: true);
+      _showSnack(
+        'Échec de l\'upload des médias. Veuillez réessayer.',
+        isError: true,
+      );
       return false;
     } finally {
       if (mounted) {
@@ -775,11 +810,16 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       });
 
       final hasValidSelectedCategory =
-          _selectedCategory != null && updatedCategories.contains(_selectedCategory);
-      final newAvailableSubCategories = hasValidSelectedCategory && _selectedCategory != null
-          ? List<String>.from(updatedSubCategories[_selectedCategory] ?? const <String>[])
+          _selectedCategory != null &&
+          updatedCategories.contains(_selectedCategory);
+      final newAvailableSubCategories =
+          hasValidSelectedCategory && _selectedCategory != null
+          ? List<String>.from(
+              updatedSubCategories[_selectedCategory] ?? const <String>[],
+            )
           : <String>[];
-      final hasValidSelectedSubCategory = hasValidSelectedCategory &&
+      final hasValidSelectedSubCategory =
+          hasValidSelectedCategory &&
           newAvailableSubCategories.contains(_selectedSubCategory);
 
       setState(() {
@@ -841,7 +881,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       }
 
       if (decoded['status'] != 'success') {
-        final message = decoded['message']?.toString() ??
+        final message =
+            decoded['message']?.toString() ??
             'Impossible de charger les catégories.';
         throw ApiException(statusCode: 0, message: message);
       }
@@ -926,7 +967,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   }
 
   int _compareCategoryMaps(Map<String, dynamic> a, Map<String, dynamic> b) {
-    final orderComparison = _parseOrder(a['order']).compareTo(_parseOrder(b['order']));
+    final orderComparison = _parseOrder(
+      a['order'],
+    ).compareTo(_parseOrder(b['order']));
     if (orderComparison != 0) {
       return orderComparison;
     }
@@ -958,7 +1001,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       _selectedCategory = category;
       _selectedSubCategory = null;
       _availableSubCategories = category != null
-          ? List<String>.from(_categorySubCategories[category] ?? const <String>[])
+          ? List<String>.from(
+              _categorySubCategories[category] ?? const <String>[],
+            )
           : <String>[];
     });
   }
@@ -966,7 +1011,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   Future<void> _selectDate({required bool isStart}) async {
     final initialDate = isStart
         ? _validFrom ?? DateTime.now()
-        : _validUntil ?? _validFrom ?? DateTime.now().add(const Duration(days: 1));
+        : _validUntil ??
+              _validFrom ??
+              DateTime.now().add(const Duration(days: 1));
     final firstDate = DateTime.now().subtract(const Duration(days: 1));
     final lastDate = DateTime.now().add(const Duration(days: 365 * 2));
 
@@ -975,7 +1022,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       initialDate: initialDate,
       firstDate: firstDate,
       lastDate: lastDate,
-      helpText: isStart ? 'Sélectionnez la date de début' : 'Sélectionnez la date de fin',
+      helpText: isStart
+          ? 'Sélectionnez la date de début'
+          : 'Sélectionnez la date de fin',
       cancelText: 'Annuler',
       confirmText: 'Confirmer',
       builder: (context, child) {
@@ -1060,15 +1109,16 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           return 'Veuillez choisir un type de bon plan.';
         }
         break;
-      
+
       case 1: // Step 2: Lien (optional)
         break;
-      
+
       case 2: // Step 3: Description
         if (_titleController.text.trim().length < 5) {
           return 'Le titre doit contenir au moins 5 caractères.';
         }
-        if (_descriptionQuillController.document.toPlainText().trim().length < 20) {
+        if (_descriptionQuillController.document.toPlainText().trim().length <
+            20) {
           return 'La description doit contenir au moins 20 caractères.';
         }
         if (_disponibleChezController.text.trim().isEmpty) {
@@ -1078,7 +1128,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           return 'Précisez où est disponible cette offre.';
         }
         break;
-      
+
       case 3: // Step 4: Prix et détails
         if (_selectedType != 'Gratuit') {
           final prixAvant = _parsePrice(_prixAvantReductionController.text);
@@ -1099,12 +1149,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           if (_locationController.text.trim().isEmpty && !_touteFrance) {
             return 'Renseignez une ville ou activez "Toute la France".';
           }
-          if (!_moyenRetraitMagasin && !_moyenRetraitEnLigne && !_moyenRetraitDrive) {
+          if (!_moyenRetraitMagasin &&
+              !_moyenRetraitEnLigne &&
+              !_moyenRetraitDrive) {
             return 'Sélectionnez au moins un moyen de retrait.';
           }
         }
         break;
-      
+
       case 4: // Step 5: Médias (optional)
         break;
     }
@@ -1146,7 +1198,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         return 'La date de fin doit être postérieure à la date de début.';
       }
     }
-    if (_locationController.text.trim().isEmpty && !_touteFrance) {
+    // if (_locationController.text.trim().isEmpty && !_touteFrance) {
+    //   return 'Renseignez une ville ou activez "Toute la France".';
+    // }
+    if (!_touteFrance) {
       return 'Renseignez une ville ou activez "Toute la France".';
     }
     if (!_moyenRetraitMagasin && !_moyenRetraitEnLigne && !_moyenRetraitDrive) {
@@ -1167,8 +1222,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     setState(() => _isSubmitting = true);
 
     final title = _titleController.text.trim();
-    final descriptionDelta = _descriptionQuillController.document.toDelta().toJson();
-    final descriptionPlainText = _descriptionQuillController.document.toPlainText().trim();
+    final descriptionDelta = _descriptionQuillController.document
+        .toDelta()
+        .toJson();
+    final descriptionPlainText = _descriptionQuillController.document
+        .toPlainText()
+        .trim();
     final disponibleChez = _disponibleChezController.text.trim();
     final link = _linkController.text.trim();
     final brandWebsite = _siteWebController.text.trim();
@@ -1211,11 +1270,19 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     try {
       final Map<String, dynamic> response;
       if (_isEditMode) {
-        response = await _apiClient.authenticatedPut('/bonplans/${widget.bonPlanId}', body: payload);
+        response = await _apiClient.authenticatedPut(
+          '/bonplans/${widget.bonPlanId}',
+          body: payload,
+        );
       } else {
-        response = await _apiClient.authenticatedPost('/bonplans', body: payload);
+        response = await _apiClient.authenticatedPost(
+          '/bonplans',
+          body: payload,
+        );
       }
-      final bonPlanData = response['data'] is Map ? response['data'] as Map : response;
+      final bonPlanData = response['data'] is Map
+          ? response['data'] as Map
+          : response;
       final bonPlanId = bonPlanData['id']?.toString() ?? widget.bonPlanId;
 
       bool mediaSuccess = true;
@@ -1238,14 +1305,17 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       if (!_isEditMode) {
         await _clearSavedProgress();
       }
-      
+
       _showSuccessDialog();
     } on ApiException catch (e) {
       if (!mounted) return;
       _showSnack(e.firstError, isError: true);
     } catch (e) {
       if (!mounted) return;
-      _showSnack('Impossible de publier le bon plan. Veuillez réessayer.', isError: true);
+      _showSnack(
+        'Impossible de publier le bon plan. Veuillez réessayer.',
+        isError: true,
+      );
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -1272,7 +1342,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                     Navigator.pop(context); // close dialog
                     Navigator.pop(context); // pop edit/create screen
                     if (_isEditMode) {
-                      Navigator.pop(context); // pop detail screen back to listing
+                      Navigator.pop(
+                        context,
+                      ); // pop detail screen back to listing
                     }
                   },
                   child: const Icon(Icons.close, color: Colors.grey, size: 22),
@@ -1394,11 +1466,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       return Container(
         color: Colors.black87,
         child: const Center(
-          child: Icon(
-            Icons.play_circle_outline,
-            size: 40,
-            color: Colors.white,
-          ),
+          child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white),
         ),
       );
     } else {
@@ -1470,12 +1538,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                value != null
-                    ? _formatSingleDate(value)
-                    : label,
+                value != null ? _formatSingleDate(value) : label,
                 style: TextStyle(
                   fontSize: 13,
-                  color: value != null ? const Color(0xFF424242) : Colors.grey[500],
+                  color: value != null
+                      ? const Color(0xFF424242)
+                      : Colors.grey[500],
                   fontWeight: value != null ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
@@ -1540,7 +1608,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                       ),
                     ),
                     Text(
-                      _isEditMode ? 'Modifier le bon plan' : 'Créer un bon plan',
+                      _isEditMode
+                          ? 'Modifier le bon plan'
+                          : 'Créer un bon plan',
                       style: const TextStyle(
                         fontSize: 20,
                         fontFamily: 'Manjari',
@@ -1561,50 +1631,52 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                 ),
               ),
-            const SizedBox(height: 12),
-            // Progress bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _buildProgressBar(),
-            ),
-            const SizedBox(height: 12),
-            // Previous button
-            if (_currentStep > 0)
+              const SizedBox(height: 12),
+              // Progress bar
               Padding(
-                padding: const EdgeInsets.only(left: 20),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: GestureDetector(
-                    onTap: _previousStep,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      child: const Text(
-                        'Précédent',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _buildProgressBar(),
+              ),
+              const SizedBox(height: 12),
+              // Previous button
+              if (_currentStep > 0)
+                Padding(
+                  padding: const EdgeInsets.only(left: 20),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: GestureDetector(
+                      onTap: _previousStep,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.grey.withOpacity(0.3),
+                          ),
+                        ),
+                        child: const Text(
+                          'Précédent',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
                       ),
                     ),
                   ),
                 ),
+              const SizedBox(height: 8),
+              // Step content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildCurrentStep(),
+                ),
               ),
-            const SizedBox(height: 8),
-            // Step content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _buildCurrentStep(),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -1725,17 +1797,24 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               mainAxisSpacing: 12,
               childAspectRatio: 1,
             ),
-            itemCount: _existingMediaUrls.length + _selectedMediaFiles.length + 1,
+            itemCount:
+                _existingMediaUrls.length + _selectedMediaFiles.length + 1,
             itemBuilder: (context, index) {
               if (index == 0) {
                 return _buildAddPhotoButton();
               }
               final existingCount = _existingMediaUrls.length;
               if (index <= existingCount) {
-                return _buildExistingPhotoCard(_existingMediaUrls[index - 1], index - 1);
+                return _buildExistingPhotoCard(
+                  _existingMediaUrls[index - 1],
+                  index - 1,
+                );
               }
               final newIndex = index - 1 - existingCount;
-              return _buildPhotoPreviewCard(_selectedMediaFiles[newIndex], newIndex);
+              return _buildPhotoPreviewCard(
+                _selectedMediaFiles[newIndex],
+                newIndex,
+              );
             },
           ),
         ),
@@ -1794,7 +1873,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
   Widget _buildPhotoPreviewCard(PlatformFile file, int index) {
     final isCoverPhoto = index == 0 && _existingMediaUrls.isEmpty;
-    
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -1997,7 +2076,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               label: 'Choisissez la sous-catégorie*',
               value: _selectedSubCategory,
               items: _availableSubCategories,
-              onChanged: _selectedCategory != null 
+              onChanged: _selectedCategory != null
                   ? (val) => setState(() => _selectedSubCategory = val)
                   : null,
               hint: _buildRequiredHint('Choisissez la sous-catégorie'),
@@ -2036,7 +2115,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               label: 'Ajouter un lien',
               controller: _linkController,
               fieldKey: 'link',
-              helperText: 'Le lien permettra d\'extraire automatiquement le titre, la description, les prix et autres détails du bon plan pour faciliter la création de votre annonce.',
+              helperText:
+                  'Le lien permettra d\'extraire automatiquement le titre, la description, les prix et autres détails du bon plan pour faciliter la création de votre annonce.',
             ),
           ],
         ),
@@ -2079,21 +2159,24 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               label: 'Quel est votre titre?*',
               controller: _titleController,
               fieldKey: 'title',
-              helperText: 'Saisissez un titre accrocheur et descriptif pour votre bon plan (ex: "Réduction de 50% sur tous les produits").',
+              helperText:
+                  'Saisissez un titre accrocheur et descriptif pour votre bon plan (ex: "Réduction de 50% sur tous les produits").',
             ),
             const SizedBox(height: 12),
             _buildRichTextEditor(
               label: 'Décrivez votre offre*',
               controller: _descriptionQuillController,
               fieldKey: 'description',
-              helperText: 'Décrivez en détail votre bon plan. Utilisez les outils de mise en forme pour mettre en évidence les informations importantes.',
+              helperText:
+                  'Décrivez en détail votre bon plan. Utilisez les outils de mise en forme pour mettre en évidence les informations importantes.',
             ),
             const SizedBox(height: 12),
             _buildTextField(
               label: 'Bon plan disponible chez?*',
               controller: _disponibleChezController,
               fieldKey: 'disponible_chez',
-              helperText: 'Indiquez le nom de l\'enseigne ou du commerce où ce bon plan est disponible.',
+              helperText:
+                  'Indiquez le nom de l\'enseigne ou du commerce où ce bon plan est disponible.',
             ),
             const SizedBox(height: 12),
             _buildDropdownField(
@@ -2150,10 +2233,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               controller: _siteWebController,
               keyboardType: TextInputType.url,
               fieldKey: 'site_web',
-              helperText: 'Saisissez l\'adresse du site web officiel de l\'enseigne.',
+              helperText:
+                  'Saisissez l\'adresse du site web officiel de l\'enseigne.',
             ),
             const SizedBox(height: 16),
-            
+
             // Validity type radio buttons
             const Text(
               'Quand cette offre est-elle valide ?',
@@ -2217,7 +2301,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               ),
             ],
             const SizedBox(height: 16),
-            
+
             // Location section (hidden when 'En ligne' is selected)
             if (!_isOnlineOnly) ...[
               const Text(
@@ -2234,7 +2318,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 controller: _locationController,
                 prefixIcon: Icons.search,
                 fieldKey: 'location',
-                helperText: 'Entrez la ville ou le code postal où ce bon plan est valable.',
+                helperText:
+                    'Entrez la ville ou le code postal où ce bon plan est valable.',
                 enabled: !_touteFrance,
                 onChanged: (value) {
                   if (value.trim().isNotEmpty && _touteFrance) {
@@ -2243,10 +2328,13 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 },
               ),
               const SizedBox(height: 12),
-              
+
               // Toute la France toggle
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF9FAFB),
                   borderRadius: BorderRadius.circular(8),
@@ -2276,10 +2364,13 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               // Google location toggle
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF9FAFB),
                   borderRadius: BorderRadius.circular(8),
@@ -2290,19 +2381,23 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                     const Expanded(
                       child: Text(
                         'Afficher la localisation Google sur l\'annonce.',
-                        style: TextStyle(fontSize: 13, color: Color(0xFF424242)),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF424242),
+                        ),
                       ),
                     ),
                     Switch(
                       value: _afficherGoogleLocation,
-                      onChanged: (val) => setState(() => _afficherGoogleLocation = val),
+                      onChanged: (val) =>
+                          setState(() => _afficherGoogleLocation = val),
                       activeColor: const Color(0xFF3AAE5E),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Moyen de retrait checkboxes (hidden when 'En ligne')
               const Text(
                 'Moyen de retrait :',
@@ -2324,7 +2419,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                             style: TextStyle(fontSize: 13),
                           ),
                           value: _moyenRetraitMagasin,
-                          onChanged: (val) => setState(() => _moyenRetraitMagasin = val ?? false),
+                          onChanged: (val) => setState(
+                            () => _moyenRetraitMagasin = val ?? false,
+                          ),
                           contentPadding: EdgeInsets.zero,
                           controlAffinity: ListTileControlAffinity.leading,
                           activeColor: const Color(0xFF3AAE5E),
@@ -2337,7 +2434,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                             style: TextStyle(fontSize: 13),
                           ),
                           value: _moyenRetraitEnLigne,
-                          onChanged: (val) => setState(() => _moyenRetraitEnLigne = val ?? false),
+                          onChanged: (val) => setState(
+                            () => _moyenRetraitEnLigne = val ?? false,
+                          ),
                           contentPadding: EdgeInsets.zero,
                           controlAffinity: ListTileControlAffinity.leading,
                           activeColor: const Color(0xFF3AAE5E),
@@ -2346,12 +2445,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                     ],
                   ),
                   CheckboxListTile(
-                    title: const Text(
-                      'Drive',
-                      style: TextStyle(fontSize: 13),
-                    ),
+                    title: const Text('Drive', style: TextStyle(fontSize: 13)),
                     value: _moyenRetraitDrive,
-                    onChanged: (val) => setState(() => _moyenRetraitDrive = val ?? false),
+                    onChanged: (val) =>
+                        setState(() => _moyenRetraitDrive = val ?? false),
                     contentPadding: EdgeInsets.zero,
                     controlAffinity: ListTileControlAffinity.leading,
                     activeColor: const Color(0xFF3AAE5E),
@@ -2409,10 +2506,15 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   ),
                   child: TextField(
                     controller: _shippingCostController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Montant des frais de port',
-                      labelStyle: const TextStyle(fontSize: 13, color: Color(0xFF757575)),
+                      labelStyle: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF757575),
+                      ),
                       suffixText: '€',
                       suffixStyle: const TextStyle(
                         fontSize: 14,
@@ -2420,16 +2522,22 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                         color: Color(0xFF424242),
                       ),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                     ),
-                    style: const TextStyle(fontSize: 14, color: Color(0xFF424242)),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF424242),
+                    ),
                   ),
                 ),
               ],
               const SizedBox(height: 16),
             ],
             const SizedBox(height: 16),
-            
+
             // Conditions field
             const Text(
               'Conditions pour profiter de cette offre :',
@@ -2445,7 +2553,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               controller: _conditionsController,
               maxLines: 3,
               fieldKey: 'conditions',
-              helperText: 'Précisez les conditions d\'utilisation du bon plan (ex: valable pour les nouveaux clients uniquement).',
+              helperText:
+                  'Précisez les conditions d\'utilisation du bon plan (ex: valable pour les nouveaux clients uniquement).',
             ),
             const SizedBox(height: 8),
             Text(
@@ -2481,7 +2590,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         const SizedBox(height: 12),
         Center(
           child: Text(
-            _isEditMode ? 'Vérifiez vos modifications' : 'Vérifiez votre annonce',
+            _isEditMode
+                ? 'Vérifiez vos modifications'
+                : 'Vérifiez votre annonce',
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -2519,7 +2630,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           rows: [
             _buildReviewRow(
               'Lien',
-              _linkController.text.isEmpty ? 'Aucun lien' : _linkController.text,
+              _linkController.text.isEmpty
+                  ? 'Aucun lien'
+                  : _linkController.text,
             ),
           ],
         ),
@@ -2542,8 +2655,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             ),
             _buildReviewRow(
               'Disponible chez',
-              _disponibleChezController.text.isEmpty 
-                  ? '-' 
+              _disponibleChezController.text.isEmpty
+                  ? '-'
                   : _disponibleChezController.text,
             ),
             _buildReviewRow(
@@ -2561,22 +2674,22 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           rows: [
             _buildReviewRow(
               'Prix avant réduction',
-              _prixAvantReductionController.text.isEmpty 
-                  ? '-' 
+              _prixAvantReductionController.text.isEmpty
+                  ? '-'
                   : '${_prixAvantReductionController.text} €',
             ),
             _buildReviewRow(
               'Prix final',
-              _prixFinalController.text.isEmpty 
-                  ? '-' 
+              _prixFinalController.text.isEmpty
+                  ? '-'
                   : '${_prixFinalController.text} €',
             ),
             _buildReviewRow(
               'Réduction',
               _calculatedDiscount != null
                   ? _discountMode == 'percent'
-                      ? '${_calculatedDiscount!.toStringAsFixed(2)} %'
-                      : '${_calculatedDiscount!.toStringAsFixed(2)} €'
+                        ? '${_calculatedDiscount!.toStringAsFixed(2)} %'
+                        : '${_calculatedDiscount!.toStringAsFixed(2)} €'
                   : '-',
             ),
             _buildReviewRow(
@@ -2601,14 +2714,16 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             _buildReviewRow(
               'Moyen de retrait',
               [
-                if (_moyenRetraitMagasin) 'Magasin',
-                if (_moyenRetraitEnLigne) 'Livraison',
-                if (_moyenRetraitDrive) 'Drive',
-              ].isEmpty ? '-' : [
-                if (_moyenRetraitMagasin) 'Magasin',
-                if (_moyenRetraitEnLigne) 'Livraison',
-                if (_moyenRetraitDrive) 'Drive',
-              ].join(', '),
+                    if (_moyenRetraitMagasin) 'Magasin',
+                    if (_moyenRetraitEnLigne) 'Livraison',
+                    if (_moyenRetraitDrive) 'Drive',
+                  ].isEmpty
+                  ? '-'
+                  : [
+                      if (_moyenRetraitMagasin) 'Magasin',
+                      if (_moyenRetraitEnLigne) 'Livraison',
+                      if (_moyenRetraitDrive) 'Drive',
+                    ].join(', '),
             ),
             if (_conditionsController.text.isNotEmpty)
               _buildReviewRow('Conditions', _conditionsController.text),
@@ -2629,12 +2744,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             ),
           ],
         ),
-        if (_existingMediaUrls.isNotEmpty || _selectedMediaFiles.isNotEmpty) ...[
+        if (_existingMediaUrls.isNotEmpty ||
+            _selectedMediaFiles.isNotEmpty) ...[
           const SizedBox(height: 12),
-          if (_existingMediaUrls.isNotEmpty)
-            _buildExistingMediaReviewList(),
-          if (_selectedMediaFiles.isNotEmpty)
-            _buildSelectedMediaList(),
+          if (_existingMediaUrls.isNotEmpty) _buildExistingMediaReviewList(),
+          if (_selectedMediaFiles.isNotEmpty) _buildSelectedMediaList(),
         ],
         const SizedBox(height: 20),
 
@@ -2684,7 +2798,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: (_isSubmitting || _isUploadingMedia) ? null : _submitBonPlan,
+            onPressed: (_isSubmitting || _isUploadingMedia)
+                ? null
+                : _submitBonPlan,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF9800),
               foregroundColor: Colors.white,
@@ -2703,19 +2819,31 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        _isUploadingMedia ? 'Upload des médias...' : 'Publication en cours...',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        _isUploadingMedia
+                            ? 'Upload des médias...'
+                            : 'Publication en cours...',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   )
                 : Text(
-                    _isEditMode ? 'Mettre à jour le bon plan' : 'Publier le bon plan',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    _isEditMode
+                        ? 'Mettre à jour le bon plan'
+                        : 'Publier le bon plan',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
           ),
         ),
@@ -2942,7 +3070,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
   Widget _buildHelperText(String? fieldKey, String helperText) {
     if (_focusedField != fieldKey) return const SizedBox.shrink();
-    
+
     return Container(
       margin: const EdgeInsets.only(top: 8, bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -3016,7 +3144,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
-              prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.grey[400]) : null,
+              prefixIcon: prefixIcon != null
+                  ? Icon(prefixIcon, color: Colors.grey[400])
+                  : null,
               suffixText: suffix,
               suffixStyle: const TextStyle(
                 fontSize: 14,
@@ -3063,58 +3193,61 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                     style: TextStyle(fontSize: 13, color: Colors.grey[400]),
                   ),
                 ),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: QuillSimpleToolbar(
-              controller: controller,
-              config: const QuillSimpleToolbarConfig(
-                toolbarSize: 28,
-                multiRowsDisplay: false,
-                showBoldButton: true,
-                showItalicButton: true,
-                showUnderLineButton: true,
-                showStrikeThrough: true,
-                showLink: true,
-                showUndo: true,
-                showRedo: true,
-                showListBullets: true,
-                showListNumbers: true,
-                showListCheck: false,
-                showCodeBlock: false,
-                showQuote: false,
-                showIndent: false,
-                showHeaderStyle: false,
-                showFontFamily: false,
-                showFontSize: false,
-                showColorButton: false,
-                showBackgroundColorButton: false,
-                showClearFormat: false,
-                showAlignmentButtons: false,
-                showDirection: false,
-                showSearchButton: false,
-                showSubscript: false,
-                showSuperscript: false,
-                showSmallButton: false,
-                showInlineCode: false,
-                showLineHeightButton: false,
-              ),
-            ),
-          ),
-          Container(
-            height: 120,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: QuillEditor.basic(
-              controller: controller,
-              config: const QuillEditorConfig(
-                placeholder: 'Saisissez votre texte ici...',
-                padding: EdgeInsets.symmetric(vertical: 8),
-              ),
-            ),
-          ),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: QuillSimpleToolbar(
+                    controller: controller,
+                    config: const QuillSimpleToolbarConfig(
+                      toolbarSize: 28,
+                      multiRowsDisplay: false,
+                      showBoldButton: true,
+                      showItalicButton: true,
+                      showUnderLineButton: true,
+                      showStrikeThrough: true,
+                      showLink: true,
+                      showUndo: true,
+                      showRedo: true,
+                      showListBullets: true,
+                      showListNumbers: true,
+                      showListCheck: false,
+                      showCodeBlock: false,
+                      showQuote: false,
+                      showIndent: false,
+                      showHeaderStyle: false,
+                      showFontFamily: false,
+                      showFontSize: false,
+                      showColorButton: false,
+                      showBackgroundColorButton: false,
+                      showClearFormat: false,
+                      showAlignmentButtons: false,
+                      showDirection: false,
+                      showSearchButton: false,
+                      showSubscript: false,
+                      showSuperscript: false,
+                      showSmallButton: false,
+                      showInlineCode: false,
+                      showLineHeightButton: false,
+                    ),
+                  ),
+                ),
+                Container(
+                  height: 120,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: QuillEditor.basic(
+                    controller: controller,
+                    config: const QuillEditorConfig(
+                      placeholder: 'Saisissez votre texte ici...',
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

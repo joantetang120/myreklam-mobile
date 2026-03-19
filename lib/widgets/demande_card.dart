@@ -13,6 +13,7 @@ class DemandeCard extends StatelessWidget {
   final int commentsCount;
   final String timeAgo;
   final VoidCallback? onTapCTA;
+  final Widget? reactionBar;
 
   const DemandeCard({
     super.key,
@@ -28,6 +29,7 @@ class DemandeCard extends StatelessWidget {
     required this.commentsCount,
     required this.timeAgo,
     this.onTapCTA,
+    this.reactionBar,
   });
 
   @override
@@ -98,11 +100,17 @@ class DemandeCard extends StatelessWidget {
               ),
               Row(
                 children: [
-                  Icon(Icons.favorite_border,
-                      color: Colors.grey.withOpacity(0.7), size: 20),
+                  Icon(
+                    Icons.favorite_border,
+                    color: Colors.grey.withOpacity(0.7),
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
-                  Icon(Icons.close,
-                      color: Colors.grey.withOpacity(0.7), size: 20),
+                  Icon(
+                    Icons.close,
+                    color: Colors.grey.withOpacity(0.7),
+                    size: 20,
+                  ),
                 ],
               ),
             ],
@@ -128,32 +136,52 @@ class DemandeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 15),
-          // Location
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.location_on_outlined,
-                    size: 16, color: Colors.grey),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    location,
-                    style: const TextStyle(
-                      fontSize: 12,
+          // Location & Time
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 16,
                       color: Colors.grey,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                    const SizedBox(width: 6),
+                    Text(
+                      location,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const Spacer(),
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    color: Colors.grey.withOpacity(0.7),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    timeAgo,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ],
           ),
           // Post image (optional)
           if (postImage != null && postImage!.isNotEmpty) ...[
@@ -183,44 +211,16 @@ class DemandeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 15),
-          // Engagement stats + time
-          Row(
-            children: [
-              _buildStat(Icons.thumb_up_alt_outlined, likesCount.toString()),
-              const SizedBox(width: 16),
-              _buildStat(Icons.chat_bubble_outline, commentsCount.toString()),
-              const SizedBox(width: 16),
-              Icon(Icons.share_outlined,
-                  color: Colors.grey.withOpacity(0.7), size: 18),
-              const Spacer(),
-              Icon(Icons.access_time,
-                  color: Colors.grey.withOpacity(0.7), size: 16),
-              const SizedBox(width: 4),
-              Text(
-                timeAgo,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
-          ),
+          // Reaction bar (if provided)
+          if (reactionBar != null) ...[
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            reactionBar!,
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+          ],
         ],
       ),
-    );
-  }
-
-  Widget _buildStat(IconData icon, String count) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.grey.withOpacity(0.7), size: 18),
-        const SizedBox(width: 6),
-        Text(
-          count,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 
@@ -248,7 +248,7 @@ class DemandeCard extends StatelessWidget {
               child: CircularProgressIndicator(
                 value: progress.expectedTotalBytes != null
                     ? progress.cumulativeBytesLoaded /
-                        progress.expectedTotalBytes!
+                          progress.expectedTotalBytes!
                     : null,
               ),
             ),
@@ -270,7 +270,11 @@ class DemandeCard extends StatelessWidget {
       width: double.infinity,
       height: 180,
       color: Colors.grey[200],
-      child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 36),
+      child: const Icon(
+        Icons.image_not_supported,
+        color: Colors.grey,
+        size: 36,
+      ),
     );
   }
 }
