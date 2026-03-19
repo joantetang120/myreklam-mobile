@@ -10,11 +10,7 @@ class ApiException implements Exception {
   final String message;
   final Map<String, dynamic>? errors;
 
-  ApiException({
-    required this.statusCode,
-    required this.message,
-    this.errors,
-  });
+  ApiException({required this.statusCode, required this.message, this.errors});
 
   @override
   String toString() => message;
@@ -45,10 +41,7 @@ class ApiClient {
     };
   }
 
-  Future<Map<String, dynamic>> get(
-    String endpoint, {
-    bool auth = false,
-  }) async {
+  Future<Map<String, dynamic>> get(String endpoint, {bool auth = false}) async {
     final token = auth ? await TokenStorage.getAccessToken() : null;
     final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
 
@@ -66,7 +59,8 @@ class ApiClient {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
+        message:
+            'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
       );
     } on http.ClientException {
       throw ApiException(
@@ -102,7 +96,8 @@ class ApiClient {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
+        message:
+            'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
       );
     } on http.ClientException {
       throw ApiException(
@@ -138,7 +133,8 @@ class ApiClient {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
+        message:
+            'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
       );
     } on http.ClientException {
       throw ApiException(
@@ -233,7 +229,8 @@ class ApiClient {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
+        message:
+            'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
       );
     } on http.ClientException {
       throw ApiException(

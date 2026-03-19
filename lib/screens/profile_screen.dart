@@ -530,7 +530,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: 'Mon profil',
                     description:
                         'Gérez vos informations personnelles, votre présentation et vos réseaux sociaux',
-                    color: const Color(0xFF04BC7B).withOpacity(0.15),
                     onTap: () {
                       Navigator.push(
                         context,
