@@ -235,9 +235,14 @@ class _SearchScreenState extends State<SearchScreen> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const ParticulierMainScreen(
+                        builder: (context) => ParticulierMainScreen(
                           initialIndex: 3,
                           showSearchResults: true,
+                          searchQuery: _searchController.text.trim(),
+                          searchCategory: _selectedCategory,
+                          searchLocation: _locationController.text.trim(),
+                          searchRadius: _searchRadius,
+                          searchAllFrance: _searchAllFrance,
                         ),
                       ),
                     );
