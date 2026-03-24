@@ -53,7 +53,9 @@ class JobAnnouncementCard extends StatelessWidget {
         ],
         border: Border.all(color: Colors.grey.withOpacity(0.1)),
       ),
-      child: Column(
+      child: Stack(
+        children: [
+          Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
@@ -217,6 +219,49 @@ class JobAnnouncementCard extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [const Color(0xFF3AAE5E), const Color(0xFF3AAE5E).withOpacity(0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(12),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF3AAE5E).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.work_outline, size: 14, color: Colors.white),
+                  SizedBox(width: 4),
+                  Text(
+                    'Offre d\'emploi',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
