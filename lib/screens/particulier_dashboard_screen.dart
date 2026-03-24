@@ -31,6 +31,7 @@ import 'package:myreklam/services/story_store.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/conversation_service.dart';
+import 'package:myreklam/screens/image_preview_screen.dart';
 
 class ParticulierDashboardScreen extends StatefulWidget {
   const ParticulierDashboardScreen({super.key});
@@ -54,14 +55,348 @@ class _PostAuthorInfo {
   final String avatar;
 }
 
+class _PostCardWidget extends StatefulWidget {
+  final String postId;
+  final bool isRepost;
+  final _PostAuthorInfo reposter;
+  final _PostAuthorInfo author;
+  final String content;
+  final String timeAgo;
+  final List<String> mediaUrls;
+  final Function(String) onToggleReaction;
+  final Widget Function() buildReactionBar;
+  final Widget Function(String, Color, IconData) buildTypeTag;
+
+  const _PostCardWidget({
+    required this.postId,
+    required this.isRepost,
+    required this.reposter,
+    required this.author,
+    required this.content,
+    required this.timeAgo,
+    required this.mediaUrls,
+    required this.onToggleReaction,
+    required this.buildReactionBar,
+    required this.buildTypeTag,
+  });
+
+  @override
+  State<_PostCardWidget> createState() => _PostCardWidgetState();
+}
+
+class _PostCardWidgetState extends State<_PostCardWidget> {
+  bool _isExpanded = false;
+  static const int _collapsedMaxLength = 150;
+
+  @override
+  Widget build(BuildContext context) {
+    final needsCollapse = widget.content.length > _collapsedMaxLength;
+    final displayContent = !_isExpanded && needsCollapse
+        ? '${widget.content.substring(0, _collapsedMaxLength)}...'
+        : widget.content;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
+        ),
+      ),
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with author info
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Repost header if applicable
+                    if (widget.isRepost) ...[
+                      Row(
+                        children: [
+                          Icon(Icons.repeat_rounded, size: 14, color: Colors.grey[600]),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              '${widget.reposter.displayName} a republié ceci',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    // Author row
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundImage: widget.author.avatar.startsWith('http')
+                              ? NetworkImage(widget.author.avatar) as ImageProvider
+                              : AssetImage(widget.author.avatar),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.author.displayName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  color: Color(0xFF333333),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                '${widget.author.accountType} • ${widget.timeAgo}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Content text
+              if (widget.content.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayContent,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF333333),
+                          height: 1.4,
+                        ),
+                      ),
+                      if (needsCollapse)
+                        GestureDetector(
+                          onTap: () => setState(() => _isExpanded = !_isExpanded),
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              _isExpanded ? '...moins' : '...more',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+              // Media images
+              if (widget.mediaUrls.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _buildMediaSection(widget.mediaUrls),
+              ],
+              // Reaction bar
+              if (widget.postId.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: widget.buildReactionBar(),
+                ),
+                const SizedBox(height: 12),
+              ],
+            ],
+          ),
+          // Type tag in top-right corner
+          Positioned(
+            top: 0,
+            right: 0,
+            child: widget.buildTypeTag('Post', const Color(0xFF0A66C2), Icons.article_outlined),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMediaSection(List<String> urls) {
+    if (urls.isEmpty) return const SizedBox.shrink();
+    
+    if (urls.length == 1) {
+      return GestureDetector(
+        onTap: () => _openImagePreview(context, urls, 0),
+        child: Image.network(
+          urls[0],
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        ),
+      );
+    }
+    
+    // Multiple images - show grid
+    return SizedBox(
+      height: 300,
+      child: _buildMediaGrid(urls),
+    );
+  }
+
+  void _openImagePreview(BuildContext context, List<String> urls, int initialIndex) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ImagePreviewScreen(
+          imageUrls: urls,
+          initialIndex: initialIndex,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMediaGrid(List<String> urls) {
+    if (urls.length == 2) {
+      return Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _openImagePreview(context, urls, 0),
+              child: Image.network(urls[0], fit: BoxFit.cover, height: 300, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+            ),
+          ),
+          const SizedBox(width: 2),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => _openImagePreview(context, urls, 1),
+              child: Image.network(urls[1], fit: BoxFit.cover, height: 300, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+            ),
+          ),
+        ],
+      );
+    }
+    
+    if (urls.length == 3) {
+      return Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: GestureDetector(
+              onTap: () => _openImagePreview(context, urls, 0),
+              child: Image.network(urls[0], fit: BoxFit.cover, height: 300, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+            ),
+          ),
+          const SizedBox(width: 2),
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _openImagePreview(context, urls, 1),
+                    child: Image.network(urls[1], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => _openImagePreview(context, urls, 2),
+                    child: Image.network(urls[2], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+    
+    // 4+ images: 2x2 grid with overflow counter
+    final int remaining = urls.length - 4;
+    return Column(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _openImagePreview(context, urls, 0),
+                  child: Image.network(urls[0], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                ),
+              ),
+              const SizedBox(width: 2),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _openImagePreview(context, urls, 1),
+                  child: Image.network(urls[1], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _openImagePreview(context, urls, 2),
+                  child: Image.network(urls[2], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                ),
+              ),
+              const SizedBox(width: 2),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _openImagePreview(context, urls, 3),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(urls[3], fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                      if (remaining > 0)
+                        Container(
+                          color: Colors.black54,
+                          alignment: Alignment.center,
+                          child: Text(
+                            '+$remaining',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ReactionData {
   int likesCount;
-  int dislikesCount;
-  String? userReaction; // 'like', 'dislike', or null
+  String? userReaction; // 'like' or null
 
   _ReactionData({
     this.likesCount = 0,
-    this.dislikesCount = 0,
     this.userReaction,
   });
 }
@@ -303,39 +638,7 @@ class _ParticulierDashboardScreenState
             ),
           )
         else ...[
-          Builder(
-            builder: (_) {
-              final nonPostItems = _feedItems
-                  .where((item) => item['feed_type'] != 'post')
-                  .toList();
-              if (nonPostItems.isEmpty) {
-                return Column(
-                  children: [
-                    _buildPostsCarousel(),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: _buildEmptyState(
-                        'Aucun contenu disponible pour le moment.',
-                      ),
-                    ),
-                  ],
-                );
-              }
-
-              // Insert posts carousel in the middle of the feed items
-              final int insertIndex = (nonPostItems.length / 2).floor().clamp(1, nonPostItems.length);
-              final topItems = nonPostItems.sublist(0, insertIndex);
-              final bottomItems = nonPostItems.sublist(insertIndex);
-
-              return Column(
-                children: [
-                  ...topItems.map(_buildFeedItemCard),
-                  _buildPostsCarousel(),
-                  ...bottomItems.map(_buildFeedItemCard),
-                ],
-              );
-            },
-          ),
+          ..._feedItems.map(_buildFeedItemCard),
           if (_isLoadingMoreFeed)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
@@ -408,128 +711,141 @@ class _ParticulierDashboardScreenState
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Title
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF333333),
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 8),
-          // Description
-          _buildBonPlanDescription(bp),
-          // Image
-          if (imageUrl != null) ...[
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                _buildStorageUrl(imageUrl) ?? '',
-                width: double.infinity,
-                height: 180,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    height: 180,
-                    color: Colors.grey[100],
-                    child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
-                },
-                errorBuilder: (_, error, ___) {
-                  debugPrint('Image load error: $error');
-                  return Container(
-                    height: 100,
-                    color: Colors.grey[200],
-                    child: const Center(
-                      child: Icon(
-                        Icons.image_not_supported,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  );
-                },
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title
+              Padding(
+                padding: const EdgeInsets.only(right: 100),
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF333333),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          // Category & type tags
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: [
-              if (category.isNotEmpty)
-                _buildBonPlanTag(category, Icons.local_offer_outlined),
-              if (subCategory.isNotEmpty)
-                _buildBonPlanTag(subCategory, Icons.subdirectory_arrow_right),
-              if (type.isNotEmpty) _buildBonPlanTag(type, Icons.label_outline),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Merchant + time
-          Row(
-            children: [
-              if (merchantName.isNotEmpty) ...[
-                Icon(Icons.store_outlined, size: 14, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '$locationType chez $merchantName',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    overflow: TextOverflow.ellipsis,
+              const SizedBox(height: 8),
+              // Description
+              _buildBonPlanDescription(bp),
+              // Image
+              if (imageUrl != null) ...[
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    _buildStorageUrl(imageUrl) ?? '',
+                    width: double.infinity,
+                    height: 180,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        height: 180,
+                        color: Colors.grey[100],
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    },
+                    errorBuilder: (_, error, ___) {
+                      debugPrint('Image load error: $error');
+                      return Container(
+                        height: 100,
+                        color: Colors.grey[200],
+                        child: const Center(
+                          child: Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
-              ] else
-                const Spacer(),
-              if (createdAt != null) ...[
-                Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Text(
-                  _buildTimeAgo(createdAt),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
               ],
+              const SizedBox(height: 12),
+              // Category & type tags
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  if (category.isNotEmpty)
+                    _buildBonPlanTag(category, Icons.local_offer_outlined),
+                  if (subCategory.isNotEmpty)
+                    _buildBonPlanTag(subCategory, Icons.subdirectory_arrow_right),
+                  if (type.isNotEmpty) _buildBonPlanTag(type, Icons.label_outline),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Merchant + time
+              Row(
+                children: [
+                  if (merchantName.isNotEmpty) ...[
+                    Icon(Icons.store_outlined, size: 14, color: Colors.grey[500]),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        '$locationType chez $merchantName',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ] else
+                    const Spacer(),
+                  if (createdAt != null) ...[
+                    Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                    const SizedBox(width: 4),
+                    Text(
+                      _buildTimeAgo(createdAt),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 10),
+              if (bpId.isNotEmpty)
+                _buildReactionBar(
+                  'bon-plans',
+                  bpId,
+                  acceptedMessages: bp['accept_messages'] == true,
+                  authorData: bp['user'] as Map<String, dynamic>?,
+                ),
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              // CTA Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _navigateToBonPlanDetail(bp),
+                  icon: const Icon(Icons.visibility_outlined, size: 18),
+                  label: const Text('VOIR LE BON PLAN'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF9800),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
-          const Divider(height: 1),
-          const SizedBox(height: 10),
-          if (bpId.isNotEmpty)
-            _buildReactionBar(
-              'bon-plans',
-              bpId,
-              acceptedMessages: bp['accept_messages'] == true,
-              authorData: bp['user'] as Map<String, dynamic>?,
-            ),
-          const SizedBox(height: 10),
-          const Divider(height: 1),
-          const SizedBox(height: 12),
-          // CTA Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _navigateToBonPlanDetail(bp),
-              icon: const Icon(Icons.visibility_outlined, size: 18),
-              label: const Text('VOIR LE BON PLAN'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF9800),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 0,
-              ),
-            ),
+          // Type tag in top-right corner
+          Positioned(
+            top: 0,
+            right: 0,
+            child: _buildTypeTag('Bon Plan', const Color(0xFFFF9800), Icons.local_offer),
           ),
         ],
       ),
@@ -1021,6 +1337,46 @@ class _ParticulierDashboardScreenState
     return Text(message, style: const TextStyle(color: Color(0xFF9E9E9E)));
   }
 
+  Widget _buildTypeTag(String label, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color, color.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(16),
+          bottomLeft: Radius.circular(12),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Reaction helpers ──────────────────────────────────────────────
 
   String _reactionKey(String apiSlug, String entityId) => '$apiSlug:$entityId';
@@ -1039,7 +1395,6 @@ class _ParticulierDashboardScreenState
     if (_reactions.containsKey(key)) return;
     _reactions[key] = _ReactionData(
       likesCount: _asInt(resource['likes_count']),
-      dislikesCount: _asInt(resource['dislikes_count']),
       userReaction: resource['user_reaction']?.toString(),
     );
   }
@@ -1054,19 +1409,15 @@ class _ParticulierDashboardScreenState
     // Optimistic update
     final oldReaction = data.userReaction;
     final oldLikes = data.likesCount;
-    final oldDislikes = data.dislikesCount;
 
     setState(() {
       if (oldReaction == type) {
         data.userReaction = null;
         if (type == 'like') data.likesCount--;
-        if (type == 'dislike') data.dislikesCount--;
       } else {
         if (oldReaction == 'like') data.likesCount--;
-        if (oldReaction == 'dislike') data.dislikesCount--;
         data.userReaction = type;
         if (type == 'like') data.likesCount++;
-        if (type == 'dislike') data.dislikesCount++;
       }
     });
 
@@ -1079,7 +1430,6 @@ class _ParticulierDashboardScreenState
       if (respData != null && mounted) {
         setState(() {
           data.likesCount = _asInt(respData['likes_count']);
-          data.dislikesCount = _asInt(respData['dislikes_count']);
           data.userReaction = respData['user_reaction']?.toString();
         });
       }
@@ -1088,7 +1438,6 @@ class _ParticulierDashboardScreenState
       if (mounted) {
         setState(() {
           data.likesCount = oldLikes;
-          data.dislikesCount = oldDislikes;
           data.userReaction = oldReaction;
         });
       }
@@ -1165,7 +1514,6 @@ class _ParticulierDashboardScreenState
   }) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
-    final isDisliked = data.userReaction == 'dislike';
     final isPost = apiSlug == 'posts';
 
     return Row(
@@ -1187,31 +1535,6 @@ class _ParticulierDashboardScreenState
                   fontSize: 12,
                   color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
                   fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 10),
-        // Dislike
-        GestureDetector(
-          onTap: () => _toggleReaction(apiSlug, entityId, 'dislike'),
-          child: Row(
-            children: [
-              Icon(
-                isDisliked
-                    ? Icons.thumb_down_alt
-                    : Icons.thumb_down_alt_outlined,
-                size: 18,
-                color: isDisliked ? Colors.redAccent : Colors.grey[500],
-              ),
-              const SizedBox(width: 4),
-              Text(
-                data.dislikesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDisliked ? Colors.redAccent : Colors.grey[600],
-                  fontWeight: isDisliked ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ],
@@ -1250,40 +1573,6 @@ class _ParticulierDashboardScreenState
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
-            ),
-          ),
-        ],
-        // Chat icon - only if accepted_messages is true
-        if (acceptedMessages == true && authorData != null) ...[
-          const Spacer(),
-          GestureDetector(
-            onTap: () => _startConversationWithAuthor(authorData),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF3AAE5E), width: 1),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.chat_outlined,
-                    size: 16,
-                    color: Color(0xFF3AAE5E),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Contacter',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: const Color(0xFF3AAE5E),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
             ),
           ),
         ],
@@ -1401,7 +1690,6 @@ class _ParticulierDashboardScreenState
                 if (respData != null) {
                   modalSetState(() {
                     comment['likes_count'] = respData['likes_count'];
-                    comment['dislikes_count'] = respData['dislikes_count'];
                     comment['user_reaction'] = respData['user_reaction'];
                   });
                 }
@@ -1588,7 +1876,6 @@ class _ParticulierDashboardScreenState
               final body = comment['body']?.toString() ?? '';
               final createdAt = comment['created_at']?.toString();
               final likes = _asInt(comment['likes_count']);
-              final dislikes = _asInt(comment['dislikes_count']);
               final userReaction = comment['user_reaction']?.toString();
               final isOwner = userId != null && userId == _currentUserId;
               print("UserId: $userId");
@@ -1738,36 +2025,6 @@ class _ParticulierDashboardScreenState
                                             fontSize: 11,
                                             color: userReaction == 'like'
                                                 ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  GestureDetector(
-                                    onTap: () => toggleCommentReaction(
-                                      comment,
-                                      'dislike',
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          userReaction == 'dislike'
-                                              ? Icons.thumb_down_alt
-                                              : Icons.thumb_down_alt_outlined,
-                                          size: 14,
-                                          color: userReaction == 'dislike'
-                                              ? Colors.redAccent
-                                              : Colors.grey[400],
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          '$dislikes',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: userReaction == 'dislike'
-                                                ? Colors.redAccent
                                                 : Colors.grey[500],
                                           ),
                                         ),
@@ -2189,44 +2446,43 @@ class _ParticulierDashboardScreenState
 
   Widget _buildPostCard(Map<String, dynamic> raw) {
     final postId = raw['id']?.toString() ?? '';
-    final author = _extractPostAuthorInfo(raw);
-    final content = raw['content']?.toString() ?? '';
-    final createdAt = raw['created_at']?.toString();
+    
+    // Détecter si c'est un repost
+    final isRepost = raw['original_post_id'] != null;
+    
+    // Si c'est un repost, utiliser les données du post original
+    final originalPost = isRepost
+        ? (raw['original_post'] as Map<String, dynamic>? ?? {})
+        : raw;
+    
+    // L'auteur du repost (celui qui a republié)
+    final reposter = _extractPostAuthorInfo(raw);
+    
+    // L'auteur du post original
+    final author = isRepost
+        ? _extractPostAuthorInfo(originalPost)
+        : reposter;
+    
+    final content = originalPost['content']?.toString() ?? '';
+    final createdAt = originalPost['created_at']?.toString();
     final timeAgo = _buildTimeAgo(createdAt);
-    final allMediaUrls = _extractAllMediaUrls(raw);
+    final allMediaUrls = _extractAllMediaUrls(originalPost);
 
-    final tags = <PostTag>[
-      PostTag(
-        title: author.accountType,
-        icon: author.accountType == 'Professionnel'
-            ? Icons.business
-            : Icons.person,
-        color: author.accountType == 'Professionnel'
-            ? const Color(0xFF2E9B5B)
-            : const Color(0xFF3AAE5E),
-      ),
-    ];
+    if (postId.isNotEmpty) {
+      _seedReactionFromFeed('posts', postId, raw);
+    }
 
-    return Column(
-      children: [
-        PostContentCard(
-          tags: tags,
-          title: content.isNotEmpty
-              ? content
-              : '${author.displayName} a partagé une publication',
-          time: timeAgo,
-          imageUrls: allMediaUrls,
-          onLike: postId.isNotEmpty
-              ? () => _toggleReaction('posts', postId, 'like')
-              : null,
-          onShare: () {},
-        ),
-        if (postId.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-            child: _buildReactionBar('posts', postId),
-          ),
-      ],
+    return _PostCardWidget(
+      postId: postId,
+      isRepost: isRepost,
+      reposter: reposter,
+      author: author,
+      content: content,
+      timeAgo: timeAgo,
+      mediaUrls: allMediaUrls,
+      onToggleReaction: (type) => _toggleReaction('posts', postId, type),
+      buildReactionBar: () => _buildReactionBar('posts', postId),
+      buildTypeTag: _buildTypeTag,
     );
   }
 
@@ -2398,6 +2654,8 @@ class _ParticulierDashboardScreenState
       ];
 
       if (!mounted) return;
+      final acceptMessages = data['accept_messages'] == true;
+      
       final result = await Navigator.push(
         context,
         MaterialPageRoute(
@@ -2422,6 +2680,8 @@ class _ParticulierDashboardScreenState
             isOwner: isOwner,
             bonPlanId: bonPlanId,
             bonPlanData: data,
+            acceptMessages: acceptMessages,
+            authorData: user,
           ),
         ),
       );
@@ -2581,6 +2841,10 @@ class _ParticulierDashboardScreenState
           currentUserId != null &&
           jobUserId == currentUserId;
 
+      // Get user data and accept_messages
+      final user = data['user'] as Map<String, dynamic>?;
+      final acceptMessages = data['accept_messages'] == true;
+
       // Navigate to detail screen
       final result = await Navigator.push(
         context,
@@ -2604,6 +2868,8 @@ class _ParticulierDashboardScreenState
             isOwner: isOwner,
             jobOfferId: jobId,
             jobOfferData: data,
+            acceptMessages: acceptMessages,
+            authorData: user,
           ),
         ),
       );

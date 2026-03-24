@@ -12,6 +12,8 @@ import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/creer_bon_plan_screen.dart';
+import 'package:myreklam/screens/chat_conversation_screen.dart';
+import 'package:myreklam/services/conversation_service.dart';
 
 class ProPostDetailScreen extends StatelessWidget {
   final List<String> images;
@@ -36,6 +38,8 @@ class ProPostDetailScreen extends StatelessWidget {
   final bool isOwner;
   final String? bonPlanId;
   final Map<String, dynamic>? bonPlanData;
+  final bool acceptMessages;
+  final Map<String, dynamic>? authorData;
 
   const ProPostDetailScreen({
     super.key,
@@ -63,10 +67,21 @@ class ProPostDetailScreen extends StatelessWidget {
     this.isOwner = false,
     this.bonPlanId,
     this.bonPlanData,
+    this.acceptMessages = false,
+    this.authorData,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Debug: Check contact button conditions
+    debugPrint('=== CONTACT BUTTON DEBUG ===');
+    debugPrint('isOwner: $isOwner');
+    debugPrint('acceptMessages: $acceptMessages');
+    debugPrint('authorData: $authorData');
+    debugPrint('authorData != null: ${authorData != null}');
+    debugPrint('Should show button: ${!isOwner && acceptMessages && authorData != null}');
+    debugPrint('===========================');
+    
     return AppLayout(
       backgroundColor: const Color(0xFFF9F9FB),
       onTabTapped: (index) {
@@ -404,6 +419,30 @@ class ProPostDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
+            // Contact button - only if not owner and acceptMessages is true
+            if (!isOwner && acceptMessages && authorData != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _startConversation(context, authorData!),
+                    icon: const Icon(Icons.chat_outlined, size: 20),
+                    label: const Text('Contacter'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3AAE5E),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ),
+            if (!isOwner && acceptMessages && authorData != null)
+              const SizedBox(height: 16),
             // Localisation Card
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -625,6 +664,49 @@ class ProPostDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  static Future<void> _startConversation(BuildContext context, Map<String, dynamic> authorData) async {
+    try {
+      final authorIdStr = authorData['id']?.toString();
+      if (authorIdStr == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossible de contacter cet utilisateur')),
+        );
+        return;
+      }
+
+      final authorId = int.tryParse(authorIdStr);
+      if (authorId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ID utilisateur invalide')),
+        );
+        return;
+      }
+
+      final conversationId = await ConversationService().getOrCreateConversation(authorId);
+      if (!context.mounted) return;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatConversationScreen(
+            conversationId: conversationId.toString(),
+            name: authorData['display_name']?.toString() ??
+                authorData['name']?.toString() ??
+                'Utilisateur',
+            avatar: authorData['avatar_url']?.toString() ??
+                authorData['avatar']?.toString(),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   String _formatValidity() {
