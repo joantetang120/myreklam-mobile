@@ -305,18 +305,35 @@ class _ParticulierDashboardScreenState
         else ...[
           Builder(
             builder: (_) {
-              final items = _feedItems
+              final nonPostItems = _feedItems
                   .where((item) => item['feed_type'] != 'post')
                   .toList();
-              if (items.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _buildEmptyState(
-                    'Aucun contenu disponible pour le moment.',
-                  ),
+              if (nonPostItems.isEmpty) {
+                return Column(
+                  children: [
+                    _buildPostsCarousel(),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: _buildEmptyState(
+                        'Aucun contenu disponible pour le moment.',
+                      ),
+                    ),
+                  ],
                 );
               }
-              return Column(children: items.map(_buildFeedItemCard).toList());
+
+              // Insert posts carousel in the middle of the feed items
+              final int insertIndex = (nonPostItems.length / 2).floor().clamp(1, nonPostItems.length);
+              final topItems = nonPostItems.sublist(0, insertIndex);
+              final bottomItems = nonPostItems.sublist(insertIndex);
+
+              return Column(
+                children: [
+                  ...topItems.map(_buildFeedItemCard),
+                  _buildPostsCarousel(),
+                  ...bottomItems.map(_buildFeedItemCard),
+                ],
+              );
             },
           ),
           if (_isLoadingMoreFeed)
@@ -851,6 +868,120 @@ class _ParticulierDashboardScreenState
       return "${ApiConfig.baseUrl.replaceFirst('/api', '')}$cover";
     }
     return null;
+  }
+
+  List<String> _extractAllMediaUrls(Map<String, dynamic> resource) {
+    final urls = <String>[];
+    final media = resource['media'] ?? resource['media_files'];
+    if (media is List) {
+      for (final item in media) {
+        if (item is Map<String, dynamic>) {
+          final url = item['url']?.toString();
+          if (url != null && url.isNotEmpty) {
+            urls.add("${ApiConfig.baseUrl.replaceFirst('/api', '')}$url");
+          }
+        }
+      }
+    }
+    if (urls.isEmpty) {
+      final cover = resource['cover_url']?.toString();
+      if (cover != null && cover.isNotEmpty) {
+        urls.add("${ApiConfig.baseUrl.replaceFirst('/api', '')}$cover");
+      }
+    }
+    return urls;
+  }
+
+  Widget _buildCarouselMediaGrid(List<String> urls) {
+    if (urls.isEmpty) return const SizedBox.shrink();
+    if (urls.length == 1) {
+      return Image.network(
+        urls[0],
+        width: double.infinity,
+        height: 100,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      );
+    }
+    if (urls.length == 2) {
+      return SizedBox(
+        height: 100,
+        child: Row(
+          children: [
+            Expanded(child: Image.network(urls[0], fit: BoxFit.cover, height: 100, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+            const SizedBox(width: 2),
+            Expanded(child: Image.network(urls[1], fit: BoxFit.cover, height: 100, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+          ],
+        ),
+      );
+    }
+    if (urls.length == 3) {
+      return SizedBox(
+        height: 100,
+        child: Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: Image.network(urls[0], fit: BoxFit.cover, height: 100, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+            ),
+            const SizedBox(width: 2),
+            Expanded(
+              child: Column(
+                children: [
+                  Expanded(child: Image.network(urls[1], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                  const SizedBox(height: 2),
+                  Expanded(child: Image.network(urls[2], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    // 4+ images: 2x2 grid with overflow counter
+    final int remaining = urls.length - 4;
+    return SizedBox(
+      height: 100,
+      child: Column(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: Image.network(urls[0], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                const SizedBox(width: 2),
+                Expanded(child: Image.network(urls[1], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+              ],
+            ),
+          ),
+          const SizedBox(height: 2),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: Image.network(urls[2], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                const SizedBox(width: 2),
+                Expanded(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.network(urls[3], fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                      if (remaining > 0)
+                        Container(
+                          color: Colors.black54,
+                          alignment: Alignment.center,
+                          child: Text(
+                            '+$remaining',
+                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildStatusPlaceholder(Widget child) {
@@ -1884,8 +2015,7 @@ class _ParticulierDashboardScreenState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Publications'),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         SizedBox(
           height: 300,
           child: PageView.builder(
@@ -1915,7 +2045,7 @@ class _ParticulierDashboardScreenState
               final content = originalPost['content']?.toString() ?? '';
               final createdAt = originalPost['created_at']?.toString();
               final timeAgo = _buildTimeAgo(createdAt);
-              final postImageUrl = _extractMediaUrl(originalPost);
+              final allMediaUrls = _extractAllMediaUrls(originalPost);
 
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 6),
@@ -2025,16 +2155,10 @@ class _ParticulierDashboardScreenState
                       ],
                     ),
                     const SizedBox(height: 12),
-                    if (postImageUrl != null && postImageUrl.isNotEmpty) ...[
+                    if (allMediaUrls.isNotEmpty) ...[
                       ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          postImageUrl,
-                          width: double.infinity,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                        ),
+                        child: _buildCarouselMediaGrid(allMediaUrls),
                       ),
                       const SizedBox(height: 8),
                     ],
@@ -2046,7 +2170,7 @@ class _ParticulierDashboardScreenState
                           color: Color(0xFF616161),
                           height: 1.4,
                         ),
-                        maxLines: postImageUrl != null ? 2 : 4,
+                        maxLines: allMediaUrls.isNotEmpty ? 2 : 4,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -2069,7 +2193,7 @@ class _ParticulierDashboardScreenState
     final content = raw['content']?.toString() ?? '';
     final createdAt = raw['created_at']?.toString();
     final timeAgo = _buildTimeAgo(createdAt);
-    final postImageUrl = _extractMediaUrl(raw);
+    final allMediaUrls = _extractAllMediaUrls(raw);
 
     final tags = <PostTag>[
       PostTag(
@@ -2091,7 +2215,7 @@ class _ParticulierDashboardScreenState
               ? content
               : '${author.displayName} a partagé une publication',
           time: timeAgo,
-          imageUrl: postImageUrl,
+          imageUrls: allMediaUrls,
           onLike: postId.isNotEmpty
               ? () => _toggleReaction('posts', postId, 'like')
               : null,
@@ -3653,8 +3777,6 @@ class _ParticulierDashboardScreenState
                   ),
 
                   const SizedBox(height: 24),
-
-                  _buildPostsCarousel(),
 
                   _buildFeedSection(),
                 ],
