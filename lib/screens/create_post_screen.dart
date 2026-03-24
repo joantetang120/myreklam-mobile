@@ -10,8 +10,10 @@ import 'package:myreklam/screens/particulier_main_screen.dart';
 class CreatePostScreen extends StatefulWidget {
   final String? postId;
   final Map<String, dynamic>? initialData;
+  final VoidCallback? onPostCreated;
+  final VoidCallback? onBackPressed;
 
-  const CreatePostScreen({super.key, this.postId, this.initialData});
+  const CreatePostScreen({super.key, this.postId, this.initialData, this.onPostCreated, this.onBackPressed});
 
   bool get isEditMode => postId != null;
 
@@ -144,7 +146,11 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
-      Navigator.pop(context, 'updated');
+      if (widget.onPostCreated != null) {
+        widget.onPostCreated!();
+      } else {
+        Navigator.pop(context, 'updated');
+      }
     } on ApiException catch (e) {
       _showSnack(e.message, isError: true);
     } catch (e) {
@@ -273,6 +279,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           onPressed: () {
             if (_isEditMode) {
               Navigator.pop(context);
+            } else if (widget.onBackPressed != null) {
+              widget.onBackPressed!();
             } else {
               Navigator.pushReplacement(
                 context,

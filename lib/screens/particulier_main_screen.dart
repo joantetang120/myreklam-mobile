@@ -46,6 +46,7 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
   late bool _showPublishOptions;
   late bool _showCreatePost;
   late bool _showSearchResults;
+  int _dashboardRefreshKey = 0;
 
   @override
   void initState() {
@@ -61,8 +62,23 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
     });
   }
 
+  void _handlePostCreated() {
+    setState(() {
+      _showCreatePost = false;
+      _currentIndex = 0;
+      _dashboardRefreshKey++;
+    });
+  }
+
+  void _handleCreatePostBack() {
+    setState(() {
+      _showCreatePost = false;
+      _currentIndex = 0;
+    });
+  }
+
   List<Widget> get _pages => [
-    const ParticulierDashboardScreen(),
+    ParticulierDashboardScreen(key: ValueKey(_dashboardRefreshKey)),
     const MessageScreen(),
     const Scaffold(body: Center(child: Text('Publier Screen'))),
     const SearchScreen(),
@@ -97,7 +113,10 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
       body = const PublishOptionsScreen();
       displayIndex = 2;
     } else if (_showCreatePost) {
-      body = const CreatePostScreen();
+      body = CreatePostScreen(
+        onPostCreated: _handlePostCreated,
+        onBackPressed: _handleCreatePostBack,
+      );
       displayIndex = 2;
     } else if (_showSearchResults) {
       body = SearchResultsScreen(

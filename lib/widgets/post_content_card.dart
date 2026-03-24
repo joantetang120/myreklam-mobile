@@ -15,6 +15,7 @@ class PostContentCard extends StatelessWidget {
   final VoidCallback? onLike;
   final VoidCallback? onShare;
   final String? imageUrl;
+  final List<String>? imageUrls;
   final VoidCallback? onMorePressed;
 
   const PostContentCard({
@@ -25,8 +26,15 @@ class PostContentCard extends StatelessWidget {
     this.onLike,
     this.onShare,
     this.imageUrl,
+    this.imageUrls,
     this.onMorePressed,
   });
+
+  List<String> get _effectiveUrls {
+    if (imageUrls != null && imageUrls!.isNotEmpty) return imageUrls!;
+    if (imageUrl != null && imageUrl!.isNotEmpty) return [imageUrl!];
+    return [];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,19 +71,10 @@ class PostContentCard extends StatelessWidget {
               height: 1.4,
             ),
           ),
-          // Post image
-          if (imageUrl != null && imageUrl!.isNotEmpty) ...[
+          // Post image(s)
+          if (_effectiveUrls.isNotEmpty) ...[
             const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                imageUrl!,
-                width: double.infinity,
-                height: 180,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            ),
+            _buildMediaGrid(_effectiveUrls),
           ],
           const SizedBox(height: 16),
           // Divider
@@ -136,6 +135,117 @@ class PostContentCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMediaGrid(List<String> urls) {
+    if (urls.length == 1) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          urls[0],
+          width: double.infinity,
+          height: 180,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+        ),
+      );
+    }
+    if (urls.length == 2) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          height: 160,
+          child: Row(
+            children: [
+              Expanded(
+                child: Image.network(urls[0], fit: BoxFit.cover, height: 160, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+              ),
+              const SizedBox(width: 3),
+              Expanded(
+                child: Image.network(urls[1], fit: BoxFit.cover, height: 160, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (urls.length == 3) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          height: 180,
+          child: Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Image.network(urls[0], fit: BoxFit.cover, height: 180, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+              ),
+              const SizedBox(width: 3),
+              Expanded(
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Image.network(urls[1], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                    ),
+                    const SizedBox(height: 3),
+                    Expanded(
+                      child: Image.network(urls[2], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    // 4+ images: 2x2 grid with overflow counter on the last cell
+    final int remaining = urls.length - 4;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        height: 180,
+        child: Column(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(child: Image.network(urls[0], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                  const SizedBox(width: 3),
+                  Expanded(child: Image.network(urls[1], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                ],
+              ),
+            ),
+            const SizedBox(height: 3),
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(child: Image.network(urls[2], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                  const SizedBox(width: 3),
+                  Expanded(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(urls[3], fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                        if (remaining > 0)
+                          Container(
+                            color: Colors.black54,
+                            alignment: Alignment.center,
+                            child: Text(
+                              '+$remaining',
+                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
