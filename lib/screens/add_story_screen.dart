@@ -11,7 +11,16 @@ class AddStoryScreen extends StatefulWidget {
   State<AddStoryScreen> createState() => _AddStoryScreenState();
 }
 
-class _AddStoryScreenState extends State<AddStoryScreen> {
+class _AddStoryScreenState extends State<AddStoryScreen>
+    with WidgetsBindingObserver {
+  static const PermissionRequestOption _permissionRequestOption =
+      PermissionRequestOption(
+        androidPermission: AndroidPermission(
+          type: RequestType.image,
+          mediaLocation: false,
+        ),
+      );
+
   bool _isLoading = true;
   bool _hasAccess = false;
   List<AssetEntity> _assets = [];
@@ -19,23 +28,60 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initGallery();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshPermissionState();
+    }
+  }
+
   Future<void> _initGallery() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
 
-    final PermissionState status = await PhotoManager.requestPermissionExtend();
-    if (status.isAuth) {
+    final PermissionState status = await PhotoManager.requestPermissionExtend(
+      requestOption: _permissionRequestOption,
+    );
+    if (status.hasAccess) {
       await _loadRecentAssets();
     } else {
+      if (!mounted) return;
       setState(() {
         _hasAccess = false;
+        _assets = [];
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _refreshPermissionState() async {
+    final PermissionState status = await PhotoManager.getPermissionState(
+      requestOption: _permissionRequestOption,
+    );
+    if (!mounted) return;
+
+    if (status.hasAccess) {
+      await _loadRecentAssets();
+      return;
+    }
+
+    setState(() {
+      _hasAccess = false;
+      _assets = [];
+      _isLoading = false;
+    });
   }
 
   Future<void> _loadRecentAssets() async {
@@ -49,11 +95,12 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
         );
 
       final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
-        type: RequestType.common,
+        type: RequestType.image,
         onlyAll: true,
         filterOption: filterOption,
       );
 
+      if (!mounted) return;
       if (albums.isEmpty) {
         setState(() {
           _assets = [];
@@ -69,6 +116,7 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
         size: 40,
       );
 
+      if (!mounted) return;
       setState(() {
         _assets = assets;
         _hasAccess = true;
@@ -76,6 +124,7 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
       });
     } catch (e) {
       debugPrint('Failed to load gallery assets: $e');
+      if (!mounted) return;
       setState(() {
         _assets = [];
         _hasAccess = true;
@@ -145,7 +194,7 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
                     color: mode.label == 'Galerie'
-                        ? const Color(0xFF2E9B5B).withOpacity(0.08)
+                        ? const Color(0xFF2E9B5B).withValues(alpha: 0.08)
                         : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFE0E0E0)),
@@ -271,6 +320,7 @@ class _PermissionPrompt extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               await PhotoManager.openSetting();
+              await onRetry();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2E9B5B),
