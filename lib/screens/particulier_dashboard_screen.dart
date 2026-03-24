@@ -323,7 +323,10 @@ class _ParticulierDashboardScreenState
               }
 
               // Insert posts carousel in the middle of the feed items
-              final int insertIndex = (nonPostItems.length / 2).floor().clamp(1, nonPostItems.length);
+              final int insertIndex = (nonPostItems.length / 2).floor().clamp(
+                1,
+                nonPostItems.length,
+              );
               final topItems = nonPostItems.sublist(0, insertIndex);
               final bottomItems = nonPostItems.sublist(insertIndex);
 
@@ -908,9 +911,23 @@ class _ParticulierDashboardScreenState
         height: 100,
         child: Row(
           children: [
-            Expanded(child: Image.network(urls[0], fit: BoxFit.cover, height: 100, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+            Expanded(
+              child: Image.network(
+                urls[0],
+                fit: BoxFit.cover,
+                height: 100,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
             const SizedBox(width: 2),
-            Expanded(child: Image.network(urls[1], fit: BoxFit.cover, height: 100, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+            Expanded(
+              child: Image.network(
+                urls[1],
+                fit: BoxFit.cover,
+                height: 100,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
           ],
         ),
       );
@@ -922,15 +939,34 @@ class _ParticulierDashboardScreenState
           children: [
             Expanded(
               flex: 2,
-              child: Image.network(urls[0], fit: BoxFit.cover, height: 100, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+              child: Image.network(
+                urls[0],
+                fit: BoxFit.cover,
+                height: 100,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
             ),
             const SizedBox(width: 2),
             Expanded(
               child: Column(
                 children: [
-                  Expanded(child: Image.network(urls[1], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                  Expanded(
+                    child: Image.network(
+                      urls[1],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Expanded(child: Image.network(urls[2], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                  Expanded(
+                    child: Image.network(
+                      urls[2],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -947,9 +983,23 @@ class _ParticulierDashboardScreenState
           Expanded(
             child: Row(
               children: [
-                Expanded(child: Image.network(urls[0], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                Expanded(
+                  child: Image.network(
+                    urls[0],
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
                 const SizedBox(width: 2),
-                Expanded(child: Image.network(urls[1], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                Expanded(
+                  child: Image.network(
+                    urls[1],
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
               ],
             ),
           ),
@@ -957,20 +1007,35 @@ class _ParticulierDashboardScreenState
           Expanded(
             child: Row(
               children: [
-                Expanded(child: Image.network(urls[2], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                Expanded(
+                  child: Image.network(
+                    urls[2],
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
                 const SizedBox(width: 2),
                 Expanded(
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(urls[3], fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                      Image.network(
+                        urls[3],
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
                       if (remaining > 0)
                         Container(
                           color: Colors.black54,
                           alignment: Alignment.center,
                           child: Text(
                             '+$remaining',
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                     ],
@@ -3325,187 +3390,10 @@ class _ParticulierDashboardScreenState
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverAppBar(
-              expandedHeight: 100,
-              floating: false,
-              pinned: true,
-              snap: false,
-              stretch: true,
-              backgroundColor: const Color(0xFF2A8143),
-              automaticallyImplyLeading: false,
-              elevation: 0,
-              collapsedHeight: kToolbarHeight,
-              flexibleSpace: LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints constraints) {
-                  final double appBarHeight = constraints.maxHeight;
-                  final double opacity =
-                      (appBarHeight - kToolbarHeight) / (100 - kToolbarHeight);
-                  final double clampedOpacity = opacity.clamp(0.0, 1.0);
-                  final double titleOpacity = 1 - clampedOpacity;
-                  final double dynamicRadius = 40 * clampedOpacity;
-                  final bool showExpandedElements = clampedOpacity > 0.01;
-                  final bool showCollapsedElements = titleOpacity > 0.01;
-
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: greenGradient,
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(dynamicRadius),
-                            bottomRight: Radius.circular(dynamicRadius),
-                          ),
-                        ),
-                      ),
-                      if (showExpandedElements)
-                        Positioned(
-                          bottom: 20,
-                          left: 20,
-                          child: Opacity(
-                            opacity: clampedOpacity,
-                            child: Image.asset(
-                              'assets/images/LOGO VERT.png',
-                              height: 32,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      if (showExpandedElements)
-                        Positioned(
-                          bottom: 20,
-                          right: 20,
-                          child: Opacity(
-                            opacity: clampedOpacity,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const FavoriteScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: const Color(
-                                        0xFFF8FDF0,
-                                      ).withOpacity(0.3),
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Icons.favorite_border,
-                                      size: 18,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const NotificationsScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: const Color(
-                                            0xFFF8FDF0,
-                                          ).withOpacity(0.3),
-                                          border: Border.all(
-                                            color: Colors.white,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.notifications_none,
-                                          size: 18,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: -6,
-                                        right: -6,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 4,
-                                            vertical: 1,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red,
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.white,
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            '10',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      if (showCollapsedElements)
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: Opacity(
-                            opacity: titleOpacity,
-                            child: Container(
-                              height: kToolbarHeight,
-                              decoration: const BoxDecoration(
-                                gradient: greenGradient,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(40),
-                  bottomRight: Radius.circular(40),
-                ),
-              ),
-            ),
             SliverToBoxAdapter(
               child: Column(
                 children: [
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 60),
 
                   //story
                   Padding(
