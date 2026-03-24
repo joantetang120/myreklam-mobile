@@ -8,55 +8,43 @@ import type {
   Attachments,
 } from "@/lib/stores/message-store"
 
-export const startConversation = async (announcementId: string) => {
-  const userId = localStorage.getItem("profileId")
+export const startConversation = async (partnerId: string) => {
+  const token = localStorage.getItem("token")
 
-  if (!userId) {
+  if (!token || !partnerId) {
+    console.error("[startConversation] Missing token or partnerId")
     return null
   }
 
   try {
+    console.log("[startConversation] Creating/getting conversation with partner:", partnerId)
+    
     const response = await axios.post(
-      `${config.API_URL}/Message.php`,
+      `${config.API_URL}/api/conversations`,
       {
-        senderId: userId,
-        offreId: announcementId,
-        Method: "start_conversation",
+        partner_id: partnerId,
       },
       {
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       },
     )
 
-    // Le backend retourne maintenant l'ID de la conversation existante si elle existe
-    // ou l'ID de la nouvelle conversation créée
-    if (response.data?.status === "success" && response.data?.conversation?.id) {
-      console.log("[startConversation] Conversation ID:", response.data.conversation.id)
-      return response.data.conversation.id
+    // Laravel API returns the conversation in response.data
+    if (response.data?.success && response.data?.data?.id) {
+      console.log("[startConversation] Conversation ID:", response.data.data.id)
+      return response.data.data.id
     }
 
-    console.error("[startConversation] Réponse inattendue du backend:", response.data)
+    console.error("[startConversation] Unexpected response from backend:", response.data)
     return null
   } catch (error: any) {
-    console.error("[startConversation] Erreur lors du démarrage de la conversation:", error)
+    console.error("[startConversation] Error starting conversation:", error.response?.data || error.message)
     
-    // En cas d'erreur, essayer de trouver une conversation existante via la liste
-    if (error.response?.status === 403 || error.response?.status === 500) {
-      console.log("[startConversation] Tentative de récupération de la conversation existante...")
-      try {
-        const conversations = await getConversationList("", 1, 1000)
-        const existingConversation = conversations.find(
-          (conv) => conv.announcement?.id === announcementId
-        )
-        if (existingConversation) {
-          console.log("[startConversation] Conversation existante trouvée:", existingConversation.id)
-          return existingConversation.id
-        }
-      } catch (searchError) {
-        console.error("[startConversation] Erreur lors de la recherche de conversation:", searchError)
-      }
+    if (error.response?.status === 422) {
+      console.error("[startConversation] Validation error:", error.response.data.message)
     }
     
     return null

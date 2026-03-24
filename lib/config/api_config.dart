@@ -2,7 +2,7 @@ class ApiConfig {
   // ============================================================
   // 🔧 CHANGE THIS URL TO POINT TO YOUR BACKEND SERVER
   // ============================================================
-  static const String baseUrl = 'http://192.168.1.237:8000/api';
+  static const String baseUrl = 'http://192.168.10.169:8000/api';
   // static const String baseUrl = 'http://10.195.240.202:8000/api';
   // Examples:
   //   Local Android emulator:  'http://10.0.2.2:8000/api'

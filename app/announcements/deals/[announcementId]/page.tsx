@@ -395,9 +395,28 @@ export default function DealPage({ params }: { params: Promise<{ announcementId:
       return
     }
 
-    // Rediriger vers la messagerie avec l'ID de l'annonce
-    // La conversation sera créée lors de l'envoi du premier message
-    router.push(`/messages?action=new_conversation&announcementId=${announcementId}&publisherId=${deal.userId}`)
+    setIsContactingLoading(true)
+    try {
+      if (!deal?.userId) {
+        toastError("Impossible de contacter cet utilisateur")
+        return
+      }
+      
+      const conversationId = await startConversation(deal.userId)
+      
+      if (!conversationId) {
+        toastError("Erreur lors du démarrage de la conversation")
+        return
+      }
+      
+      router.push(`/messages?action=conversation&conversationId=${conversationId}`)
+      toastSuccess("Conversation démarrée")
+    } catch (error) {
+      console.error("Error starting conversation:", error)
+      toastError("Erreur lors du démarrage de la conversation")
+    } finally {
+      setIsContactingLoading(false)
+    }
   }
 
   const fetchCommentsWithUsernames = useCallback(async () => {
