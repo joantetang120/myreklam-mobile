@@ -43,9 +43,7 @@ class ProPostDetailScreen extends StatelessWidget {
 
   const ProPostDetailScreen({
     super.key,
-    this.images = const [
-      'assets/images/details_bon_plans/Rectangle 35.png',
-    ],
+    this.images = const ['assets/images/details_bon_plans/Rectangle 35.png'],
     this.discount,
     required this.avatar,
     required this.name,
@@ -79,9 +77,11 @@ class ProPostDetailScreen extends StatelessWidget {
     debugPrint('acceptMessages: $acceptMessages');
     debugPrint('authorData: $authorData');
     debugPrint('authorData != null: ${authorData != null}');
-    debugPrint('Should show button: ${!isOwner && acceptMessages && authorData != null}');
+    debugPrint(
+      'Should show button: ${!isOwner && acceptMessages && authorData != null}',
+    );
     debugPrint('===========================');
-    
+
     return AppLayout(
       backgroundColor: const Color(0xFFF9F9FB),
       onTabTapped: (index) {
@@ -150,7 +150,9 @@ class ProPostDetailScreen extends StatelessWidget {
                       );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Impossible de modifier ce bon plan')),
+                        const SnackBar(
+                          content: Text('Impossible de modifier ce bon plan'),
+                        ),
                       );
                     }
                   } else if (value == 'delete') {
@@ -162,7 +164,11 @@ class ProPostDetailScreen extends StatelessWidget {
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, size: 20, color: Color(0xFF616161)),
+                        Icon(
+                          Icons.edit_outlined,
+                          size: 20,
+                          color: Color(0xFF616161),
+                        ),
                         SizedBox(width: 12),
                         Text('Modifier'),
                       ],
@@ -196,7 +202,10 @@ class ProPostDetailScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: const Color(0xFFE6F7EF),
-                    border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
+                    border: Border.all(
+                      color: const Color(0xFF2A8143),
+                      width: 1.5,
+                    ),
                   ),
                   child: const Icon(
                     Icons.notifications,
@@ -354,7 +363,10 @@ class ProPostDetailScreen extends StatelessWidget {
                         onPressed: () async {
                           final uri = Uri.parse(link!);
                           if (await canLaunchUrl(uri)) {
-                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
                           }
                         },
                         icon: const Icon(Icons.description_outlined),
@@ -666,44 +678,115 @@ class ProPostDetailScreen extends StatelessWidget {
     );
   }
 
-  static Future<void> _startConversation(BuildContext context, Map<String, dynamic> authorData) async {
-    try {
-      final authorIdStr = authorData['id']?.toString();
-      if (authorIdStr == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Impossible de contacter cet utilisateur')),
-        );
-        return;
-      }
+  static Future<void> _startConversation(
+    BuildContext context,
+    Map<String, dynamic> authorData,
+  ) async {
+    final authorId = authorData['id']?.toString();
 
-      final authorId = int.tryParse(authorIdStr);
-      if (authorId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ID utilisateur invalide')),
-        );
-        return;
-      }
+    // Extraire le nom depuis le profil particulier
+    String authorName = 'Utilisateur';
+    if (authorData['particulier_profile'] != null) {
+      final particulierProfile =
+          authorData['particulier_profile'] as Map<String, dynamic>;
+      authorName =
+          particulierProfile['pseudo']?.toString() ??
+          authorData['email']?.toString().split('@').first ??
+          'Utilisateur';
+    } else if (authorData['pro_profile'] != null) {
+      final proProfile = authorData['pro_profile'] as Map<String, dynamic>;
+      authorName =
+          proProfile['company_name']?.toString() ??
+          (proProfile['first_name']?.toString() != null &&
+                  proProfile['last_name']?.toString() != null
+              ? '${proProfile['first_name']} ${proProfile['last_name']}'
+              : authorData['email']?.toString().split('@').first) ??
+          'Utilisateur';
+    }
 
-      final conversationId = await ConversationService().getOrCreateConversation(authorId);
-      if (!context.mounted) return;
+    // Extraire l'avatar depuis le profil approprié
+    String? authorAvatar;
+    if (authorData['particulier_profile'] != null) {
+      final particulierProfile =
+          authorData['particulier_profile'] as Map<String, dynamic>;
+      authorAvatar = particulierProfile['avatar_url']?.toString();
+    } else if (authorData['pro_profile'] != null) {
+      final proProfile = authorData['pro_profile'] as Map<String, dynamic>;
+      authorAvatar = proProfile['avatar_url']?.toString();
+    }
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ChatConversationScreen(
-            conversationId: conversationId.toString(),
-            name: authorData['display_name']?.toString() ??
-                authorData['name']?.toString() ??
-                'Utilisateur',
-            avatar: authorData['avatar_url']?.toString() ??
-                authorData['avatar']?.toString(),
-          ),
+    if (authorId == null || authorId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible de démarrer la conversation'),
+          backgroundColor: Colors.redAccent,
         ),
       );
-    } catch (e) {
+      return;
+    }
+
+    final otherUserId = int.tryParse(authorId);
+    if (otherUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ID utilisateur invalide'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Create or get conversation
+      final conversationService = ConversationService();
+      final conversation = await conversationService.getOrCreateConversation(
+        otherUserId,
+      );
+
+      // Close loading indicator
+      if (context.mounted) Navigator.pop(context);
+
+      // Navigate to chat conversation screen
       if (context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatConversationScreen(
+              conversationId: conversation.id.toString(),
+              name: authorName,
+              avatar:
+                  authorAvatar ??
+                  'assets/images/dashboard_particulier/Ellipse 10.png',
+              status: 'En ligne',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading indicator
+      if (context.mounted) Navigator.pop(context);
+
+      if (context.mounted) {
+        // Extract error message from exception
+        String errorMessage = 'Échec, veuillez réessayer';
+        final exceptionString = e.toString();
+        if (exceptionString.startsWith('Exception: ')) {
+          errorMessage = exceptionString.substring('Exception: '.length);
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: ${e.toString()}')),
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 4),
+          ),
         );
       }
     }
@@ -712,7 +795,9 @@ class ProPostDetailScreen extends StatelessWidget {
   String _formatValidity() {
     if (validityType == 'permanent') {
       return 'Offre permanente';
-    } else if (validityType == 'dates' && validFrom != null && validUntil != null) {
+    } else if (validityType == 'dates' &&
+        validFrom != null &&
+        validUntil != null) {
       try {
         final from = DateTime.parse(validFrom!);
         final until = DateTime.parse(validUntil!);
@@ -733,7 +818,8 @@ class ProPostDetailScreen extends StatelessWidget {
         if (descriptionDelta is List) {
           // Already a List<dynamic> of Dart maps — use directly
           opsList = descriptionDelta as List;
-        } else if (descriptionDelta is Map && (descriptionDelta as Map)['ops'] is List) {
+        } else if (descriptionDelta is Map &&
+            (descriptionDelta as Map)['ops'] is List) {
           opsList = (descriptionDelta as Map)['ops'] as List;
         } else if (descriptionDelta is String) {
           String jsonString = descriptionDelta as String;
@@ -765,7 +851,9 @@ class ProPostDetailScreen extends StatelessWidget {
             throw Exception('Unknown delta format');
           }
         } else {
-          throw Exception('Unsupported descriptionDelta type: ${descriptionDelta.runtimeType}');
+          throw Exception(
+            'Unsupported descriptionDelta type: ${descriptionDelta.runtimeType}',
+          );
         }
 
         // Filter out operations with null insert values
@@ -773,7 +861,7 @@ class ProPostDetailScreen extends StatelessWidget {
             .where((op) => op is Map && op['insert'] != null)
             .map((op) => Map<String, dynamic>.from(op as Map))
             .toList();
-        
+
         if (filteredOps.isEmpty) throw Exception('No valid ops');
 
         // Ensure last op ends with newline (Quill requirement)
@@ -781,13 +869,13 @@ class ProPostDetailScreen extends StatelessWidget {
         if (lastInsert is String && !lastInsert.endsWith('\n')) {
           filteredOps.add({'insert': '\n'});
         }
-        
+
         final doc = quill.Document.fromJson(filteredOps);
         final controller = quill.QuillController(
           document: doc,
           selection: const TextSelection.collapsed(offset: 0),
         );
-        
+
         return quill.QuillEditor.basic(
           controller: controller,
           config: quill.QuillEditorConfig(
@@ -809,11 +897,7 @@ class ProPostDetailScreen extends StatelessWidget {
     // Fallback to plain text
     return Text(
       description.isNotEmpty ? description : 'Aucune description disponible.',
-      style: TextStyle(
-        fontSize: 13,
-        color: Colors.grey[600],
-        height: 1.5,
-      ),
+      style: TextStyle(fontSize: 13, color: Colors.grey[600], height: 1.5),
     );
   }
 
@@ -831,7 +915,9 @@ class ProPostDetailScreen extends StatelessWidget {
         bool isDeleting = false;
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Text(
               'Supprimer le bon plan',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -841,7 +927,9 @@ class ProPostDetailScreen extends StatelessWidget {
             ),
             actions: [
               TextButton(
-                onPressed: isDeleting ? null : () => Navigator.pop(dialogContext),
+                onPressed: isDeleting
+                    ? null
+                    : () => Navigator.pop(dialogContext),
                 child: const Text('Annuler'),
               ),
               ElevatedButton(
@@ -853,13 +941,16 @@ class ProPostDetailScreen extends StatelessWidget {
                           final token = await TokenStorage.getAccessToken();
                           if (token == null) throw Exception('Session expirée');
                           final response = await http.delete(
-                            Uri.parse('${ApiConfig.baseUrl}/bonplans/$bonPlanId'),
+                            Uri.parse(
+                              '${ApiConfig.baseUrl}/bonplans/$bonPlanId',
+                            ),
                             headers: {
                               'Authorization': 'Bearer $token',
                               'Accept': 'application/json',
                             },
                           );
-                          if (response.statusCode >= 200 && response.statusCode < 300) {
+                          if (response.statusCode >= 200 &&
+                              response.statusCode < 300) {
                             Navigator.pop(dialogContext);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -875,7 +966,9 @@ class ProPostDetailScreen extends StatelessWidget {
                           setDialogState(() => isDeleting = false);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Erreur: ${e.toString().replaceFirst("Exception: ", "")}'),
+                              content: Text(
+                                'Erreur: ${e.toString().replaceFirst("Exception: ", "")}',
+                              ),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -889,7 +982,10 @@ class ProPostDetailScreen extends StatelessWidget {
                     ? const SizedBox(
                         height: 18,
                         width: 18,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
                     : const Text('Supprimer'),
               ),
