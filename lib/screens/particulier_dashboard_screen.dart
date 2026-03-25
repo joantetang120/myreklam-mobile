@@ -118,7 +118,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                     if (widget.isRepost) ...[
                       Row(
                         children: [
-                          Icon(Icons.repeat_rounded, size: 14, color: Colors.grey[600]),
+                          Icon(
+                            Icons.repeat_rounded,
+                            size: 14,
+                            color: Colors.grey[600],
+                          ),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
@@ -141,8 +145,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       children: [
                         CircleAvatar(
                           radius: 20,
-                          backgroundImage: widget.author.avatar.startsWith('http')
-                              ? NetworkImage(widget.author.avatar) as ImageProvider
+                          backgroundImage:
+                              widget.author.avatar.startsWith('http')
+                              ? NetworkImage(widget.author.avatar)
+                                    as ImageProvider
                               : AssetImage(widget.author.avatar),
                         ),
                         const SizedBox(width: 10),
@@ -193,7 +199,8 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       ),
                       if (needsCollapse)
                         GestureDetector(
-                          onTap: () => setState(() => _isExpanded = !_isExpanded),
+                          onTap: () =>
+                              setState(() => _isExpanded = !_isExpanded),
                           child: Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
@@ -230,7 +237,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
           Positioned(
             top: 0,
             right: 0,
-            child: widget.buildTypeTag('Post', const Color(0xFF0A66C2), Icons.article_outlined),
+            child: widget.buildTypeTag(
+              'Post',
+              const Color(0xFF0A66C2),
+              Icons.article_outlined,
+            ),
           ),
         ],
       ),
@@ -239,7 +250,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
 
   Widget _buildMediaSection(List<String> urls) {
     if (urls.isEmpty) return const SizedBox.shrink();
-    
+
     if (urls.length == 1) {
       return GestureDetector(
         onTap: () => _openImagePreview(context, urls, 0),
@@ -251,21 +262,20 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
         ),
       );
     }
-    
+
     // Multiple images - show grid
-    return SizedBox(
-      height: 300,
-      child: _buildMediaGrid(urls),
-    );
+    return SizedBox(height: 300, child: _buildMediaGrid(urls));
   }
 
-  void _openImagePreview(BuildContext context, List<String> urls, int initialIndex) {
+  void _openImagePreview(
+    BuildContext context,
+    List<String> urls,
+    int initialIndex,
+  ) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ImagePreviewScreen(
-          imageUrls: urls,
-          initialIndex: initialIndex,
-        ),
+        builder: (context) =>
+            ImagePreviewScreen(imageUrls: urls, initialIndex: initialIndex),
       ),
     );
   }
@@ -277,20 +287,30 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
           Expanded(
             child: GestureDetector(
               onTap: () => _openImagePreview(context, urls, 0),
-              child: Image.network(urls[0], fit: BoxFit.cover, height: 300, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+              child: Image.network(
+                urls[0],
+                fit: BoxFit.cover,
+                height: 300,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
             ),
           ),
           const SizedBox(width: 2),
           Expanded(
             child: GestureDetector(
               onTap: () => _openImagePreview(context, urls, 1),
-              child: Image.network(urls[1], fit: BoxFit.cover, height: 300, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+              child: Image.network(
+                urls[1],
+                fit: BoxFit.cover,
+                height: 300,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
             ),
           ),
         ],
       );
     }
-    
+
     if (urls.length == 3) {
       return Row(
         children: [
@@ -298,7 +318,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
             flex: 2,
             child: GestureDetector(
               onTap: () => _openImagePreview(context, urls, 0),
-              child: Image.network(urls[0], fit: BoxFit.cover, height: 300, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+              child: Image.network(
+                urls[0],
+                fit: BoxFit.cover,
+                height: 300,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
             ),
           ),
           const SizedBox(width: 2),
@@ -308,14 +333,24 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () => _openImagePreview(context, urls, 1),
-                    child: Image.network(urls[1], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                    child: Image.network(
+                      urls[1],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 2),
                 Expanded(
                   child: GestureDetector(
                     onTap: () => _openImagePreview(context, urls, 2),
-                    child: Image.network(urls[2], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                    child: Image.network(
+                      urls[2],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ],
@@ -324,7 +359,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
         ],
       );
     }
-    
+
     // 4+ images: 2x2 grid with overflow counter
     final int remaining = urls.length - 4;
     return Column(
@@ -335,14 +370,24 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               Expanded(
                 child: GestureDetector(
                   onTap: () => _openImagePreview(context, urls, 0),
-                  child: Image.network(urls[0], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                  child: Image.network(
+                    urls[0],
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
                 ),
               ),
               const SizedBox(width: 2),
               Expanded(
                 child: GestureDetector(
                   onTap: () => _openImagePreview(context, urls, 1),
-                  child: Image.network(urls[1], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                  child: Image.network(
+                    urls[1],
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
                 ),
               ),
             ],
@@ -355,7 +400,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               Expanded(
                 child: GestureDetector(
                   onTap: () => _openImagePreview(context, urls, 2),
-                  child: Image.network(urls[2], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                  child: Image.network(
+                    urls[2],
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
                 ),
               ),
               const SizedBox(width: 2),
@@ -365,7 +415,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(urls[3], fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                      Image.network(
+                        urls[3],
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
                       if (remaining > 0)
                         Container(
                           color: Colors.black54,
@@ -395,10 +449,7 @@ class _ReactionData {
   int likesCount;
   String? userReaction; // 'like' or null
 
-  _ReactionData({
-    this.likesCount = 0,
-    this.userReaction,
-  });
+  _ReactionData({this.likesCount = 0, this.userReaction});
 }
 
 class _ParticulierDashboardScreenState
@@ -778,8 +829,12 @@ class _ParticulierDashboardScreenState
                   if (category.isNotEmpty)
                     _buildBonPlanTag(category, Icons.local_offer_outlined),
                   if (subCategory.isNotEmpty)
-                    _buildBonPlanTag(subCategory, Icons.subdirectory_arrow_right),
-                  if (type.isNotEmpty) _buildBonPlanTag(type, Icons.label_outline),
+                    _buildBonPlanTag(
+                      subCategory,
+                      Icons.subdirectory_arrow_right,
+                    ),
+                  if (type.isNotEmpty)
+                    _buildBonPlanTag(type, Icons.label_outline),
                 ],
               ),
               const SizedBox(height: 12),
@@ -787,7 +842,11 @@ class _ParticulierDashboardScreenState
               Row(
                 children: [
                   if (merchantName.isNotEmpty) ...[
-                    Icon(Icons.store_outlined, size: 14, color: Colors.grey[500]),
+                    Icon(
+                      Icons.store_outlined,
+                      size: 14,
+                      color: Colors.grey[500],
+                    ),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -845,7 +904,11 @@ class _ParticulierDashboardScreenState
           Positioned(
             top: 0,
             right: 0,
-            child: _buildTypeTag('Bon Plan', const Color(0xFFFF9800), Icons.local_offer),
+            child: _buildTypeTag(
+              'Bon Plan',
+              const Color(0xFFFF9800),
+              Icons.local_offer,
+            ),
           ),
         ],
       ),
@@ -1224,9 +1287,23 @@ class _ParticulierDashboardScreenState
         height: 100,
         child: Row(
           children: [
-            Expanded(child: Image.network(urls[0], fit: BoxFit.cover, height: 100, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+            Expanded(
+              child: Image.network(
+                urls[0],
+                fit: BoxFit.cover,
+                height: 100,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
             const SizedBox(width: 2),
-            Expanded(child: Image.network(urls[1], fit: BoxFit.cover, height: 100, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+            Expanded(
+              child: Image.network(
+                urls[1],
+                fit: BoxFit.cover,
+                height: 100,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
           ],
         ),
       );
@@ -1238,15 +1315,34 @@ class _ParticulierDashboardScreenState
           children: [
             Expanded(
               flex: 2,
-              child: Image.network(urls[0], fit: BoxFit.cover, height: 100, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+              child: Image.network(
+                urls[0],
+                fit: BoxFit.cover,
+                height: 100,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
             ),
             const SizedBox(width: 2),
             Expanded(
               child: Column(
                 children: [
-                  Expanded(child: Image.network(urls[1], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                  Expanded(
+                    child: Image.network(
+                      urls[1],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Expanded(child: Image.network(urls[2], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                  Expanded(
+                    child: Image.network(
+                      urls[2],
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1263,9 +1359,23 @@ class _ParticulierDashboardScreenState
           Expanded(
             child: Row(
               children: [
-                Expanded(child: Image.network(urls[0], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                Expanded(
+                  child: Image.network(
+                    urls[0],
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
                 const SizedBox(width: 2),
-                Expanded(child: Image.network(urls[1], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                Expanded(
+                  child: Image.network(
+                    urls[1],
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1273,20 +1383,35 @@ class _ParticulierDashboardScreenState
           Expanded(
             child: Row(
               children: [
-                Expanded(child: Image.network(urls[2], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                Expanded(
+                  child: Image.network(
+                    urls[2],
+                    fit: BoxFit.cover,
+                    height: double.infinity,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
                 const SizedBox(width: 2),
                 Expanded(
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(urls[3], fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                      Image.network(
+                        urls[3],
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
                       if (remaining > 0)
                         Container(
                           color: Colors.black54,
                           alignment: Alignment.center,
                           child: Text(
                             '+$remaining',
-                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                     ],
@@ -2446,23 +2571,21 @@ class _ParticulierDashboardScreenState
 
   Widget _buildPostCard(Map<String, dynamic> raw) {
     final postId = raw['id']?.toString() ?? '';
-    
+
     // Détecter si c'est un repost
     final isRepost = raw['original_post_id'] != null;
-    
+
     // Si c'est un repost, utiliser les données du post original
     final originalPost = isRepost
         ? (raw['original_post'] as Map<String, dynamic>? ?? {})
         : raw;
-    
+
     // L'auteur du repost (celui qui a republié)
     final reposter = _extractPostAuthorInfo(raw);
-    
+
     // L'auteur du post original
-    final author = isRepost
-        ? _extractPostAuthorInfo(originalPost)
-        : reposter;
-    
+    final author = isRepost ? _extractPostAuthorInfo(originalPost) : reposter;
+
     final content = originalPost['content']?.toString() ?? '';
     final createdAt = originalPost['created_at']?.toString();
     final timeAgo = _buildTimeAgo(createdAt);
@@ -2655,7 +2778,7 @@ class _ParticulierDashboardScreenState
 
       if (!mounted) return;
       final acceptMessages = data['accept_messages'] == true;
-      
+
       final result = await Navigator.push(
         context,
         MaterialPageRoute(
@@ -3591,187 +3714,10 @@ class _ParticulierDashboardScreenState
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverAppBar(
-              expandedHeight: 100,
-              floating: false,
-              pinned: true,
-              snap: false,
-              stretch: true,
-              backgroundColor: const Color(0xFF2A8143),
-              automaticallyImplyLeading: false,
-              elevation: 0,
-              collapsedHeight: kToolbarHeight,
-              flexibleSpace: LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints constraints) {
-                  final double appBarHeight = constraints.maxHeight;
-                  final double opacity =
-                      (appBarHeight - kToolbarHeight) / (100 - kToolbarHeight);
-                  final double clampedOpacity = opacity.clamp(0.0, 1.0);
-                  final double titleOpacity = 1 - clampedOpacity;
-                  final double dynamicRadius = 40 * clampedOpacity;
-                  final bool showExpandedElements = clampedOpacity > 0.01;
-                  final bool showCollapsedElements = titleOpacity > 0.01;
-
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: greenGradient,
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(dynamicRadius),
-                            bottomRight: Radius.circular(dynamicRadius),
-                          ),
-                        ),
-                      ),
-                      if (showExpandedElements)
-                        Positioned(
-                          bottom: 20,
-                          left: 20,
-                          child: Opacity(
-                            opacity: clampedOpacity,
-                            child: Image.asset(
-                              'assets/images/LOGO VERT.png',
-                              height: 32,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ),
-                      if (showExpandedElements)
-                        Positioned(
-                          bottom: 20,
-                          right: 20,
-                          child: Opacity(
-                            opacity: clampedOpacity,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const FavoriteScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: const Color(
-                                        0xFFF8FDF0,
-                                      ).withOpacity(0.3),
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Icons.favorite_border,
-                                      size: 18,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const NotificationsScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: const Color(
-                                            0xFFF8FDF0,
-                                          ).withOpacity(0.3),
-                                          border: Border.all(
-                                            color: Colors.white,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: const Icon(
-                                          Icons.notifications_none,
-                                          size: 18,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: -6,
-                                        right: -6,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 4,
-                                            vertical: 1,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red,
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.white,
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            '10',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      if (showCollapsedElements)
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: Opacity(
-                            opacity: titleOpacity,
-                            child: Container(
-                              height: kToolbarHeight,
-                              decoration: const BoxDecoration(
-                                gradient: greenGradient,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(40),
-                  bottomRight: Radius.circular(40),
-                ),
-              ),
-            ),
             SliverToBoxAdapter(
               child: Column(
                 children: [
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 60),
 
                   //story
                   Padding(

@@ -1359,17 +1359,17 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
         // Insérer "Recherche de stage/Alternance" après "Recherche d'emploi"
         // Vérifier si la liste a au moins 1 élément avant d'insérer à l'index 1
-        final insertIndex = updatedCategories.isNotEmpty ? 1 : 0;
-        updatedCategories.insertAll(insertIndex, [
-          {
-            'id': '999',
-            'code': 'Internship',
-            'label': 'Recherche de stage/Alternance',
-          },
-          {'id': '999', 'code': 'SearchJob', 'label': 'Recherche d\'emploi'},
-          {'id': '999', 'code': 'Training', 'label': 'Formation'},
-          {'id': '999', 'code': 'RealEstate', 'label': 'Immoblier'},
-        ]);
+        // final insertIndex = updatedCategories.isNotEmpty ? 1 : 0;
+        // updatedCategories.insertAll(insertIndex, [
+        //   {
+        //     'id': '999',
+        //     'code': 'Internship',
+        //     'label': 'Recherche de stage/Alternance',
+        //   },
+        //   {'id': '999', 'code': 'SearchJob', 'label': 'Recherche d\'emploi'},
+        //   {'id': '999', 'code': 'Training', 'label': 'Formation'},
+        //   {'id': '999', 'code': 'RealEstate', 'label': 'Immoblier'},
+        // ]);
 
         // Mettre à jour _natureOptions directement
         setState(() {

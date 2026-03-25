@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_reward_screen.dart';
 import 'package:myreklam/screens/publier_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_post_screen.dart';
@@ -103,6 +104,62 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 20),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationsScreen(),
+                  ),
+                );
+              },
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFF3AAE5E),
+                      border: Border.all(color: Color(0xFF3AAE5E), width: 1.5),
+                    ),
+                    child: const Icon(
+                      Icons.notifications_none,
+                      size: 18,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Positioned(
+                    top: -6,
+                    right: -6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white, width: 1),
+                      ),
+                      child: const Text(
+                        '10',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
