@@ -98,6 +98,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   DateTime? selectedDate;
 
   bool _acceptMessages = false;
+  List<String> _selectedDaysOfWeek = [];
 
   bool get _isEditMode => widget.eventId != null && widget.eventId!.isNotEmpty;
 
@@ -169,6 +170,22 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       _priceCategories[index]['name']!.dispose();
       _priceCategories[index]['price']!.dispose();
       _priceCategories.removeAt(index);
+    });
+  }
+
+  void _toggleDayOfWeek(String day) {
+    setState(() {
+      if (_selectedDaysOfWeek.contains(day)) {
+        _selectedDaysOfWeek.remove(day);
+      } else {
+        _selectedDaysOfWeek.add(day);
+      }
+    });
+  }
+
+  void _clearDaysOfWeek() {
+    setState(() {
+      _selectedDaysOfWeek.clear();
     });
   }
 
@@ -299,6 +316,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       }
 
       _acceptMessages = data['accept_messages'] == true || data['accept_messages'] == 1;
+
+      // Days of week
+      final daysOfWeek = data['days_of_week'] as List? ?? [];
+      _selectedDaysOfWeek = daysOfWeek.map<String>((d) => d.toString()).toList();
 
       // Existing media
       final mediaFiles = data['media_files'] as List? ?? [];
@@ -473,6 +494,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         'end_time_hour': _endTime?.hour,
         'end_time_minute': _endTime?.minute,
         'accept_messages': _acceptMessages,
+        'days_of_week': _selectedDaysOfWeek,
       };
       await prefs.setString('evenement_draft', jsonEncode(formData));
     } catch (e) {
@@ -519,6 +541,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         _siteWebController.text = formData['site_web'] ?? '';
         _selectedTimeEvenement = formData['duree'] ?? 'Sur une journée';
         _acceptMessages = formData['accept_messages'] ?? false;
+        _selectedDaysOfWeek = (formData['days_of_week'] as List? ?? []).map<String>((d) => d.toString()).toList();
 
         if (formData['date'] != null) {
           selectedDate = DateTime.parse(formData['date']);
@@ -723,7 +746,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         break;
       
       case 3: // Step 4: Dates et horaires
-        if (selectedDate == null) {
+        // Only require date for one_day and multi_day, not for permanent
+        if (_selectedTimeEvenement != 'Permanent' && selectedDate == null) {
           return 'Sélectionnez une date pour l\'événement.';
         }
         break;
@@ -891,6 +915,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           : null,
       'start_time': _startTime != null ? _formatTime(_startTime) : null,
       'end_time': _endTime != null ? _formatTime(_endTime) : null,
+      'days_of_week': (durationType == 'multi_day' || durationType == 'permanent') && _selectedDaysOfWeek.isNotEmpty
+          ? _selectedDaysOfWeek
+          : null,
       'initial_price': _prixInitialController.text.trim().isNotEmpty
           ? double.tryParse(_prixInitialController.text.replaceAll(',', '.'))
           : null,
@@ -2064,7 +2091,15 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               title: "Durée de l'évènement :*",
               values: ['Sur une journée', 'Sur plusieurs jours', 'Permanent'],
               selectedValue: _selectedTimeEvenement,
-              onChanged: (val) => setState(() => _selectedTimeEvenement = val),
+              onChanged: (val) {
+                setState(() {
+                  _selectedTimeEvenement = val;
+                  // Clear days of week when selecting "Sur une journée"
+                  if (val == 'Sur une journée') {
+                    _selectedDaysOfWeek.clear();
+                  }
+                });
+              },
               labelBuilder: (value) => value,
             ),
             const SizedBox(height: 10),
@@ -2195,6 +2230,19 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               ],
             ),
             const SizedBox(height: 16),
+            // Days of week selection (for multi_day and permanent)
+            if (_selectedTimeEvenement == 'Sur plusieurs jours' || _selectedTimeEvenement == 'Permanent') ...[
+              const Text(
+                'Jours de la semaine :',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildDaysOfWeekSelector(),
+            ],
           ],
         ),
         const SizedBox(height: 24),
@@ -2323,6 +2371,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 '${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}',
               ),
             _buildReviewRow('Horaire', '${_formatTime(_startTime)} - ${_formatTime(_endTime)}'),
+            if ((_selectedTimeEvenement == 'Sur plusieurs jours' || _selectedTimeEvenement == 'Permanent') &&
+                _selectedDaysOfWeek.isNotEmpty)
+              _buildReviewRow('Jours', _formatSelectedDaysOfWeek()),
           ],
         ),
         const SizedBox(height: 16),
@@ -3008,5 +3059,64 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildDaysOfWeekSelector() {
+    final days = [
+      {'code': 'monday', 'label': 'L', 'name': 'Lundi'},
+      {'code': 'tuesday', 'label': 'Ma', 'name': 'Mardi'},
+      {'code': 'wednesday', 'label': 'Me', 'name': 'Mercredi'},
+      {'code': 'thursday', 'label': 'J', 'name': 'Jeudi'},
+      {'code': 'friday', 'label': 'V', 'name': 'Vendredi'},
+      {'code': 'saturday', 'label': 'S', 'name': 'Samedi'},
+      {'code': 'sunday', 'label': 'D', 'name': 'Dimanche'},
+    ];
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: days.map((day) {
+        final isSelected = _selectedDaysOfWeek.contains(day['code']);
+        return GestureDetector(
+          onTap: () => _toggleDayOfWeek(day['code']!),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFF3AAE5E) : Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey.withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                day['label']!,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : const Color(0xFF424242),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  String _formatSelectedDaysOfWeek() {
+    final dayNames = {
+      'monday': 'Lun',
+      'tuesday': 'Mar',
+      'wednesday': 'Mer',
+      'thursday': 'Jeu',
+      'friday': 'Ven',
+      'saturday': 'Sam',
+      'sunday': 'Dim',
+    };
+    final days = _selectedDaysOfWeek.map((d) => dayNames[d] ?? d).toList();
+    return days.join(', ');
   }
 }
