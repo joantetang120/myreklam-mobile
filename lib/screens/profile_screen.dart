@@ -37,6 +37,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
   String? _pseudo;
   String? _avatarUrl;
+  int _followersCount = 0;
+  int _followingCount = 0;
+  int _postsCount = 0;
+  String? _userId;
 
   @override
   void initState() {
@@ -50,6 +54,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
 
       setState(() {
+        if (response['user'] != null) {
+          _userId = response['user']['id']?.toString();
+          _followersCount = response['user']['followers_count'] ?? 0;
+          _followingCount = response['user']['following_count'] ?? 0;
+          _postsCount = response['user']['posts_count'] ?? 0;
+        }
         if (response['profile'] != null) {
           _pseudo = response['profile']['pseudo'];
           _avatarUrl = response['profile']['avatar_url'];
@@ -183,7 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   MaterialPageRoute(
                     builder: (context) => const NotificationsScreen(),
                   ),
-                );
+                ).then((_) => _loadProfile());
               },
               child: Stack(
                 clipBehavior: Clip.none,
@@ -230,8 +240,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
+      body: RefreshIndicator(
+        onRefresh: _loadProfile,
+        color: const Color(0xFF3AAE5E),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
           children: [
             const SizedBox(height: 20),
             Padding(
@@ -382,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       );
                     },
-                    child: _buildStatColumn('0', 'Post(s)'),
+                    child: _buildStatColumn(_postsCount.toString(), 'Post(s)'),
                   ),
                   Container(width: 1, height: 40, color: Colors.grey[300]),
                   GestureDetector(
@@ -390,11 +404,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const FollowersScreen(),
+                          builder: (context) => FollowersScreen(
+                            userId: _userId,
+                          ),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
-                    child: _buildStatColumn('0', 'Follower(s)'),
+                    child: _buildStatColumn(_followersCount.toString(), 'Follower(s)'),
                   ),
                   Container(width: 1, height: 40, color: Colors.grey[300]),
                   GestureDetector(
@@ -402,13 +418,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const FollowersScreen(
+                          builder: (context) => FollowersScreen(
+                            userId: _userId,
                             initialShowFollowers: false,
                           ),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
-                    child: _buildStatColumn('0', 'Suivi(s)'),
+                    child: _buildStatColumn(_followingCount.toString(), 'Suivi(s)'),
                   ),
                 ],
               ),
@@ -427,7 +444,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             builder: (context) => const PublierScreen(),
                             fullscreenDialog: true,
                           ),
-                        );
+                        ).then((_) => _loadProfile());
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFEF8A40),
@@ -464,7 +481,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           MaterialPageRoute(
                             builder: (context) => const PublicProfileScreen(),
                           ),
-                        );
+                        ).then((_) => _loadProfile());
                       },
                       icon: const Icon(Icons.visibility_outlined, size: 14),
                       label: const Text(
@@ -594,7 +611,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         MaterialPageRoute(
                           builder: (context) => const EspaceCandidatScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -610,7 +627,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         MaterialPageRoute(
                           builder: (context) => const RecompensesScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -625,7 +642,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         MaterialPageRoute(
                           builder: (context) => const ParrainageScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -641,7 +658,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           builder: (context) =>
                               const MonProfilParticulierScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                 ],
@@ -674,8 +691,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildMenuCard({
     required String icon,

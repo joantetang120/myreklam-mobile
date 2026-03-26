@@ -8,7 +8,7 @@ import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_reward_screen.dart';
 import 'package:myreklam/screens/publier_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_post_screen.dart';
-import 'package:myreklam/screens/profile_pro/pro_follow_screen.dart';
+import 'package:myreklam/screens/followers_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_annonces_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_searchSave_screen.dart';
@@ -38,6 +38,10 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
   String? _companyName;
   String? _siret;
   String? _avatarUrl;
+  int _followersCount = 0;
+  int _followingCount = 0;
+  int _postsCount = 0;
+  String? _userId;
 
   @override
   void initState() {
@@ -51,6 +55,12 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
       if (!mounted) return;
 
       setState(() {
+        if (response['user'] != null) {
+          _userId = response['user']['id']?.toString();
+          _followersCount = response['user']['followers_count'] ?? 0;
+          _followingCount = response['user']['following_count'] ?? 0;
+          _postsCount = response['user']['posts_count'] ?? 0;
+        }
         if (response['profile'] != null) {
           _companyName = response['profile']['company_name'];
           _siret = response['profile']['siret'];
@@ -180,7 +190,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                   MaterialPageRoute(
                     builder: (context) => const NotificationsScreen(),
                   ),
-                );
+                ).then((_) => _loadProfile());
               },
               child: Stack(
                 clipBehavior: Clip.none,
@@ -227,8 +237,12 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
+      body: RefreshIndicator(
+        onRefresh: _loadProfile,
+        color: const Color(0xFFEF8A40),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
           children: [
             Container(
               color: Colors.white,
@@ -440,33 +454,33 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatColumn('0', 'Post(s)', () {
+                      _buildStatColumn(_postsCount.toString(), 'Post(s)', () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const ProPostScreen(),
                           ),
-                        );
+                        ).then((_) => _loadProfile());
                       }),
                       Container(width: 1, height: 30, color: Colors.grey[300]),
-                      _buildStatColumn('0', 'Follower(s)', () {
+                      _buildStatColumn(_followersCount.toString(), 'Follower(s)', () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const ProFollowScreen(initialTab: 0),
+                                FollowersScreen(userId: _userId, initialShowFollowers: true),
                           ),
-                        );
+                        ).then((_) => _loadProfile());
                       }),
                       Container(width: 1, height: 30, color: Colors.grey[300]),
-                      _buildStatColumn('0', 'Suivie(s)', () {
+                      _buildStatColumn(_followingCount.toString(), 'Suivie(s)', () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const ProFollowScreen(initialTab: 1),
+                                FollowersScreen(userId: _userId, initialShowFollowers: false),
                           ),
-                        );
+                        ).then((_) => _loadProfile());
                       }),
                     ],
                   ),
@@ -484,7 +498,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                 return const PublierScreen();
                               },
                             ),
-                          ),
+                          ).then((_) => _loadProfile()),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFEF8A40),
                             foregroundColor: Colors.white,
@@ -521,7 +535,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                 builder: (context) =>
                                     const ProPublicViewScreen(),
                               ),
-                            );
+                            ).then((_) => _loadProfile());
                           },
                           style: OutlinedButton.styleFrom(
                             backgroundColor: const Color(
@@ -581,7 +595,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         MaterialPageRoute(
                           builder: (context) => const ProAnnoncesScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -597,7 +611,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         MaterialPageRoute(
                           builder: (context) => const ProPostScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -613,7 +627,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         MaterialPageRoute(
                           builder: (context) => const ProSearchSaveScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -628,7 +642,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         MaterialPageRoute(
                           builder: (context) => const ProFavorisScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -643,7 +657,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         MaterialPageRoute(
                           builder: (context) => const ProSpaceProScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -659,7 +673,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         MaterialPageRoute(
                           builder: (context) => const ProSettingsScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -675,7 +689,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         MaterialPageRoute(
                           builder: (context) => const ProRewardScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -690,7 +704,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         MaterialPageRoute(
                           builder: (context) => const ProAffiliateScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -705,7 +719,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         MaterialPageRoute(
                           builder: (context) => const ProSubscribeScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -722,7 +736,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                           builder: (context) =>
                               const ProProfileEntrepriseScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                 ],
@@ -864,8 +878,9 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildStatColumn(String value, String label, VoidCallback onTap) {
     return InkWell(

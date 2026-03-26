@@ -1,754 +1,386 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:myreklam/widgets/app_layout.dart';
-import 'package:myreklam/screens/particulier_main_screen.dart';
-import 'package:myreklam/widgets/pro_post_card.dart';
-import 'package:myreklam/widgets/my_post_item.dart';
+import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/screens/chat_conversation_screen.dart';
+import 'package:myreklam/screens/followers_screen.dart';
+import 'package:myreklam/services/conversation_service.dart';
+import 'package:myreklam/services/profile_service.dart';
 
 class PublicProfileScreen extends StatefulWidget {
-  const PublicProfileScreen({super.key});
+  final String? userId;
+  final Map<String, dynamic>? initialData;
+
+  const PublicProfileScreen({
+    super.key,
+    this.userId,
+    this.initialData,
+  });
 
   @override
   State<PublicProfileScreen> createState() => _PublicProfileScreenState();
 }
 
 class _PublicProfileScreenState extends State<PublicProfileScreen> {
+  final _profileService = ProfileService();
+  final _conversationService = ConversationService();
+  
+  bool _isLoading = true;
+  Map<String, dynamic>? _userData;
   String _selectedTab = 'Présentation';
-  final List<_DocumentSection> _documentSections = const [
-    _DocumentSection(
-      title: 'CV',
-      documents: [
-        _DocumentItem(
-          title: 'Curriculum Vitae',
-          date: '5 Janvier 2026',
-        ),
-      ],
-    ),
-    _DocumentSection(
-      title: 'Lettre de motivation',
-      documents: [
-        _DocumentItem(
-          title: 'Lettre de motivation',
-          date: '5 Janvier 2026',
-        ),
-      ],
-    ),
-  ];
-
-  int get _documentCount => _documentSections
-      .fold<int>(0, (total, section) => total + section.documents.length);
+  bool _isFollowing = false;
 
   @override
-  void dispose() {
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    setState(() => _isLoading = true);
+    try {
+      final String? targetId = widget.userId ?? widget.initialData?['id']?.toString();
+      
+      if (targetId == null) {
+        // Fallback to current user if no ID provided
+        final response = await _profileService.getProfile();
+        setState(() {
+          _userData = response['user'] ?? response;
+          _isLoading = false;
+        });
+      } else {
+        final response = await _profileService.getUserProfile(targetId);
+        setState(() {
+          _userData = response['user'] ?? response;
+          _isFollowing = response['is_following'] ?? false;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors du chargement du profil: $e')),
+        );
+      }
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    final targetId = _userData?['id']?.toString();
+    if (targetId == null) return;
+
+    try {
+      if (_isFollowing) {
+        await _profileService.unfollowUser(targetId);
+      } else {
+        await _profileService.followUser(targetId);
+      }
+      setState(() => _isFollowing = !_isFollowing);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _startConversation() async {
+    final targetIdStr = _userData?['id']?.toString();
+    final targetId = int.tryParse(targetIdStr ?? '');
+    
+    if (targetId == null) return;
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final conversation = await _conversationService.getOrCreateConversation(targetId);
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      final displayName = _extractDisplayName(_userData);
+      final avatar = _extractAvatar(_userData);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatConversationScreen(
+            conversationId: conversation.id.toString(),
+            name: displayName,
+            avatar: avatar,
+            status: 'En ligne',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Close loading
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Impossible de démarrer la conversation: $e')),
+        );
+      }
+    }
+  }
+
+  String _extractDisplayName(Map<String, dynamic>? data) {
+    if (data == null) return 'Utilisateur';
+    final pro = data['pro_profile'] as Map?;
+    final part = data['particulier_profile'] as Map?;
+    
+    if (part != null) return part['pseudo']?.toString() ?? 'Utilisateur';
+    if (pro != null) return pro['company_name']?.toString() ?? '${pro['first_name'] ?? ''} ${pro['last_name'] ?? ''}'.trim();
+    
+    return data['name']?.toString() ?? 'Utilisateur';
+  }
+
+  String _extractAvatar(Map<String, dynamic>? data) {
+    if (data == null) return 'assets/images/dashboard_particulier/Ellipse 10.png';
+    
+    final pro = data['pro_profile'] as Map?;
+    final part = data['particulier_profile'] as Map?;
+    
+    String? url = part?['avatar_url']?.toString() ?? 
+                 pro?['logo_url']?.toString() ?? 
+                 pro?['avatar_url']?.toString() ?? 
+                 data['avatar']?.toString();
+
+    if (url != null && url.isNotEmpty) {
+      if (url.startsWith('http')) return url;
+      final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+      return '$serverBase/storage/$url';
+    }
+    
+    return 'assets/images/dashboard_particulier/Ellipse 10.png';
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppLayout(
-      currentIndex: 4,
-      onTabTapped: (index) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (context) => ParticulierMainScreen(initialIndex: index),
-          ),
-          (route) => false,
-        );
-      },
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final displayName = _extractDisplayName(_userData);
+    final avatar = _extractAvatar(_userData);
+    final accountType = _userData?['pro_profile'] != null ? 'Professionnel' : 'Particulier';
+
+    return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF3AAE5E)),
-          onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ParticulierMainScreen(
-                  initialIndex: 4,
-                ),
-              ),
-            );
-          },
+          onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Profil',
-          style: TextStyle(
-            color: Color(0xFF616161),
-            fontFamily: 'Manjari',
-            fontWeight: FontWeight.bold,
-          ),
+        title: Text(
+          displayName,
+          style: const TextStyle(color: Color(0xFF616161), fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
+            // Header Section
             Stack(
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  margin: const EdgeInsets.only(
-                    left: 16,
-                    right: 16,
-                    bottom: 25,
-                    top: 40,
-                  ),
-                  padding: const EdgeInsets.only(
-                    top: 68,
-                    left: 30,
-                    right: 20,
-                    bottom: 20,
-                  ),
+                  margin: const EdgeInsets.fromLTRB(16, 40, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF2E9B5B),
-                      width: 2,
-                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF2E9B5B), width: 1),
                   ),
                   child: Column(
                     children: [
-                      const Text(
-                        'Ralph Edwards',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
-                        ),
+                      Text(
+                        displayName,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'SIRET: 81054649100039',
-                        style: TextStyle(fontSize: 11, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            'assets/images/profil_pro/profil-etiq.png',
-                            width: 17,
-                            height: 17,
-                          ),
-                          const SizedBox(width: 4),
-                          const Text(
-                            'Information et communication',
-                            style: TextStyle(fontSize: 11, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.star, color: Color(0xFFFFD700), size: 16),
-                          SizedBox(width: 4),
-                          Text(
-                            '5.0 (0 avis)',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        accountType,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                       const SizedBox(height: 12),
+                      
+                      // Stats Row: Posts, Followers, Following
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 4,
+                          Column(
+                            children: [
+                              Text(
+                                (_userData?['posts_count'] ?? 0).toString(),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              const Text('Posts', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            ],
+                          ),
+                          const SizedBox(width: 30),
+                          GestureDetector(
+                            onTap: () {
+                              final String? uid = _userData?['id']?.toString();
+                              if (uid != null) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FollowersScreen(
+                                      userId: uid,
+                                      initialShowFollowers: true,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Column(
+                              children: [
+                                Text(
+                                  (_userData?['followers_count'] ?? 0).toString(),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                const Text('Followers', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                              ],
                             ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2E9B5B),
-                              borderRadius: BorderRadius.circular(4),
+                          ),
+                          const SizedBox(width: 30),
+                          GestureDetector(
+                            onTap: () {
+                              final String? uid = _userData?['id']?.toString();
+                              if (uid != null) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FollowersScreen(
+                                      userId: uid,
+                                      initialShowFollowers: false,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Column(
+                              children: [
+                                Text(
+                                  (_userData?['following_count'] ?? 0).toString(),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                const Text('Suivi(s)', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                              ],
                             ),
-                            child: const Text(
-                              'Particulier',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Action Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _startConversation,
+                              icon: const Icon(Icons.message_outlined, size: 18),
+                              label: const Text('Message'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF3AAE5E),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          
+                          const SizedBox(width:12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _toggleFollow,
+                              icon: Icon(_isFollowing ? Icons.check : Icons.person_add_outlined, size: 18),
+                              label: Text(_isFollowing ? 'Suivi' : 'Suivre'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF3AAE5E),
+                                side: const BorderSide(color: Color(0xFF3AAE5E)),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
+                
+                // Avatar
                 Positioned(
                   top: 0,
                   left: 0,
                   right: 0,
                   child: Center(
                     child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF2E9B5B), width: 2),
-                      ),
-                      child: const CircleAvatar(
-                        radius: 50,
-                        backgroundImage: AssetImage(
-                          'assets/images/profil/Ellipse 41.png',
-                        ),
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(color: Color(0xFF2E9B5B), shape: BoxShape.circle),
+                      child: CircleAvatar(
+                        radius: 45,
+                        backgroundColor: Colors.white,
+                        backgroundImage: avatar.startsWith('http') 
+                          ? NetworkImage(avatar) as ImageProvider 
+                          : AssetImage(avatar),
                       ),
                     ),
-                  ),
-                ),
-                Positioned(
-                  top: 75,
-                  left: 30,
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1877F2).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: IconButton(
-                          onPressed: () {},
-                          icon: const Icon(
-                            FontAwesomeIcons.facebook,
-                            color: Color(0xFF1877F2),
-                            size: 22,
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE1306C).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: IconButton(
-                          onPressed: () {},
-                          icon: const Icon(
-                            FontAwesomeIcons.instagram,
-                            color: Color(0xFFE1306C),
-                            size: 22,
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF0000).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: IconButton(
-                          onPressed: () {},
-                          icon: const Icon(
-                            FontAwesomeIcons.youtube,
-                            color: Color(0xFFFF0000),
-                            size: 22,
-                          ),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ],
             ),
+
+            // Tabs
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-                child: Row(
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+              child: Row(
                 children: [
                   _buildTabButton('Présentation'),
-                  _buildTabButton('Annonces(2)'),
+                  _buildTabButton('Annonces'),
                   _buildTabButton('Post'),
-                  _buildTabButton('Documents'),
                 ],
               ),
             ),
+            
             const SizedBox(height: 16),
-            if (_selectedTab == 'Présentation') ...[
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Bannière',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        'assets/images/profil/Rectangle 238.png',
-                        width: double.infinity,
-                        height: 150,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Présentation',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[700],
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Medias photos et vidéos',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Column(
-                          children: [
-                            Icon(
-                              Icons.photo_library_outlined,
-                              color: Colors.grey[400],
-                              size: 24,
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              height: 2,
-                              width: 40,
-                              color: const Color(0xFFFF9800),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 24),
-                        Column(
-                          children: [
-                            Icon(
-                              Icons.videocam_outlined,
-                              color: Colors.grey[400],
-                              size: 24,
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              height: 2,
-                              width: 40,
-                              color: Colors.transparent,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.asset(
-                              'assets/images/profil/Rectangle 195.png',
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.asset(
-                              'assets/images/profil/Rectangle 196.png',
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.asset(
-                              'assets/images/profil/Rectangle 197.png',
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            if (_selectedTab == 'Annonces(2)') ...[
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.tune, color: Colors.grey[600], size: 20),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Filtres',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.location_on_outlined, color: Colors.grey[600], size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Localisation',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[700],
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              ProPostCard(
-                profileImage: 'assets/images/dashboard_particulier/Ellipse 10.png',
-                username: 'Savannah Nguyen',
-                userType: 'Particulier',
-                postText: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-                postImage: 'assets/images/dashboard_particulier/Rectangle 12.png',
-                reductionPercentage: '-50%',
-                categoryIcon: Icons.restaurant,
-                categoryName: 'Restaurant',
-                merchantName: 'Chez Marcel',
-                timeAgo: 'il y a 2h',
-                price: '25€',
-                likesCount: 125,
-                commentsCount: 10,
-                onTapCTA: () {},
-              ),
-              ProPostCard(
-                profileImage: 'assets/images/dashboard_particulier/Ellipse 10 (1).png',
-                username: 'Savannah Nguyen',
-                userType: 'Particulier',
-                postText: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-                postImage: 'assets/images/dashboard_particulier/Rectangle 12 (1).png',
-                reductionPercentage: '-30%',
-                categoryIcon: Icons.shopping_bag,
-                categoryName: 'Shopping',
-                merchantName: 'Fashion Store',
-                timeAgo: 'il y a 5h',
-                price: '45€',
-                likesCount: 89,
-                commentsCount: 15,
-                onTapCTA: () {},
-              ),
-            ],
-            if (_selectedTab == 'Post') ...[
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  children: [
-                    MyPostItem(
-                      image: 'assets/images/posts/Rectangle 189.png',
-                      content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore...voir plus',
-                      likeCount: 125,
-                      commentCount: 10,
-                      shareCount: 2,
-                      onEdit: () {},
-                      onDelete: () {},
-                    ),
-                    const SizedBox(height: 20),
-                    MyPostItem(
-                      image: 'assets/images/posts/Rectangle 189 (1).png',
-                      content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore...voir plus',
-                      likeCount: 125,
-                      commentCount: 10,
-                      shareCount: 2,
-                      onEdit: () {},
-                      onDelete: () {},
-                    ),
-                    const SizedBox(height: 20),
-                    MyPostItem(
-                      image: 'assets/images/posts/Rectangle 189 (2).png',
-                      content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore...voir plus',
-                      likeCount: 125,
-                      commentCount: 10,
-                      shareCount: 2,
-                      onEdit: () {},
-                      onDelete: () {},
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            if (_selectedTab == 'Documents') ...[
-              _buildDocumentsTab(),
-            ],
-            const SizedBox(height: 20),
+            
+            // Tab Content
+            _buildTabContent(),
+            
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDocumentsTab() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Mes documents (${_documentCount})',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF616161),
-              fontFamily: 'Manjari',
-            ),
-          ),
-          const SizedBox(height: 16),
-          ..._documentSections
-              .map((section) => _buildDocumentSection(section))
-              .toList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDocumentSection(_DocumentSection section) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            section.title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF616161),
-              fontFamily: 'Manjari',
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...section.documents.map(
-            (doc) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _buildDocumentTile(doc),
-            ),
-          ),
-          if (section != _documentSections.last)
-            const Divider(height: 24, thickness: 1, color: Color(0xFFEFEFEF)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDocumentTile(_DocumentItem document) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF3F3F3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-    child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE7F7EE),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.description,
-              color: Color(0xFF2E9B5B),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  document.title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF2F2F2F),
-                    fontFamily: 'Manjari',
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_today,
-                        size: 14, color: Color(0xFF9E9E9E)),
-                    const SizedBox(width: 6),
-                    Text(
-                      document.date,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF9E9E9E),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          _buildDocumentAction(
-            icon: Icons.remove_red_eye,
-            color: const Color(0xFF1DA1F2),
-          ),
-          const SizedBox(width: 8),
-          _buildDocumentAction(
-            icon: Icons.download,
-            color: const Color(0xFF2E9B5B),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDocumentAction({required IconData icon, required Color color}) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(icon, color: color, size: 20),
-    );
-  }
-
-  Widget _buildTabButton(String key, {String? displayLabel}) {
-    final isSelected = _selectedTab == key;
-    final text = displayLabel ?? key;
+  Widget _buildTabButton(String label) {
+    bool isSelected = _selectedTab == label;
     return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedTab = key;
-          });
-        },
+      child: InkWell(
+        onTap: () => setState(() => _selectedTab = label),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFFF9800) : Colors.transparent,
+            color: isSelected ? const Color(0xFFEF8A40) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            text,
+            label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               color: isSelected ? Colors.white : Colors.grey[600],
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 13,
             ),
           ),
         ),
@@ -756,24 +388,36 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     );
   }
 
-}
-
-class _DocumentSection {
-  const _DocumentSection({
-    required this.title,
-    required this.documents,
-  });
-
-  final String title;
-  final List<_DocumentItem> documents;
-}
-
-class _DocumentItem {
-  const _DocumentItem({
-    required this.title,
-    required this.date,
-  });
-
-  final String title;
-  final String date;
+  Widget _buildTabContent() {
+    switch (_selectedTab) {
+      case 'Annonces':
+        return const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text('Aucune annonce pour le moment'),
+        );
+      case 'Post':
+        return const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text('Aucun post pour le moment'),
+        );
+      default:
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Présentation', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 12),
+              Text(
+                _userData?['bio'] ?? 'Aucune présentation disponible.',
+                style: TextStyle(color: Colors.grey[700], height: 1.5),
+              ),
+            ],
+          ),
+        );
+    }
+  }
 }
