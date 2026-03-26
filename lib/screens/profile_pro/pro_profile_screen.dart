@@ -1,4 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_reward_screen.dart';
@@ -57,6 +61,68 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    await Permission.photos.request();
+
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+      if (pickedFile != null) {
+        final croppedFile = await ImageCropper().cropImage(
+          sourcePath: pickedFile.path,
+          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+          compressFormat: ImageCompressFormat.jpg,
+          compressQuality: 80,
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Ajuster l\'Avatar',
+              toolbarColor: const Color(0xFFEF8A40),
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.square,
+              lockAspectRatio: true,
+            ),
+            IOSUiSettings(
+              title: 'Ajuster l\'Avatar',
+            ),
+          ],
+        );
+
+        if (croppedFile != null) {
+          setState(() => _isLoading = true);
+          
+          final file = File(croppedFile.path);
+          final response = await _profileService.uploadAvatar(file);
+          
+          if (response['success'] == true && response['avatar_url'] != null) {
+            setState(() {
+              _avatarUrl = response['avatar_url'];
+            });
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Avatar mis à jour avec succès!'),
+                  backgroundColor: Color(0xFF2E9B5B),
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -200,16 +266,20 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                           Positioned(
                             bottom: 0,
                             right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFEF8A40),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.add,
-                                color: Colors.white,
-                                size: 16,
+                            child: GestureDetector(
+                              onTap: _pickAndUploadAvatar,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEF8A40),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                                child: const Icon(
+                                  Icons.edit,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
                               ),
                             ),
                           ),

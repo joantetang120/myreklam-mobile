@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:myreklam/services/profile_service.dart';
 
 class ProProfileEntrepriseScreen extends StatefulWidget {
   const ProProfileEntrepriseScreen({super.key});
@@ -12,6 +13,8 @@ class ProProfileEntrepriseScreen extends StatefulWidget {
 class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final _profileService = ProfileService();
+  bool _isLoading = true;
 
   // Controllers pour les champs
   final TextEditingController _nomSocieteController = TextEditingController();
@@ -21,14 +24,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
   final TextEditingController _codePostalController = TextEditingController();
   final TextEditingController _villeController = TextEditingController();
   final TextEditingController _paysController = TextEditingController();
-  final TextEditingController _presentationController = TextEditingController(
-    text:
-        '''C’est un espace dynamique pensé pour connecter les particuliers, les professionnels et les entreprises autour d’opportunités concrètes : bons plans, offres d’emploi, formations, événements, ou encore services sur mesure.
-Notre objectif est simple : favoriser la mise en relation locale et nationale, tout en valorisant chaque publication, chaque interaction et chaque membre de la communauté. Chez MyReklam, chaque action compte et peut être récompensée via un système de points (les "MY’s"), renforçant l’engagement et la fidélité de nos utilisateurs.
-
-Une vision collaborative et équitable
-Nous croyons en une plateforme utile, équitable et accessible à tous. Que vous soyez un particulier à la recherche d’une formation, une entreprise souhaitant publier une annonce, ou un professionnel en quête de visibilité, MyReklam vous accompagne à chaque étape.''',
-  );
+  final TextEditingController _presentationController = TextEditingController();
 
   // Controllers pour les réseaux sociaux
   final TextEditingController _facebookController = TextEditingController();
@@ -43,6 +39,48 @@ Nous croyons en une plateforme utile, équitable et accessible à tous. Que vous
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final response = await _profileService.getProfile();
+      if (!mounted) return;
+
+      if (response['profile'] != null) {
+        final profile = response['profile'];
+        setState(() {
+          _nomSocieteController.text = profile['company_name'] ?? '';
+          _telephoneController.text = profile['phone'] ?? '';
+          if (profile['contact_email'] != null && profile['contact_email'].isNotEmpty) {
+            _emailController.text = profile['contact_email'];
+          } else {
+            _emailController.text = response['user']['email'] ?? '';
+          }
+          _adresseController.text = profile['address'] ?? '';
+          _codePostalController.text = profile['code_postal'] ?? '';
+          _villeController.text = profile['ville'] ?? '';
+          _paysController.text = profile['pays'] ?? '';
+          _presentationController.text = profile['presentation'] ?? '';
+          _selectedSecteur = profile['secteur_activite'];
+
+          if (profile['social_links'] != null) {
+            final links = profile['social_links'];
+            _facebookController.text = links['facebook'] ?? '';
+            _instagramController.text = links['instagram'] ?? '';
+            _linkedinController.text = links['linkedin'] ?? '';
+            _youtubeController.text = links['youtube'] ?? '';
+            _snapchatController.text = links['snapchat'] ?? '';
+          }
+          _isLoading = false;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -85,8 +123,10 @@ Nous croyons en une plateforme utile, équitable et accessible à tous. Que vous
         ),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
           const SizedBox(height: 10),
           // TabBar
           Container(
@@ -625,12 +665,47 @@ Nous croyons en une plateforme utile, équitable et accessible à tous. Que vous
     );
   }
 
-  void _saveChanges() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Modifications enregistrées avec succès !'),
-        backgroundColor: Color(0xFF2E9B5B),
-      ),
-    );
+  Future<void> _saveChanges() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = {
+        'company_name': _nomSocieteController.text,
+        'phone': _telephoneController.text,
+        'contact_email': _emailController.text,
+        'address': _adresseController.text,
+        'code_postal': _codePostalController.text,
+        'ville': _villeController.text,
+        'pays': _paysController.text,
+        'presentation': _presentationController.text,
+        'secteur_activite': _selectedSecteur,
+        'social_links': {
+          'facebook': _facebookController.text,
+          'instagram': _instagramController.text,
+          'linkedin': _linkedinController.text,
+          'youtube': _youtubeController.text,
+          'snapchat': _snapchatController.text,
+        },
+      };
+
+      await _profileService.updateProfile(data);
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Modifications enregistrées avec succès !'),
+          backgroundColor: Color(0xFF2E9B5B),
+        ),
+      );
+      setState(() => _isLoading = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de la mise à jour: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

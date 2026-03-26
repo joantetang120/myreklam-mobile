@@ -9,6 +9,7 @@ class JobAnnouncementCard extends StatelessWidget {
   final List<String> advantages;
   final String timeAgo;
   final VoidCallback? onApply;
+  final Widget? reactionBar;
 
   const JobAnnouncementCard({
     super.key,
@@ -20,30 +21,16 @@ class JobAnnouncementCard extends StatelessWidget {
     required this.advantages,
     required this.timeAgo,
     this.onApply,
+    this.reactionBar,
   });
-
-  Widget _buildHeaderIcon(IconData icon, {required VoidCallback onPressed}) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(icon, color: Colors.grey.withOpacity(0.7), size: 20),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -126,15 +113,7 @@ class JobAnnouncementCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Row(
-                children: [
-                  _buildHeaderIcon(Icons.favorite_border, onPressed: () {}),
-                  const SizedBox(width: 8),
-                  _buildHeaderIcon(Icons.share_outlined, onPressed: () {}),
-                  const SizedBox(width: 8),
-                  _buildHeaderIcon(Icons.close, onPressed: () {}),
-                ],
-              ),
+              const Spacer(),
             ],
           ),
           const SizedBox(height: 20),
@@ -220,6 +199,15 @@ class JobAnnouncementCard extends StatelessWidget {
               ),
             ],
           ),
+          if (reactionBar != null) ...[
+            const SizedBox(height: 20),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            reactionBar!,
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+          ],
+          const SizedBox(height: 10),
         ],
       ),
           Positioned(

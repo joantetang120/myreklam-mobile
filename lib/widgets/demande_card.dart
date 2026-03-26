@@ -35,11 +35,10 @@ class DemandeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -100,21 +99,7 @@ class DemandeCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Row(
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    color: Colors.grey.withOpacity(0.7),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Icon(
-                    Icons.close,
-                    color: Colors.grey.withOpacity(0.7),
-                    size: 20,
-                  ),
-                ],
-              ),
+              const Spacer(),
             ],
           ),
           const SizedBox(height: 18),

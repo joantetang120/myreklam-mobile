@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:myreklam/services/api_client.dart';
 
 class ProfileService {
@@ -74,5 +75,14 @@ class ProfileService {
   /// PUT /api/profile/me
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> fields) async {
     return await _api.authenticatedPut('/profile/me', body: fields);
+  }
+
+  /// POST /api/profile/avatar
+  Future<Map<String, dynamic>> uploadAvatar(File imageFile) async {
+    return await _api.authenticatedMultipart(
+      '/profile/avatar',
+      file: imageFile,
+      fileField: 'image',
+    );
   }
 }

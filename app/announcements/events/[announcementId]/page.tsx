@@ -895,14 +895,19 @@ export default function EventDetailPage({ params }: { params: Promise<{ announce
 
     setIsContactingLoading(true)
     try {
-      const conversationId = await startConversation(announcementId)
+      if (!event?.userId) {
+        toastError("Impossible de contacter cet utilisateur")
+        return
+      }
+      
+      const conversationId = await startConversation(event.userId)
 
       if (!conversationId) {
         toastError("Erreur lors du démarrage de la conversation")
         return
       }
 
-      router.push(`/messages?conversation=${conversationId}`)
+      router.push(`/messages?action=conversation&conversationId=${conversationId}`)
       toastSuccess("Conversation démarrée")
     } catch (error) {
       toastError("Erreur lors du démarrage de la conversation")
