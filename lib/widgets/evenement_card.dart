@@ -15,6 +15,7 @@ class EvenementCard extends StatelessWidget {
   final int likesCount;
   final int commentsCount;
   final VoidCallback? onTapCTA;
+  final Widget? reactionBar;
 
   const EvenementCard({
     super.key,
@@ -32,16 +33,16 @@ class EvenementCard extends StatelessWidget {
     required this.likesCount,
     required this.commentsCount,
     this.onTapCTA,
+    this.reactionBar,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -101,18 +102,7 @@ class EvenementCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Row(
-                children: [
-                  Icon(Icons.favorite_border,
-                      color: Colors.grey.withOpacity(0.7), size: 20),
-                  const SizedBox(width: 10),
-                  Icon(Icons.more_horiz,
-                      color: Colors.grey.withOpacity(0.7), size: 20),
-                  const SizedBox(width: 10),
-                  Icon(Icons.close,
-                      color: Colors.grey.withOpacity(0.7), size: 20),
-                ],
-              ),
+              const Spacer(),
             ],
           ),
           const SizedBox(height: 15),
@@ -349,19 +339,15 @@ class EvenementCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          // Engagement Stats
-          Row(
-            children: [
-              _buildStat(Icons.thumb_up_alt_outlined, likesCount.toString()),
-              const SizedBox(width: 20),
-              _buildStat(
-                  Icons.chat_bubble_outline, commentsCount.toString()),
-              const SizedBox(width: 20),
-              Icon(Icons.share_outlined,
-                  color: Colors.grey.withOpacity(0.7), size: 18),
-            ],
-          ),
+          if (reactionBar != null) ...[
+            const SizedBox(height: 20),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            reactionBar!,
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+          ],
+          const SizedBox(height: 10),
         ],
       ),
           Positioned(
@@ -407,23 +393,6 @@ class EvenementCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStat(IconData icon, String count) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.grey.withOpacity(0.7), size: 18),
-        const SizedBox(width: 6),
-        Text(
-          count,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 }

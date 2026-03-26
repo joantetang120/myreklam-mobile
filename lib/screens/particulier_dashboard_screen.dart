@@ -31,6 +31,7 @@ import 'package:myreklam/services/story_store.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/conversation_service.dart';
+import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/screens/image_preview_screen.dart';
 
 class ParticulierDashboardScreen extends StatefulWidget {
@@ -95,17 +96,36 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
         ? '${widget.content.substring(0, _collapsedMaxLength)}...'
         : widget.content;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PostDetailFullScreen(
+              author: {
+                'displayName': widget.author.displayName,
+                'accountType': widget.author.accountType,
+                'avatar': widget.author.avatar,
+              },
+              content: widget.content,
+              timeAgo: widget.timeAgo,
+              mediaUrls: widget.mediaUrls,
+              reactionBar: widget.buildReactionBar(),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
+          ),
         ),
-      ),
-      child: Stack(
-        children: [
-          Column(
+        child: Stack(
+          children: [
+            Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header with author info
@@ -245,8 +265,9 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildMediaSection(List<String> urls) {
     if (urls.isEmpty) return const SizedBox.shrink();
@@ -552,13 +573,17 @@ class _ParticulierDashboardScreenState
         _storyStore.addStory(result);
       }
     } else {
+      final ownGroups = _storyStore.feedNotifier.value.where((g) => g.isOwn).toList();
+      final myAvatar = ownGroups.isNotEmpty ? ownGroups.first.userAvatar : null;
+      final resolvedAvatar = ApiConfig.resolveMediaUrl(myAvatar);
+      
       await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => MyStoriesScreen(
             stories: _storyStore.stories,
             userName: 'Vous',
-            userAvatar: 'assets/images/dashboard_particulier/Ellipse 10.png',
+            userAvatar: resolvedAvatar ?? _defaultAvatar,
           ),
         ),
       );
@@ -749,11 +774,10 @@ class _ParticulierDashboardScreenState
         : null;
 
     return Container(
-      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -951,26 +975,31 @@ class _ParticulierDashboardScreenState
       advantages.add('Avantages non précisés');
     }
 
-    return Column(
-      children: [
-        JobAnnouncementCard(
-          companyLogo: 'assets/images/dashboard_particulier/Rectangle 13.png',
-          companyName: companyName,
-          jobTitle: jobTitle,
-          description: description.isNotEmpty
-              ? description
-              : 'Description non disponible.',
-          tags: tags,
-          advantages: advantages,
-          timeAgo: _buildTimeAgo(job['created_at']?.toString()),
-          onApply: () => _navigateToJobDetail(job),
-        ),
-        if (jobId.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-            child: _buildReactionBar('job-offers', jobId),
-          ),
-      ],
+    final user = job['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
+    
+    final avatarUrl = proProfile?['logo_url']?.toString() ?? 
+                      proProfile?['avatar_url']?.toString() ?? 
+                      particulierProfile?['avatar_url']?.toString() ?? 
+                      user?['avatar']?.toString();
+                      
+    final companyLogoUrl = _buildStorageUrl(avatarUrl) ?? 'assets/images/dashboard_particulier/Rectangle 13.png';
+
+    return JobAnnouncementCard(
+      companyLogo: companyLogoUrl,
+      companyName: companyName,
+      jobTitle: jobTitle,
+      description: description.isNotEmpty
+          ? description
+          : 'Description non disponible.',
+      tags: tags,
+      advantages: advantages,
+      timeAgo: _buildTimeAgo(job['created_at']?.toString()),
+      onApply: () => _navigateToJobDetail(job),
+      reactionBar: jobId.isNotEmpty
+          ? _buildReactionBar('job-offers', jobId)
+          : null,
     );
   }
 
@@ -1002,32 +1031,44 @@ class _ParticulierDashboardScreenState
         FormationTag(icon: Icons.euro, text: '$price €', isSpecial: true),
     ];
 
-    return Column(
-      children: [
-        FormationCard(
-          companyLogo: 'assets/images/Formation.png',
-          companyName: provider,
-          formationTitle: title,
-          description: description.isNotEmpty
-              ? description
-              : 'Description non disponible.',
-          tags: tags,
-          timeAgo: _buildTimeAgo(training['created_at']?.toString()),
-          onApply: () => _navigateToTrainingDetail(training),
-        ),
-        if (trainingId.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-            child: _buildReactionBar('trainings', trainingId),
-          ),
-      ],
+    final user = training['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
+    
+    final avatarUrl = proProfile?['logo_url']?.toString() ?? 
+                      proProfile?['avatar_url']?.toString() ?? 
+                      particulierProfile?['avatar_url']?.toString() ?? 
+                      user?['avatar']?.toString();
+                      
+    final companyLogoUrl = _buildStorageUrl(avatarUrl) ?? 'assets/images/Formation.png';
+
+    return FormationCard(
+      companyLogo: companyLogoUrl,
+      companyName: provider,
+      formationTitle: title,
+      description: description.isNotEmpty
+          ? description
+          : 'Description non disponible.',
+      tags: tags,
+      timeAgo: _buildTimeAgo(training['created_at']?.toString()),
+      onApply: () => _navigateToTrainingDetail(training),
+      reactionBar: trainingId.isNotEmpty
+          ? _buildReactionBar('trainings', trainingId)
+          : null,
     );
   }
 
   Widget _buildEventFeedCard(Map<String, dynamic> event) {
     final user = event['user'] as Map<String, dynamic>?;
-    final profileImage =
-        _buildStorageUrl(user?['avatar']?.toString()) ?? _defaultAvatar;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
+    
+    final avatarUrl = proProfile?['logo_url']?.toString() ?? 
+                      proProfile?['avatar_url']?.toString() ?? 
+                      particulierProfile?['avatar_url']?.toString() ?? 
+                      user?['avatar']?.toString();
+                      
+    final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
     final username = user?['name']?.toString() ?? 'Organisateur';
     final eventTitle = event['title']?.toString() ?? 'Évènement';
     final eventImage =
@@ -1046,30 +1087,24 @@ class _ParticulierDashboardScreenState
 
     final eventId = event['id']?.toString() ?? '';
 
-    return Column(
-      children: [
-        EvenementCard(
-          profileImage: profileImage,
-          username: username,
-          userType: 'Évènement',
-          eventTitle: eventTitle,
-          eventImage: eventImage,
-          badge: event['status']?.toString(),
-          categories: categories.isNotEmpty ? categories : ['Général'],
-          eventDate: _formatEventDate(event),
-          location: coverageArea,
-          timeAgo: _buildTimeAgo(event['created_at']?.toString()),
-          price: price,
-          likesCount: _asInt(event['likes_count']),
-          commentsCount: _asInt(event['comments_count']),
-          onTapCTA: () => _navigateToEventDetail(event),
-        ),
-        if (eventId.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-            child: _buildReactionBar('events', eventId),
-          ),
-      ],
+    return EvenementCard(
+      profileImage: profileImage,
+      username: username,
+      userType: 'Évènement',
+      eventTitle: eventTitle,
+      eventImage: eventImage,
+      badge: event['status']?.toString(),
+      categories: categories.isNotEmpty ? categories : ['Général'],
+      eventDate: _formatEventDate(event),
+      location: coverageArea,
+      timeAgo: _buildTimeAgo(event['created_at']?.toString()),
+      price: price,
+      likesCount: _asInt(event['likes_count']),
+      commentsCount: _asInt(event['comments_count']),
+      onTapCTA: () => _navigateToEventDetail(event),
+      reactionBar: eventId.isNotEmpty
+          ? _buildReactionBar('events', eventId)
+          : null,
     );
   }
 
@@ -1084,6 +1119,7 @@ class _ParticulierDashboardScreenState
     // Avatar : particulier_profile.avatar_url ou pro_profile.logo_url
     final avatarUrl =
         particulierProfile?['avatar_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
         proProfile?['logo_url']?.toString();
     final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
 
@@ -2656,7 +2692,13 @@ class _ParticulierDashboardScreenState
         ? 'Professionnel'
         : 'Particulier';
 
+    final particulierProfile = authorMap?['particulier_profile'] as Map<String, dynamic>?;
+    final proProfile = authorMap?['pro_profile'] as Map<String, dynamic>?;
+
     final avatarCandidates = [
+      particulierProfile?['avatar_url'],
+      proProfile?['avatar_url'],
+      proProfile?['logo_url'],
       authorMap?['avatar_url'],
       authorMap?['avatar'],
       authorMap?['photo'],
@@ -3621,7 +3663,7 @@ class _ParticulierDashboardScreenState
       authorAvatar = particulierProfile['avatar_url']?.toString();
     } else if (authorData['pro_profile'] != null) {
       final proProfile = authorData['pro_profile'] as Map<String, dynamic>;
-      authorAvatar = proProfile['avatar_url']?.toString();
+      authorAvatar = proProfile['avatar_url']?.toString() ?? proProfile['logo_url']?.toString();
     }
 
     if (authorId == null || authorId.isEmpty) {
@@ -3770,11 +3812,13 @@ class _ParticulierDashboardScreenState
                                                 ),
                                               ),
                                               child: hasOwnStories
-                                                  ? const CircleAvatar(
+                                                  ? CircleAvatar(
                                                       radius: 22,
-                                                      backgroundImage: AssetImage(
-                                                        'assets/images/dashboard_particulier/Ellipse 10.png',
-                                                      ),
+                                                      backgroundImage: (ownGroup.first.userAvatar != null && ownGroup.first.userAvatar!.isNotEmpty)
+                                                          ? NetworkImage(ApiConfig.resolveMediaUrl(ownGroup.first.userAvatar)!) as ImageProvider
+                                                          : const AssetImage(
+                                                              _defaultAvatar,
+                                                            ),
                                                     )
                                                   : const Center(
                                                       child: Icon(

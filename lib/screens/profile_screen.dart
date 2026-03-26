@@ -1,4 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -55,6 +59,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    await Permission.photos.request();
+    // We ignore denied for modern Android (Android 13+) which uses the photo picker
+
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+      if (pickedFile != null) {
+        final croppedFile = await ImageCropper().cropImage(
+          sourcePath: pickedFile.path,
+          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+          compressFormat: ImageCompressFormat.jpg,
+          compressQuality: 80,
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Ajuster l\'Avatar',
+              toolbarColor: const Color(0xFF3AAE5E),
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.square,
+              lockAspectRatio: true,
+            ),
+            IOSUiSettings(
+              title: 'Ajuster l\'Avatar',
+            ),
+          ],
+        );
+
+        if (croppedFile != null) {
+          setState(() => _isLoading = true);
+          
+          final file = File(croppedFile.path);
+          final response = await _profileService.uploadAvatar(file);
+          
+          if (response['success'] == true && response['avatar_url'] != null) {
+            setState(() {
+              _avatarUrl = response['avatar_url'];
+            });
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Avatar mis à jour avec succès!'),
+                  backgroundColor: Color(0xFF3AAE5E),
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -194,17 +261,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Positioned(
                         bottom: 0,
                         right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF3AAE5E),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: const Icon(
-                            Icons.add,
-                            color: Colors.white,
-                            size: 14,
+                        child: GestureDetector(
+                          onTap: _pickAndUploadAvatar,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3AAE5E),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 14,
+                            ),
                           ),
                         ),
                       ),
