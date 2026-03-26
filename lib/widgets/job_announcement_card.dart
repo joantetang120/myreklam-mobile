@@ -10,6 +10,7 @@ class JobAnnouncementCard extends StatelessWidget {
   final String timeAgo;
   final VoidCallback? onApply;
   final Widget? reactionBar;
+  final VoidCallback? onAvatarTap;
 
   const JobAnnouncementCard({
     super.key,
@@ -22,6 +23,7 @@ class JobAnnouncementCard extends StatelessWidget {
     required this.timeAgo,
     this.onApply,
     this.reactionBar,
+    this.onAvatarTap,
   });
 
   @override
@@ -48,18 +50,31 @@ class JobAnnouncementCard extends StatelessWidget {
           // Header
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFE6F7EF),
-                  border: Border.all(color: const Color(0xFF3AAE5E).withOpacity(0.2)),
-                ),
-                child: const Icon(
-                  Icons.business_rounded,
-                  color: Color(0xFF1B8D4B),
-                  size: 24,
+              GestureDetector(
+                onTap: onAvatarTap,
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFE6F7EF),
+                    border: Border.all(color: const Color(0xFF3AAE5E).withOpacity(0.2)),
+                    image: companyLogo.isNotEmpty
+                        ? DecorationImage(
+                            image: companyLogo.startsWith('http')
+                                ? NetworkImage(companyLogo)
+                                : AssetImage(companyLogo) as ImageProvider,
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: companyLogo.isEmpty
+                      ? const Icon(
+                          Icons.business_rounded,
+                          color: Color(0xFF1B8D4B),
+                          size: 24,
+                        )
+                      : null,
                 ),
               ),
               const SizedBox(width: 12),
@@ -70,14 +85,17 @@ class JobAnnouncementCard extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            companyName,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF616161),
+                          child: GestureDetector(
+                            onTap: onAvatarTap,
+                            child: Text(
+                              companyName,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF616161),
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 4),

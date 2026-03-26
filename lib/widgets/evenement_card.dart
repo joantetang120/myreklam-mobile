@@ -16,6 +16,7 @@ class EvenementCard extends StatelessWidget {
   final int commentsCount;
   final VoidCallback? onTapCTA;
   final Widget? reactionBar;
+  final VoidCallback? onAvatarTap;
 
   const EvenementCard({
     super.key,
@@ -34,6 +35,7 @@ class EvenementCard extends StatelessWidget {
     required this.commentsCount,
     this.onTapCTA,
     this.reactionBar,
+    this.onAvatarTap,
   });
 
   @override
@@ -60,21 +62,29 @@ class EvenementCard extends StatelessWidget {
           // Header
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: AssetImage(profileImage),
+              GestureDetector(
+                onTap: onAvatarTap,
+                child: CircleAvatar(
+                  radius: 24,
+                  backgroundImage: profileImage.startsWith('http')
+                      ? NetworkImage(profileImage)
+                      : AssetImage(profileImage) as ImageProvider,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      username,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
+                    GestureDetector(
+                      onTap: onAvatarTap,
+                      child: Text(
+                        username,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF616161),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),

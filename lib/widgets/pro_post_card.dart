@@ -16,6 +16,7 @@ class ProPostCard extends StatelessWidget {
   final int commentsCount;
   final VoidCallback? onTapCTA;
   final VoidCallback? onCommentsTap;
+  final VoidCallback? onAvatarTap;
 
   const ProPostCard({
     super.key,
@@ -34,6 +35,7 @@ class ProPostCard extends StatelessWidget {
     required this.commentsCount,
     this.onTapCTA,
     this.onCommentsTap,
+    this.onAvatarTap,
   });
 
   @override
@@ -59,21 +61,27 @@ class ProPostCard extends StatelessWidget {
           // Header
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: _buildImageProvider(profileImage),
+              GestureDetector(
+                onTap: onAvatarTap,
+                child: CircleAvatar(
+                  radius: 24,
+                  backgroundImage: _buildImageProvider(profileImage),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      username,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
+                    GestureDetector(
+                      onTap: onAvatarTap,
+                      child: Text(
+                        username,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF616161),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),

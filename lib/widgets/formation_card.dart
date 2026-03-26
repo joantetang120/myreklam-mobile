@@ -9,6 +9,7 @@ class FormationCard extends StatelessWidget {
   final String timeAgo;
   final VoidCallback? onApply;
   final Widget? reactionBar;
+  final VoidCallback? onAvatarTap;
 
   const FormationCard({
     super.key,
@@ -20,6 +21,7 @@ class FormationCard extends StatelessWidget {
     required this.timeAgo,
     this.onApply,
     this.reactionBar,
+    this.onAvatarTap,
   });
 
   @override
@@ -46,15 +48,20 @@ class FormationCard extends StatelessWidget {
           // Header
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                  image: DecorationImage(
-                    image: AssetImage(companyLogo),
-                    fit: BoxFit.contain,
+              GestureDetector(
+                onTap: onAvatarTap,
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    image: DecorationImage(
+                      image: companyLogo.startsWith('http')
+                          ? NetworkImage(companyLogo)
+                          : AssetImage(companyLogo) as ImageProvider,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
@@ -63,14 +70,17 @@ class FormationCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      companyName,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
+                    GestureDetector(
+                      onTap: onAvatarTap,
+                      child: Text(
+                        companyName,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF616161),
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Container(

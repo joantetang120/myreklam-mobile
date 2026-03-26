@@ -14,6 +14,7 @@ class DemandeCard extends StatelessWidget {
   final String timeAgo;
   final VoidCallback? onTapCTA;
   final Widget? reactionBar;
+  final VoidCallback? onAvatarTap;
 
   const DemandeCard({
     super.key,
@@ -30,6 +31,7 @@ class DemandeCard extends StatelessWidget {
     required this.timeAgo,
     this.onTapCTA,
     this.reactionBar,
+    this.onAvatarTap,
   });
 
   @override
@@ -56,22 +58,28 @@ class DemandeCard extends StatelessWidget {
           // Header
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: _buildImageProvider(profileImage),
-                backgroundColor: Colors.grey[200],
+              GestureDetector(
+                onTap: onAvatarTap,
+                child: CircleAvatar(
+                  radius: 24,
+                  backgroundImage: _buildImageProvider(profileImage),
+                  backgroundColor: Colors.grey[200],
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      username,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
+                    GestureDetector(
+                      onTap: onAvatarTap,
+                      child: Text(
+                        username,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF616161),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
