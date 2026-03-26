@@ -1338,6 +1338,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   ) {
     if (role == 'pro') {
       // Pour les comptes pro, exclure "Recherche d'emploi"
+      // Pour les comptes pro, exclure "Recherche de stage"
       return categories.where((cat) => cat['code'] != 'SearchJob').toList();
     } else if (role == 'particulier') {
       // Pour les comptes particuliers, vérifier si "Recherche de stage" existe

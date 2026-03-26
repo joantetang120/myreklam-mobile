@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -29,7 +30,9 @@ class _FormationScreenState extends State<FormationScreen> {
     });
 
     try {
-      final response = await ApiClient().get('/feed/latest?type=training&limit=20');
+      final response = await ApiClient().get(
+        '/feed/latest?type=training&limit=20',
+      );
       final data = response['data'];
       List<Map<String, dynamic>> fetched = [];
       if (data is Map<String, dynamic> && data['items'] is List) {
@@ -78,10 +81,15 @@ class _FormationScreenState extends State<FormationScreen> {
 
   Widget _buildNotifBubble() {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+        );
+      },
       child: Container(
-        width: 36,
-        height: 36,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: const Color(0xFFE6F7EF),
@@ -111,7 +119,6 @@ class _FormationScreenState extends State<FormationScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 120,
             floating: false,
             pinned: true,
             snap: false,
@@ -149,11 +156,28 @@ class _FormationScreenState extends State<FormationScreen> {
                       bottom: false,
                       child: Padding(
                         padding: const EdgeInsets.only(
-                            left: 16, right: 16, bottom: 20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          left: 16,
+                          right: 16,
+                          bottom: 10,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: 8,
+                                right: 6,
+                              ),
+                              child: GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: const Icon(
+                                  Icons.arrow_back,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
+                            ),
                             const Text(
                               'Formation',
                               style: TextStyle(
@@ -173,16 +197,17 @@ class _FormationScreenState extends State<FormationScreen> {
                       ? SafeArea(
                           bottom: false,
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 GestureDetector(
                                   onTap: () => Navigator.pop(context),
-                                  child: const Icon(Icons.arrow_back,
-                                      color: Colors.white, size: 22),
+                                  child: const Icon(
+                                    Icons.arrow_back,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
                                 ),
                                 _buildNotifBubble(),
                               ],
@@ -193,15 +218,42 @@ class _FormationScreenState extends State<FormationScreen> {
                 );
               },
             ),
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.arrow_back,
-                    color: Colors.white, size: 22),
-              ),
-            ),
             actions: [
+              Container(
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF9E6),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFD700)),
+                ),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      'assets/images/profil_pro/reward.png',
+                      width: 12,
+                      height: 12,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      '145',
+                      style: TextStyle(
+                        color: Color(0xFFFFD700),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'My\'s',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: _buildNotifBubble(),
@@ -222,13 +274,11 @@ class _FormationScreenState extends State<FormationScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border:
-                            Border.all(color: Colors.grey.withOpacity(0.2)),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.search,
-                              color: Colors.grey[400], size: 20),
+                          Icon(Icons.search, color: Colors.grey[400], size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -251,11 +301,9 @@ class _FormationScreenState extends State<FormationScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border:
-                          Border.all(color: Colors.grey.withOpacity(0.2)),
+                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
                     ),
-                    child:
-                        Icon(Icons.tune, color: Colors.grey[500], size: 20),
+                    child: Icon(Icons.tune, color: Colors.grey[500], size: 20),
                   ),
                 ],
               ),
@@ -300,14 +348,12 @@ class _FormationScreenState extends State<FormationScreen> {
             )
           else
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final item = _items[index];
-                  final resource = item['resource'] as Map<String, dynamic>? ?? {};
-                  return _buildFormationCard(resource);
-                },
-                childCount: _items.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final item = _items[index];
+                final resource =
+                    item['resource'] as Map<String, dynamic>? ?? {};
+                return _buildFormationCard(resource);
+              }, childCount: _items.length),
             ),
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
@@ -318,12 +364,16 @@ class _FormationScreenState extends State<FormationScreen> {
   Widget _buildFormationCard(Map<String, dynamic> training) {
     final title = training['title']?.toString() ?? 'Formation';
     final description = _stripHtml(training['description']?.toString() ?? '');
-    final location = training['location']?.toString() ?? training['city']?.toString() ?? '';
+    final location =
+        training['location']?.toString() ?? training['city']?.toString() ?? '';
     final duration = training['duration']?.toString() ?? '';
     final targetAudience = training['target_audience']?.toString() ?? '';
     final formationType = training['formation_type']?.toString() ?? '';
     final createdAt = training['created_at']?.toString();
-    final companyName = training['company_name']?.toString() ?? training['user']?['email']?.toString().split('@').first ?? 'Organisme';
+    final companyName =
+        training['company_name']?.toString() ??
+        training['user']?['email']?.toString().split('@').first ??
+        'Organisme';
 
     final tags = <FormationTag>[
       if (duration.isNotEmpty)
@@ -331,9 +381,17 @@ class _FormationScreenState extends State<FormationScreen> {
       if (location.isNotEmpty)
         FormationTag(icon: Icons.location_on_outlined, text: location),
       if (targetAudience.isNotEmpty)
-        FormationTag(icon: Icons.person_outline, text: targetAudience, isSpecial: true),
+        FormationTag(
+          icon: Icons.person_outline,
+          text: targetAudience,
+          isSpecial: true,
+        ),
       if (formationType.isNotEmpty)
-        FormationTag(icon: Icons.school_outlined, text: formationType, isSpecial: true),
+        FormationTag(
+          icon: Icons.school_outlined,
+          text: formationType,
+          isSpecial: true,
+        ),
     ];
 
     return FormationCard(
@@ -341,7 +399,14 @@ class _FormationScreenState extends State<FormationScreen> {
       companyName: companyName,
       formationTitle: title,
       description: description,
-      tags: tags.isNotEmpty ? tags : [const FormationTag(icon: Icons.info_outline, text: 'Détails disponibles')],
+      tags: tags.isNotEmpty
+          ? tags
+          : [
+              const FormationTag(
+                icon: Icons.info_outline,
+                text: 'Détails disponibles',
+              ),
+            ],
       timeAgo: _buildTimeAgo(createdAt),
       onApply: () {},
     );

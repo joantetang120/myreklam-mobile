@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -30,7 +31,9 @@ class _DemandesScreenState extends State<DemandesScreen> {
     });
 
     try {
-      final response = await ApiClient().get('/feed/latest?type=demande&limit=20');
+      final response = await ApiClient().get(
+        '/feed/latest?type=demande&limit=20',
+      );
       final data = response['data'];
       List<Map<String, dynamic>> fetched = [];
       if (data is Map<String, dynamic> && data['items'] is List) {
@@ -84,10 +87,15 @@ class _DemandesScreenState extends State<DemandesScreen> {
 
   Widget _buildNotifBubble() {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+        );
+      },
       child: Container(
-        width: 36,
-        height: 36,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: const Color(0xFFE6F7EF),
@@ -117,7 +125,6 @@ class _DemandesScreenState extends State<DemandesScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 120,
             floating: false,
             pinned: true,
             snap: false,
@@ -155,11 +162,28 @@ class _DemandesScreenState extends State<DemandesScreen> {
                       bottom: false,
                       child: Padding(
                         padding: const EdgeInsets.only(
-                            left: 16, right: 16, bottom: 20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          left: 16,
+                          right: 16,
+                          bottom: 10,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: 8,
+                                right: 6,
+                              ),
+                              child: GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: const Icon(
+                                  Icons.arrow_back,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
+                            ),
                             const Text(
                               'Demandes',
                               style: TextStyle(
@@ -179,16 +203,17 @@ class _DemandesScreenState extends State<DemandesScreen> {
                       ? SafeArea(
                           bottom: false,
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 GestureDetector(
                                   onTap: () => Navigator.pop(context),
-                                  child: const Icon(Icons.arrow_back,
-                                      color: Colors.white, size: 22),
+                                  child: const Icon(
+                                    Icons.arrow_back,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
                                 ),
                                 _buildNotifBubble(),
                               ],
@@ -199,15 +224,42 @@ class _DemandesScreenState extends State<DemandesScreen> {
                 );
               },
             ),
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.arrow_back,
-                    color: Colors.white, size: 22),
-              ),
-            ),
             actions: [
+              Container(
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF9E6),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFD700)),
+                ),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      'assets/images/profil_pro/reward.png',
+                      width: 12,
+                      height: 12,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      '145',
+                      style: TextStyle(
+                        color: Color(0xFFFFD700),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'My\'s',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: _buildNotifBubble(),
@@ -228,13 +280,11 @@ class _DemandesScreenState extends State<DemandesScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border:
-                            Border.all(color: Colors.grey.withOpacity(0.2)),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.search,
-                              color: Colors.grey[400], size: 20),
+                          Icon(Icons.search, color: Colors.grey[400], size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -257,11 +307,9 @@ class _DemandesScreenState extends State<DemandesScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border:
-                          Border.all(color: Colors.grey.withOpacity(0.2)),
+                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
                     ),
-                    child:
-                        Icon(Icons.tune, color: Colors.grey[500], size: 20),
+                    child: Icon(Icons.tune, color: Colors.grey[500], size: 20),
                   ),
                 ],
               ),
@@ -306,14 +354,12 @@ class _DemandesScreenState extends State<DemandesScreen> {
             )
           else
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final item = _items[index];
-                  final resource = item['resource'] as Map<String, dynamic>? ?? {};
-                  return _buildDemandeCard(resource);
-                },
-                childCount: _items.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final item = _items[index];
+                final resource =
+                    item['resource'] as Map<String, dynamic>? ?? {};
+                return _buildDemandeCard(resource);
+              }, childCount: _items.length),
             ),
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
@@ -325,11 +371,15 @@ class _DemandesScreenState extends State<DemandesScreen> {
     final title = demande['title']?.toString() ?? 'Demande';
     final description = _stripHtml(demande['description']?.toString() ?? '');
     final category = demande['category']?.toString() ?? '';
-    final location = demande['location']?.toString() ?? demande['city']?.toString() ?? '';
+    final location =
+        demande['location']?.toString() ?? demande['city']?.toString() ?? '';
     final createdAt = demande['created_at']?.toString();
     final mediaFiles = demande['media'] as List? ?? [];
-    final imageUrl = mediaFiles.isNotEmpty ? mediaFiles.first['url']?.toString() : null;
-    final username = demande['user']?['email']?.toString().split('@').first ?? 'Utilisateur';
+    final imageUrl = mediaFiles.isNotEmpty
+        ? mediaFiles.first['url']?.toString()
+        : null;
+    final username =
+        demande['user']?['email']?.toString().split('@').first ?? 'Utilisateur';
 
     return DemandeCard(
       profileImage: 'assets/images/dashboard_particulier/Ellipse 10.png',

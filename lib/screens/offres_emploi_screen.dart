@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -30,7 +31,9 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
     });
 
     try {
-      final response = await ApiClient().get('/feed/latest?type=job_offer&limit=20');
+      final response = await ApiClient().get(
+        '/feed/latest?type=job_offer&limit=20',
+      );
       final data = response['data'];
       List<Map<String, dynamic>> fetched = [];
       if (data is Map<String, dynamic> && data['items'] is List) {
@@ -79,10 +82,15 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
 
   Widget _buildNotifBubble() {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+        );
+      },
       child: Container(
-        width: 36,
-        height: 36,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: const Color(0xFFE6F7EF),
@@ -112,7 +120,6 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 120,
             floating: false,
             pinned: true,
             snap: false,
@@ -150,11 +157,28 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                       bottom: false,
                       child: Padding(
                         padding: const EdgeInsets.only(
-                            left: 16, right: 16, bottom: 20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          left: 16,
+                          right: 16,
+                          bottom: 10,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: 8,
+                                right: 6,
+                              ),
+                              child: GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: const Icon(
+                                  Icons.arrow_back,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
+                            ),
                             const Text(
                               "Offres d'emploi",
                               style: TextStyle(
@@ -180,8 +204,11 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                               children: [
                                 GestureDetector(
                                   onTap: () => Navigator.pop(context),
-                                  child: const Icon(Icons.arrow_back,
-                                      color: Colors.white, size: 22),
+                                  child: const Icon(
+                                    Icons.arrow_back,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
                                 ),
                                 _buildNotifBubble(),
                               ],
@@ -192,15 +219,42 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                 );
               },
             ),
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.arrow_back,
-                    color: Colors.white, size: 22),
-              ),
-            ),
             actions: [
+              Container(
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF9E6),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFD700)),
+                ),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      'assets/images/profil_pro/reward.png',
+                      width: 12,
+                      height: 12,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      '145',
+                      style: TextStyle(
+                        color: Color(0xFFFFD700),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'My\'s',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: _buildNotifBubble(),
@@ -221,13 +275,11 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border:
-                            Border.all(color: Colors.grey.withOpacity(0.2)),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.search,
-                              color: Colors.grey[400], size: 20),
+                          Icon(Icons.search, color: Colors.grey[400], size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -250,11 +302,9 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border:
-                          Border.all(color: Colors.grey.withOpacity(0.2)),
+                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
                     ),
-                    child:
-                        Icon(Icons.tune, color: Colors.grey[500], size: 20),
+                    child: Icon(Icons.tune, color: Colors.grey[500], size: 20),
                   ),
                 ],
               ),
@@ -299,14 +349,12 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
             )
           else
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final item = _items[index];
-                  final resource = item['resource'] as Map<String, dynamic>? ?? {};
-                  return _buildJobCard(resource);
-                },
-                childCount: _items.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final item = _items[index];
+                final resource =
+                    item['resource'] as Map<String, dynamic>? ?? {};
+                return _buildJobCard(resource);
+              }, childCount: _items.length),
             ),
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
         ],
@@ -318,12 +366,16 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
     final companyName = job['company_name']?.toString() ?? 'Entreprise';
     final jobTitle = job['title']?.toString() ?? "Offre d'emploi";
     final description = _stripHtml(job['description']?.toString() ?? '');
-    final location = job['location']?.toString() ?? job['city']?.toString() ?? 'Non spécifié';
+    final location =
+        job['location']?.toString() ??
+        job['city']?.toString() ??
+        'Non spécifié';
     final contract = job['contract_type']?.toString() ?? '';
     final experience = job['experience_level']?.toString() ?? '';
     final salary = job['salary_label']?.toString() ?? job['salary']?.toString();
     final createdAt = job['created_at']?.toString();
-    final advantages = (job['advantages'] as List?)?.map((e) => e.toString()).toList() ?? [];
+    final advantages =
+        (job['advantages'] as List?)?.map((e) => e.toString()).toList() ?? [];
 
     final tags = <JobDetailTag>[
       if (contract.isNotEmpty)
@@ -333,7 +385,11 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
       if (experience.isNotEmpty)
         JobDetailTag(icon: Icons.work_history_outlined, text: experience),
       if (salary != null && salary.isNotEmpty)
-        JobDetailTag(icon: Icons.monetization_on_outlined, text: salary, isSpecial: true),
+        JobDetailTag(
+          icon: Icons.monetization_on_outlined,
+          text: salary,
+          isSpecial: true,
+        ),
     ];
 
     return JobAnnouncementCard(
@@ -349,7 +405,8 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
           context,
           MaterialPageRoute(
             builder: (context) => JobDetailScreen(
-              companyLogo: 'assets/images/dashboard_particulier/Rectangle 13.png',
+              companyLogo:
+                  'assets/images/dashboard_particulier/Rectangle 13.png',
               companyName: companyName,
               jobTitle: jobTitle,
               description: description,
