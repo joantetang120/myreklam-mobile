@@ -3705,6 +3705,31 @@ class _ParticulierDashboardScreenState
     return _loadUnifiedFeed(reset: true);
   }
 
+  Widget _buildNotifBubble() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+        );
+      },
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: const Color(0xFFE6F7EF),
+          border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
+        ),
+        child: const Icon(
+          Icons.notifications,
+          color: Color(0xFF2A8143),
+          size: 18,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -3714,11 +3739,136 @@ class _ParticulierDashboardScreenState
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
+            SliverAppBar(
+              floating: false,
+              pinned: true,
+              snap: false,
+              backgroundColor: const Color(0xFF2A8143),
+              automaticallyImplyLeading: false,
+              elevation: 0,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+              flexibleSpace: LayoutBuilder(
+                builder: (context, constraints) {
+                  final double appBarHeight = constraints.maxHeight;
+                  final double expandRatio =
+                      ((appBarHeight - kToolbarHeight) / (120 - kToolbarHeight))
+                          .clamp(0.0, 1.0);
+                  final bool isCollapsed = expandRatio < 0.1;
+
+                  return FlexibleSpaceBar(
+                    background: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFF2A8143), Color(0xFF3AAE5E)],
+                        ),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(30),
+                          bottomRight: Radius.circular(30),
+                        ),
+                      ),
+                      child: SafeArea(
+                        bottom: false,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 16, right: 16),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Image.asset(
+                                "assets/images/LOGO VERT.png",
+                                width: 130,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    titlePadding: EdgeInsets.zero,
+                    title: isCollapsed
+                        ? SafeArea(
+                            bottom: false,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => Navigator.pop(context),
+                                    child: const Icon(
+                                      Icons.arrow_back,
+                                      color: Colors.white,
+                                      size: 22,
+                                    ),
+                                  ),
+                                  _buildNotifBubble(),
+                                ],
+                              ),
+                            ),
+                          )
+                        : null,
+                  );
+                },
+              ),
+              actions: [
+                Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF9E6),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFFD700)),
+                  ),
+                  child: Row(
+                    children: [
+                      Image.asset(
+                        'assets/images/profil_pro/reward.png',
+                        width: 12,
+                        height: 12,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        '145',
+                        style: TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        'My\'s',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: _buildNotifBubble(),
+                ),
+              ],
+            ),
+
             SliverToBoxAdapter(
               child: Column(
                 children: [
-                  const SizedBox(height: 60),
-
+                  SizedBox(height: 20),
                   //story
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
