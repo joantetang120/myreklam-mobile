@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/bons_plans_screen.dart';
@@ -10,12 +11,17 @@ import 'package:myreklam/screens/demandes_screen.dart';
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({super.key});
 
-  Widget _buildNotifBubble() {
+  Widget _buildNotifBubble(BuildContext context) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+        );
+      },
       child: Container(
-        width: 36,
-        height: 36,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: const Color(0xFFE6F7EF),
@@ -35,7 +41,8 @@ class CategoriesScreen extends StatelessWidget {
     final List<_CategoryItem> categories = [
       _CategoryItem(
         title: 'Bons Plans',
-        description: 'consectetur adipiscing elit.altconsecteur adipiscing elit.',
+        description:
+            'consectetur adipiscing elit.altconsecteur adipiscing elit.',
         icon: Icons.card_giftcard_outlined,
         bgColor: const Color(0xFFFFE0B2).withOpacity(0.3),
         iconColor: const Color.fromARGB(255, 252, 116, 37),
@@ -48,7 +55,8 @@ class CategoriesScreen extends StatelessWidget {
       ),
       _CategoryItem(
         title: "Offre d'emploi",
-        description: 'consectetur adipiscing elit.altconsecteur adipiscing elit.',
+        description:
+            'consectetur adipiscing elit.altconsecteur adipiscing elit.',
         icon: Icons.work_outline,
         bgColor: const Color(0xFFB3E5FC).withOpacity(0.3),
         iconColor: Colors.lightBlueAccent,
@@ -61,7 +69,8 @@ class CategoriesScreen extends StatelessWidget {
       ),
       _CategoryItem(
         title: 'Formation',
-        description: 'consectetur adipiscing elit.altconsecteur adipiscing elit.',
+        description:
+            'consectetur adipiscing elit.altconsecteur adipiscing elit.',
         icon: Icons.school_outlined,
         bgColor: const Color(0xFFE1BEE7).withOpacity(0.2),
         iconColor: Colors.purple,
@@ -74,7 +83,8 @@ class CategoriesScreen extends StatelessWidget {
       ),
       _CategoryItem(
         title: 'Evènement',
-        description: 'consectetur adipiscing elit.altconsecteur adipiscing elit.',
+        description:
+            'consectetur adipiscing elit.altconsecteur adipiscing elit.',
         icon: Icons.event_outlined,
         bgColor: const Color(0xFFE6F7EF).withOpacity(0.5),
         iconColor: Colors.green,
@@ -87,7 +97,8 @@ class CategoriesScreen extends StatelessWidget {
       ),
       _CategoryItem(
         title: 'Demandes',
-        description: 'consectetur adipiscing elit.altconsecteur adipiscing elit.',
+        description:
+            'consectetur adipiscing elit.altconsecteur adipiscing elit.',
         icon: Icons.chat_outlined,
         bgColor: Color.fromARGB(255, 255, 250, 178).withOpacity(0.3),
         iconColor: const Color.fromARGB(255, 252, 231, 49),
@@ -113,7 +124,6 @@ class CategoriesScreen extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 120,
             floating: false,
             pinned: true,
             snap: false,
@@ -151,11 +161,28 @@ class CategoriesScreen extends StatelessWidget {
                       bottom: false,
                       child: Padding(
                         padding: const EdgeInsets.only(
-                            left: 16, right: 16, bottom: 20),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          left: 16,
+                          right: 16,
+                          bottom: 10,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: 8,
+                                right: 6,
+                              ),
+                              child: GestureDetector(
+                                onTap: () => Navigator.pop(context),
+                                child: const Icon(
+                                  Icons.arrow_back,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
+                            ),
                             const Text(
                               'Catégories',
                               style: TextStyle(
@@ -175,18 +202,19 @@ class CategoriesScreen extends StatelessWidget {
                       ? SafeArea(
                           bottom: false,
                           child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 GestureDetector(
                                   onTap: () => Navigator.pop(context),
-                                  child: const Icon(Icons.arrow_back,
-                                      color: Colors.white, size: 22),
+                                  child: const Icon(
+                                    Icons.arrow_back,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
                                 ),
-                                _buildNotifBubble(),
+                                _buildNotifBubble(context),
                               ],
                             ),
                           ),
@@ -195,57 +223,52 @@ class CategoriesScreen extends StatelessWidget {
                 );
               },
             ),
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.arrow_back,
-                    color: Colors.white, size: 22),
-              ),
-            ),
             actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: _buildNotifBubble(),
-              ),
-            ],
-          ),
-
-          // Search bar
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-              child: Container(
-                height: 44,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+              Container(
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: const Color(0xFFFFF9E6),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                  border: Border.all(color: const Color(0xFFFFD700)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.search, color: Colors.grey[400], size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Rechercher une catégorie',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 13,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                    Image.asset(
+                      'assets/images/profil_pro/reward.png',
+                      width: 12,
+                      height: 12,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      '145',
+                      style: TextStyle(
+                        color: Color(0xFFFFD700),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'My\'s',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: _buildNotifBubble(context),
+              ),
+            ],
           ),
 
           // Categories grid
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.only(left: 20, right: 20, top: 40),
             sliver: SliverGrid(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -253,60 +276,53 @@ class CategoriesScreen extends StatelessWidget {
                 mainAxisSpacing: 14,
                 childAspectRatio: 1.1,
               ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final cat = categories[index];
-                  return GestureDetector(
-                    onTap: cat.onTap,
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: cat.bgColor,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: cat.iconColor.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              cat.icon,
-                              color: cat.iconColor,
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            cat.title,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF616161),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            cat.description,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.grey[500],
-                              height: 1.4,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final cat = categories[index];
+                return GestureDetector(
+                  onTap: cat.onTap,
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: cat.bgColor,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  );
-                },
-                childCount: categories.length,
-              ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: cat.iconColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(cat.icon, color: cat.iconColor, size: 22),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          cat.title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF616161),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          cat.description,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[500],
+                            height: 1.4,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }, childCount: categories.length),
             ),
           ),
 
