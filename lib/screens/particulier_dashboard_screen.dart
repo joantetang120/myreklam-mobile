@@ -31,7 +31,11 @@ import 'package:myreklam/services/story_store.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/conversation_service.dart';
+import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/screens/image_preview_screen.dart';
+import 'package:myreklam/screens/public_profile_screen.dart';
+import 'package:myreklam/services/profile_service.dart';
+import 'package:myreklam/screens/suggested_users_screen.dart';
 
 class ParticulierDashboardScreen extends StatefulWidget {
   const ParticulierDashboardScreen({super.key});
@@ -95,17 +99,36 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
         ? '${widget.content.substring(0, _collapsedMaxLength)}...'
         : widget.content;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PostDetailFullScreen(
+              author: {
+                'displayName': widget.author.displayName,
+                'accountType': widget.author.accountType,
+                'avatar': widget.author.avatar,
+              },
+              content: widget.content,
+              timeAgo: widget.timeAgo,
+              mediaUrls: widget.mediaUrls,
+              reactionBar: widget.buildReactionBar(),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
+          ),
         ),
-      ),
-      child: Stack(
-        children: [
-          Column(
+        child: Stack(
+          children: [
+            Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header with author info
@@ -143,28 +166,56 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                     // Author row
                     Row(
                       children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundImage:
-                              widget.author.avatar.startsWith('http')
-                              ? NetworkImage(widget.author.avatar)
-                                    as ImageProvider
-                              : AssetImage(widget.author.avatar),
+                        GestureDetector(
+                          onTap: () {
+                            if (widget.author.id != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PublicProfileScreen(
+                                    userId: widget.author.id,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: CircleAvatar(
+                            radius: 20,
+                            backgroundImage:
+                                widget.author.avatar.startsWith('http')
+                                ? NetworkImage(widget.author.avatar)
+                                      as ImageProvider
+                                : AssetImage(widget.author.avatar),
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                widget.author.displayName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                  color: Color(0xFF333333),
+                              GestureDetector(
+                                onTap: () {
+                                  if (widget.author.id != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => PublicProfileScreen(
+                                          userId: widget.author.id,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  widget.author.displayName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: Color(0xFF333333),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                               Text(
                                 '${widget.author.accountType} • ${widget.timeAgo}',
@@ -245,8 +296,9 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildMediaSection(List<String> urls) {
     if (urls.isEmpty) return const SizedBox.shrink();
@@ -533,6 +585,206 @@ class _ParticulierDashboardScreenState
     _prefetchCurrentUser();
     _loadUnifiedFeed(reset: true);
     _storyStore.loadFeed();
+    _loadSuggestions();
+  }
+
+  List<dynamic> _suggestions = [];
+  bool _isLoadingSuggestions = false;
+  final ProfileService _profileService = ProfileService();
+
+  Future<void> _loadSuggestions() async {
+    if (!mounted) return;
+    setState(() => _isLoadingSuggestions = true);
+    try {
+      final suggestions = await _profileService.getSuggestions();
+      if (mounted) {
+        setState(() {
+          _suggestions = suggestions;
+          _isLoadingSuggestions = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading suggestions: $e');
+      if (mounted) setState(() => _isLoadingSuggestions = false);
+    }
+  }
+
+  Future<void> _toggleFollowSuggestion(int index) async {
+    final user = _suggestions[index];
+    final userId = user['id'].toString();
+    try {
+      await _profileService.followUser(userId);
+      if (mounted) {
+        setState(() {
+          _suggestions.removeAt(index);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Vous suivez maintenant ${user['particulier_profile']?['pseudo'] ?? user['pro_profile']?['company_name'] ?? 'cet utilisateur'}'),
+            backgroundColor: const Color(0xFF3AAE5E),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
+  Widget _buildSuggestedProfiles() {
+    if (_isLoadingSuggestions && _suggestions.isEmpty) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_suggestions.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Des profils qui pourraient t'intéresser",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2A2A2A),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SuggestedUsersScreen(),
+                    ),
+                  ).then((_) => _loadSuggestions());
+                },
+                child: const Text(
+                  "Voir tout",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF3AAE5E),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 200,
+          child: ListView.builder(
+            padding: const EdgeInsets.only(left: 20, right: 10),
+            scrollDirection: Axis.horizontal,
+            itemCount: _suggestions.length,
+            itemBuilder: (context, index) {
+              final user = _suggestions[index];
+              final isPro = user['account_type'] == 'pro';
+              final profile = isPro ? user['pro_profile'] : user['particulier_profile'];
+              final name = isPro 
+                  ? (profile?['company_name'] ?? 'Pro') 
+                  : (profile?['pseudo'] ?? 'Utilisateur');
+              final avatar = profile?['avatar_url'] ?? profile?['logo_url'];
+              final avatarUrl = _buildStorageUrl(avatar) ?? _defaultAvatar;
+
+              return Container(
+                width: 150,
+                margin: const EdgeInsets.only(right: 12, bottom: 5),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAFAFA),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.withOpacity(0.1)),
+                ),
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PublicProfileScreen(
+                              userId: user['id'].toString(),
+                            ),
+                          ),
+                        ).then((_) => _loadSuggestions());
+                      },
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundImage: avatarUrl.startsWith('http')
+                                ? NetworkImage(avatarUrl)
+                                : AssetImage(avatarUrl) as ImageProvider,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            name,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                            ),
+                            child: Text(
+                              isPro ? 'Pro' : 'Particulier',
+                              style: const TextStyle(fontSize: 10, color: Colors.grey),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 32,
+                      child: OutlinedButton(
+                        onPressed: () => _toggleFollowSuggestion(index),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF3AAE5E)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: const Text(
+                          "S'abonner",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF3AAE5E),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+      ],
+    );
   }
 
   @override
@@ -552,13 +804,17 @@ class _ParticulierDashboardScreenState
         _storyStore.addStory(result);
       }
     } else {
+      final ownGroups = _storyStore.feedNotifier.value.where((g) => g.isOwn).toList();
+      final myAvatar = ownGroups.isNotEmpty ? ownGroups.first.userAvatar : null;
+      final resolvedAvatar = ApiConfig.resolveMediaUrl(myAvatar);
+      
       await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => MyStoriesScreen(
             stories: _storyStore.stories,
             userName: 'Vous',
-            userAvatar: 'assets/images/dashboard_particulier/Ellipse 10.png',
+            userAvatar: resolvedAvatar ?? _defaultAvatar,
           ),
         ),
       );
@@ -747,13 +1003,10 @@ class _ParticulierDashboardScreenState
     final imageUrl = mediaFiles.isNotEmpty
         ? mediaFiles.first['url']?.toString()
         : null;
-
     return Container(
-      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -769,7 +1022,7 @@ class _ParticulierDashboardScreenState
             children: [
               // Title
               Padding(
-                padding: const EdgeInsets.only(right: 100),
+                padding: const EdgeInsets.fromLTRB(16, 16, 100, 0),
                 child: Text(
                   title,
                   style: const TextStyle(
@@ -783,118 +1036,136 @@ class _ParticulierDashboardScreenState
               ),
               const SizedBox(height: 8),
               // Description
-              _buildBonPlanDescription(bp),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _buildBonPlanDescription(bp),
+              ),
               // Image
               if (imageUrl != null) ...[
                 const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    _buildStorageUrl(imageUrl) ?? '',
-                    width: double.infinity,
-                    height: 180,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Container(
-                        height: 180,
-                        color: Colors.grey[100],
-                        child: const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                Image.network(
+                  _buildStorageUrl(imageUrl) ?? '',
+                  width: double.infinity,
+                  height: 220, // Slightly taller for better focus
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      height: 220,
+                      color: Colors.grey[100],
+                      child: const Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    );
+                  },
+                  errorBuilder: (_, error, ___) {
+                    debugPrint('Image load error: $error');
+                    return Container(
+                      height: 120,
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: Icon(
+                          Icons.image_not_supported,
+                          color: Colors.grey,
                         ),
-                      );
-                    },
-                    errorBuilder: (_, error, ___) {
-                      debugPrint('Image load error: $error');
-                      return Container(
-                        height: 100,
-                        color: Colors.grey[200],
-                        child: const Center(
-                          child: Icon(
-                            Icons.image_not_supported,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
               ],
               const SizedBox(height: 12),
               // Category & type tags
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  if (category.isNotEmpty)
-                    _buildBonPlanTag(category, Icons.local_offer_outlined),
-                  if (subCategory.isNotEmpty)
-                    _buildBonPlanTag(
-                      subCategory,
-                      Icons.subdirectory_arrow_right,
-                    ),
-                  if (type.isNotEmpty)
-                    _buildBonPlanTag(type, Icons.label_outline),
-                ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    if (category.isNotEmpty)
+                      _buildBonPlanTag(category, Icons.local_offer_outlined),
+                    if (subCategory.isNotEmpty)
+                      _buildBonPlanTag(
+                        subCategory,
+                        Icons.subdirectory_arrow_right,
+                      ),
+                    if (type.isNotEmpty)
+                      _buildBonPlanTag(type, Icons.label_outline),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               // Merchant + time
-              Row(
-                children: [
-                  if (merchantName.isNotEmpty) ...[
-                    Icon(
-                      Icons.store_outlined,
-                      size: 14,
-                      color: Colors.grey[500],
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        '$locationType chez $merchantName',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        overflow: TextOverflow.ellipsis,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    if (merchantName.isNotEmpty) ...[
+                      Icon(
+                        Icons.store_outlined,
+                        size: 14,
+                        color: Colors.grey[500],
                       ),
-                    ),
-                  ] else
-                    const Spacer(),
-                  if (createdAt != null) ...[
-                    Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
-                    const SizedBox(width: 4),
-                    Text(
-                      _buildTimeAgo(createdAt),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          '$locationType chez $merchantName',
+                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ] else
+                      const Spacer(),
+                    if (createdAt != null) ...[
+                      Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                      const SizedBox(width: 4),
+                      Text(
+                        _buildTimeAgo(createdAt),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
               const SizedBox(height: 12),
-              const Divider(height: 1),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Divider(height: 1),
+              ),
               const SizedBox(height: 10),
               if (bpId.isNotEmpty)
-                _buildReactionBar(
-                  'bon-plans',
-                  bpId,
-                  acceptedMessages: bp['accept_messages'] == true,
-                  authorData: bp['user'] as Map<String, dynamic>?,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildReactionBar(
+                    'bon-plans',
+                    bpId,
+                    acceptedMessages: bp['accept_messages'] == true,
+                    authorData: bp['user'] as Map<String, dynamic>?,
+                  ),
                 ),
               const SizedBox(height: 10),
-              const Divider(height: 1),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Divider(height: 1),
+              ),
               const SizedBox(height: 12),
               // CTA Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _navigateToBonPlanDetail(bp),
-                  icon: const Icon(Icons.visibility_outlined, size: 18),
-                  label: const Text('VOIR LE BON PLAN'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9800),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _navigateToBonPlanDetail(bp),
+                    icon: const Icon(Icons.visibility_outlined, size: 18),
+                    label: const Text('VOIR LE BON PLAN'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF9800),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 0,
                     ),
-                    elevation: 0,
                   ),
                 ),
               ),
@@ -951,26 +1222,43 @@ class _ParticulierDashboardScreenState
       advantages.add('Avantages non précisés');
     }
 
-    return Column(
-      children: [
-        JobAnnouncementCard(
-          companyLogo: 'assets/images/dashboard_particulier/Rectangle 13.png',
-          companyName: companyName,
-          jobTitle: jobTitle,
-          description: description.isNotEmpty
-              ? description
-              : 'Description non disponible.',
-          tags: tags,
-          advantages: advantages,
-          timeAgo: _buildTimeAgo(job['created_at']?.toString()),
-          onApply: () => _navigateToJobDetail(job),
-        ),
-        if (jobId.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-            child: _buildReactionBar('job-offers', jobId),
-          ),
-      ],
+    final user = job['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
+    
+    final avatarUrl = proProfile?['logo_url']?.toString() ?? 
+                      proProfile?['avatar_url']?.toString() ?? 
+                      particulierProfile?['avatar_url']?.toString() ?? 
+                      user?['avatar']?.toString();
+                      
+    final companyLogoUrl = _buildStorageUrl(avatarUrl) ?? 'assets/images/dashboard_particulier/Rectangle 13.png';
+
+    return JobAnnouncementCard(
+      companyLogo: companyLogoUrl,
+      companyName: companyName,
+      jobTitle: jobTitle,
+      description: description.isNotEmpty
+          ? description
+          : 'Description non disponible.',
+      tags: tags,
+      advantages: advantages,
+      timeAgo: _buildTimeAgo(job['created_at']?.toString()),
+      onApply: () => _navigateToJobDetail(job),
+      onAvatarTap: () {
+        if (user?['id'] != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PublicProfileScreen(
+                userId: user!['id'].toString(),
+              ),
+            ),
+          );
+        }
+      },
+      reactionBar: jobId.isNotEmpty
+          ? _buildReactionBar('job-offers', jobId)
+          : null,
     );
   }
 
@@ -1002,32 +1290,56 @@ class _ParticulierDashboardScreenState
         FormationTag(icon: Icons.euro, text: '$price €', isSpecial: true),
     ];
 
-    return Column(
-      children: [
-        FormationCard(
-          companyLogo: 'assets/images/Formation.png',
-          companyName: provider,
-          formationTitle: title,
-          description: description.isNotEmpty
-              ? description
-              : 'Description non disponible.',
-          tags: tags,
-          timeAgo: _buildTimeAgo(training['created_at']?.toString()),
-          onApply: () => _navigateToTrainingDetail(training),
-        ),
-        if (trainingId.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-            child: _buildReactionBar('trainings', trainingId),
-          ),
-      ],
+    final user = training['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
+    
+    final avatarUrl = proProfile?['logo_url']?.toString() ?? 
+                      proProfile?['avatar_url']?.toString() ?? 
+                      particulierProfile?['avatar_url']?.toString() ?? 
+                      user?['avatar']?.toString();
+                      
+    final companyLogoUrl = _buildStorageUrl(avatarUrl) ?? 'assets/images/Formation.png';
+
+    return FormationCard(
+      companyLogo: companyLogoUrl,
+      companyName: provider,
+      formationTitle: title,
+      description: description.isNotEmpty
+          ? description
+          : 'Description non disponible.',
+      tags: tags,
+      timeAgo: _buildTimeAgo(training['created_at']?.toString()),
+      onApply: () => _navigateToTrainingDetail(training),
+      onAvatarTap: () {
+        if (user?['id'] != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PublicProfileScreen(
+                userId: user!['id'].toString(),
+              ),
+            ),
+          );
+        }
+      },
+      reactionBar: trainingId.isNotEmpty
+          ? _buildReactionBar('trainings', trainingId)
+          : null,
     );
   }
 
   Widget _buildEventFeedCard(Map<String, dynamic> event) {
     final user = event['user'] as Map<String, dynamic>?;
-    final profileImage =
-        _buildStorageUrl(user?['avatar']?.toString()) ?? _defaultAvatar;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
+    
+    final avatarUrl = proProfile?['logo_url']?.toString() ?? 
+                      proProfile?['avatar_url']?.toString() ?? 
+                      particulierProfile?['avatar_url']?.toString() ?? 
+                      user?['avatar']?.toString();
+                      
+    final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
     final username = user?['name']?.toString() ?? 'Organisateur';
     final eventTitle = event['title']?.toString() ?? 'Évènement';
     final eventImage =
@@ -1046,30 +1358,36 @@ class _ParticulierDashboardScreenState
 
     final eventId = event['id']?.toString() ?? '';
 
-    return Column(
-      children: [
-        EvenementCard(
-          profileImage: profileImage,
-          username: username,
-          userType: 'Évènement',
-          eventTitle: eventTitle,
-          eventImage: eventImage,
-          badge: event['status']?.toString(),
-          categories: categories.isNotEmpty ? categories : ['Général'],
-          eventDate: _formatEventDate(event),
-          location: coverageArea,
-          timeAgo: _buildTimeAgo(event['created_at']?.toString()),
-          price: price,
-          likesCount: _asInt(event['likes_count']),
-          commentsCount: _asInt(event['comments_count']),
-          onTapCTA: () => _navigateToEventDetail(event),
-        ),
-        if (eventId.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
-            child: _buildReactionBar('events', eventId),
-          ),
-      ],
+    return EvenementCard(
+      profileImage: profileImage,
+      username: username,
+      userType: 'Évènement',
+      eventTitle: eventTitle,
+      eventImage: eventImage,
+      badge: event['status']?.toString(),
+      categories: categories.isNotEmpty ? categories : ['Général'],
+      eventDate: _formatEventDate(event),
+      location: coverageArea,
+      timeAgo: _buildTimeAgo(event['created_at']?.toString()),
+      price: price,
+      likesCount: _asInt(event['likes_count']),
+      commentsCount: _asInt(event['comments_count']),
+      onTapCTA: () => _navigateToEventDetail(event),
+      onAvatarTap: () {
+        if (user?['id'] != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PublicProfileScreen(
+                userId: user!['id'].toString(),
+              ),
+            ),
+          );
+        }
+      },
+      reactionBar: eventId.isNotEmpty
+          ? _buildReactionBar('events', eventId)
+          : null,
     );
   }
 
@@ -1084,6 +1402,7 @@ class _ParticulierDashboardScreenState
     // Avatar : particulier_profile.avatar_url ou pro_profile.logo_url
     final avatarUrl =
         particulierProfile?['avatar_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
         proProfile?['logo_url']?.toString();
     final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
 
@@ -1124,6 +1443,18 @@ class _ParticulierDashboardScreenState
       commentsCount: _asInt(demande['comments_count']),
       timeAgo: _buildTimeAgo(demande['created_at']?.toString()),
       onTapCTA: () => _navigateToDemandeDetail(demande),
+      onAvatarTap: () {
+        if (user?['id'] != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PublicProfileScreen(
+                userId: user!['id'].toString(),
+              ),
+            ),
+          );
+        }
+      },
       reactionBar: demandeId.isNotEmpty
           ? _buildReactionBar(
               'demandes',
@@ -2656,7 +2987,13 @@ class _ParticulierDashboardScreenState
         ? 'Professionnel'
         : 'Particulier';
 
+    final particulierProfile = authorMap?['particulier_profile'] as Map<String, dynamic>?;
+    final proProfile = authorMap?['pro_profile'] as Map<String, dynamic>?;
+
     final avatarCandidates = [
+      particulierProfile?['avatar_url'],
+      proProfile?['avatar_url'],
+      proProfile?['logo_url'],
       authorMap?['avatar_url'],
       authorMap?['avatar'],
       authorMap?['photo'],
@@ -3621,7 +3958,7 @@ class _ParticulierDashboardScreenState
       authorAvatar = particulierProfile['avatar_url']?.toString();
     } else if (authorData['pro_profile'] != null) {
       final proProfile = authorData['pro_profile'] as Map<String, dynamic>;
-      authorAvatar = proProfile['avatar_url']?.toString();
+      authorAvatar = proProfile['avatar_url']?.toString() ?? proProfile['logo_url']?.toString();
     }
 
     if (authorId == null || authorId.isEmpty) {
@@ -3920,11 +4257,13 @@ class _ParticulierDashboardScreenState
                                                 ),
                                               ),
                                               child: hasOwnStories
-                                                  ? const CircleAvatar(
+                                                  ? CircleAvatar(
                                                       radius: 22,
-                                                      backgroundImage: AssetImage(
-                                                        'assets/images/dashboard_particulier/Ellipse 10.png',
-                                                      ),
+                                                      backgroundImage: (ownGroup.first.userAvatar != null && ownGroup.first.userAvatar!.isNotEmpty)
+                                                          ? NetworkImage(ApiConfig.resolveMediaUrl(ownGroup.first.userAvatar)!) as ImageProvider
+                                                          : const AssetImage(
+                                                              _defaultAvatar,
+                                                            ),
                                                     )
                                                   : const Center(
                                                       child: Icon(
@@ -4139,6 +4478,8 @@ class _ParticulierDashboardScreenState
                   ),
 
                   const SizedBox(height: 24),
+
+                  _buildSuggestedProfiles(),
 
                   _buildFeedSection(),
                 ],

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:myreklam/services/api_client.dart';
 
 class ProfileService {
@@ -71,8 +72,53 @@ class ProfileService {
     return await _api.authenticatedGet('/profile/me');
   }
 
+  /// GET /api/profile/{userId}
+  Future<Map<String, dynamic>> getUserProfile(String userId) async {
+    return await _api.authenticatedGet('/profile/$userId');
+  }
+
+  /// POST /api/profile/{userId}/follow
+  Future<Map<String, dynamic>> followUser(String userId) async {
+    return await _api.authenticatedPost('/profile/$userId/follow');
+  }
+
+  /// DELETE /api/profile/{userId}/unfollow
+  Future<Map<String, dynamic>> unfollowUser(String userId) async {
+    return await _api.authenticatedDelete('/profile/$userId/unfollow');
+  }
+
   /// PUT /api/profile/me
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> fields) async {
     return await _api.authenticatedPut('/profile/me', body: fields);
+  }
+
+  /// POST /api/profile/avatar
+  Future<Map<String, dynamic>> uploadAvatar(File imageFile) async {
+    return await _api.authenticatedMultipart(
+      '/profile/avatar',
+      file: imageFile,
+      fileField: 'image',
+    );
+  }
+
+  /// GET /api/profile/{userId}/followers
+  Future<List<dynamic>> getFollowers(String userId) async {
+    final response = await _api.authenticatedGet('/profile/$userId/followers');
+    return response['data'] ?? [];
+  }
+
+  /// GET /api/profile/{userId}/following
+  Future<List<dynamic>> getFollowing(String userId) async {
+    final response = await _api.authenticatedGet('/profile/$userId/following');
+    return response['data'] ?? [];
+  }
+
+  Future<List<dynamic>> getSuggestions({String? query}) async {
+    String url = '/profile/suggestions';
+    if (query != null && query.isNotEmpty) {
+      url += '?query=${Uri.encodeComponent(query)}';
+    }
+    final response = await _api.authenticatedGet(url);
+    return response['data'] ?? [];
   }
 }

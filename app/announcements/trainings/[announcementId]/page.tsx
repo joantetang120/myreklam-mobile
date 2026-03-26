@@ -281,14 +281,19 @@ export default function TrainingPage({ params }: { params: Promise<{ announcemen
 
     setIsContactingLoading(true)
     try {
-      const conversationId = await startConversation(announcementId)
+      if (!training?.userId) {
+        toastError("Impossible de contacter cet utilisateur")
+        return
+      }
+      
+      const conversationId = await startConversation(training.userId)
 
       if (!conversationId) {
         toastError("Erreur lors du démarrage de la conversation")
         return
       }
 
-      router.push(`/messages?conversation=${conversationId}`)
+      router.push(`/messages?action=conversation&conversationId=${conversationId}`)
       toastSuccess("Conversation démarrée")
     } catch (error) {
       toastError("Erreur lors du démarrage de la conversation")

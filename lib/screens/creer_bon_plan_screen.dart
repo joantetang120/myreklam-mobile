@@ -1198,11 +1198,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         return 'La date de fin doit être postérieure à la date de début.';
       }
     }
-    // if (_locationController.text.trim().isEmpty && !_touteFrance) {
-    //   return 'Renseignez une ville ou activez "Toute la France".';
-    // }
-    if (!_touteFrance) {
-      return 'Renseignez une ville ou activez "Toute la France".';
+    if (!_isOnlineOnly) {
+      if (_locationController.text.trim().isEmpty && !_touteFrance) {
+        return 'Renseignez une ville ou activez "Toute la France".';
+      }
     }
     if (!_moyenRetraitMagasin && !_moyenRetraitEnLigne && !_moyenRetraitDrive) {
       return 'Sélectionnez au moins un moyen de retrait.';

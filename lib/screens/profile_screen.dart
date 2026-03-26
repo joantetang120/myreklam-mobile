@@ -1,4 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -33,6 +37,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
   String? _pseudo;
   String? _avatarUrl;
+  int _followersCount = 0;
+  int _followingCount = 0;
+  int _postsCount = 0;
+  String? _userId;
 
   @override
   void initState() {
@@ -46,6 +54,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
 
       setState(() {
+        if (response['user'] != null) {
+          _userId = response['user']['id']?.toString();
+          _followersCount = response['user']['followers_count'] ?? 0;
+          _followingCount = response['user']['following_count'] ?? 0;
+          _postsCount = response['user']['posts_count'] ?? 0;
+        }
         if (response['profile'] != null) {
           _pseudo = response['profile']['pseudo'];
           _avatarUrl = response['profile']['avatar_url'];
@@ -55,6 +69,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    await Permission.photos.request();
+    // We ignore denied for modern Android (Android 13+) which uses the photo picker
+
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+      if (pickedFile != null) {
+        final croppedFile = await ImageCropper().cropImage(
+          sourcePath: pickedFile.path,
+          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+          compressFormat: ImageCompressFormat.jpg,
+          compressQuality: 80,
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Ajuster l\'Avatar',
+              toolbarColor: const Color(0xFF3AAE5E),
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.square,
+              lockAspectRatio: true,
+            ),
+            IOSUiSettings(
+              title: 'Ajuster l\'Avatar',
+            ),
+          ],
+        );
+
+        if (croppedFile != null) {
+          setState(() => _isLoading = true);
+          
+          final file = File(croppedFile.path);
+          final response = await _profileService.uploadAvatar(file);
+          
+          if (response['success'] == true && response['avatar_url'] != null) {
+            setState(() {
+              _avatarUrl = response['avatar_url'];
+            });
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Avatar mis à jour avec succès!'),
+                  backgroundColor: Color(0xFF3AAE5E),
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -116,7 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   MaterialPageRoute(
                     builder: (context) => const NotificationsScreen(),
                   ),
-                );
+                ).then((_) => _loadProfile());
               },
               child: Stack(
                 clipBehavior: Clip.none,
@@ -163,8 +240,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
+      body: RefreshIndicator(
+        onRefresh: _loadProfile,
+        color: const Color(0xFF3AAE5E),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
           children: [
             const SizedBox(height: 20),
             Padding(
@@ -194,17 +275,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Positioned(
                         bottom: 0,
                         right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF3AAE5E),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: const Icon(
-                            Icons.add,
-                            color: Colors.white,
-                            size: 14,
+                        child: GestureDetector(
+                          onTap: _pickAndUploadAvatar,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3AAE5E),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 14,
+                            ),
                           ),
                         ),
                       ),
@@ -312,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       );
                     },
-                    child: _buildStatColumn('0', 'Post(s)'),
+                    child: _buildStatColumn(_postsCount.toString(), 'Post(s)'),
                   ),
                   Container(width: 1, height: 40, color: Colors.grey[300]),
                   GestureDetector(
@@ -320,11 +404,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const FollowersScreen(),
+                          builder: (context) => FollowersScreen(
+                            userId: _userId,
+                          ),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
-                    child: _buildStatColumn('0', 'Follower(s)'),
+                    child: _buildStatColumn(_followersCount.toString(), 'Follower(s)'),
                   ),
                   Container(width: 1, height: 40, color: Colors.grey[300]),
                   GestureDetector(
@@ -332,13 +418,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const FollowersScreen(
+                          builder: (context) => FollowersScreen(
+                            userId: _userId,
                             initialShowFollowers: false,
                           ),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
-                    child: _buildStatColumn('0', 'Suivi(s)'),
+                    child: _buildStatColumn(_followingCount.toString(), 'Suivi(s)'),
                   ),
                 ],
               ),
@@ -357,7 +444,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             builder: (context) => const PublierScreen(),
                             fullscreenDialog: true,
                           ),
-                        );
+                        ).then((_) => _loadProfile());
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFEF8A40),
@@ -394,7 +481,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           MaterialPageRoute(
                             builder: (context) => const PublicProfileScreen(),
                           ),
-                        );
+                        ).then((_) => _loadProfile());
                       },
                       icon: const Icon(Icons.visibility_outlined, size: 14),
                       label: const Text(
@@ -524,7 +611,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         MaterialPageRoute(
                           builder: (context) => const EspaceCandidatScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -540,7 +627,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         MaterialPageRoute(
                           builder: (context) => const RecompensesScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -555,7 +642,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         MaterialPageRoute(
                           builder: (context) => const ParrainageScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                   _buildMenuCard(
@@ -571,7 +658,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           builder: (context) =>
                               const MonProfilParticulierScreen(),
                         ),
-                      );
+                      ).then((_) => _loadProfile());
                     },
                   ),
                 ],
@@ -604,8 +691,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildMenuCard({
     required String icon,

@@ -83,7 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             top: 0,
             left: 0,
             right: 0,
-            height: MediaQuery.of(context).size.height * 0.4,
+            height: MediaQuery.of(context).size.height * 0.3,
             child: Container(
               color: const Color(0xFF1B8D4B),
               child: Image.asset(
@@ -98,7 +98,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 50),
+                const SizedBox(height: 30),
                 Center(
                   child: Image.asset(
                     'assets/images/LOGO VERT.png',
@@ -113,7 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: MediaQuery.of(context).size.height * 0.78,
+              height: MediaQuery.of(context).size.height * 0.82,
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(

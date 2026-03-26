@@ -14,6 +14,7 @@ class DemandeCard extends StatelessWidget {
   final String timeAgo;
   final VoidCallback? onTapCTA;
   final Widget? reactionBar;
+  final VoidCallback? onAvatarTap;
 
   const DemandeCard({
     super.key,
@@ -30,16 +31,16 @@ class DemandeCard extends StatelessWidget {
     required this.timeAgo,
     this.onTapCTA,
     this.reactionBar,
+    this.onAvatarTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -57,22 +58,28 @@ class DemandeCard extends StatelessWidget {
           // Header
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: _buildImageProvider(profileImage),
-                backgroundColor: Colors.grey[200],
+              GestureDetector(
+                onTap: onAvatarTap,
+                child: CircleAvatar(
+                  radius: 24,
+                  backgroundImage: _buildImageProvider(profileImage),
+                  backgroundColor: Colors.grey[200],
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      username,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
+                    GestureDetector(
+                      onTap: onAvatarTap,
+                      child: Text(
+                        username,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF616161),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -100,21 +107,7 @@ class DemandeCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Row(
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    color: Colors.grey.withOpacity(0.7),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Icon(
-                    Icons.close,
-                    color: Colors.grey.withOpacity(0.7),
-                    size: 20,
-                  ),
-                ],
-              ),
+              const Spacer(),
             ],
           ),
           const SizedBox(height: 18),

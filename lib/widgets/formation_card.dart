@@ -8,6 +8,8 @@ class FormationCard extends StatelessWidget {
   final List<FormationTag> tags;
   final String timeAgo;
   final VoidCallback? onApply;
+  final Widget? reactionBar;
+  final VoidCallback? onAvatarTap;
 
   const FormationCard({
     super.key,
@@ -18,30 +20,17 @@ class FormationCard extends StatelessWidget {
     required this.tags,
     required this.timeAgo,
     this.onApply,
+    this.reactionBar,
+    this.onAvatarTap,
   });
-
-  Widget _buildHeaderIcon(IconData icon, {required VoidCallback onPressed}) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(icon, color: Colors.grey.withOpacity(0.7), size: 20),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -59,15 +48,20 @@ class FormationCard extends StatelessWidget {
           // Header
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                  image: DecorationImage(
-                    image: AssetImage(companyLogo),
-                    fit: BoxFit.contain,
+              GestureDetector(
+                onTap: onAvatarTap,
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    image: DecorationImage(
+                      image: companyLogo.startsWith('http')
+                          ? NetworkImage(companyLogo)
+                          : AssetImage(companyLogo) as ImageProvider,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
@@ -76,14 +70,17 @@ class FormationCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      companyName,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
+                    GestureDetector(
+                      onTap: onAvatarTap,
+                      child: Text(
+                        companyName,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF616161),
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Container(
@@ -110,15 +107,7 @@ class FormationCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Row(
-                children: [
-                  _buildHeaderIcon(Icons.favorite_border, onPressed: () {}),
-                  const SizedBox(width: 8),
-                  _buildHeaderIcon(Icons.share_outlined, onPressed: () {}),
-                  const SizedBox(width: 8),
-                  _buildHeaderIcon(Icons.close, onPressed: () {}),
-                ],
-              ),
+              const Spacer(),
             ],
           ),
           const SizedBox(height: 20),
@@ -186,6 +175,15 @@ class FormationCard extends StatelessWidget {
               ),
             ],
           ),
+          if (reactionBar != null) ...[
+            const SizedBox(height: 20),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            reactionBar!,
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+          ],
+          const SizedBox(height: 10),
         ],
       ),
           Positioned(
