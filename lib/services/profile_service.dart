@@ -121,4 +121,22 @@ class ProfileService {
     final response = await _api.authenticatedGet(url);
     return response['data'] ?? [];
   }
+
+  /// GET /api/profile/pseudo/check?pseudo=xxx
+  Future<Map<String, dynamic>> checkPseudo(String pseudo) async {
+    final encodedPseudo = Uri.encodeComponent(pseudo);
+    return await _api.authenticatedGet('/profile/pseudo/check?pseudo=$encodedPseudo');
+  }
+
+  /// GET /api/profile/pseudo/suggestions?pseudo=xxx
+  Future<List<String>> getPseudoSuggestions(String pseudo) async {
+    final encodedPseudo = Uri.encodeComponent(pseudo);
+    final response = await _api.authenticatedGet('/profile/pseudo/suggestions?pseudo=$encodedPseudo');
+    return (response['suggestions'] as List?)?.map((s) => s.toString()).toList() ?? [];
+  }
+
+  /// GET /api/profile/me/pseudo-limit
+  Future<Map<String, dynamic>> getPseudoChangeLimit() async {
+    return await _api.authenticatedGet('/profile/me/pseudo-limit');
+  }
 }

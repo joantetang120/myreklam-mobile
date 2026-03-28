@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -16,6 +17,17 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
   late TabController _tabController;
   final _profileService = ProfileService();
   bool _isLoading = true;
+
+  // Pseudo validation state
+  Timer? _pseudoDebounceTimer;
+  bool _isCheckingPseudo = false;
+  bool? _pseudoIsAvailable;
+  String _pseudoErrorMessage = '';
+  List<String> _pseudoSuggestions = [];
+  int _pseudoChangeCount = 0;
+  int _maxPseudoChanges = 3;
+  bool _pseudoChangeLimitReached = false;
+  String? _originalPseudo;
 
   final TextEditingController _pseudoController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -37,6 +49,85 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadProfileData();
+    _loadPseudoChangeLimit();
+    _pseudoController.addListener(_onPseudoChanged);
+  }
+
+  Future<void> _loadPseudoChangeLimit() async {
+    try {
+      final response = await _profileService.getPseudoChangeLimit();
+      if (!mounted) return;
+
+      if (response['success'] == true && response['data'] != null) {
+        final data = response['data'];
+        setState(() {
+          _pseudoChangeCount = data['current_changes'] ?? 0;
+          _maxPseudoChanges = data['max_changes'] ?? 3;
+          _pseudoChangeLimitReached = data['can_change'] == false;
+        });
+      }
+    } catch (e) {
+      // Silent fail - use defaults
+    }
+  }
+
+  void _onPseudoChanged() {
+    // Cancel any pending timer
+    _pseudoDebounceTimer?.cancel();
+
+    final newPseudo = _pseudoController.text.trim();
+
+    // Skip if empty or same as original
+    if (newPseudo.isEmpty || newPseudo == _originalPseudo) {
+      setState(() {
+        _pseudoIsAvailable = null;
+        _pseudoErrorMessage = '';
+        _pseudoSuggestions = [];
+      });
+      return;
+    }
+
+    // Set debounce timer
+    _pseudoDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+      _checkPseudoAvailability(newPseudo);
+    });
+  }
+
+  Future<void> _checkPseudoAvailability(String pseudo) async {
+    if (pseudo.isEmpty) return;
+
+    setState(() => _isCheckingPseudo = true);
+
+    try {
+      final response = await _profileService.checkPseudo(pseudo);
+      if (!mounted) return;
+
+      final available = response['available'] ?? false;
+      final suggestions = (response['suggestions'] as List?)?.map((s) => s.toString()).toList() ?? [];
+
+      setState(() {
+        _isCheckingPseudo = false;
+        _pseudoIsAvailable = available;
+        _pseudoErrorMessage = available ? '' : 'Ce pseudo est déjà utilisé.';
+        _pseudoSuggestions = suggestions;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isCheckingPseudo = false;
+        _pseudoIsAvailable = null;
+        _pseudoErrorMessage = '';
+      });
+    }
+  }
+
+  void _selectSuggestion(String suggestion) {
+    _pseudoController.text = suggestion;
+    setState(() {
+      _pseudoIsAvailable = true;
+      _pseudoErrorMessage = '';
+      _pseudoSuggestions = [];
+    });
   }
 
   Future<void> _loadProfileData() async {
@@ -48,7 +139,8 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         final profile = response['profile'];
         final user = response['user'];
         setState(() {
-          _pseudoController.text = profile['pseudo'] ?? '';
+          _originalPseudo = profile['pseudo']?.toString() ?? '';
+          _pseudoController.text = _originalPseudo ?? '';
           _emailController.text = user != null ? (user['email'] ?? '') : '';
           _phoneController.text = profile['phone'] ?? '';
           _presentationController.text = profile['bio'] ?? '';
@@ -110,7 +202,9 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
 
   @override
   void dispose() {
+    _pseudoDebounceTimer?.cancel();
     _tabController.dispose();
+    _pseudoController.removeListener(_onPseudoChanged);
     _pseudoController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -258,11 +352,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         children: [
           _buildSectionHeader(Icons.person_outline, 'Informations Personnelle'),
           const SizedBox(height: 16),
-          _buildTextField(
-            label: 'Pseudo',
-            controller: _pseudoController,
-            icon: Icons.person_outline,
-          ),
+          _buildPseudoField(),
           const SizedBox(height: 16),
           _buildTextField(
             label: 'Adresse email',
@@ -291,7 +381,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             },
           ),
           const SizedBox(height: 24),
-          _buildSectionHeader(Icons.description_outlined, 'Presentation'),
+          _buildSectionHeader(Icons.description_outlined, 'Bio'),
           const SizedBox(height: 16),
           _buildTextArea(
             controller: _presentationController,
@@ -300,6 +390,158 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
           const SizedBox(height: 20),
         ],
       ),
+    );
+  }
+
+  Widget _buildPseudoField() {
+    // Determine border color based on validation state
+    Color borderColor = Colors.grey.withOpacity(0.2);
+    if (_pseudoIsAvailable == true) {
+      borderColor = const Color(0xFF3AAE5E);
+    } else if (_pseudoIsAvailable == false) {
+      borderColor = Colors.red;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Label
+        Row(
+          children: [
+            Icon(Icons.person_outline, size: 16, color: Colors.grey[400]),
+            const SizedBox(width: 8),
+            Text(
+              'Pseudo',
+              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+            ),
+            const Spacer(),
+            // Change limit indicator
+            if (_pseudoChangeCount > 0)
+              Text(
+                '$_pseudoChangeCount/$_maxPseudoChanges changements',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: _pseudoChangeLimitReached ? Colors.red : Colors.grey[500],
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Pseudo input field
+        Container(
+          decoration: BoxDecoration(
+            color: _pseudoChangeLimitReached ? Colors.grey[100] : Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: borderColor, width: _pseudoIsAvailable != null ? 2 : 1),
+          ),
+          child: TextField(
+            controller: _pseudoController,
+            enabled: !_pseudoChangeLimitReached,
+            style: TextStyle(
+              fontSize: 14,
+              color: _pseudoChangeLimitReached ? Colors.grey : const Color(0xFF424242),
+            ),
+            decoration: InputDecoration(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: InputBorder.none,
+              suffixIcon: _isCheckingPseudo
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : _pseudoIsAvailable == true
+                      ? const Icon(Icons.check_circle, color: Color(0xFF3AAE5E))
+                      : _pseudoIsAvailable == false
+                          ? const Icon(Icons.error, color: Colors.red)
+                          : null,
+            ),
+          ),
+        ),
+
+        // Error message
+        if (_pseudoErrorMessage.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              _pseudoErrorMessage,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ),
+
+        // Suggestions when pseudo is taken
+        if (_pseudoSuggestions.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Suggestions disponibles:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF3AAE5E),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  children: _pseudoSuggestions.map((suggestion) {
+                    return GestureDetector(
+                      onTap: () => _selectSuggestion(suggestion),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE6F7EF),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFF3AAE5E)),
+                        ),
+                        child: Text(
+                          suggestion,
+                          style: const TextStyle(
+                            color: Color(0xFF3AAE5E),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+
+        // Change limit warning
+        if (_pseudoChangeLimitReached)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.lock, color: Colors.red, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Vous avez atteint la limite de $_maxPseudoChanges changements de pseudo.',
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 

@@ -36,6 +36,7 @@ import 'package:myreklam/screens/image_preview_screen.dart';
 import 'package:myreklam/screens/public_profile_screen.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/screens/suggested_users_screen.dart';
+import 'package:myreklam/screens/search_screen.dart';
 
 class ParticulierDashboardScreen extends StatefulWidget {
   const ParticulierDashboardScreen({super.key});
@@ -283,16 +284,6 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                 const SizedBox(height: 12),
               ],
             ],
-          ),
-          // Type tag in top-right corner
-          Positioned(
-            top: 0,
-            right: 0,
-            child: widget.buildTypeTag(
-              'Post',
-              const Color(0xFF0A66C2),
-              Icons.article_outlined,
-            ),
           ),
         ],
       ),
@@ -681,7 +672,7 @@ class _ParticulierDashboardScreenState
           ),
         ),
         SizedBox(
-          height: 200,
+          height: 160,
           child: ListView.builder(
             padding: const EdgeInsets.only(left: 20, right: 10),
             scrollDirection: Axis.horizontal,
@@ -697,12 +688,12 @@ class _ParticulierDashboardScreenState
               final avatarUrl = _buildStorageUrl(avatar) ?? _defaultAvatar;
 
               return Container(
-                width: 150,
-                margin: const EdgeInsets.only(right: 12, bottom: 5),
-                padding: const EdgeInsets.all(12),
+                width: 110,
+                margin: const EdgeInsets.only(right: 10, bottom: 5),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFAFAFA),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: Colors.grey.withOpacity(0.1)),
                 ),
                 child: Column(
@@ -721,16 +712,16 @@ class _ParticulierDashboardScreenState
                       child: Column(
                         children: [
                           CircleAvatar(
-                            radius: 30,
+                            radius: 24,
                             backgroundImage: avatarUrl.startsWith('http')
                                 ? NetworkImage(avatarUrl)
                                 : AssetImage(avatarUrl) as ImageProvider,
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Text(
                             name,
                             style: const TextStyle(
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                             maxLines: 1,
@@ -739,7 +730,7 @@ class _ParticulierDashboardScreenState
                           ),
                           const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(4),
@@ -747,7 +738,7 @@ class _ParticulierDashboardScreenState
                             ),
                             child: Text(
                               isPro ? 'Pro' : 'Particulier',
-                              style: const TextStyle(fontSize: 10, color: Colors.grey),
+                              style: const TextStyle(fontSize: 9, color: Colors.grey),
                             ),
                           ),
                         ],
@@ -756,20 +747,20 @@ class _ParticulierDashboardScreenState
                     const Spacer(),
                     SizedBox(
                       width: double.infinity,
-                      height: 32,
+                      height: 28,
                       child: OutlinedButton(
                         onPressed: () => _toggleFollowSuggestion(index),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFF3AAE5E)),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           padding: EdgeInsets.zero,
                         ),
                         child: const Text(
-                          "S'abonner",
+                          'Suivre',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             color: Color(0xFF3AAE5E),
                             fontWeight: FontWeight.w600,
                           ),
@@ -999,10 +990,21 @@ class _ParticulierDashboardScreenState
     final merchantName = bp['available_at_name']?.toString() ?? '';
     final locationType = bp['available_location_type']?.toString() ?? '';
     final createdAt = bp['created_at']?.toString();
-    final mediaFiles = bp['media_files'] as List? ?? [];
-    final imageUrl = mediaFiles.isNotEmpty
-        ? mediaFiles.first['url']?.toString()
-        : null;
+    // Support both media_files (from BonPlanController) and media (from FeedController)
+    final mediaFiles = (bp['media_files'] as List? ?? [])..addAll(bp['media'] as List? ?? []);
+    final imageUrls = mediaFiles
+        .where((m) => m['type'] == 'image' || m['type'] == null)
+        .map((m) {
+          final url = m['url']?.toString() ?? '';
+          if (url.isEmpty) return '';
+          // If URL is already complete (http/https), use it as-is
+          if (url.startsWith('http')) return url;
+          // Otherwise use the storage URL builder
+          return _buildStorageUrl(url) ?? '';
+        })
+        .where((url) => url.isNotEmpty)
+        .toList();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -1020,6 +1022,23 @@ class _ParticulierDashboardScreenState
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Image carousel at top
+              if (imageUrls.isNotEmpty)
+                _buildBonPlanImageCarousel(imageUrls)
+              else
+                Container(
+                  height: 120,
+                  width: double.infinity,
+                  color: Colors.grey[100],
+                  child: Center(
+                    child: Icon(
+                      Icons.card_giftcard,
+                      size: 48,
+                      color: Colors.grey[300],
+                    ),
+                  ),
+                ),
+              
               // Title
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 100, 0),
@@ -1035,45 +1054,14 @@ class _ParticulierDashboardScreenState
                 ),
               ),
               const SizedBox(height: 8),
+              
               // Description
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _buildBonPlanDescription(bp),
               ),
-              // Image
-              if (imageUrl != null) ...[
-                const SizedBox(height: 12),
-                Image.network(
-                  _buildStorageUrl(imageUrl) ?? '',
-                  width: double.infinity,
-                  height: 220, // Slightly taller for better focus
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      height: 220,
-                      color: Colors.grey[100],
-                      child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    );
-                  },
-                  errorBuilder: (_, error, ___) {
-                    debugPrint('Image load error: $error');
-                    return Container(
-                      height: 120,
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
               const SizedBox(height: 12),
+              
               // Category & type tags
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1094,6 +1082,7 @@ class _ParticulierDashboardScreenState
                 ),
               ),
               const SizedBox(height: 12),
+              
               // Merchant + time
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1173,8 +1162,8 @@ class _ParticulierDashboardScreenState
           ),
           // Type tag in top-right corner
           Positioned(
-            top: 0,
-            right: 0,
+            top: 12,
+            right: 12,
             child: _buildTypeTag(
               'Bon Plan',
               const Color(0xFFFF9800),
@@ -1183,6 +1172,88 @@ class _ParticulierDashboardScreenState
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBonPlanImageCarousel(List<String> urls) {
+    if (urls.length == 1) {
+      return _buildBonPlanImage(urls.first);
+    }
+    
+    return StatefulBuilder(
+      builder: (context, setState) {
+        final controller = PageController();
+        int currentPage = 0;
+        
+        return Column(
+          children: [
+            SizedBox(
+              height: 220,
+              child: PageView.builder(
+                controller: controller,
+                itemCount: urls.length,
+                onPageChanged: (index) => setState(() => currentPage = index),
+                itemBuilder: (context, index) {
+                  return _buildBonPlanImage(urls[index]);
+                },
+              ),
+            ),
+            // Page indicator
+            if (urls.length > 1) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(urls.length, (index) {
+                  return Container(
+                    width: 6,
+                    height: 6,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: index == currentPage
+                          ? const Color(0xFFFF9800)
+                          : Colors.grey[300],
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildBonPlanImage(String url) {
+    return Image.network(
+      url,
+      width: double.infinity,
+      height: 220,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          height: 220,
+          color: Colors.grey[100],
+          child: const Center(
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        );
+      },
+      errorBuilder: (_, error, ___) {
+        debugPrint('Image load error: $error');
+        return Container(
+          height: 220,
+          color: Colors.grey[200],
+          child: const Center(
+            child: Icon(
+              Icons.image_not_supported,
+              color: Colors.grey,
+              size: 48,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1569,12 +1640,16 @@ class _ParticulierDashboardScreenState
       if (first is Map<String, dynamic>) {
         final url = first['url']?.toString();
         if (url != null && url.isNotEmpty) {
+          // If URL is already complete (http/https), return it as-is
+          if (url.startsWith('http')) return url;
+          // Otherwise prepend the server base URL
           return "${ApiConfig.baseUrl.replaceFirst('/api', '')}$url";
         }
       }
     }
     final cover = resource['cover_url']?.toString();
     if (cover != null && cover.isNotEmpty) {
+      if (cover.startsWith('http')) return cover;
       return "${ApiConfig.baseUrl.replaceFirst('/api', '')}$cover";
     }
     return null;
@@ -1588,7 +1663,13 @@ class _ParticulierDashboardScreenState
         if (item is Map<String, dynamic>) {
           final url = item['url']?.toString();
           if (url != null && url.isNotEmpty) {
-            urls.add("${ApiConfig.baseUrl.replaceFirst('/api', '')}$url");
+            // If URL is already complete (http/https), use it as-is
+            if (url.startsWith('http')) {
+              urls.add(url);
+            } else {
+              // Otherwise prepend the server base URL
+              urls.add("${ApiConfig.baseUrl.replaceFirst('/api', '')}$url");
+            }
           }
         }
       }
@@ -1596,7 +1677,11 @@ class _ParticulierDashboardScreenState
     if (urls.isEmpty) {
       final cover = resource['cover_url']?.toString();
       if (cover != null && cover.isNotEmpty) {
-        urls.add("${ApiConfig.baseUrl.replaceFirst('/api', '')}$cover");
+        if (cover.startsWith('http')) {
+          urls.add(cover);
+        } else {
+          urls.add("${ApiConfig.baseUrl.replaceFirst('/api', '')}$cover");
+        }
       }
     }
     return urls;
@@ -3060,9 +3145,14 @@ class _ParticulierDashboardScreenState
 
       final data = response['data'] as Map<String, dynamic>? ?? response;
       final user = data['user'] as Map<String, dynamic>?;
-      final profileImage =
-          _buildStorageUrl(user?['avatar']?.toString()) ?? _defaultAvatar;
-      final username = user?['name']?.toString() ?? 'Utilisateur';
+      // Use the enhanced user data with proper display name and avatar
+      final profileImage = user?['avatar_url']?.toString() ?? 
+          _buildStorageUrl(user?['avatar']?.toString()) ?? 
+          _defaultAvatar;
+      // Use display_name which contains company_name for pro or pseudo for particulier
+      final username = user?['display_name']?.toString() ?? 
+          user?['name']?.toString() ?? 
+          'Utilisateur';
       final userType = user?['account_type']?.toString() ?? 'Particulier';
       final title = data['title']?.toString() ?? 'Bon plan';
 
@@ -4047,7 +4137,7 @@ class _ParticulierDashboardScreenState
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+          MaterialPageRoute(builder: (context) => const SearchScreen()),
         );
       },
       child: Container(
@@ -4059,7 +4149,7 @@ class _ParticulierDashboardScreenState
           border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
         ),
         child: const Icon(
-          Icons.notifications,
+          Icons.search,
           color: Color(0xFF2A8143),
           size: 18,
         ),

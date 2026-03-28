@@ -14,6 +14,7 @@ class _SearchScreenState extends State<SearchScreen> {
   double _searchRadius = 0;
   bool _searchAllFrance = false;
   String? _selectedCategory;
+  String _searchType = 'annonces'; // 'annonces' or 'users'
 
   @override
   void dispose() {
@@ -88,146 +89,206 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              GestureDetector(
-                onTap: () {
-                  _showCategoryBottomSheet(context);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.grid_view_outlined, color: Colors.grey[600]),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _selectedCategory ?? 'Toutes les catégories',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: _selectedCategory != null
-                                ? Colors.black
-                                : Colors.grey[400],
+              
+              // Search Type Toggle
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _searchType = 'annonces'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _searchType == 'annonces' ? const Color(0xFF3AAE5E) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Annonces',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: _searchType == 'annonces' ? Colors.white : Colors.grey[600],
+                            ),
                           ),
                         ),
                       ),
-                      Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _locationController,
-                      decoration: InputDecoration(
-                        hintText: 'Ville, code postal...',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        prefixIcon: Icon(Icons.location_on_outlined, color: Colors.grey[400]),
-                        filled: true,
-                        fillColor: Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _searchType = 'users'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _searchType == 'users' ? const Color(0xFF3AAE5E) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Utilisateurs',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: _searchType == 'users' ? Colors.white : Colors.grey[600],
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.all(14),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Category and Location filters - only for annonces
+              if (_searchType == 'annonces') ...[
+                GestureDetector(
+                  onTap: () {
+                    _showCategoryBottomSheet(context);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     decoration: BoxDecoration(
                       color: Colors.grey[100],
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey[300]!),
                     ),
-                    child: Icon(
-                      Icons.my_location,
-                      color: Colors.grey[600],
-                      size: 24,
+                    child: Row(
+                      children: [
+                        Icon(Icons.grid_view_outlined, color: Colors.grey[600]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _selectedCategory ?? 'Toutes les catégories',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: _selectedCategory != null
+                                  ? Colors.black
+                                  : Colors.grey[400],
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
+                      ],
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Rayon de recherche',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
                 ),
-              ),
-              const SizedBox(height: 12),
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  activeTrackColor: const Color(0xFF3AAE5E),
-                  inactiveTrackColor: Colors.grey[300],
-                  thumbColor: const Color(0xFF3AAE5E),
-                  overlayColor: const Color(0xFF3AAE5E).withOpacity(0.2),
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-                ),
-                child: Slider(
-                  value: _searchRadius,
-                  min: 0,
-                  max: 100,
-                  divisions: 20,
-                  onChanged: (value) {
-                    setState(() {
-                      _searchRadius = value;
-                    });
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                const SizedBox(height: 16),
+                Row(
                   children: [
-                    Text('0 km', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                    Text('20 km', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                    Text('50 km', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                    Text('75 km', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                    Text('100 km', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    Expanded(
+                      child: TextField(
+                        controller: _locationController,
+                        decoration: InputDecoration(
+                          hintText: 'Ville, code postal...',
+                          hintStyle: TextStyle(color: Colors.grey[400]),
+                          prefixIcon: Icon(Icons.location_on_outlined, color: Colors.grey[400]),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Icon(
+                        Icons.my_location,
+                        color: Colors.grey[600],
+                        size: 24,
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Checkbox(
-                    value: _searchAllFrance,
+                const SizedBox(height: 24),
+                const Text(
+                  'Rayon de recherche',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: const Color(0xFF3AAE5E),
+                    inactiveTrackColor: Colors.grey[300],
+                    thumbColor: const Color(0xFF3AAE5E),
+                    overlayColor: const Color(0xFF3AAE5E).withOpacity(0.2),
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                  ),
+                  child: Slider(
+                    value: _searchRadius,
+                    min: 0,
+                    max: 100,
+                    divisions: 20,
                     onChanged: (value) {
                       setState(() {
-                        _searchAllFrance = value ?? false;
+                        _searchRadius = value;
                       });
                     },
-                    activeColor: const Color(0xFF3AAE5E),
                   ),
-                  Text(
-                    'Rechercher dans toute la France',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('0 km', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                      Text('20 km', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                      Text('50 km', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                      Text('75 km', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                      Text('100 km', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _searchAllFrance,
+                      onChanged: (value) {
+                        setState(() {
+                          _searchAllFrance = value ?? false;
+                        });
+                      },
+                      activeColor: const Color(0xFF3AAE5E),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
+                    Text(
+                      'Rechercher dans toute la France',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+              ],
+              
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -243,6 +304,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           searchLocation: _locationController.text.trim(),
                           searchRadius: _searchRadius,
                           searchAllFrance: _searchAllFrance,
+                          searchType: _searchType,
                         ),
                       ),
                     );

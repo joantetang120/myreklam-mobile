@@ -308,10 +308,18 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
       final data = response['data'] as Map<String, dynamic>? ?? response;
       final user = data['user'] as Map<String, dynamic>?;
-      final profileImage = user?['avatar']?.toString() != null
-          ? _buildImageUrl(user!['avatar']?.toString())
-          : 'assets/images/default_profile.png';
-      final username = user?['name']?.toString() ?? 'Mon bon plan';
+      // Use the enhanced user data with proper display name and avatar
+      String profileImage = user?['avatar_url']?.toString() ?? '';
+      if (profileImage.isEmpty) {
+        profileImage = _buildImageUrl(user?['avatar']?.toString());
+      }
+      if (profileImage.isEmpty) {
+        profileImage = 'assets/images/default_profile.png';
+      }
+      // Use display_name which contains company_name for pro or pseudo for particulier
+      final username = user?['display_name']?.toString() ?? 
+          user?['name']?.toString() ?? 
+          'Mon bon plan';
       final userType = user?['account_type']?.toString() ?? 'Professionnel';
       final title = data['title']?.toString() ?? 'Bon plan';
       final description = _stripHtml(data['description']?.toString() ?? '');
@@ -341,6 +349,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       ];
 
       if (!mounted) return;
+      final acceptMessages = data['accept_messages'] == true;
+
       final result = await Navigator.push(
         context,
         MaterialPageRoute(
@@ -365,6 +375,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             isOwner: true,
             bonPlanId: bonPlanId,
             bonPlanData: data,
+            acceptMessages: acceptMessages,
+            authorData: user,
           ),
         ),
       );

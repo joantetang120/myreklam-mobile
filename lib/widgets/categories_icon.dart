@@ -38,7 +38,7 @@ class CategoriesIcon extends StatelessWidget {
                         return Icon(Icons.image_not_supported, color: iconColor, size: 20);
                       },
                     )
-                  : Icon(icon, color: iconColor),
+                  : Icon(icon, color: iconColor, size: 20),
             ),
           ),
           Text(title, style: TextStyle(fontSize: 8)),

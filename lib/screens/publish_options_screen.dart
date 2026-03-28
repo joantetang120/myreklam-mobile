@@ -195,7 +195,7 @@ class PublishOptionsScreen extends StatelessWidget {
                   titleColor: const Color(0xFFFF9800),
                   title: 'Publier un bon plan',
                   description:
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore',
+                      'Partagez les meilleures offres, promotions et bons plans avec la communauté.',
                   icon: Icons.card_giftcard_outlined,
                   iconColor: const Color(0xFFFF9800),
                   onTap: () {
@@ -213,7 +213,7 @@ class PublishOptionsScreen extends StatelessWidget {
                   titleColor: Colors.lightBlueAccent,
                   title: "Publier une offre d'emploi",
                   description:
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore',
+                      'Déposez vos offres de recrutement ou trouvez des opportunités professionnelles.',
                   icon: Icons.work_outline,
                   iconColor: Colors.lightBlueAccent,
                   onTap: () {
@@ -231,7 +231,7 @@ class PublishOptionsScreen extends StatelessWidget {
                   titleColor: const Color(0xFF3AAE5E),
                   title: 'Publier une Formation',
                   description:
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore',
+                      'Proposez vos formations et partagez vos connaissances avec les membres.',
                   icon: Icons.school_outlined,
                   iconColor: const Color(0xFF3AAE5E),
                   onTap: () {
@@ -249,7 +249,7 @@ class PublishOptionsScreen extends StatelessWidget {
                   titleColor: const Color(0xFF00897B),
                   title: 'Publier un Evènement',
                   description:
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore',
+                      'Organisez et annoncez vos événements, rencontres et activités.',
                   icon: Icons.event_outlined,
                   iconColor: const Color(0xFF00897B),
                   onTap: () {
@@ -267,7 +267,7 @@ class PublishOptionsScreen extends StatelessWidget {
                   titleColor: const Color(0xFFFFA000),
                   title: 'Publier une Demande',
                   description:
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore',
+                      'Exprimez vos besoins et recevez des réponses de la communauté.',
                   icon: Icons.chat_bubble_outline,
                   iconColor: const Color(0xFFFFA000),
                   onTap: () {
