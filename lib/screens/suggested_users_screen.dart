@@ -200,7 +200,7 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
                                       ),
                                     ),
                                     child: const Text(
-                                      "S'abonner",
+                                      'Suivre',
                                       style: TextStyle(
                                         color: Color(0xFF3AAE5E),
                                         fontWeight: FontWeight.bold,

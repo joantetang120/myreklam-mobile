@@ -24,6 +24,7 @@ class ParticulierMainScreen extends StatefulWidget {
   final String? searchLocation;
   final double? searchRadius;
   final bool? searchAllFrance;
+  final String? searchType;
   const ParticulierMainScreen({
     super.key,
     this.initialIndex = 0,
@@ -35,6 +36,7 @@ class ParticulierMainScreen extends StatefulWidget {
     this.searchLocation,
     this.searchRadius,
     this.searchAllFrance,
+    this.searchType,
   });
 
   @override
@@ -125,6 +127,7 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
         location: widget.searchLocation ?? '',
         radius: widget.searchRadius ?? 0,
         allFrance: widget.searchAllFrance ?? false,
+        searchType: widget.searchType,
       );
       displayIndex = 3;
     } else {

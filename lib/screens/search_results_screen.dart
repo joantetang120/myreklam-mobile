@@ -11,6 +11,7 @@ class SearchResultsScreen extends StatefulWidget {
   final String location;
   final double radius;
   final bool allFrance;
+  final String? searchType;
 
   const SearchResultsScreen({
     super.key,
@@ -19,6 +20,7 @@ class SearchResultsScreen extends StatefulWidget {
     required this.location,
     this.radius = 0,
     this.allFrance = false,
+    this.searchType,
   });
 
   @override
@@ -26,7 +28,7 @@ class SearchResultsScreen extends StatefulWidget {
 }
 
 class _SearchResultsScreenState extends State<SearchResultsScreen> {
-  String _selectedTab = 'annonces';
+  late String _selectedTab;
   bool _isLoading = true;
   List<Map<String, dynamic>> _annonceResults = [];
   List<Map<String, dynamic>> _userResults = [];
@@ -38,6 +40,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedTab = widget.searchType ?? 'annonces';
     _inlineSearchController.text = widget.query;
     _fetchResults();
   }

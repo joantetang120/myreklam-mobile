@@ -5,6 +5,10 @@ class UserDetailCard extends StatelessWidget {
   final String name;
   final String userType;
   final VoidCallback? onSubscribe;
+  final VoidCallback? onTap;
+  final bool showSubscribeButton;
+  final bool isFollowing;
+  final bool isLoading;
 
   const UserDetailCard({
     super.key,
@@ -12,11 +16,15 @@ class UserDetailCard extends StatelessWidget {
     required this.name,
     required this.userType,
     this.onSubscribe,
+    this.onTap,
+    this.showSubscribeButton = true,
+    this.isFollowing = false,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    Widget cardContent = Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -33,7 +41,12 @@ class UserDetailCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(radius: 26, backgroundImage: AssetImage(avatar)),
+          CircleAvatar(
+            radius: 26,
+            backgroundImage: avatar.startsWith('http')
+                ? NetworkImage(avatar)
+                : AssetImage(avatar) as ImageProvider,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -70,26 +83,50 @@ class UserDetailCard extends StatelessWidget {
               ],
             ),
           ),
-          OutlinedButton.icon(
-            onPressed: onSubscribe,
-            icon: const Icon(Icons.person_add_outlined, size: 14),
-            label: const Text(
-              "S'abonner",
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-            ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFFF9800),
-              side: const BorderSide(color: Color(0xFFFFCCBC)),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              minimumSize: const Size(0, 0),
-              backgroundColor: const Color(0xFFFFF3E0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
+          if (showSubscribeButton)
+            isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFFFF9800),
+                  ),
+                )
+              : OutlinedButton.icon(
+                  onPressed: onSubscribe,
+                  icon: Icon(
+                    isFollowing ? Icons.check : Icons.person_add_outlined,
+                    size: 14,
+                  ),
+                  label: Text(
+                    isFollowing ? 'Suivis' : 'Suivre',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: isFollowing ? const Color(0xFF3AAE5E) : const Color(0xFFFF9800),
+                    side: BorderSide(
+                      color: isFollowing ? const Color(0xFF3AAE5E) : const Color(0xFFFFCCBC),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: const Size(0, 0),
+                    backgroundColor: isFollowing ? const Color(0xFFE6F7EF) : const Color(0xFFFFF3E0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
         ],
       ),
     );
+
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: cardContent,
+      );
+    }
+
+    return cardContent;
   }
 }

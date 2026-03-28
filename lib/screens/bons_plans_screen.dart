@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/pro_post_card.dart';
+import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'dart:convert';
 
 class BonsPlansScreen extends StatefulWidget {
   const BonsPlansScreen({super.key});
@@ -68,18 +70,163 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
     return ApiConfig.resolveMediaUrl(path);
   }
 
-  String _buildTimeAgo(String? dateStr) {
+  String _buildImageUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+    if (url.startsWith('http')) {
+      return url.replaceFirst(RegExp(r'https?://[^/]+'), serverBase);
+    }
+    return '$serverBase$url';
+  }
+
+  String _stripHtml(String html) {
+    return html.replaceAll(RegExp(r'<[^>]*>'), '');
+  }
+
+  String _timeAgo(String? dateStr) {
     if (dateStr == null) return '';
     try {
       final date = DateTime.parse(dateStr);
       final diff = DateTime.now().difference(date);
-      if (diff.inDays > 7) return 'il y a ${diff.inDays ~/ 7} semaine(s)';
-      if (diff.inDays > 0) return 'il y a ${diff.inDays} jour(s)';
-      if (diff.inHours > 0) return 'il y a ${diff.inHours} heure(s)';
-      return 'il y a ${diff.inMinutes} min';
+      if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes}min';
+      if (diff.inHours < 24) return 'il y a ${diff.inHours}h';
+      if (diff.inDays < 7) return 'il y a ${diff.inDays}j';
+      if (diff.inDays < 30) return 'il y a ${diff.inDays ~/ 7} sem.';
+      return 'il y a ${diff.inDays ~/ 30} mois';
     } catch (_) {
       return '';
     }
+  }
+
+  String _buildDeliveryInfo(Map<String, dynamic>? pickupMethods) {
+    if (pickupMethods == null) return 'Non spécifié';
+    final inStore = pickupMethods['in_store'] == true;
+    final delivery = pickupMethods['delivery'] == true;
+    if (inStore && delivery) return 'En magasin et livraison';
+    if (inStore) return 'En magasin uniquement';
+    if (delivery) return 'Livraison disponible';
+    return 'Non spécifié';
+  }
+
+  Future<void> _navigateToBonPlanDetail(Map<String, dynamic> bp) async {
+    final bonPlanId = bp['id']?.toString();
+    if (bonPlanId == null || bonPlanId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir ce bon plan')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedGet('/bonplans/$bonPlanId');
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      final data = response['data'] as Map<String, dynamic>? ?? response;
+      final user = data['user'] as Map<String, dynamic>?;
+      
+      // Use the enhanced user data with proper display name and avatar
+      String profileImage = user?['avatar_url']?.toString() ?? '';
+      if (profileImage.isEmpty) {
+        profileImage = _buildImageUrl(user?['avatar']?.toString());
+      }
+      if (profileImage.isEmpty) {
+        profileImage = 'assets/images/dashboard_particulier/Ellipse 10.png';
+      }
+      
+      // Use display_name which contains company_name for pro or pseudo for particulier
+      final username = user?['display_name']?.toString() ?? 
+          user?['name']?.toString() ?? 
+          'Utilisateur';
+      final userType = user?['account_type']?.toString() ?? 'Particulier';
+      final title = data['title']?.toString() ?? 'Bon plan';
+      final description = _stripHtml(data['description']?.toString() ?? '');
+      final descriptionDelta = data['description_delta'];
+      final category = data['category']?.toString() ?? '';
+      final subCategory = data['sub_category']?.toString() ?? '';
+      final type = data['type']?.toString() ?? '';
+      final availableAt = data['available_at_name']?.toString() ?? 'Non spécifié';
+      final validityType = data['validity_type']?.toString() ?? 'permanent';
+      final validFrom = data['valid_from']?.toString();
+      final validUntil = data['valid_until']?.toString();
+      final link = data['link']?.toString();
+      final pickupMethods = data['pickup_methods'] as Map<String, dynamic>?;
+      final deliveryInfo = _buildDeliveryInfo(pickupMethods);
+      final location = data['location_search']?.toString();
+      final mediaFiles = data['media_files'] as List?;
+      final images = _extractImages(mediaFiles);
+      final reductionLabel = data['reduction_label']?.toString();
+      final acceptMessages = data['accept_messages'] == true;
+
+      final tags = <PostTag>[
+        if (category.isNotEmpty)
+          PostTag(title: category, icon: Icons.local_offer_outlined, color: Colors.orange),
+        if (subCategory.isNotEmpty)
+          PostTag(title: subCategory, icon: Icons.grid_view_outlined, color: Colors.grey),
+        if (type.isNotEmpty)
+          PostTag(title: type, icon: Icons.check_circle_outline, color: Colors.green),
+      ];
+
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProPostDetailScreen(
+            images: images,
+            discount: reductionLabel,
+            avatar: profileImage,
+            name: username,
+            userType: userType,
+            title: title,
+            description: description,
+            descriptionDelta: descriptionDelta,
+            tags: tags,
+            time: _timeAgo(data['created_at']?.toString()),
+            availability: availableAt,
+            validityType: validityType,
+            validFrom: validFrom,
+            validUntil: validUntil,
+            deliveryInfo: deliveryInfo,
+            location: location,
+            link: link,
+            isOwner: false,
+            bonPlanId: bonPlanId,
+            bonPlanData: data,
+            acceptMessages: acceptMessages,
+            authorData: user,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      debugPrint('Error fetching bon plan detail: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du chargement: $e')),
+      );
+    }
+  }
+
+  List<String> _extractImages(List? mediaFiles) {
+    if (mediaFiles == null || mediaFiles.isEmpty) {
+      return ['assets/images/details_bon_plans/Rectangle 35.png'];
+    }
+    final images = <String>[];
+    for (final m in mediaFiles) {
+      if (m is Map && m['url'] != null) {
+        final url = _buildImageUrl(m['url']?.toString());
+        if (url.isNotEmpty) {
+          images.add(url);
+        }
+      }
+    }
+    return images.isNotEmpty ? images : ['assets/images/details_bon_plans/Rectangle 35.png'];
   }
 
   Widget _buildNotifBubble() {
@@ -394,25 +541,11 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
         subCategory,
       ].where((s) => s.isNotEmpty).join(' · '),
       merchantName: merchantName.isNotEmpty ? merchantName : 'En ligne',
-      timeAgo: _buildTimeAgo(createdAt),
+      timeAgo: _timeAgo(createdAt),
       price: price.isNotEmpty ? '${price}€' : 'Voir offre',
       likesCount: bp['likes_count'] ?? 0,
       commentsCount: bp['comments_count'] ?? 0,
-      onTapCTA: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProPostDetailScreen(
-              avatar: 'assets/images/dashboard_particulier/Ellipse 10.png',
-              name:
-                  bp['user']?['email']?.toString().split('@').first ??
-                  'Utilisateur',
-              userType: 'Pro',
-              title: title,
-            ),
-          ),
-        );
-      },
+      onTapCTA: () => _navigateToBonPlanDetail(bp),
     );
   }
 }
