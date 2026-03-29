@@ -15,7 +15,7 @@ import 'package:myreklam/screens/creer_bon_plan_screen.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/conversation_service.dart';
 
-class ProPostDetailScreen extends StatelessWidget {
+class ProPostDetailScreen extends StatefulWidget {
   final List<String> images;
   final String? discount;
   final String avatar;
@@ -70,15 +70,234 @@ class ProPostDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<ProPostDetailScreen> createState() => _ProPostDetailScreenState();
+}
+
+class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
+  List<Map<String, dynamic>> _comments = [];
+  bool _isLoadingComments = false;
+  final TextEditingController _commentController = TextEditingController();
+  List<Map<String, dynamic>> _relatedBonPlans = [];
+  bool _isLoadingRelated = false;
+  bool _isFollowing = false;
+  bool _isLoadingFollow = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchComments();
+    _fetchRelatedBonPlans();
+    _checkFollowStatus();
+  }
+
+  Future<void> _checkFollowStatus() async {
+    if (widget.isOwner || widget.authorData == null) return;
+    
+    final authorId = widget.authorData!['id']?.toString();
+    if (authorId == null) return;
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) return;
+      
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/profile/$authorId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['is_following'] == true) {
+          setState(() => _isFollowing = true);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking follow status: $e');
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    if (widget.isOwner || widget.authorData == null) return;
+    
+    final authorId = widget.authorData!['id']?.toString();
+    if (authorId == null) return;
+    
+    setState(() => _isLoadingFollow = true);
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter')),
+        );
+        return;
+      }
+      
+      if (_isFollowing) {
+        // Unfollow
+        final response = await http.delete(
+          Uri.parse('${ApiConfig.baseUrl}/profile/$authorId/unfollow'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        
+        if (response.statusCode == 200) {
+          setState(() => _isFollowing = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vous ne suivez plus cet utilisateur')),
+          );
+        }
+      } else {
+        // Follow
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}/profile/$authorId/follow'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        
+        if (response.statusCode == 200) {
+          setState(() => _isFollowing = true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vous suivez maintenant cet utilisateur')),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      setState(() => _isLoadingFollow = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchComments() async {
+    if (widget.bonPlanId == null) return;
+    
+    setState(() => _isLoadingComments = true);
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/comments/bon-plans/${widget.bonPlanId}'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          final commentsData = data['data']['data'] ?? data['data'];
+          if (commentsData is List) {
+            setState(() {
+              _comments = commentsData.cast<Map<String, dynamic>>();
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching comments: $e');
+    } finally {
+      setState(() => _isLoadingComments = false);
+    }
+  }
+
+  Future<void> _postComment() async {
+    if (widget.bonPlanId == null || _commentController.text.trim().isEmpty) return;
+
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) return;
+
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/comments/bon-plans/${widget.bonPlanId}'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'body': _commentController.text.trim()}),
+      );
+
+      if (response.statusCode == 201) {
+        _commentController.clear();
+        _fetchComments();
+      }
+    } catch (e) {
+      debugPrint('Error posting comment: $e');
+    }
+  }
+
+  Future<void> _fetchRelatedBonPlans() async {
+    setState(() => _isLoadingRelated = true);
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) return;
+
+      // Fetch latest bon plans excluding current one
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/feed/latest?type=bon_plan&per_type_limit=4'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          final items = data['data']['items'] as List? ?? [];
+          // Filter out current bon plan and take up to 3
+          final filtered = items
+              .where((item) => item['id'].toString() != widget.bonPlanId)
+              .take(3)
+              .toList();
+          setState(() {
+            _relatedBonPlans = filtered.cast<Map<String, dynamic>>();
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching related bon plans: $e');
+    } finally {
+      setState(() => _isLoadingRelated = false);
+    }
+  }
+
+  void _navigateToUserProfile() {
+    if (widget.authorData == null) return;
+    // TODO: Navigate to user profile screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profil utilisateur - à implémenter')),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Debug: Check contact button conditions
     debugPrint('=== CONTACT BUTTON DEBUG ===');
-    debugPrint('isOwner: $isOwner');
-    debugPrint('acceptMessages: $acceptMessages');
-    debugPrint('authorData: $authorData');
-    debugPrint('authorData != null: ${authorData != null}');
+    debugPrint('isOwner: ${widget.isOwner}');
+    debugPrint('acceptMessages: ${widget.acceptMessages}');
+    debugPrint('authorData: ${widget.authorData}');
+    debugPrint('authorData != null: ${widget.authorData != null}');
     debugPrint(
-      'Should show button: ${!isOwner && acceptMessages && authorData != null}',
+      'Should show button: ${!widget.isOwner && widget.acceptMessages && widget.authorData != null}',
     );
     debugPrint('===========================');
 
@@ -123,7 +342,7 @@ class ProPostDetailScreen extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
-          if (isOwner)
+          if (widget.isOwner)
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
@@ -138,13 +357,13 @@ class ProPostDetailScreen extends StatelessWidget {
                 ),
                 onSelected: (value) {
                   if (value == 'edit') {
-                    if (bonPlanId != null && bonPlanData != null) {
+                    if (widget.bonPlanId != null && widget.bonPlanData != null) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => CreerBonPlanScreen(
-                            bonPlanId: bonPlanId,
-                            initialData: bonPlanData,
+                            bonPlanId: widget.bonPlanId,
+                            initialData: widget.bonPlanData,
                           ),
                         ),
                       );
@@ -221,22 +440,26 @@ class ProPostDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (images.isNotEmpty) ...[
-              ImageCarousel(images: images, discount: discount),
+            if (widget.images.isNotEmpty) ...[
+              ImageCarousel(images: widget.images, discount: widget.discount),
               const SizedBox(height: 16),
             ],
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 5),
               child: UserDetailCard(
-                avatar: avatar,
-                name: name,
-                userType: userType,
-                onSubscribe: () {},
+                avatar: widget.avatar,
+                name: widget.name,
+                userType: widget.userType,
+                onSubscribe: widget.isOwner ? null : _toggleFollow,
+                onTap: widget.authorData != null ? _navigateToUserProfile : null,
+                showSubscribeButton: !widget.isOwner,
+                isFollowing: _isFollowing,
+                isLoading: _isLoadingFollow,
               ),
             ),
             const SizedBox(height: 16),
             PostContentCard(
-              tags: tags.isEmpty
+              tags: widget.tags.isEmpty
                   ? [
                       PostTag(
                         title: 'High-Tech',
@@ -254,9 +477,9 @@ class ProPostDetailScreen extends StatelessWidget {
                         color: Colors.green,
                       ),
                     ]
-                  : tags,
-              title: title,
-              time: time,
+                  : widget.tags,
+              title: widget.title,
+              time: widget.time,
               onLike: () {},
               onShare: () {},
             ),
@@ -301,67 +524,51 @@ class ProPostDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   const Divider(height: 1, thickness: 0.5),
-                  const SizedBox(height: 12),
-
-                  // 2x2 Grid
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildGridItem(
-                          icon: Icons.euro_symbol,
-                          iconColor: Colors.orange,
-                          bgColor: Colors.orange.withOpacity(0.1),
-                          label: 'Prix',
-                          value: price ?? 'Gratuit',
-                          originalValue: originalPrice,
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildGridItem(
-                          icon: Icons.public,
-                          iconColor: const Color(0xFF3AAE5E),
-                          bgColor: const Color(0xFFE6F7EF),
-                          label: 'Disponibilité',
-                          value: availability,
-                          prefixValue: 'Chez ',
-                        ),
-                      ),
-                    ],
+                  // Single Column Layout for Details
+                  _buildDetailItem(
+                    icon: Icons.euro_symbol,
+                    iconColor: Colors.orange,
+                    bgColor: Colors.orange.withOpacity(0.1),
+                    label: 'Prix',
+                    value: widget.price ?? 'Gratuit',
+                    originalValue: widget.originalPrice,
                   ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildGridItem(
-                          icon: Icons.calendar_month_outlined,
-                          iconColor: Colors.lightBlue,
-                          bgColor: Colors.lightBlue.withOpacity(0.1),
-                          label: 'Validité',
-                          value: _formatValidity(),
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildGridItem(
-                          icon: Icons.directions_bike,
-                          iconColor: Colors.purpleAccent,
-                          bgColor: Colors.purpleAccent.withOpacity(0.05),
-                          label: 'Livraison',
-                          value: deliveryInfo,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 16),
+                  _buildDetailItem(
+                    icon: Icons.public,
+                    iconColor: const Color(0xFF3AAE5E),
+                    bgColor: const Color(0xFFE6F7EF),
+                    label: 'Disponibilité',
+                    value: widget.availability,
+                    prefixValue: 'Chez ',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDetailItem(
+                    icon: Icons.calendar_month_outlined,
+                    iconColor: Colors.lightBlue,
+                    bgColor: Colors.lightBlue.withOpacity(0.1),
+                    label: 'Validité',
+                    value: _formatValidity(),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildDetailItem(
+                    icon: Icons.directions_bike,
+                    iconColor: Colors.purpleAccent,
+                    bgColor: Colors.purpleAccent.withOpacity(0.05),
+                    label: 'Livraison',
+                    value: widget.deliveryInfo,
                   ),
                   const SizedBox(height: 24),
                   const Divider(height: 1),
                   const SizedBox(height: 20),
 
                   // Primary CTA
-                  if (link != null && link!.isNotEmpty)
+                  if (widget.link != null && widget.link!.isNotEmpty)
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () async {
-                          final uri = Uri.parse(link!);
+                          final uri = Uri.parse(widget.link!);
                           if (await canLaunchUrl(uri)) {
                             await launchUrl(
                               uri,
@@ -432,13 +639,13 @@ class ProPostDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             // Contact button - only if not owner and acceptMessages is true
-            if (!isOwner && acceptMessages && authorData != null)
+            if (!widget.isOwner && widget.acceptMessages && widget.authorData != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () => _startConversation(context, authorData!),
+                    onPressed: () => _startConversation(context, widget.authorData!),
                     icon: const Icon(Icons.chat_outlined, size: 20),
                     label: const Text('Contacter'),
                     style: ElevatedButton.styleFrom(
@@ -453,7 +660,7 @@ class ProPostDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
-            if (!isOwner && acceptMessages && authorData != null)
+            if (!widget.isOwner && widget.acceptMessages && widget.authorData != null)
               const SizedBox(height: 16),
             // Localisation Card
             Container(
@@ -492,7 +699,7 @@ class ProPostDetailScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (location != null && location!.isNotEmpty) ...[
+                  if (widget.location != null && widget.location!.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
@@ -505,7 +712,7 @@ class ProPostDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      location!,
+                      widget.location!,
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF616161),
@@ -565,19 +772,78 @@ class ProPostDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // No comments message
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      child: Text(
-                        '0 commentaires',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                          fontStyle: FontStyle.italic,
+                  // Comments list
+                  if (_isLoadingComments)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else if (_comments.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Text(
+                          'Aucun commentaire',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                       ),
+                    )
+                  else
+                    Column(
+                      children: _comments
+                          .map((comment) => _buildCommentItem(comment))
+                          .toList(),
                     ),
+                  const SizedBox(height: 16),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  // Comment input
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _commentController,
+                          decoration: InputDecoration(
+                            hintText: 'Ajouter un commentaire...',
+                            hintStyle: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[400],
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          maxLines: 2,
+                          minLines: 1,
+                          textInputAction: TextInputAction.send,
+                          onSubmitted: (_) => _postComment(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        onPressed: _postComment,
+                        icon: const Icon(Icons.send, color: Color(0xFF3AAE5E)),
+                        style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFFE6F7EF),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -607,75 +873,150 @@ class ProPostDetailScreen extends StatelessWidget {
               ),
             ),
 
-            ProPostCard(
-              profileImage:
-                  'assets/images/dashboard_particulier/Ellipse 10.png',
-              username: 'Marvin McKinney',
-              userType: 'Particulier',
-              postText:
-                  "Porsche : légendaire, luxueuse, sportive. Performances brutes et design iconique. Un rêve de vitesse....plus",
-              postImage:
-                  'assets/images/dashboard_particulier/Rectangle 12 (4).png',
-              reductionPercentage: '-10%',
-              categoryIcon: Icons.account_balance_outlined,
-              categoryName: 'Finances & Assurances',
-              merchantName: 'Go Pro',
-              timeAgo: 'il y a 3 semaine',
-              onTapCTA: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProPostDetailScreen(
-                      avatar:
-                          'assets/images/dashboard_particulier/Ellipse 10.png',
-                      name: 'Floyd Miles',
-                      userType: 'Particulier',
-                      title: 'Porsche : légendaire, luxueuse, sportive',
+            // Dynamic Related Bon Plans
+            if (_isLoadingRelated)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else if (_relatedBonPlans.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    'Aucun bon plan disponible',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                      fontStyle: FontStyle.italic,
                     ),
                   ),
+                ),
+              )
+            else
+              ..._relatedBonPlans.map((bonPlan) {
+                final user = bonPlan['user'] as Map<String, dynamic>?;
+                final userName = user?['particulier_profile']?['pseudo'] ??
+                    user?['pro_profile']?['company_name'] ??
+                    bonPlan['author']?['name'] ??
+                    'Utilisateur';
+                final userType = user?['type'] == 'pro' ? 'Professionnel' : 'Particulier';
+                final avatarUrl = user?['particulier_profile']?['avatar_url'] ??
+                    user?['pro_profile']?['avatar_url'] ??
+                    'assets/images/dashboard_particulier/Ellipse 10.png';
+                final media = bonPlan['media'] as List? ?? [];
+                final imageUrl = media.isNotEmpty
+                    ? media.first['url']?.toString() ??
+                      'assets/images/dashboard_particulier/Rectangle 12 (4).png'
+                    : 'assets/images/dashboard_particulier/Rectangle 12 (4).png';
+                final category = bonPlan['category'] as Map<String, dynamic>?;
+                final categoryName = category?['name'] ?? 'Catégorie';
+                final categoryIcon = category?['icon'] != null
+                    ? _getIconFromString(category!['icon'])
+                    : Icons.category_outlined;
+
+                return ProPostCard(
+                  profileImage: avatarUrl,
+                  username: userName,
+                  userType: userType,
+                  postText: bonPlan['title'] ?? 'Sans titre',
+                  postImage: imageUrl,
+                  reductionPercentage: bonPlan['discount_display']?.toString() ?? '',
+                  categoryIcon: categoryIcon,
+                  categoryName: categoryName,
+                  merchantName: bonPlan['merchant_name'] ?? '',
+                  timeAgo: _formatTimeAgo(bonPlan['created_at']),
+                  onTapCTA: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProPostDetailScreen(
+                          images: media.map((m) => m['url']?.toString() ?? '').where((s) => s.isNotEmpty).toList(),
+                          discount: bonPlan['discount_display']?.toString(),
+                          avatar: avatarUrl,
+                          name: userName,
+                          userType: userType,
+                          title: bonPlan['title'] ?? 'Sans titre',
+                          description: bonPlan['description'] ?? '',
+                          price: bonPlan['price']?.toString(),
+                          originalPrice: bonPlan['original_price']?.toString(),
+                          location: bonPlan['location'],
+                          link: bonPlan['external_link'],
+                          isOwner: false,
+                          bonPlanId: bonPlan['id']?.toString(),
+                          bonPlanData: bonPlan,
+                          acceptMessages: bonPlan['accept_messages'] == true || bonPlan['accept_messages'] == 1,
+                          authorData: user,
+                        ),
+                      ),
+                    );
+                  },
+                  price: bonPlan['price']?.toString() ?? '',
+                  likesCount: bonPlan['likes_count'] ?? 0,
+                  commentsCount: bonPlan['comments_count'] ?? 0,
                 );
-              },
-              price: '50.000€',
-              likesCount: 125,
-              commentsCount: 0,
-            ),
-            ProPostCard(
-              profileImage:
-                  'assets/images/dashboard_particulier/Ellipse 12.png',
-              username: 'Marvin McKinney',
-              userType: 'Particulier',
-              postText:
-                  "Porsche : légendaire, luxueuse, sportive. Performances brutes et design iconique. Un rêve de vitesse....plus",
-              postImage:
-                  'assets/images/dashboard_particulier/Rectangle 12 (4).png',
-              reductionPercentage: '-10%',
-              categoryIcon: Icons.account_balance_outlined,
-              categoryName: 'Finances & Assurances',
-              merchantName: 'Go Pro',
-              timeAgo: 'il y a 3 semaine',
-              onTapCTA: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProPostDetailScreen(
-                      avatar:
-                          'assets/images/dashboard_particulier/Ellipse 10.png',
-                      name: 'Floyd Miles',
-                      userType: 'Particulier',
-                      title: 'Bon plan automobile',
-                    ),
-                  ),
-                );
-              },
-              price: '50.000€',
-              likesCount: 125,
-              commentsCount: 0,
-            ),
+              }).toList(),
             const SizedBox(height: 40),
           ],
         ),
       ),
     );
+  }
+
+  String _formatValidity() {
+    if (widget.validityType == 'permanent') {
+      return 'Offre permanente';
+    } else if (widget.validityType == 'dates' &&
+        widget.validFrom != null &&
+        widget.validUntil != null) {
+      try {
+        final from = DateTime.parse(widget.validFrom!);
+        final until = DateTime.parse(widget.validUntil!);
+        return 'Du ${from.day}/${from.month}/${from.year} au ${until.day}/${until.month}/${until.year}';
+      } catch (_) {
+        return 'Dates spécifiées';
+      }
+    }
+    return 'Offre permanente';
+  }
+
+  String _formatTimeAgo(String? dateString) {
+    if (dateString == null) return 'Il y a un moment';
+    try {
+      final date = DateTime.parse(dateString);
+      final diff = DateTime.now().difference(date);
+      if (diff.inDays > 30) {
+        return 'Il y a ${(diff.inDays / 30).floor()} mois';
+      } else if (diff.inDays > 0) {
+        return 'Il y a ${diff.inDays} jour${diff.inDays > 1 ? 's' : ''}';
+      } else if (diff.inHours > 0) {
+        return 'Il y a ${diff.inHours}h';
+      } else if (diff.inMinutes > 0) {
+        return 'Il y a ${diff.inMinutes}min';
+      }
+    } catch (_) {}
+    return 'Il y a un moment';
+  }
+
+  IconData _getIconFromString(String? iconName) {
+    switch (iconName?.toLowerCase()) {
+      case 'restaurant':
+        return Icons.restaurant_outlined;
+      case 'shopping':
+        return Icons.shopping_bag_outlined;
+      case 'travel':
+        return Icons.flight_outlined;
+      case 'health':
+        return Icons.health_and_safety_outlined;
+      case 'finance':
+        return Icons.account_balance_outlined;
+      case 'tech':
+        return Icons.computer_outlined;
+      default:
+        return Icons.local_offer_outlined;
+    }
   }
 
   static Future<void> _startConversation(
@@ -792,37 +1133,20 @@ class ProPostDetailScreen extends StatelessWidget {
     }
   }
 
-  String _formatValidity() {
-    if (validityType == 'permanent') {
-      return 'Offre permanente';
-    } else if (validityType == 'dates' &&
-        validFrom != null &&
-        validUntil != null) {
-      try {
-        final from = DateTime.parse(validFrom!);
-        final until = DateTime.parse(validUntil!);
-        return 'Du ${from.day}/${from.month}/${from.year} au ${until.day}/${until.month}/${until.year}';
-      } catch (_) {
-        return 'Dates spécifiées';
-      }
-    }
-    return 'Offre permanente';
-  }
-
   Widget _buildDescription() {
     // If we have rich text delta, render it with Quill
-    if (descriptionDelta != null && descriptionDelta.toString().isNotEmpty) {
+    if (widget.descriptionDelta != null && widget.descriptionDelta.toString().isNotEmpty) {
       try {
         List opsList;
 
-        if (descriptionDelta is List) {
+        if (widget.descriptionDelta is List) {
           // Already a List<dynamic> of Dart maps — use directly
-          opsList = descriptionDelta as List;
-        } else if (descriptionDelta is Map &&
-            (descriptionDelta as Map)['ops'] is List) {
-          opsList = (descriptionDelta as Map)['ops'] as List;
-        } else if (descriptionDelta is String) {
-          String jsonString = descriptionDelta as String;
+          opsList = widget.descriptionDelta as List;
+        } else if (widget.descriptionDelta is Map &&
+            (widget.descriptionDelta as Map)['ops'] is List) {
+          opsList = (widget.descriptionDelta as Map)['ops'] as List;
+        } else if (widget.descriptionDelta is String) {
+          String jsonString = widget.descriptionDelta as String;
 
           // Handle unquoted keys
           jsonString = jsonString.replaceAllMapped(
@@ -852,7 +1176,7 @@ class ProPostDetailScreen extends StatelessWidget {
           }
         } else {
           throw Exception(
-            'Unsupported descriptionDelta type: ${descriptionDelta.runtimeType}',
+            'Unsupported descriptionDelta type: ${widget.descriptionDelta.runtimeType}',
           );
         }
 
@@ -896,13 +1220,13 @@ class ProPostDetailScreen extends StatelessWidget {
 
     // Fallback to plain text
     return Text(
-      description.isNotEmpty ? description : 'Aucune description disponible.',
+      widget.description.isNotEmpty ? widget.description : 'Aucune description disponible.',
       style: TextStyle(fontSize: 13, color: Colors.grey[600], height: 1.5),
     );
   }
 
   void _showDeleteDialog(BuildContext context) {
-    if (bonPlanId == null) {
+    if (widget.bonPlanId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Impossible de supprimer ce bon plan')),
       );
@@ -942,7 +1266,7 @@ class ProPostDetailScreen extends StatelessWidget {
                           if (token == null) throw Exception('Session expirée');
                           final response = await http.delete(
                             Uri.parse(
-                              '${ApiConfig.baseUrl}/bonplans/$bonPlanId',
+                              '${ApiConfig.baseUrl}/bonplans/${widget.bonPlanId}',
                             ),
                             headers: {
                               'Authorization': 'Bearer $token',
@@ -996,7 +1320,7 @@ class ProPostDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGridItem({
+  Widget _buildDetailItem({
     required IconData icon,
     required Color iconColor,
     required Color bgColor,
@@ -1009,63 +1333,138 @@ class ProPostDetailScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          width: 42,
+          height: 42,
           decoration: BoxDecoration(
             color: bgColor,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: iconColor, size: 20),
+          child: Icon(icon, color: iconColor, size: 22),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 2),
-              RichText(
-                overflow: TextOverflow.ellipsis,
-                text: TextSpan(
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                  children: [
-                    if (prefixValue != null)
-                      TextSpan(
-                        text: prefixValue,
-                        style: TextStyle(
-                          fontWeight: FontWeight.normal,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    TextSpan(
-                      text: value,
-                      style: label == 'Prix'
-                          ? const TextStyle(color: Colors.orange)
-                          : null,
-                    ),
-                    if (originalValue != null)
-                      TextSpan(
-                        text: ' $originalValue',
-                        style: TextStyle(
-                          fontSize: 13,
-                          decoration: TextDecoration.lineThrough,
-                          color: Colors.grey[400],
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                  ],
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                  fontWeight: FontWeight.w500,
                 ),
               ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  if (prefixValue != null)
+                    Text(
+                      prefixValue,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  Expanded(
+                    child: Text(
+                      value,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF424242),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (originalValue != null && originalValue.isNotEmpty)
+                Text(
+                  'Au lieu de $originalValue',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[400],
+                    decoration: TextDecoration.lineThrough,
+                  ),
+                ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCommentItem(Map<String, dynamic> comment) {
+    final user = comment['user'] as Map<String, dynamic>?;
+    final authorName = user?['name'] ?? 'Utilisateur';
+    final avatarUrl = user?['avatar_url'];
+    final body = comment['body'] ?? '';
+    final createdAt = comment['created_at'];
+    String timeAgo = 'Il y a un moment';
+    if (createdAt != null) {
+      try {
+        final date = DateTime.parse(createdAt);
+        final diff = DateTime.now().difference(date);
+        if (diff.inDays > 0) {
+          timeAgo = 'Il y a ${diff.inDays} jour${diff.inDays > 1 ? 's' : ''}';
+        } else if (diff.inHours > 0) {
+          timeAgo = 'Il y a ${diff.inHours}h';
+        } else if (diff.inMinutes > 0) {
+          timeAgo = 'Il y a ${diff.inMinutes}min';
+        }
+      } catch (_) {}
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundImage: avatarUrl != null && avatarUrl.toString().startsWith('http')
+                ? NetworkImage(avatarUrl)
+                : const AssetImage('assets/images/dashboard_particulier/Ellipse 10.png') as ImageProvider,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      authorName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Color(0xFF424242),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      timeAgo,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

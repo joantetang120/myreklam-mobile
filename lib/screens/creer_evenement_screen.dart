@@ -189,6 +189,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     });
   }
 
+  void _selectAllDaysOfWeek() {
+    setState(() {
+      _selectedDaysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    });
+  }
+
   Future<void> _checkForSavedProgress() async {
     final prefs = await SharedPreferences.getInstance();
     final savedData = prefs.getString('evenement_draft');
@@ -3072,37 +3078,69 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       {'code': 'sunday', 'label': 'D', 'name': 'Dimanche'},
     ];
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: days.map((day) {
-        final isSelected = _selectedDaysOfWeek.contains(day['code']);
-        return GestureDetector(
-          onTap: () => _toggleDayOfWeek(day['code']!),
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF3AAE5E) : Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey.withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                day['label']!,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.white : const Color(0xFF424242),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: days.map((day) {
+            final isSelected = _selectedDaysOfWeek.contains(day['code']);
+            return GestureDetector(
+              onTap: () => _toggleDayOfWeek(day['code']!),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF3AAE5E) : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    day['label']!,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : const Color(0xFF424242),
+                    ),
+                  ),
                 ),
               ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: _selectAllDaysOfWeek,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE6F7EF),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF3AAE5E)),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.select_all, size: 18, color: Color(0xFF3AAE5E)),
+                SizedBox(width: 8),
+                Text(
+                  'Tout sélectionner',
+                  style: TextStyle(
+                    color: Color(0xFF3AAE5E),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
-        );
-      }).toList(),
+        ),
+      ],
     );
   }
 

@@ -42,7 +42,7 @@ class CategoriesScreen extends StatelessWidget {
       _CategoryItem(
         title: 'Bons Plans',
         description:
-            'consectetur adipiscing elit.altconsecteur adipiscing elit.',
+            'Découvrez les meilleures offres et promotions près de chez vous.',
         icon: Icons.card_giftcard_outlined,
         bgColor: const Color(0xFFFFE0B2).withOpacity(0.3),
         iconColor: const Color.fromARGB(255, 252, 116, 37),
@@ -56,7 +56,7 @@ class CategoriesScreen extends StatelessWidget {
       _CategoryItem(
         title: "Offre d'emploi",
         description:
-            'consectetur adipiscing elit.altconsecteur adipiscing elit.',
+            'Trouvez votre prochain emploi ou déposez vos offres de recrutement.',
         icon: Icons.work_outline,
         bgColor: const Color(0xFFB3E5FC).withOpacity(0.3),
         iconColor: Colors.lightBlueAccent,
@@ -70,7 +70,7 @@ class CategoriesScreen extends StatelessWidget {
       _CategoryItem(
         title: 'Formation',
         description:
-            'consectetur adipiscing elit.altconsecteur adipiscing elit.',
+            'Développez vos compétences avec nos formations et cours disponibles.',
         icon: Icons.school_outlined,
         bgColor: const Color(0xFFE1BEE7).withOpacity(0.2),
         iconColor: Colors.purple,
@@ -84,7 +84,7 @@ class CategoriesScreen extends StatelessWidget {
       _CategoryItem(
         title: 'Evènement',
         description:
-            'consectetur adipiscing elit.altconsecteur adipiscing elit.',
+            'Participez aux événements et rencontres organisés dans votre région.',
         icon: Icons.event_outlined,
         bgColor: const Color(0xFFE6F7EF).withOpacity(0.5),
         iconColor: Colors.green,
@@ -98,7 +98,7 @@ class CategoriesScreen extends StatelessWidget {
       _CategoryItem(
         title: 'Demandes',
         description:
-            'consectetur adipiscing elit.altconsecteur adipiscing elit.',
+            'Postez vos demandes et recevez des réponses de la communauté.',
         icon: Icons.chat_outlined,
         bgColor: Color.fromARGB(255, 255, 250, 178).withOpacity(0.3),
         iconColor: const Color.fromARGB(255, 252, 231, 49),

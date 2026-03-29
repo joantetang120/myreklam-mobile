@@ -235,44 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                         ),
                       ),
-                      const SizedBox(height: 40),
-                      // Social Login
-                      Row(
-                        children: [
-                          const Expanded(child: Divider()),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
-                            child: Text(
-                              'ou connectez-vous avec',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          const Expanded(child: Divider()),
-                        ],
-                      ),
                       const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildSocialButton(
-                            'assets/images/auth/flat-color-icons_google.png',
-                            onTap: _isLoading
-                                ? null
-                                : () => _handleGoogleLogin(),
-                          ),
-                          const SizedBox(width: 20),
-                          _buildSocialButton(
-                            'assets/images/auth/logos_facebook.png',
-                            onTap: _isLoading
-                                ? null
-                                : () => _handleFacebookLogin(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 40),
                       // Footer
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -321,6 +284,43 @@ class _LoginScreenState extends State<LoginScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 40),
+                      // Social Login
+                      Row(
+                        children: [
+                          const Expanded(child: Divider()),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            child: Text(
+                              'ou connectez-vous avec',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          const Expanded(child: Divider()),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildSocialButton(
+                            'assets/images/auth/flat-color-icons_google.png',
+                            onTap: _isLoading
+                                ? null
+                                : () => _handleGoogleLogin(),
+                          ),
+                          const SizedBox(width: 20),
+                          _buildSocialButton(
+                            'assets/images/auth/logos_facebook.png',
+                            onTap: _isLoading
+                                ? null
+                                : () => _handleFacebookLogin(),
                           ),
                         ],
                       ),
