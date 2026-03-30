@@ -46,6 +46,10 @@ class ApiConfig {
     if (trimmed.startsWith('storage/')) {
       return '$host/$trimmed';
     }
+    // Handle avatar paths and other storage paths without storage/ prefix
+    if (trimmed.startsWith('avatars/')) {
+      return '$host/storage/$trimmed';
+    }
     return trimmed;
   }
 }
