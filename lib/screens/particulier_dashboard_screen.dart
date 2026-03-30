@@ -130,166 +130,167 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
         child: Stack(
           children: [
             Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with author info
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Repost header if applicable
-                    if (widget.isRepost) ...[
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with author info
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Repost header if applicable
+                      if (widget.isRepost) ...[
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.repeat_rounded,
+                              size: 14,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                '${widget.reposter.displayName} a republié ceci',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      // Author row
                       Row(
                         children: [
-                          Icon(
-                            Icons.repeat_rounded,
-                            size: 14,
-                            color: Colors.grey[600],
+                          GestureDetector(
+                            onTap: () {
+                              if (widget.author.id != null) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PublicProfileScreen(
+                                      userId: widget.author.id,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundImage:
+                                  widget.author.avatar.startsWith('http')
+                                  ? NetworkImage(widget.author.avatar)
+                                        as ImageProvider
+                                  : AssetImage(widget.author.avatar),
+                            ),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 10),
                           Expanded(
-                            child: Text(
-                              '${widget.reposter.displayName} a republié ceci',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    if (widget.author.id != null) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              PublicProfileScreen(
+                                                userId: widget.author.id,
+                                              ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Text(
+                                    widget.author.displayName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: Color(0xFF333333),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Text(
+                                  '${widget.author.accountType} • ${widget.timeAgo}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                    ],
-                    // Author row
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            if (widget.author.id != null) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PublicProfileScreen(
-                                    userId: widget.author.id,
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundImage:
-                                widget.author.avatar.startsWith('http')
-                                ? NetworkImage(widget.author.avatar)
-                                      as ImageProvider
-                                : AssetImage(widget.author.avatar),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  if (widget.author.id != null) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => PublicProfileScreen(
-                                          userId: widget.author.id,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: Text(
-                                  widget.author.displayName,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                    color: Color(0xFF333333),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Text(
-                                '${widget.author.accountType} • ${widget.timeAgo}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              // Content text
-              if (widget.content.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayContent,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF333333),
-                          height: 1.4,
-                        ),
-                      ),
-                      if (needsCollapse)
-                        GestureDetector(
-                          onTap: () =>
-                              setState(() => _isExpanded = !_isExpanded),
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              _isExpanded ? '...moins' : '...more',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                 ),
+                // Content text
+                if (widget.content.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayContent,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF333333),
+                            height: 1.4,
+                          ),
+                        ),
+                        if (needsCollapse)
+                          GestureDetector(
+                            onTap: () =>
+                                setState(() => _isExpanded = !_isExpanded),
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                _isExpanded ? '...moins' : '...more',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+                // Media images
+                if (widget.mediaUrls.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _buildMediaSection(widget.mediaUrls),
+                ],
+                // Reaction bar
+                if (widget.postId.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: widget.buildReactionBar(),
+                  ),
+                  const SizedBox(height: 12),
+                ],
               ],
-              // Media images
-              if (widget.mediaUrls.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                _buildMediaSection(widget.mediaUrls),
-              ],
-              // Reaction bar
-              if (widget.postId.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: widget.buildReactionBar(),
-                ),
-                const SizedBox(height: 12),
-              ],
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildMediaSection(List<String> urls) {
     if (urls.isEmpty) return const SizedBox.shrink();
@@ -611,16 +612,18 @@ class _ParticulierDashboardScreenState
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Vous suivez maintenant ${user['particulier_profile']?['pseudo'] ?? user['pro_profile']?['company_name'] ?? 'cet utilisateur'}'),
+            content: Text(
+              'Vous suivez maintenant ${user['particulier_profile']?['pseudo'] ?? user['pro_profile']?['company_name'] ?? 'cet utilisateur'}',
+            ),
             backgroundColor: const Color(0xFF3AAE5E),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: ${e.toString()}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: ${e.toString()}')));
       }
     }
   }
@@ -680,9 +683,11 @@ class _ParticulierDashboardScreenState
             itemBuilder: (context, index) {
               final user = _suggestions[index];
               final isPro = user['account_type'] == 'pro';
-              final profile = isPro ? user['pro_profile'] : user['particulier_profile'];
-              final name = isPro 
-                  ? (profile?['company_name'] ?? 'Pro') 
+              final profile = isPro
+                  ? user['pro_profile']
+                  : user['particulier_profile'];
+              final name = isPro
+                  ? (profile?['company_name'] ?? 'Pro')
                   : (profile?['pseudo'] ?? 'Utilisateur');
               final avatar = profile?['avatar_url'] ?? profile?['logo_url'];
               final avatarUrl = _buildStorageUrl(avatar) ?? _defaultAvatar;
@@ -730,15 +735,23 @@ class _ParticulierDashboardScreenState
                           ),
                           const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                              border: Border.all(
+                                color: Colors.grey.withOpacity(0.2),
+                              ),
                             ),
                             child: Text(
                               isPro ? 'Pro' : 'Particulier',
-                              style: const TextStyle(fontSize: 9, color: Colors.grey),
+                              style: const TextStyle(
+                                fontSize: 9,
+                                color: Colors.grey,
+                              ),
                             ),
                           ),
                         ],
@@ -795,10 +808,12 @@ class _ParticulierDashboardScreenState
         _storyStore.addStory(result);
       }
     } else {
-      final ownGroups = _storyStore.feedNotifier.value.where((g) => g.isOwn).toList();
+      final ownGroups = _storyStore.feedNotifier.value
+          .where((g) => g.isOwn)
+          .toList();
       final myAvatar = ownGroups.isNotEmpty ? ownGroups.first.userAvatar : null;
       final resolvedAvatar = ApiConfig.resolveMediaUrl(myAvatar);
-      
+
       await Navigator.push(
         context,
         MaterialPageRoute(
@@ -991,7 +1006,8 @@ class _ParticulierDashboardScreenState
     final locationType = bp['available_location_type']?.toString() ?? '';
     final createdAt = bp['created_at']?.toString();
     // Support both media_files (from BonPlanController) and media (from FeedController)
-    final mediaFiles = (bp['media_files'] as List? ?? [])..addAll(bp['media'] as List? ?? []);
+    final mediaFiles = (bp['media_files'] as List? ?? [])
+      ..addAll(bp['media'] as List? ?? []);
     final imageUrls = mediaFiles
         .where((m) => m['type'] == 'image' || m['type'] == null)
         .map((m) {
@@ -1038,7 +1054,7 @@ class _ParticulierDashboardScreenState
                     ),
                   ),
                 ),
-              
+
               // Title
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 100, 0),
@@ -1054,14 +1070,14 @@ class _ParticulierDashboardScreenState
                 ),
               ),
               const SizedBox(height: 8),
-              
+
               // Description
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _buildBonPlanDescription(bp),
               ),
               const SizedBox(height: 12),
-              
+
               // Category & type tags
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1082,7 +1098,7 @@ class _ParticulierDashboardScreenState
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               // Merchant + time
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1098,14 +1114,21 @@ class _ParticulierDashboardScreenState
                       Expanded(
                         child: Text(
                           '$locationType chez $merchantName',
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ] else
                       const Spacer(),
                     if (createdAt != null) ...[
-                      Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                      Icon(
+                        Icons.access_time,
+                        size: 14,
+                        color: Colors.grey[500],
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         _buildTimeAgo(createdAt),
@@ -1179,12 +1202,12 @@ class _ParticulierDashboardScreenState
     if (urls.length == 1) {
       return _buildBonPlanImage(urls.first);
     }
-    
+
     return StatefulBuilder(
       builder: (context, setState) {
         final controller = PageController();
         int currentPage = 0;
-        
+
         return Column(
           children: [
             SizedBox(
@@ -1235,9 +1258,7 @@ class _ParticulierDashboardScreenState
         return Container(
           height: 220,
           color: Colors.grey[100],
-          child: const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         );
       },
       errorBuilder: (_, error, ___) {
@@ -1295,14 +1316,18 @@ class _ParticulierDashboardScreenState
 
     final user = job['user'] as Map<String, dynamic>?;
     final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
-    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
-    
-    final avatarUrl = proProfile?['logo_url']?.toString() ?? 
-                      proProfile?['avatar_url']?.toString() ?? 
-                      particulierProfile?['avatar_url']?.toString() ?? 
-                      user?['avatar']?.toString();
-                      
-    final companyLogoUrl = _buildStorageUrl(avatarUrl) ?? 'assets/images/dashboard_particulier/Rectangle 13.png';
+    final particulierProfile =
+        user?['particulier_profile'] as Map<String, dynamic>?;
+
+    final avatarUrl =
+        proProfile?['logo_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        particulierProfile?['avatar_url']?.toString() ??
+        user?['avatar']?.toString();
+
+    final companyLogoUrl =
+        _buildStorageUrl(avatarUrl) ??
+        'assets/images/dashboard_particulier/Rectangle 13.png';
 
     return JobAnnouncementCard(
       companyLogo: companyLogoUrl,
@@ -1320,9 +1345,8 @@ class _ParticulierDashboardScreenState
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => PublicProfileScreen(
-                userId: user!['id'].toString(),
-              ),
+              builder: (context) =>
+                  PublicProfileScreen(userId: user!['id'].toString()),
             ),
           );
         }
@@ -1363,14 +1387,17 @@ class _ParticulierDashboardScreenState
 
     final user = training['user'] as Map<String, dynamic>?;
     final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
-    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
-    
-    final avatarUrl = proProfile?['logo_url']?.toString() ?? 
-                      proProfile?['avatar_url']?.toString() ?? 
-                      particulierProfile?['avatar_url']?.toString() ?? 
-                      user?['avatar']?.toString();
-                      
-    final companyLogoUrl = _buildStorageUrl(avatarUrl) ?? 'assets/images/Formation.png';
+    final particulierProfile =
+        user?['particulier_profile'] as Map<String, dynamic>?;
+
+    final avatarUrl =
+        proProfile?['logo_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        particulierProfile?['avatar_url']?.toString() ??
+        user?['avatar']?.toString();
+
+    final companyLogoUrl =
+        _buildStorageUrl(avatarUrl) ?? 'assets/images/Formation.png';
 
     return FormationCard(
       companyLogo: companyLogoUrl,
@@ -1387,9 +1414,8 @@ class _ParticulierDashboardScreenState
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => PublicProfileScreen(
-                userId: user!['id'].toString(),
-              ),
+              builder: (context) =>
+                  PublicProfileScreen(userId: user!['id'].toString()),
             ),
           );
         }
@@ -1403,13 +1429,15 @@ class _ParticulierDashboardScreenState
   Widget _buildEventFeedCard(Map<String, dynamic> event) {
     final user = event['user'] as Map<String, dynamic>?;
     final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
-    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
-    
-    final avatarUrl = proProfile?['logo_url']?.toString() ?? 
-                      proProfile?['avatar_url']?.toString() ?? 
-                      particulierProfile?['avatar_url']?.toString() ?? 
-                      user?['avatar']?.toString();
-                      
+    final particulierProfile =
+        user?['particulier_profile'] as Map<String, dynamic>?;
+
+    final avatarUrl =
+        proProfile?['logo_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        particulierProfile?['avatar_url']?.toString() ??
+        user?['avatar']?.toString();
+
     final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
     final username = user?['name']?.toString() ?? 'Organisateur';
     final eventTitle = event['title']?.toString() ?? 'Évènement';
@@ -1449,9 +1477,8 @@ class _ParticulierDashboardScreenState
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => PublicProfileScreen(
-                userId: user!['id'].toString(),
-              ),
+              builder: (context) =>
+                  PublicProfileScreen(userId: user!['id'].toString()),
             ),
           );
         }
@@ -1519,9 +1546,8 @@ class _ParticulierDashboardScreenState
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => PublicProfileScreen(
-                userId: user!['id'].toString(),
-              ),
+              builder: (context) =>
+                  PublicProfileScreen(userId: user!['id'].toString()),
             ),
           );
         }
@@ -3072,7 +3098,8 @@ class _ParticulierDashboardScreenState
         ? 'Professionnel'
         : 'Particulier';
 
-    final particulierProfile = authorMap?['particulier_profile'] as Map<String, dynamic>?;
+    final particulierProfile =
+        authorMap?['particulier_profile'] as Map<String, dynamic>?;
     final proProfile = authorMap?['pro_profile'] as Map<String, dynamic>?;
 
     final avatarCandidates = [
@@ -3146,12 +3173,14 @@ class _ParticulierDashboardScreenState
       final data = response['data'] as Map<String, dynamic>? ?? response;
       final user = data['user'] as Map<String, dynamic>?;
       // Use the enhanced user data with proper display name and avatar
-      final profileImage = user?['avatar_url']?.toString() ?? 
-          _buildStorageUrl(user?['avatar']?.toString()) ?? 
+      final profileImage =
+          user?['avatar_url']?.toString() ??
+          _buildStorageUrl(user?['avatar']?.toString()) ??
           _defaultAvatar;
       // Use display_name which contains company_name for pro or pseudo for particulier
-      final username = user?['display_name']?.toString() ?? 
-          user?['name']?.toString() ?? 
+      final username =
+          user?['display_name']?.toString() ??
+          user?['name']?.toString() ??
           'Utilisateur';
       final userType = user?['account_type']?.toString() ?? 'Particulier';
       final title = data['title']?.toString() ?? 'Bon plan';
@@ -3822,7 +3851,6 @@ class _ParticulierDashboardScreenState
             images: images,
             avatar: profileImage,
             username: userName,
-            userType: categoryLabel,
             demandeTitle: title,
             description: description,
             tags: tags,
@@ -4048,7 +4076,9 @@ class _ParticulierDashboardScreenState
       authorAvatar = particulierProfile['avatar_url']?.toString();
     } else if (authorData['pro_profile'] != null) {
       final proProfile = authorData['pro_profile'] as Map<String, dynamic>;
-      authorAvatar = proProfile['avatar_url']?.toString() ?? proProfile['logo_url']?.toString();
+      authorAvatar =
+          proProfile['avatar_url']?.toString() ??
+          proProfile['logo_url']?.toString();
     }
 
     if (authorId == null || authorId.isEmpty) {
@@ -4148,11 +4178,7 @@ class _ParticulierDashboardScreenState
           color: const Color(0xFFE6F7EF),
           border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
         ),
-        child: const Icon(
-          Icons.search,
-          color: Color(0xFF2A8143),
-          size: 18,
-        ),
+        child: const Icon(Icons.search, color: Color(0xFF2A8143), size: 18),
       ),
     );
   }
@@ -4349,8 +4375,23 @@ class _ParticulierDashboardScreenState
                                               child: hasOwnStories
                                                   ? CircleAvatar(
                                                       radius: 22,
-                                                      backgroundImage: (ownGroup.first.userAvatar != null && ownGroup.first.userAvatar!.isNotEmpty)
-                                                          ? NetworkImage(ApiConfig.resolveMediaUrl(ownGroup.first.userAvatar)!) as ImageProvider
+                                                      backgroundImage:
+                                                          (ownGroup
+                                                                      .first
+                                                                      .userAvatar !=
+                                                                  null &&
+                                                              ownGroup
+                                                                  .first
+                                                                  .userAvatar!
+                                                                  .isNotEmpty)
+                                                          ? NetworkImage(
+                                                                  ApiConfig.resolveMediaUrl(
+                                                                    ownGroup
+                                                                        .first
+                                                                        .userAvatar,
+                                                                  )!,
+                                                                )
+                                                                as ImageProvider
                                                           : const AssetImage(
                                                               _defaultAvatar,
                                                             ),

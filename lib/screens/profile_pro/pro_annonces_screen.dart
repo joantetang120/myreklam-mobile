@@ -13,8 +13,10 @@ import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
 import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/screens/demande_detail_screen.dart';
+import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/formation_card.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class ProAnnoncesScreen extends StatefulWidget {
   const ProAnnoncesScreen({super.key});
@@ -28,6 +30,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
+  String? _currentUserId;
+
   List<Map<String, dynamic>> _bonPlans = [];
   bool _isLoadingBonPlans = true;
   String? _bonPlansError;
@@ -40,6 +44,19 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
   bool _isLoadingEvents = true;
   String? _eventsError;
 
+  Future<String?> _ensureCurrentUserId() async {
+    try {
+      final response = await ApiClient().authenticatedGet('/profile/me');
+      final id = response['user']?['id']?.toString();
+      if (id != null && id.isNotEmpty) {
+        _currentUserId = id;
+      }
+      return _currentUserId;
+    } catch (_) {
+      return null;
+    }
+  }
+
   List<Map<String, dynamic>> _demandes = [];
   bool _isLoadingDemandes = true;
   String? _demandesError;
@@ -51,6 +68,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
   @override
   void initState() {
     super.initState();
+    _ensureCurrentUserId();
     _loadBonPlans();
     _loadJobOffers();
     _loadEvents();
@@ -65,7 +83,10 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
   }
 
   Future<void> _loadBonPlans() async {
-    setState(() { _isLoadingBonPlans = true; _bonPlansError = null; });
+    setState(() {
+      _isLoadingBonPlans = true;
+      _bonPlansError = null;
+    });
     try {
       debugPrint('Pro: Fetching bon plans from: /bonplans');
       final response = await ApiClient().authenticatedGet('/bonplans');
@@ -92,7 +113,10 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
   }
 
   Future<void> _loadJobOffers() async {
-    setState(() { _isLoadingJobOffers = true; _jobOffersError = null; });
+    setState(() {
+      _isLoadingJobOffers = true;
+      _jobOffersError = null;
+    });
     try {
       debugPrint('Pro: Fetching job offers from: /job-offers');
       final response = await ApiClient().authenticatedGet('/job-offers');
@@ -119,7 +143,10 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
   }
 
   Future<void> _loadDemandes() async {
-    setState(() { _isLoadingDemandes = true; _demandesError = null; });
+    setState(() {
+      _isLoadingDemandes = true;
+      _demandesError = null;
+    });
     try {
       debugPrint('Pro: Fetching demandes from: /demandes');
       final response = await ApiClient().authenticatedGet('/demandes');
@@ -144,7 +171,10 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
   }
 
   Future<void> _loadEvents() async {
-    setState(() { _isLoadingEvents = true; _eventsError = null; });
+    setState(() {
+      _isLoadingEvents = true;
+      _eventsError = null;
+    });
     try {
       debugPrint('Pro: Fetching events from: /events');
       final response = await ApiClient().authenticatedGet('/events');
@@ -169,7 +199,10 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
   }
 
   Future<void> _loadTrainings() async {
-    setState(() { _isLoadingTrainings = true; _trainingsError = null; });
+    setState(() {
+      _isLoadingTrainings = true;
+      _trainingsError = null;
+    });
     try {
       debugPrint('Pro: Fetching trainings from: /trainings');
       final response = await ApiClient().authenticatedGet('/trainings');
@@ -223,7 +256,10 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final desc = (d['description'] ?? '').toString().toLowerCase();
       final nature = (d['nature'] ?? '').toString().toLowerCase();
       final type = (d['type'] ?? '').toString().toLowerCase();
-      return title.contains(q) || desc.contains(q) || nature.contains(q) || type.contains(q);
+      return title.contains(q) ||
+          desc.contains(q) ||
+          nature.contains(q) ||
+          type.contains(q);
     }).toList();
   }
 
@@ -250,30 +286,62 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
   }
 
   String _stripHtml(String value) {
-    return value.replaceAll(RegExp(r'<[^>]*>'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+    return value
+        .replaceAll(RegExp(r'<[^>]*>'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
-  int get _totalCount => _bonPlans.length + _jobOffers.length + _events.length + _demandes.length + _trainings.length;
+  int get _totalCount =>
+      _bonPlans.length +
+      _jobOffers.length +
+      _events.length +
+      _demandes.length +
+      _trainings.length;
 
   int get _activeCount {
-    final activeBp = _bonPlans.where((bp) =>
-        bp['status'] == 'published' || bp['status'] == 'PUBLISHED').length;
-    final activeJo = _jobOffers.where((jo) =>
-        jo['status'] == 'PUBLISHED' || jo['status'] == 'published').length;
-    final activeEvents = _events.where((ev) =>
-        (ev['status'] ?? '').toString().toUpperCase() == 'PUBLISHED').length;
-    final activeDemandes = _demandes.where((d) =>
-        (d['status'] ?? '').toString().toUpperCase() == 'PUBLISHED').length;
+    final activeBp = _bonPlans
+        .where(
+          (bp) => bp['status'] == 'published' || bp['status'] == 'PUBLISHED',
+        )
+        .length;
+    final activeJo = _jobOffers
+        .where(
+          (jo) => jo['status'] == 'PUBLISHED' || jo['status'] == 'published',
+        )
+        .length;
+    final activeEvents = _events
+        .where(
+          (ev) => (ev['status'] ?? '').toString().toUpperCase() == 'PUBLISHED',
+        )
+        .length;
+    final activeDemandes = _demandes
+        .where(
+          (d) => (d['status'] ?? '').toString().toUpperCase() == 'PUBLISHED',
+        )
+        .length;
     return activeBp + activeJo + activeEvents + activeDemandes;
   }
 
   int get _expiredCount {
-    final expBp = _bonPlans.where((bp) =>
-        bp['status'] == 'rejected' || bp['status'] == 'REJECTED' ||
-        bp['status'] == 'ARCHIVED' || bp['status'] == 'archived').length;
-    final expJo = _jobOffers.where((jo) =>
-        jo['status'] == 'REJECTED' || jo['status'] == 'rejected' ||
-        jo['status'] == 'ARCHIVED' || jo['status'] == 'archived').length;
+    final expBp = _bonPlans
+        .where(
+          (bp) =>
+              bp['status'] == 'rejected' ||
+              bp['status'] == 'REJECTED' ||
+              bp['status'] == 'ARCHIVED' ||
+              bp['status'] == 'archived',
+        )
+        .length;
+    final expJo = _jobOffers
+        .where(
+          (jo) =>
+              jo['status'] == 'REJECTED' ||
+              jo['status'] == 'rejected' ||
+              jo['status'] == 'ARCHIVED' ||
+              jo['status'] == 'archived',
+        )
+        .length;
     final expEvents = _events.where((ev) {
       final status = (ev['status'] ?? '').toString().toUpperCase();
       return status == 'REJECTED' || status == 'ARCHIVED';
@@ -302,7 +370,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     );
 
     try {
-      final response = await ApiClient().authenticatedGet('/bonplans/$bonPlanId');
+      final response = await ApiClient().authenticatedGet(
+        '/bonplans/$bonPlanId',
+      );
       if (!mounted) return;
       Navigator.pop(context); // dismiss loading
 
@@ -317,8 +387,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         profileImage = 'assets/images/default_profile.png';
       }
       // Use display_name which contains company_name for pro or pseudo for particulier
-      final username = user?['display_name']?.toString() ?? 
-          user?['name']?.toString() ?? 
+      final username =
+          user?['display_name']?.toString() ??
+          user?['name']?.toString() ??
           'Mon bon plan';
       final userType = user?['account_type']?.toString() ?? 'Professionnel';
       final title = data['title']?.toString() ?? 'Bon plan';
@@ -327,7 +398,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final category = data['category']?.toString() ?? '';
       final subCategory = data['sub_category']?.toString() ?? '';
       final type = data['type']?.toString() ?? '';
-      final availableAt = data['available_at_name']?.toString() ?? 'Non spécifié';
+      final availableAt =
+          data['available_at_name']?.toString() ?? 'Non spécifié';
       final validityType = data['validity_type']?.toString() ?? 'permanent';
       final validFrom = data['valid_from']?.toString();
       final validUntil = data['valid_until']?.toString();
@@ -341,11 +413,23 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
       final tags = <PostTag>[
         if (category.isNotEmpty)
-          PostTag(title: category, icon: Icons.local_offer_outlined, color: Colors.orange),
+          PostTag(
+            title: category,
+            icon: Icons.local_offer_outlined,
+            color: Colors.orange,
+          ),
         if (subCategory.isNotEmpty)
-          PostTag(title: subCategory, icon: Icons.grid_view_outlined, color: Colors.grey),
+          PostTag(
+            title: subCategory,
+            icon: Icons.grid_view_outlined,
+            color: Colors.grey,
+          ),
         if (type.isNotEmpty)
-          PostTag(title: type, icon: Icons.check_circle_outline, color: Colors.green),
+          PostTag(
+            title: type,
+            icon: Icons.check_circle_outline,
+            color: Colors.green,
+          ),
       ];
 
       if (!mounted) return;
@@ -385,9 +469,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       if (!mounted) return;
       Navigator.pop(context); // dismiss loading
       debugPrint('Error fetching bon plan detail: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors du chargement: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur lors du chargement: $e')));
     }
   }
 
@@ -414,7 +498,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         }
       }
     }
-    return images.isNotEmpty ? images : ['assets/images/details_bon_plans/Rectangle 35.png'];
+    return images.isNotEmpty
+        ? images
+        : ['assets/images/details_bon_plans/Rectangle 35.png'];
   }
 
   String _timeAgo(String? dateStr) {
@@ -434,23 +520,35 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
   String _statusLabel(String? status) {
     switch (status?.toUpperCase()) {
-      case 'PUBLISHED': return 'Publié';
-      case 'PENDING_REVIEW': return 'En attente';
-      case 'DRAFT': return 'Brouillon';
-      case 'REJECTED': return 'Rejeté';
-      case 'ARCHIVED': return 'Archivé';
-      default: return status ?? '';
+      case 'PUBLISHED':
+        return 'Publié';
+      case 'PENDING_REVIEW':
+        return 'En attente';
+      case 'DRAFT':
+        return 'Brouillon';
+      case 'REJECTED':
+        return 'Rejeté';
+      case 'ARCHIVED':
+        return 'Archivé';
+      default:
+        return status ?? '';
     }
   }
 
   Color _statusColor(String? status) {
     switch (status?.toUpperCase()) {
-      case 'PUBLISHED': return const Color(0xFF4CAF50);
-      case 'PENDING_REVIEW': return const Color(0xFFFF9800);
-      case 'DRAFT': return Colors.grey;
-      case 'REJECTED': return const Color(0xFFF44336);
-      case 'ARCHIVED': return Colors.blueGrey;
-      default: return Colors.grey;
+      case 'PUBLISHED':
+        return const Color(0xFF4CAF50);
+      case 'PENDING_REVIEW':
+        return const Color(0xFFFF9800);
+      case 'DRAFT':
+        return Colors.grey;
+      case 'REJECTED':
+        return const Color(0xFFF44336);
+      case 'ARCHIVED':
+        return Colors.blueGrey;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -459,7 +557,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
     String fullUrl = url;
     if (url.startsWith('http')) {
-      fullUrl = url.replaceFirst(RegExp(r'https?://[^/]+'), serverBase);
+      // fullUrl = url.replaceFirst(RegExp(r'https?://[^/]+'), serverBase);
+      fullUrl = url;
     } else {
       fullUrl = '$serverBase$url';
     }
@@ -469,9 +568,12 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
   String _workTimeLabel(String val) {
     switch (val) {
-      case 'FULL_TIME': return 'Temps plein';
-      case 'PART_TIME': return 'Temps partiel';
-      default: return val;
+      case 'FULL_TIME':
+        return 'Temps plein';
+      case 'PART_TIME':
+        return 'Temps partiel';
+      default:
+        return val;
     }
   }
 
@@ -498,7 +600,12 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          await Future.wait([_loadBonPlans(), _loadJobOffers(), _loadEvents(), _loadDemandes()]);
+          await Future.wait([
+            _loadBonPlans(),
+            _loadJobOffers(),
+            _loadEvents(),
+            _loadDemandes(),
+          ]);
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -514,7 +621,10 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                       onChanged: (v) => setState(() => _searchQuery = v),
                       decoration: InputDecoration(
                         hintText: 'Faire une recherche',
-                        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                        hintStyle: TextStyle(
+                          color: Colors.grey[400],
+                          fontSize: 14,
+                        ),
                         prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
@@ -533,9 +643,13 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(color: Color(0xFF2E9B5B)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF2E9B5B),
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -598,7 +712,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const PublishOptionsScreen(),
+                                builder: (context) =>
+                                    const PublishOptionsScreen(),
                               ),
                             ).then((_) {
                               _loadBonPlans();
@@ -643,7 +758,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                             iconColor: const Color.fromARGB(255, 252, 116, 37),
                             bgColor: const Color(0xFFFFE0B2).withOpacity(0.2),
                             icon: Icons.card_giftcard_outlined,
-                            onTap: () => setState(() => selectedCategory = 'Bons plans'),
+                            onTap: () =>
+                                setState(() => selectedCategory = 'Bons plans'),
                           ),
                           const SizedBox(width: 15),
                           CategoriesIcon(
@@ -651,7 +767,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                             iconColor: Colors.lightBlueAccent,
                             bgColor: const Color(0xFFB3E5FC).withOpacity(0.2),
                             iconAsset: 'assets/images/offres.png',
-                            onTap: () => setState(() => selectedCategory = "Offre d'emploi"),
+                            onTap: () => setState(
+                              () => selectedCategory = "Offre d'emploi",
+                            ),
                           ),
                           const SizedBox(width: 15),
                           CategoriesIcon(
@@ -659,7 +777,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                             iconColor: Colors.purple,
                             bgColor: const Color(0xFFE1BEE7).withOpacity(0.1),
                             iconAsset: 'assets/images/Formation.png',
-                            onTap: () => setState(() => selectedCategory = 'Formations'),
+                            onTap: () =>
+                                setState(() => selectedCategory = 'Formations'),
                           ),
                           const SizedBox(width: 15),
                           CategoriesIcon(
@@ -667,15 +786,22 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                             iconColor: Colors.green,
                             bgColor: const Color(0xFFE6F7EF).withOpacity(0.5),
                             icon: Icons.event_outlined,
-                            onTap: () => setState(() => selectedCategory = 'Événement'),
+                            onTap: () =>
+                                setState(() => selectedCategory = 'Événement'),
                           ),
                           const SizedBox(width: 15),
                           CategoriesIcon(
                             title: 'Demandes',
                             iconColor: const Color.fromARGB(255, 252, 231, 49),
-                            bgColor: const Color.fromARGB(255, 255, 250, 178).withOpacity(0.2),
+                            bgColor: const Color.fromARGB(
+                              255,
+                              255,
+                              250,
+                              178,
+                            ).withOpacity(0.2),
                             icon: Icons.chat_outlined,
-                            onTap: () => setState(() => selectedCategory = 'Demandes'),
+                            onTap: () =>
+                                setState(() => selectedCategory = 'Demandes'),
                           ),
                         ],
                       ),
@@ -723,9 +849,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             : 'Aucune demande publiée',
       );
     }
-    return Column(
-      children: items.map(_buildDemandeCard).toList(),
-    );
+    return Column(children: items.map(_buildDemandeCard).toList());
   }
 
   Widget _buildDemandeCard(Map<String, dynamic> d) {
@@ -736,20 +860,59 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     final location = d['location']?.toString() ?? '';
     final nationwide = d['nationwide'] == true;
     final createdAt = d['created_at']?.toString();
+    final user = d['user'] is Map<String, dynamic>
+        ? d['user'] as Map<String, dynamic>
+        : null;
     final mediaFiles = d['media_files'] as List? ?? [];
     final imageUrl = mediaFiles.isNotEmpty
         ? _buildImageUrl(mediaFiles.first['url']?.toString() ?? '')
         : null;
 
-    final categoryLabel = type.isNotEmpty ? type : (nature.isNotEmpty ? nature : 'Demande');
+    String username = 'Utilisateur';
+    if (user != null) {
+      if (user['particulier_profile'] is Map) {
+        final p = user['particulier_profile'] as Map;
+        username =
+            p['pseudo']?.toString() ??
+            user['email']?.toString().split('@').first ??
+            'Utilisateur';
+      } else if (user['pro_profile'] is Map) {
+        final p = user['pro_profile'] as Map;
+        username =
+            p['company_name']?.toString() ??
+            ((p['first_name']?.toString() != null &&
+                    p['last_name']?.toString() != null)
+                ? '${p['first_name']} ${p['last_name']}'
+                : user['email']?.toString().split('@').first) ??
+            'Utilisateur';
+      }
+    }
+
+    String profileImage = 'assets/images/default_profile.png';
+    if (user != null) {
+      if (user['particulier_profile'] is Map) {
+        final p = user['particulier_profile'] as Map;
+        final avatarUrl = p['avatar_url']?.toString() ?? '';
+        if (avatarUrl.isNotEmpty) profileImage = avatarUrl;
+      } else if (user['pro_profile'] is Map) {
+        final p = user['pro_profile'] as Map;
+        final avatarUrl =
+            p['avatar_url']?.toString() ?? p['logo_url']?.toString() ?? '';
+        if (avatarUrl.isNotEmpty) profileImage = avatarUrl;
+      }
+      if (profileImage.isNotEmpty && !profileImage.startsWith('assets/')) {
+        profileImage = _buildImageUrl(profileImage);
+      }
+    }
+
     final displayLocation = nationwide
         ? 'Toute la France'
         : (location.isNotEmpty ? location : 'Non spécifié');
 
     return DemandeCard(
-      profileImage: 'assets/images/default_profile.png',
-      username: 'Ma demande',
-      categoryLabel: categoryLabel,
+      profileImage: profileImage,
+      username: username,
+      categoryLabel: nature,
       categoryColor: const Color(0xFFEF8A40),
       title: title,
       description: description.length > 200
@@ -780,7 +943,12 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     );
 
     try {
-      final response = await ApiClient().authenticatedGet('/demandes/$demandeId');
+      final response = await ApiClient().authenticatedGet(
+        '/demandes/$demandeId',
+      );
+
+      print("Response: ${response['data']['user']}");
+
       if (!mounted) return;
       Navigator.pop(context);
 
@@ -790,6 +958,14 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final description = data['description']?.toString() ?? '';
       final nature = data['nature']?.toString();
       final type = data['type']?.toString();
+      final username = response['data']['user']['pro_profile'] != null
+          ? response['data']['user']['pro_profile']['first_name']?.toString()
+          : response['data']['user']['particulier_profile']['pseudo']
+                ?.toString();
+      final avatar = response['data']['user']['pro_profile'] != null
+          ? response['data']['user']['pro_profile']['avatar_url']?.toString()
+          : response['data']['user']['particulier_profile']['avatar_url']
+                ?.toString();
       final urgent = data['urgent'] == true;
       final budgetMax = data['budget_max']?.toString();
       final location = data['location']?.toString();
@@ -800,11 +976,15 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final showGoogleLocation = data['show_google_location'] == true;
       final acceptMessages = data['accept_messages'] == true;
       final createdAt = data['created_at']?.toString();
-      final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+      final mediaFiles =
+          data['media_files'] as List? ?? data['media'] as List? ?? [];
+
+      print("Medias: $mediaFiles");
 
       final images = mediaFiles
           .where((m) => m is Map && m['url'] != null)
-          .map((m) => _buildImageUrl(m['url']?.toString() ?? ''))
+          .map((m) => m['url']?.toString() ?? '')
+          // .map((m) => _buildImageUrl(m['url']?.toString() ?? ''))
           .where((url) => url.isNotEmpty)
           .toList();
 
@@ -813,12 +993,42 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
           : (nature != null && nature.isNotEmpty ? nature : 'Demande');
 
       final tags = <PostTag>[
-        PostTag(title: categoryLabel, icon: Icons.label_outline, color: Colors.orange),
+        PostTag(
+          title: categoryLabel,
+          icon: Icons.label_outline,
+          color: Colors.grey,
+        ),
         if (urgent)
-          PostTag(title: 'Urgent', icon: Icons.warning_amber_rounded, color: Colors.red),
+          PostTag(
+            title: 'Urgent',
+            icon: Icons.warning_amber_rounded,
+            color: Colors.red,
+          ),
         if (nationwide)
-          PostTag(title: 'Toute la France', icon: Icons.public, color: Colors.blue),
+          PostTag(
+            title: 'Toute la France',
+            icon: Icons.public,
+            color: Colors.blue,
+          ),
       ];
+
+      final subTagsCat = nature != null && nature.isNotEmpty
+          ? nature
+          : 'Demande';
+
+      final subTag = PostTag(
+        title: subTagsCat,
+        icon: Icons.label_outline,
+        color: Colors.orange,
+      );
+
+      final currentUserId = _currentUserId;
+      final authorId = (data['user'] is Map)
+          ? (data['user'] as Map)['id']?.toString()
+          : data['user_id']?.toString();
+
+      final isOwner =
+          authorId != null && authorId.isNotEmpty && currentUserId == authorId;
 
       if (!mounted) return;
       final result = await Navigator.push(
@@ -826,12 +1036,12 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         MaterialPageRoute(
           builder: (_) => DemandeDetailScreen(
             images: images,
-            avatar: 'assets/images/default_profile.png',
-            username: 'Ma demande',
-            userType: categoryLabel,
+            avatar: avatar ?? 'assets/images/profil/Rectangle 195.png',
+            username: username ?? 'Ma demande',
             demandeTitle: title,
             description: description,
             tags: tags,
+            subtags: subTag,
             timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
             nature: nature,
             type: type,
@@ -842,7 +1052,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             searchRadiusKm: searchRadiusKm,
             showGoogleLocation: showGoogleLocation,
             acceptMessages: acceptMessages,
-            isOwner: true,
+            isOwner: isOwner,
             demandeId: demandeId,
             demandeData: data,
             returnToListingOnEdit: true,
@@ -854,9 +1064,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       if (!mounted) return;
       Navigator.pop(context);
       debugPrint('Error fetching demande detail: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors du chargement: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur lors du chargement: $e')));
     }
   }
 
@@ -880,9 +1090,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             : 'Aucune formation publiée',
       );
     }
-    return Column(
-      children: items.map(_buildTrainingCard).toList(),
-    );
+    return Column(children: items.map(_buildTrainingCard).toList());
   }
 
   Widget _buildTrainingCard(Map<String, dynamic> tr) {
@@ -913,7 +1121,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       if (durationHours != null)
         FormationTag(
           icon: Icons.timer_outlined,
-          text: '$durationHours h${durationUnit != null ? ' / $durationUnit' : ''}',
+          text:
+              '$durationHours h${durationUnit != null ? ' / $durationUnit' : ''}',
         ),
       if (status.isNotEmpty)
         FormationTag(icon: Icons.flag_outlined, text: _statusLabel(status)),
@@ -923,7 +1132,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       companyLogo: 'assets/images/Formation.png',
       companyName: 'Ma formation',
       formationTitle: title,
-      description: description.isNotEmpty ? description : 'Aucune description fournie.',
+      description: description.isNotEmpty
+          ? description
+          : 'Aucune description fournie.',
       tags: tags,
       timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
       onApply: () => _navigateToTrainingDetail(tr),
@@ -946,7 +1157,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     );
 
     try {
-      final response = await ApiClient().authenticatedGet('/trainings/$trainingId');
+      final response = await ApiClient().authenticatedGet(
+        '/trainings/$trainingId',
+      );
       if (!mounted) return;
       Navigator.pop(context);
 
@@ -996,7 +1209,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
           ? certificationRaw.map((e) => e.toString()).toList()
           : <String>[];
       final createdAt = data['created_at']?.toString();
-      final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+      final mediaFiles =
+          data['media_files'] as List? ?? data['media'] as List? ?? [];
 
       final images = mediaFiles
           .where((m) => m is Map && m['url'] != null)
@@ -1008,7 +1222,10 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         if (trainingCategory != null && trainingCategory.isNotEmpty)
           FormationTag(icon: Icons.category_outlined, text: trainingCategory),
         if (trainingSubCategory != null && trainingSubCategory.isNotEmpty)
-          FormationTag(icon: Icons.subdirectory_arrow_right, text: trainingSubCategory),
+          FormationTag(
+            icon: Icons.subdirectory_arrow_right,
+            text: trainingSubCategory,
+          ),
         if (trainingType != null && trainingType.isNotEmpty)
           FormationTag(icon: Icons.school_outlined, text: trainingType),
         if (durationInH != null)
@@ -1064,9 +1281,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       if (!mounted) return;
       Navigator.pop(context);
       debugPrint('Error fetching training detail: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors du chargement: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur lors du chargement: $e')));
     }
   }
 
@@ -1090,9 +1307,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             : 'Aucun bon plan publié',
       );
     }
-    return Column(
-      children: items.map((bp) => _buildBonPlanCard(bp)).toList(),
-    );
+    return Column(children: items.map((bp) => _buildBonPlanCard(bp)).toList());
   }
 
   Widget _buildJobOffersList() {
@@ -1115,9 +1330,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             : "Aucune offre d'emploi publiée",
       );
     }
-    return Column(
-      children: items.map((jo) => _buildJobOfferCard(jo)).toList(),
-    );
+    return Column(children: items.map((jo) => _buildJobOfferCard(jo)).toList());
   }
 
   Widget _buildEventsList() {
@@ -1140,9 +1353,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             : 'Aucun événement publié',
       );
     }
-    return Column(
-      children: items.map((ev) => _buildEventCard(ev)).toList(),
-    );
+    return Column(children: items.map((ev) => _buildEventCard(ev)).toList());
   }
 
   Widget _buildEventCard(Map<String, dynamic> ev) {
@@ -1157,9 +1368,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     final categoryCode = ev['category_code']?.toString() ?? '';
     final subCategoryCode = ev['sub_category_code']?.toString() ?? '';
     final formatType = ev['format_type']?.toString() ?? '';
-    
+
     final mediaFiles = ev['media_files'] as List? ?? [];
-    final eventImage = mediaFiles.isNotEmpty 
+    final eventImage = mediaFiles.isNotEmpty
         ? _buildImageUrl(mediaFiles.first['url']?.toString() ?? '')
         : 'assets/images/default_event.png';
 
@@ -1248,9 +1459,13 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final priceType = data['price_type']?.toString();
       final pricingMode = data['pricing_mode']?.toString();
       final priceAmount = data['price_amount']?.toString();
-      final priceCategories = (data['price_categories'] as List?)
-          ?.map<Map<String, dynamic>>((c) => Map<String, dynamic>.from(c as Map))
-          .toList() ?? <Map<String, dynamic>>[];
+      final priceCategories =
+          (data['price_categories'] as List?)
+              ?.map<Map<String, dynamic>>(
+                (c) => Map<String, dynamic>.from(c as Map),
+              )
+              .toList() ??
+          <Map<String, dynamic>>[];
       final reservationMode = data['reservation_mode']?.toString();
       final coverageArea = data['coverage_area']?.toString();
       final isNationwide = data['is_nationwide'] == true;
@@ -1260,7 +1475,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final landingUrl = data['landing_url']?.toString();
       final acceptMessages = data['accept_messages'] == true;
       final createdAt = data['created_at']?.toString();
-      final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+      final mediaFiles =
+          data['media_files'] as List? ?? data['media'] as List? ?? [];
 
       final images = mediaFiles
           .where((m) => m is Map && m['url'] != null)
@@ -1270,11 +1486,23 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
       final tags = <PostTag>[
         if (categoryCode != null && categoryCode.isNotEmpty)
-          PostTag(title: categoryCode, icon: Icons.local_offer_outlined, color: Colors.green),
+          PostTag(
+            title: categoryCode,
+            icon: Icons.local_offer_outlined,
+            color: Colors.green,
+          ),
         if (subCategoryCode != null && subCategoryCode.isNotEmpty)
-          PostTag(title: subCategoryCode, icon: Icons.grid_view_outlined, color: Colors.grey),
+          PostTag(
+            title: subCategoryCode,
+            icon: Icons.grid_view_outlined,
+            color: Colors.grey,
+          ),
         if (formatType != null && formatType.isNotEmpty)
-          PostTag(title: formatType, icon: Icons.videocam_outlined, color: Colors.blue),
+          PostTag(
+            title: formatType,
+            icon: Icons.videocam_outlined,
+            color: Colors.blue,
+          ),
       ];
 
       if (!mounted) return;
@@ -1284,7 +1512,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
           builder: (_) => EventDetailScreen(
             images: images,
             avatar: 'assets/images/default_profile.png',
-            username: isOrganizer ? 'Mon événement' : (organizerName ?? 'Organisateur'),
+            username: isOrganizer
+                ? 'Mon événement'
+                : (organizerName ?? 'Organisateur'),
             userType: 'Évènement',
             eventTitle: title,
             description: description,
@@ -1324,9 +1554,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       if (!mounted) return;
       Navigator.pop(context);
       debugPrint('Error fetching event detail: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors du chargement: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur lors du chargement: $e')));
     }
   }
 
@@ -1340,7 +1570,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     final locationType = bp['available_location_type'] ?? '';
     final createdAt = bp['created_at']?.toString();
     final mediaFiles = bp['media_files'] as List? ?? [];
-    final imageUrl = mediaFiles.isNotEmpty ? mediaFiles.first['url']?.toString() : null;
+    final imageUrl = mediaFiles.isNotEmpty
+        ? mediaFiles.first['url']?.toString()
+        : null;
 
     return Container(
       margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
@@ -1379,7 +1611,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                 decoration: BoxDecoration(
                   color: _statusColor(status).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: _statusColor(status).withOpacity(0.5)),
+                  border: Border.all(
+                    color: _statusColor(status).withOpacity(0.5),
+                  ),
                 ),
                 child: Text(
                   _statusLabel(status),
@@ -1410,7 +1644,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                   return Container(
                     height: 180,
                     color: Colors.grey[100],
-                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   );
                 },
                 errorBuilder: (_, error, ___) {
@@ -1418,7 +1654,12 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                   return Container(
                     height: 100,
                     color: Colors.grey[200],
-                    child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey)),
+                    child: const Center(
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey,
+                      ),
+                    ),
                   );
                 },
               ),
@@ -1430,8 +1671,10 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             spacing: 8,
             runSpacing: 6,
             children: [
-              if (category.isNotEmpty) _buildTag(category, Icons.local_offer_outlined),
-              if (subCategory.isNotEmpty) _buildTag(subCategory, Icons.subdirectory_arrow_right),
+              if (category.isNotEmpty)
+                _buildTag(category, Icons.local_offer_outlined),
+              if (subCategory.isNotEmpty)
+                _buildTag(subCategory, Icons.subdirectory_arrow_right),
               if (type.isNotEmpty) _buildTag(type, Icons.label_outline),
             ],
           ),
@@ -1492,16 +1735,21 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     final contractType = jo['contract_type'] ?? '';
     final workTime = jo['work_time'] ?? '';
     final companyRaw = jo['company'];
-    final companyName = companyRaw is Map ? (companyRaw['name'] ?? '') : (companyRaw ?? '').toString();
-    final locationRaw = jo['location'];
-    final city = locationRaw is Map ? (locationRaw['city'] ?? '') : '';
+    final companyName = companyRaw is Map
+        ? (companyRaw['name'] ?? '')
+        : (companyRaw ?? '').toString();
+    final city = jo['location'];
     final createdAt = jo['created_at']?.toString();
     final categoryRaw = jo['category'];
-    final categoryName = categoryRaw is Map ? (categoryRaw['name'] ?? '') : (categoryRaw ?? '').toString();
+    final categoryName = categoryRaw is Map
+        ? (categoryRaw['name'] ?? '')
+        : (categoryRaw ?? '').toString();
     final advantages = jo['advantages'] as List? ?? [];
     final salaryMin = jo['salary_min'];
     final salaryMax = jo['salary_max'];
-    
+    final educationLevel = jo['education_level'];
+    final experienceLevel = jo['experience_level'];
+
     // Extract description
     String description = '';
     final descriptionDelta = jo['description_delta'];
@@ -1539,17 +1787,21 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     } else {
       description = jo['description']?.toString() ?? '';
     }
-    
+
     // Build tags
     final tags = <JobDetailTag>[
       if (contractType.isNotEmpty)
         JobDetailTag(icon: Icons.description_outlined, text: contractType),
       if (workTime.isNotEmpty)
         JobDetailTag(icon: Icons.access_time, text: _workTimeLabel(workTime)),
-      if (categoryName.isNotEmpty)
-        JobDetailTag(icon: Icons.category_outlined, text: categoryName),
       if (city.isNotEmpty)
         JobDetailTag(icon: Icons.location_on_outlined, text: city),
+      if (categoryName.isNotEmpty)
+        JobDetailTag(icon: Icons.category_outlined, text: categoryName),
+      if (educationLevel.isNotEmpty)
+        JobDetailTag(icon: Icons.school_outlined, text: educationLevel),
+      if (experienceLevel.isNotEmpty)
+        JobDetailTag(icon: Icons.trending_up_outlined, text: experienceLevel),
       if (salaryMin != null || salaryMax != null)
         JobDetailTag(
           icon: Icons.euro,
@@ -1557,24 +1809,238 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
           isSpecial: true,
         ),
     ];
-    
+
     // Build advantages list
     final advantagesList = advantages.take(3).map((a) => a.toString()).toList();
 
+    final user = jo['user'] is Map<String, dynamic>
+        ? jo['user'] as Map<String, dynamic>
+        : null;
+
+    String cardCompanyName = companyName.isNotEmpty
+        ? companyName
+        : 'Entreprise';
+    String cardCompanyLogo = '';
+
+    if (user != null) {
+      if (user['pro_profile'] is Map) {
+        final p = user['pro_profile'] as Map;
+        final n = p['company_name']?.toString() ?? '';
+        if (n.isNotEmpty) cardCompanyName = n;
+
+        final logo =
+            p['avatar_url']?.toString() ?? p['logo_url']?.toString() ?? '';
+        if (logo.isNotEmpty) cardCompanyLogo = logo;
+      } else if (user['particulier_profile'] is Map) {
+        final p = user['particulier_profile'] as Map;
+        final n = p['pseudo']?.toString() ?? '';
+        if (n.isNotEmpty) cardCompanyName = n;
+
+        final logo = p['avatar_url']?.toString() ?? '';
+        if (logo.isNotEmpty) cardCompanyLogo = logo;
+      }
+    }
+
     return JobAnnouncementCard(
-      companyLogo: '',
-      companyName: companyName.isNotEmpty ? companyName : 'Entreprise',
+      companyLogo: cardCompanyLogo,
+      companyName: cardCompanyName,
       jobTitle: title,
       description: description,
       tags: tags,
       advantages: advantagesList,
       timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
-      onApply: () {
-        // Handle view job offer action
-      },
+      onApply: () => _navigateToJobOfferDetail(jo),
     );
   }
-  
+
+  Future<void> _navigateToJobOfferDetail(Map<String, dynamic> jo) async {
+    final jobId = jo['id']?.toString();
+    if (jobId == null || jobId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir cette offre')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedGet('/job-offers/$jobId');
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      final data = response['data'] as Map<String, dynamic>? ?? response;
+
+      final title = data['title']?.toString() ?? '';
+      final descriptionRaw = data['description'];
+      final description = descriptionRaw?.toString() ?? '';
+      final descriptionDelta =
+          data['description_delta'] ??
+          (descriptionRaw is List ? descriptionRaw : null);
+      final profileDescription = data['profile_description']?.toString();
+      final companyName = data['company_name']?.toString() ?? 'Entreprise';
+      final companyWebsite = data['company_website']?.toString() ?? '';
+
+      final contractTypeRaw = data['contract_type'];
+      final contractType = contractTypeRaw is Map
+          ? (contractTypeRaw['name'] ?? contractTypeRaw.toString())
+          : (contractTypeRaw?.toString() ?? '');
+
+      final workTimeRaw = data['work_time'];
+      final workTime = workTimeRaw is Map
+          ? (workTimeRaw['name'] ?? workTimeRaw.toString())
+          : (workTimeRaw?.toString() ?? '');
+
+      final locationRaw = data['location'];
+      final location = locationRaw is Map
+          ? (locationRaw['city'] ??
+                locationRaw['name'] ??
+                locationRaw.toString())
+          : (locationRaw?.toString() ?? '');
+
+      final categoryRaw = data['category'];
+      final category = categoryRaw is Map
+          ? (categoryRaw['name'] ?? categoryRaw.toString())
+          : (categoryRaw?.toString() ?? '');
+
+      final salaryMin = data['salary_min'];
+      final salaryMax = data['salary_max'];
+
+      final remoteWork = data['remote_work'] == true;
+
+      final educationLevelRaw = data['education_level'];
+      final educationLevel = educationLevelRaw is Map
+          ? (educationLevelRaw['name'] ?? educationLevelRaw.toString())
+          : educationLevelRaw?.toString();
+
+      final experienceLevelRaw = data['experience_level'];
+      final experienceLevel = experienceLevelRaw is Map
+          ? (experienceLevelRaw['name'] ?? experienceLevelRaw.toString())
+          : experienceLevelRaw?.toString();
+
+      final advantagesRaw = data['advantages'];
+      final advantages = advantagesRaw is List
+          ? advantagesRaw
+                .map(
+                  (a) => a is Map ? (a['name'] ?? a.toString()) : a.toString(),
+                )
+                .toList()
+          : <String>[];
+
+      final createdAt = data['created_at']?.toString();
+      final mediaRaw =
+          data['media'] as List? ?? data['media_files'] as List? ?? [];
+
+      final images = mediaRaw
+          .where((m) => m is Map && m['url'] != null)
+          .map((m) => _buildImageUrl(m['url']?.toString() ?? ''))
+          .where((url) => url.isNotEmpty)
+          .toList();
+
+      if (images.isEmpty) {
+        images.add('assets/images/dashboard_particulier/Rectangle 13.png');
+      }
+
+      final tags = <JobDetailTag>[
+        if (contractType.isNotEmpty)
+          JobDetailTag(icon: Icons.description_outlined, text: contractType),
+        if (workTime.isNotEmpty)
+          JobDetailTag(icon: Icons.access_time, text: _workTimeLabel(workTime)),
+        if (location.isNotEmpty)
+          JobDetailTag(icon: Icons.location_on_outlined, text: location),
+        if (category.isNotEmpty)
+          JobDetailTag(icon: Icons.category_outlined, text: category),
+        if (educationLevel != null && educationLevel.isNotEmpty)
+          JobDetailTag(icon: Icons.school_outlined, text: educationLevel),
+        if (experienceLevel != null && experienceLevel.isNotEmpty)
+          JobDetailTag(icon: Icons.trending_up_outlined, text: experienceLevel),
+        if (salaryMin != null || salaryMax != null)
+          JobDetailTag(
+            icon: Icons.euro,
+            text: _formatSalary(salaryMin, salaryMax),
+            isSpecial: true,
+          ),
+      ];
+
+      final advantagesList = advantages
+          .take(3)
+          .map((a) => a.toString())
+          .toList();
+
+      final currentUserId = await _ensureCurrentUserId();
+      final jobUserId =
+          data['user_id']?.toString() ?? jo['user_id']?.toString();
+      final isOwner =
+          currentUserId != null &&
+          jobUserId != null &&
+          currentUserId == jobUserId;
+
+      final authorData = data['user'] is Map<String, dynamic>
+          ? data['user'] as Map<String, dynamic>
+          : null;
+      final acceptMessages = data['accept_messages'] == true;
+
+      final avatar = data['user']['avatar_url'];
+
+      if (!mounted) return;
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => JobDetailScreen(
+            images: images,
+            companyLogo:
+                avatar ??
+                'assets/images/dashboard_particulier/Rectangle 13.png',
+            companyName: companyName,
+            companyWebsite: companyWebsite,
+            jobTitle: title,
+            description: description,
+            descriptionDelta: descriptionDelta,
+            profileDescription: profileDescription,
+            tags: tags,
+            postTags: <PostTag>[
+              if (workTime.isNotEmpty)
+                PostTag(
+                  title: workTime,
+                  icon: Icons.access_time,
+                  color: Colors.grey,
+                ),
+            ],
+            subtags: contractType.isNotEmpty
+                ? PostTag(
+                    title: contractType,
+                    icon: Icons.description_outlined,
+                    color: const Color(0xFF27A5FF),
+                  )
+                : null,
+            advantages: advantagesList,
+            timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
+            location: location,
+            remoteWork: remoteWork,
+            educationLevel: educationLevel,
+            experienceLevel: experienceLevel,
+            isOwner: isOwner,
+            jobOfferId: jobId,
+            jobOfferData: data,
+            acceptMessages: acceptMessages,
+            authorData: authorData,
+          ),
+        ),
+      );
+      if (result == 'deleted' && mounted) _loadJobOffers();
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur lors du chargement: $e')));
+    }
+  }
+
   String _formatSalary(dynamic min, dynamic max) {
     if (min != null && max != null) {
       return '${min}€ - ${max}€';
@@ -1639,10 +2105,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 12),
-              TextButton(
-                onPressed: onRetry,
-                child: const Text('Réessayer'),
-              ),
+              TextButton(onPressed: onRetry, child: const Text('Réessayer')),
             ],
           ],
         ),
@@ -1774,7 +2237,11 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
     return Text(
       descriptionPlain,
-      style: const TextStyle(fontSize: 13, color: Color(0xFF666666), height: 1.5),
+      style: const TextStyle(
+        fontSize: 13,
+        color: Color(0xFF666666),
+        height: 1.5,
+      ),
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
     );

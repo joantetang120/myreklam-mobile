@@ -1,22 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/screens/creer_demande_screen.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/user_detail_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
-import 'package:myreklam/screens/creer_demande_screen.dart';
+import 'package:myreklam/services/conversation_service.dart';
+import 'package:myreklam/screens/chat_conversation_screen.dart';
 
 class DemandeDetailScreen extends StatelessWidget {
   final List<String> images;
   final String avatar;
   final String username;
-  final String userType;
   final String demandeTitle;
   final String description;
   final List<PostTag> tags;
+  final PostTag? subtags;
   final String timeAgo;
   // Demande-specific fields
   final String? nature;
@@ -38,10 +40,10 @@ class DemandeDetailScreen extends StatelessWidget {
     this.images = const [],
     required this.avatar,
     required this.username,
-    this.userType = 'Demande',
     required this.demandeTitle,
     required this.description,
     this.tags = const [],
+    this.subtags,
     this.timeAgo = '',
     this.nature,
     this.type,
@@ -57,6 +59,114 @@ class DemandeDetailScreen extends StatelessWidget {
     this.demandeData,
     this.returnToListingOnEdit = false,
   });
+
+  Future<void> _startConversationWithAuthor(
+    BuildContext context,
+    Map<String, dynamic> authorData,
+  ) async {
+    final authorId = authorData['id']?.toString();
+
+    String authorName = 'Utilisateur';
+    if (authorData['particulier_profile'] != null) {
+      final particulierProfile =
+          authorData['particulier_profile'] as Map<String, dynamic>;
+      authorName =
+          particulierProfile['pseudo']?.toString() ??
+          authorData['email']?.toString().split('@').first ??
+          'Utilisateur';
+    } else if (authorData['pro_profile'] != null) {
+      final proProfile = authorData['pro_profile'] as Map<String, dynamic>;
+      authorName =
+          proProfile['company_name']?.toString() ??
+          (proProfile['first_name']?.toString() != null &&
+                  proProfile['last_name']?.toString() != null
+              ? '${proProfile['first_name']} ${proProfile['last_name']}'
+              : authorData['email']?.toString().split('@').first) ??
+          'Utilisateur';
+    }
+
+    String? authorAvatar;
+    if (authorData['particulier_profile'] != null) {
+      final particulierProfile =
+          authorData['particulier_profile'] as Map<String, dynamic>;
+      authorAvatar = particulierProfile['avatar_url']?.toString();
+    } else if (authorData['pro_profile'] != null) {
+      final proProfile = authorData['pro_profile'] as Map<String, dynamic>;
+      authorAvatar =
+          proProfile['avatar_url']?.toString() ??
+          proProfile['logo_url']?.toString();
+    }
+
+    if (authorId == null || authorId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible de démarrer la conversation'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final otherUserId = int.tryParse(authorId);
+    if (otherUserId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ID utilisateur invalide'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final conversationService = ConversationService();
+      final conversation = await conversationService.getOrCreateConversation(
+        otherUserId,
+      );
+
+      if (context.mounted) Navigator.pop(context);
+
+      if (context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatConversationScreen(
+              conversationId: conversation.id.toString(),
+              name: authorName,
+              avatar:
+                  authorAvatar ??
+                  'assets/images/dashboard_particulier/Ellipse 10.png',
+              status: 'En ligne',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) Navigator.pop(context);
+
+      if (context.mounted) {
+        String errorMessage = 'Échec, veuillez réessayer';
+        final exceptionString = e.toString();
+        if (exceptionString.startsWith('Exception: ')) {
+          errorMessage = exceptionString.substring('Exception: '.length);
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,260 +202,383 @@ class DemandeDetailScreen extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite_border, color: Color(0xFF616161)),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.share_outlined, color: Color(0xFF616161)),
-            onPressed: () {},
-          ),
           if (isOwner)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Color(0xFF616161), size: 24),
-              offset: const Offset(0, 45),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              onSelected: (value) {
-                if (value == 'edit') {
-                  if (demandeId != null && demandeData != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CreerDemandeScreen(
-                          demandeId: demandeId,
-                          initialData: demandeData,
-                          shouldReturnToListingOnSuccess: returnToListingOnEdit,
+            Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: PopupMenuButton<String>(
+                icon: const Icon(
+                  Icons.more_vert,
+                  color: Color(0xFF616161),
+                  size: 24,
+                ),
+                offset: const Offset(0, 45),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    if (demandeId != null && demandeData != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CreerDemandeScreen(
+                            demandeId: demandeId,
+                            initialData: demandeData,
+                          ),
                         ),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Impossible de modifier cette demande')),
-                    );
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Impossible de modifier cette demande'),
+                        ),
+                      );
+                    }
+                  } else if (value == 'delete') {
+                    _showDeleteDialog(context);
                   }
-                } else if (value == 'delete') {
-                  _showDeleteDialog(context);
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit_outlined, size: 20, color: Color(0xFF616161)),
-                      SizedBox(width: 12),
-                      Text('Modifier'),
-                    ],
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.edit_outlined,
+                          size: 20,
+                          color: Color(0xFF616161),
+                        ),
+                        SizedBox(width: 12),
+                        Text('Modifier'),
+                      ],
+                    ),
                   ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                      SizedBox(width: 12),
-                      Text('Supprimer', style: TextStyle(color: Colors.red)),
-                    ],
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                        SizedBox(width: 12),
+                        Text('Supprimer', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            )
-          else
-            GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Notifications activées')),
-                );
-              },
-              child: Container(
-                margin: const EdgeInsets.only(right: 14),
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFE6F7EF),
-                  border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
-                ),
-                child: const Icon(Icons.notifications, color: Color(0xFF2A8143), size: 18),
+                ],
               ),
             ),
+          GestureDetector(
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Notifications activées')),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 14),
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFE6F7EF),
+                border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
+              ),
+              child: const Icon(
+                Icons.notifications,
+                color: Color(0xFF2A8143),
+                size: 18,
+              ),
+            ),
+          ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Image Carousel
-            if (images.isNotEmpty) ...[
-              ImageCarousel(images: images),
-              const SizedBox(height: 16),
-            ],
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Image Carousel
+              if (images.isNotEmpty) ...[
+                ImageCarousel(images: images),
+                const SizedBox(height: 16),
+              ],
 
-            // 2. User Detail Card
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: UserDetailCard(
+              // 2. User Detail Card
+              UserDetailCard(
                 avatar: avatar,
                 name: username,
-                userType: userType,
+                userType: nature ?? 'Demande',
                 onSubscribe: () {},
+                isOwner: isOwner,
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // 3. Post Content Card (Tags & Title)
-            PostContentCard(
-              tags: tags,
-              title: demandeTitle,
-              time: timeAgo,
-              onLike: () {},
-              onShare: () {},
-            ),
-            const SizedBox(height: 16),
+              // 3. Post Content Card (Tags & Title)
+              PostContentCard(
+                tags: tags,
+                subtags: subtags,
+                title: demandeTitle,
+                time: timeAgo,
+                onLike: () {},
+                onShare: () {},
+              ),
+              const SizedBox(height: 16),
 
-            // 4. Urgent badge
-            if (urgent)
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.red.withOpacity(0.3)),
+              // 4. Urgent badge
+              if (urgent)
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.red,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Demande urgente',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red[700],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              if (urgent) const SizedBox(height: 16),
+
+              // 5. Description Section
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: _cardDecoration(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 18),
-                    const SizedBox(width: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.grey[600],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Description',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
                     Text(
-                      'Demande urgente',
+                      description.isNotEmpty
+                          ? description
+                          : 'Aucune description fournie.',
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red[700],
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        height: 1.6,
                       ),
                     ),
                   ],
                 ),
               ),
-            if (urgent) const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
-            // 5. Description Section
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Description de la demande',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
+              // 6. Details Section (Nature, Type, Budget, Radius)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: _cardDecoration(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.grey[600],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Details de la demande',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+                    _buildDetailsGrid(),
+
+                    if (_hasLocation()) const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            location ?? 'Localisation non specifie',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    if (!isOwner && acceptMessages)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            final author = demandeData?['user'];
+                            if (author is Map<String, dynamic>) {
+                              _startConversationWithAuthor(context, author);
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Impossible de démarrer la conversation',
+                                ),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.reply_outlined, size: 20),
+                          label: const Text('Répondre à la demande'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF9800),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1),
-                  const SizedBox(height: 12),
-                  Text(
-                    description.isNotEmpty
-                        ? description
-                        : 'Aucune description fournie.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                      height: 1.6,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // 6. Details Section (Nature, Type, Budget, Radius)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.list_alt_outlined, color: Colors.grey[600], size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Informations',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1),
-                  const SizedBox(height: 12),
-                  if (nature != null && nature!.isNotEmpty)
-                    _buildInfoRow(Icons.category_outlined, 'Catégorie', nature!),
-                  if (type != null && type!.isNotEmpty)
-                    _buildInfoRow(Icons.label_outline, 'Type', type!),
-                  if (budgetMax != null && budgetMax!.isNotEmpty)
-                    _buildInfoRow(Icons.euro, 'Budget max', '$budgetMax €'),
-                  if (searchRadiusKm != null && searchRadiusKm! > 0)
-                    _buildInfoRow(
-                      Icons.radar_outlined,
-                      'Rayon de recherche',
-                      '$searchRadiusKm km',
-                    ),
-                  if (acceptMessages)
-                    _buildInfoRow(
-                      Icons.message_outlined,
-                      'Messages',
-                      'Accepte les messages',
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // 7. "Répondre à la demande" button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.reply_outlined, size: 20),
-                  label: const Text('Répondre à la demande'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9800),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // 8. Localisation Card
-            if (_hasLocation())
+              // 8. Localisation Card
+              if (_hasLocation())
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: _cardDecoration(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            color: Colors.grey[700],
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Localisation',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      if (showGoogleLocation)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.asset(
+                            'assets/images/details_bon_plans/Rectangle 128 (1).png',
+                            width: double.infinity,
+                            height: 180,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: double.infinity,
+                                height: 180,
+                                color: Colors.grey[200],
+                                child: const Icon(
+                                  Icons.map,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      if (showGoogleLocation) const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.place,
+                            size: 16,
+                            color: Color(0xFFFF9800),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              nationwide
+                                  ? 'Toute la France'
+                                  : (location ?? 'Non spécifié'),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF616161),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 16),
+
+              // 9. Commentaires Section
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
                 padding: const EdgeInsets.all(16),
                 decoration: _cardDecoration(),
                 child: Column(
@@ -354,142 +587,83 @@ class DemandeDetailScreen extends StatelessWidget {
                     Row(
                       children: [
                         const Icon(
-                          Icons.location_on_outlined,
-                          color: Color(0xFFFF9800),
-                          size: 22,
+                          Icons.comment_outlined,
+                          color: Color(0xFF616161),
+                          size: 20,
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Localisation',
+                          'Commentaires',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                             color: Colors.grey[700],
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    if (showGoogleLocation)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          'assets/images/details_bon_plans/Rectangle 128 (1).png',
-                          width: double.infinity,
-                          height: 180,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: double.infinity,
-                              height: 180,
-                              color: Colors.grey[200],
-                              child: const Icon(Icons.map, size: 50, color: Colors.grey),
-                            );
-                          },
-                        ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
                       ),
-                    if (showGoogleLocation) const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const Icon(Icons.place, size: 16, color: Color(0xFFFF9800)),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            nationwide
-                                ? 'Toute la France'
-                                : (location ?? 'Non spécifié'),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF616161),
-                              fontWeight: FontWeight.w500,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 18,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Laisser votre avis',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[400],
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Text(
+                        'Aucun commentaire pour le moment',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                      ),
                     ),
                   ],
                 ),
               ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 32),
 
-            // 9. Commentaires Section
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.comment_outlined,
-                          color: Color(0xFF616161), size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Commentaires',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
+              // 10. Similar demandes header
+              const Center(
+                child: Text(
+                  'Demandes similaires',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF616161),
                   ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit_outlined, size: 18, color: Colors.grey[400]),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Laisser votre avis',
-                          style: TextStyle(fontSize: 13, color: Colors.grey[400]),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Center(
-                    child: Icon(Icons.more_horiz, color: Colors.grey, size: 28),
-                  ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      'Aucun commentaire pour le moment',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[400],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            // 10. Similar demandes header
-            const Center(
-              child: Text(
-                'Demandes similaires',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF616161),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Container(height: 1, color: Colors.grey[300]),
-            ),
-            const SizedBox(height: 30),
-          ],
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                child: Container(height: 1, color: Colors.grey[300]),
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
     );
@@ -524,7 +698,9 @@ class DemandeDetailScreen extends StatelessWidget {
         bool isDeleting = false;
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Text(
               'Supprimer la demande',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -534,7 +710,9 @@ class DemandeDetailScreen extends StatelessWidget {
             ),
             actions: [
               TextButton(
-                onPressed: isDeleting ? null : () => Navigator.pop(dialogContext),
+                onPressed: isDeleting
+                    ? null
+                    : () => Navigator.pop(dialogContext),
                 child: const Text('Annuler'),
               ),
               ElevatedButton(
@@ -546,13 +724,16 @@ class DemandeDetailScreen extends StatelessWidget {
                           final token = await TokenStorage.getAccessToken();
                           if (token == null) throw Exception('Session expirée');
                           final response = await http.delete(
-                            Uri.parse('${ApiConfig.baseUrl}/demandes/$demandeId'),
+                            Uri.parse(
+                              '${ApiConfig.baseUrl}/demandes/$demandeId',
+                            ),
                             headers: {
                               'Authorization': 'Bearer $token',
                               'Accept': 'application/json',
                             },
                           );
-                          if (response.statusCode >= 200 && response.statusCode < 300) {
+                          if (response.statusCode >= 200 &&
+                              response.statusCode < 300) {
                             Navigator.pop(dialogContext);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -568,7 +749,9 @@ class DemandeDetailScreen extends StatelessWidget {
                           setDialogState(() => isDeleting = false);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Erreur: ${e.toString().replaceFirst("Exception: ", "")}'),
+                              content: Text(
+                                'Erreur: ${e.toString().replaceFirst("Exception: ", "")}',
+                              ),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -582,7 +765,10 @@ class DemandeDetailScreen extends StatelessWidget {
                     ? const SizedBox(
                         height: 18,
                         width: 18,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
                     : const Text('Supprimer'),
               ),
@@ -611,10 +797,7 @@ class DemandeDetailScreen extends StatelessWidget {
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
           ),
         ],
@@ -624,5 +807,398 @@ class DemandeDetailScreen extends StatelessWidget {
 
   bool _hasLocation() {
     return nationwide || (location != null && location!.isNotEmpty);
+  }
+
+  Widget _buildDetailsGrid() {
+    final tiles = _buildDetailTiles();
+
+    if (tiles.isEmpty) {
+      return Text(
+        'Aucune information disponible.',
+        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: tiles
+              .map((t) => SizedBox(width: constraints.maxWidth, child: t))
+              .toList(),
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildDetailTiles() {
+    final data = demandeData ?? const <String, dynamic>{};
+
+    final n = (nature ?? '').toString().trim().toLowerCase();
+    final isFormation = n.contains('formation');
+    final isImmobilier = n.contains('immobilier');
+    final isStage = n.contains('stage');
+    final isEmploi = n.contains("emploi");
+
+    final tiles = <Widget>[];
+
+    String? str(dynamic v) {
+      final s = v?.toString().trim();
+      return (s == null || s.isEmpty) ? null : s;
+    }
+
+    List<String> listStr(dynamic v) {
+      if (v is List) {
+        return v
+            .map((e) => e.toString())
+            .where((e) => e.trim().isNotEmpty)
+            .toList();
+      }
+      return <String>[];
+    }
+
+    String? formatDate(dynamic v) {
+      final raw = str(v);
+      if (raw == null) return null;
+      final dt = DateTime.tryParse(raw);
+      if (dt == null) return raw;
+      final d = dt.day.toString().padLeft(2, '0');
+      final m = dt.month.toString().padLeft(2, '0');
+      final y = dt.year.toString();
+      return '$d/$m/$y';
+    }
+
+    String? formatBool(dynamic v) {
+      if (v == null) return null;
+      if (v is bool) return v ? 'Oui' : 'Non';
+      final s = v.toString().toLowerCase();
+      if (s == '1' || s == 'true') return 'Oui';
+      if (s == '0' || s == 'false') return 'Non';
+      return null;
+    }
+
+    void addTile({
+      required IconData icon,
+      required Color iconBg,
+      required Color iconColor,
+      required String title,
+      String? value,
+      String? subtitle,
+    }) {
+      final v = value ?? subtitle;
+      if (v == null || v.trim().isEmpty) return;
+      tiles.add(
+        _buildDetailTile(
+          icon: icon,
+          iconBg: iconBg,
+          iconColor: iconColor,
+          title: title,
+          value: value,
+          subtitle: subtitle,
+        ),
+      );
+    }
+
+    if (isFormation) {
+      addTile(
+        icon: Icons.school_outlined,
+        iconBg: const Color(0xFFEDE7F6),
+        iconColor: const Color(0xFF673AB7),
+        title: 'Catégorie',
+        value: str(data['training_category']),
+      );
+      addTile(
+        icon: Icons.auto_stories_outlined,
+        iconBg: const Color(0xFFE3F2FD),
+        iconColor: const Color(0xFF1E88E5),
+        title: 'Type',
+        value: str(data['training_type']),
+      );
+      addTile(
+        icon: Icons.hub_outlined,
+        iconBg: const Color(0xFFE6F7EF),
+        iconColor: const Color(0xFF2A8143),
+        title: 'Secteur',
+        value: str(data['training_sector']),
+      );
+      final teaching = listStr(data['teaching_types']);
+      addTile(
+        icon: Icons.cast_for_education_outlined,
+        iconBg: const Color(0xFFFFF3E0),
+        iconColor: const Color(0xFFFF9800),
+        title: 'Enseignement',
+        value: teaching.isNotEmpty ? teaching.join(', ') : null,
+      );
+      final financing = listStr(data['financing_types']);
+      addTile(
+        icon: Icons.payments_outlined,
+        iconBg: const Color(0xFFFFEBEE),
+        iconColor: const Color(0xFFE53935),
+        title: 'Financement',
+        value: financing.isNotEmpty ? financing.join(', ') : null,
+      );
+      addTile(
+        icon: Icons.group_outlined,
+        iconBg: const Color(0xFFF5F5F5),
+        iconColor: const Color(0xFF616161),
+        title: 'Personnes',
+        value: str(data['nb_personnes']),
+      );
+      addTile(
+        icon: Icons.groups_outlined,
+        iconBg: const Color(0xFFF5F5F5),
+        iconColor: const Color(0xFF616161),
+        title: 'Groupes',
+        value: str(data['nb_groupes']),
+      );
+      addTile(
+        icon: Icons.description_outlined,
+        iconBg: const Color(0xFFE3F2FD),
+        iconColor: const Color(0xFF1E88E5),
+        title: 'Docs',
+        value: formatBool(data['use_candidate_documents']),
+      );
+    } else if (isImmobilier) {
+      addTile(
+        icon: Icons.apartment_outlined,
+        iconBg: const Color(0xFFE6F7EF),
+        iconColor: const Color(0xFF2A8143),
+        title: 'Type demande',
+        value: str(data['real_estate_type']),
+      );
+      final props = listStr(data['property_types']);
+      addTile(
+        icon: Icons.home_work_outlined,
+        iconBg: const Color(0xFFF5F5F5),
+        iconColor: const Color(0xFF616161),
+        title: 'Type de bien',
+        value: props.isNotEmpty ? props.join(', ') : null,
+      );
+      final shMin = str(data['surface_habitable_min']);
+      final shMax = str(data['surface_habitable_max']);
+      addTile(
+        icon: Icons.square_foot_outlined,
+        iconBg: const Color(0xFFE3F2FD),
+        iconColor: const Color(0xFF1E88E5),
+        title: 'Surface hab.',
+        value: (shMin != null || shMax != null)
+            ? '${shMin ?? '-'} - ${shMax ?? '-'} m²'
+            : null,
+      );
+      final stMin = str(data['surface_terrain_min']);
+      final stMax = str(data['surface_terrain_max']);
+      addTile(
+        icon: Icons.terrain_outlined,
+        iconBg: const Color(0xFFEDE7F6),
+        iconColor: const Color(0xFF673AB7),
+        title: 'Terrain',
+        value: (stMin != null || stMax != null)
+            ? '${stMin ?? '-'} - ${stMax ?? '-'} m²'
+            : null,
+      );
+      addTile(
+        icon: Icons.meeting_room_outlined,
+        iconBg: const Color(0xFFFFF3E0),
+        iconColor: const Color(0xFFFF9800),
+        title: 'Pièces',
+        value: str(data['nb_pieces']),
+      );
+      addTile(
+        icon: Icons.bed_outlined,
+        iconBg: const Color(0xFFFFEBEE),
+        iconColor: const Color(0xFFE53935),
+        title: 'Chambres',
+        value: str(data['nb_chambres']),
+      );
+      addTile(
+        icon: Icons.weekend_outlined,
+        iconBg: const Color(0xFFF3E5F5),
+        iconColor: const Color(0xFF8E24AA),
+        title: 'Meublé',
+        value: formatBool(data['meuble']),
+      );
+    } else if (isEmploi || isStage) {
+      addTile(
+        icon: Icons.work_outline,
+        iconBg: const Color(0xFFE3F2FD),
+        iconColor: const Color(0xFF1E88E5),
+        title: 'Secteur',
+        value: str(data['activity_sector']),
+      );
+      addTile(
+        icon: Icons.badge_outlined,
+        iconBg: const Color(0xFFF5F5F5),
+        iconColor: const Color(0xFF616161),
+        title: 'Fonction',
+        value: str(data['function']),
+      );
+      final contracts = listStr(data['contract_types']);
+      addTile(
+        icon: Icons.assignment_outlined,
+        iconBg: const Color(0xFFE6F7EF),
+        iconColor: const Color(0xFF2A8143),
+        title: 'Contrat',
+        value: contracts.isNotEmpty ? contracts.join(', ') : null,
+      );
+      addTile(
+        icon: Icons.schedule_outlined,
+        iconBg: const Color(0xFFFFF3E0),
+        iconColor: const Color(0xFFFF9800),
+        title: 'Temps',
+        value: str(data['work_type']),
+      );
+      addTile(
+        icon: Icons.school_outlined,
+        iconBg: const Color(0xFFEDE7F6),
+        iconColor: const Color(0xFF673AB7),
+        title: 'Études',
+        value: str(data['education_level']),
+      );
+      addTile(
+        icon: Icons.trending_up_outlined,
+        iconBg: const Color(0xFFFFEBEE),
+        iconColor: const Color(0xFFE53935),
+        title: 'Expérience',
+        value: str(data['experience_level']),
+      );
+      addTile(
+        icon: Icons.laptop_outlined,
+        iconBg: const Color(0xFFE3F2FD),
+        iconColor: const Color(0xFF1E88E5),
+        title: 'Télétravail',
+        value: formatBool(data['accept_remote_work']),
+      );
+
+      final immediate = formatBool(data['immediate_availability']);
+      if (immediate == 'Oui') {
+        addTile(
+          icon: Icons.flash_on_outlined,
+          iconBg: const Color(0xFFFFF3E0),
+          iconColor: const Color(0xFFFF9800),
+          title: 'Disponibilité',
+          value: immediate,
+        );
+      }
+
+      if (immediate == 'Non') {
+        addTile(
+          icon: Icons.event_available_outlined,
+          iconBg: const Color(0xFFE6F7EF),
+          iconColor: const Color(0xFF2A8143),
+          title: 'Début',
+          value: formatDate(data['start_date']),
+        );
+        addTile(
+          icon: Icons.event_outlined,
+          iconBg: const Color(0xFFFFEBEE),
+          iconColor: const Color(0xFFE53935),
+          title: 'Fin',
+          value: formatDate(data['end_date']),
+        );
+      }
+
+      addTile(
+        icon: Icons.description_outlined,
+        iconBg: const Color(0xFFEDE7F6),
+        iconColor: const Color(0xFF673AB7),
+        title: 'Documents',
+        value: formatBool(data['use_candidate_documents'] ?? data['doc_cand']),
+      );
+
+      final salaryRange = str(data['salary_range']);
+      final sMin = str(data['salary_min']);
+      final sMax = str(data['salary_max']);
+      final netOrBrut = str(data['salary_net_or_brut']);
+      final indice = str(data['salary_indice_temporel']);
+
+      String? salaryText() {
+        final hasMinMax =
+            (sMin != null && sMin.isNotEmpty) ||
+            (sMax != null && sMax.isNotEmpty);
+        if (hasMinMax) {
+          var t = '${sMin ?? '-'} - ${sMax ?? '-'} €';
+          if (netOrBrut == 'net') t += ' (Net)';
+          if (netOrBrut == 'brut') t += ' (Brut)';
+          if (indice == 'annees') t += ' / Années';
+          if (indice == 'heures') t += ' / Heures';
+          return t;
+        }
+
+        if (salaryRange != null &&
+            salaryRange.toLowerCase() != 'aucune' &&
+            salaryRange.toLowerCase() != 'none') {
+          return salaryRange;
+        }
+        return null;
+      }
+
+      addTile(
+        icon: Icons.euro,
+        iconBg: const Color(0xFFFFEBEE),
+        iconColor: const Color(0xFFE53935),
+        title: 'Salaire',
+        value: salaryText(),
+      );
+    }
+
+    return tiles;
+  }
+
+  Widget _buildDetailTile({
+    required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
+    required String title,
+    String? value,
+    String? subtitle,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.withOpacity(0.12)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: iconColor, size: 16),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  (value ?? subtitle ?? '').toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

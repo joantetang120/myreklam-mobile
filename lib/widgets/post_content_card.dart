@@ -10,6 +10,7 @@ class PostTag {
 
 class PostContentCard extends StatelessWidget {
   final List<PostTag> tags;
+  final PostTag? subtags;
   final String title;
   final String time;
   final VoidCallback? onLike;
@@ -21,6 +22,7 @@ class PostContentCard extends StatelessWidget {
   const PostContentCard({
     super.key,
     required this.tags,
+    this.subtags,
     required this.title,
     required this.time,
     this.onLike,
@@ -39,8 +41,7 @@ class PostContentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -59,7 +60,12 @@ class PostContentCard extends StatelessWidget {
           // Tags Row
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: Row(children: tags.map((tag) => _buildTag(tag)).toList()),
+            child: Row(
+              children: [
+                if (subtags != null) _buildTag(subtags!),
+                ...tags.map((tag) => _buildTag(tag)).toList(),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           // Title
@@ -79,7 +85,6 @@ class PostContentCard extends StatelessWidget {
           const SizedBox(height: 16),
           // Divider
           Container(height: 1, color: Colors.grey.withOpacity(0.1)),
-          const SizedBox(height: 12),
           // Footer
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -101,7 +106,6 @@ class PostContentCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
               Row(
                 children: [
                   IconButton(
@@ -114,7 +118,6 @@ class PostContentCard extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
-                  const SizedBox(width: 16),
                   IconButton(
                     onPressed: onShare,
                     icon: Icon(Icons.reply, color: Colors.grey[500], size: 20),
@@ -125,7 +128,11 @@ class PostContentCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     IconButton(
                       onPressed: onMorePressed,
-                      icon: Icon(Icons.more_vert, color: Colors.grey[500], size: 20),
+                      icon: Icon(
+                        Icons.more_vert,
+                        color: Colors.grey[500],
+                        size: 20,
+                      ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
@@ -160,11 +167,21 @@ class PostContentCard extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Image.network(urls[0], fit: BoxFit.cover, height: 160, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                child: Image.network(
+                  urls[0],
+                  fit: BoxFit.cover,
+                  height: 160,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
               ),
               const SizedBox(width: 3),
               Expanded(
-                child: Image.network(urls[1], fit: BoxFit.cover, height: 160, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                child: Image.network(
+                  urls[1],
+                  fit: BoxFit.cover,
+                  height: 160,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
               ),
             ],
           ),
@@ -180,18 +197,33 @@ class PostContentCard extends StatelessWidget {
             children: [
               Expanded(
                 flex: 2,
-                child: Image.network(urls[0], fit: BoxFit.cover, height: 180, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                child: Image.network(
+                  urls[0],
+                  fit: BoxFit.cover,
+                  height: 180,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
               ),
               const SizedBox(width: 3),
               Expanded(
                 child: Column(
                   children: [
                     Expanded(
-                      child: Image.network(urls[1], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                      child: Image.network(
+                        urls[1],
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
                     ),
                     const SizedBox(height: 3),
                     Expanded(
-                      child: Image.network(urls[2], fit: BoxFit.cover, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                      child: Image.network(
+                        urls[2],
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
                     ),
                   ],
                 ),
@@ -212,9 +244,23 @@ class PostContentCard extends StatelessWidget {
             Expanded(
               child: Row(
                 children: [
-                  Expanded(child: Image.network(urls[0], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                  Expanded(
+                    child: Image.network(
+                      urls[0],
+                      fit: BoxFit.cover,
+                      height: double.infinity,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
                   const SizedBox(width: 3),
-                  Expanded(child: Image.network(urls[1], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                  Expanded(
+                    child: Image.network(
+                      urls[1],
+                      fit: BoxFit.cover,
+                      height: double.infinity,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -222,20 +268,35 @@ class PostContentCard extends StatelessWidget {
             Expanded(
               child: Row(
                 children: [
-                  Expanded(child: Image.network(urls[2], fit: BoxFit.cover, height: double.infinity, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                  Expanded(
+                    child: Image.network(
+                      urls[2],
+                      fit: BoxFit.cover,
+                      height: double.infinity,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
+                  ),
                   const SizedBox(width: 3),
                   Expanded(
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.network(urls[3], fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                        Image.network(
+                          urls[3],
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        ),
                         if (remaining > 0)
                           Container(
                             color: Colors.black54,
                             alignment: Alignment.center,
                             child: Text(
                               '+$remaining',
-                              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                       ],
