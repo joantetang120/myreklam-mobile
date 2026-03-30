@@ -7,9 +7,17 @@ import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/widgets/publish_option_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/creer_bon_plan_screen.dart';
+import 'package:myreklam/utils/user_session.dart';
 
-class PublishOptionsScreen extends StatelessWidget {
+class PublishOptionsScreen extends StatefulWidget {
   const PublishOptionsScreen({super.key});
+
+  @override
+  State<PublishOptionsScreen> createState() => _PublishOptionsScreenState();
+}
+
+class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
+  final UserSession _userSession = UserSession();
 
   Widget _buildNotifBubble(BuildContext context) {
     return GestureDetector(
@@ -207,42 +215,45 @@ class PublishOptionsScreen extends StatelessWidget {
                     );
                   },
                 ),
-                PublishOptionCard(
-                  backgroundColor: const Color(0xFFE0F7FA),
-                  borderColor: Colors.lightBlueAccent,
-                  titleColor: Colors.lightBlueAccent,
-                  title: "Publier une offre d'emploi",
-                  description:
-                      'Déposez vos offres de recrutement ou trouvez des opportunités professionnelles.',
-                  icon: Icons.work_outline,
-                  iconColor: Colors.lightBlueAccent,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreerOffreEmploiScreen(),
-                      ),
-                    );
-                  },
-                ),
-                PublishOptionCard(
-                  backgroundColor: const Color(0xFFE6F7EF),
-                  borderColor: const Color(0xFF3AAE5E),
-                  titleColor: const Color(0xFF3AAE5E),
-                  title: 'Publier une Formation',
-                  description:
-                      'Proposez vos formations et partagez vos connaissances avec les membres.',
-                  icon: Icons.school_outlined,
-                  iconColor: const Color(0xFF3AAE5E),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreerFormationScreen(),
-                      ),
-                    );
-                  },
-                ),
+                // Show Offre d'emploi and Formation only for professionals
+                if (_userSession.isPro) ...[
+                  PublishOptionCard(
+                    backgroundColor: const Color(0xFFE0F7FA),
+                    borderColor: Colors.lightBlueAccent,
+                    titleColor: Colors.lightBlueAccent,
+                    title: "Publier une offre d'emploi",
+                    description:
+                        'Déposez vos offres de recrutement ou trouvez des opportunités professionnelles.',
+                    icon: Icons.work_outline,
+                    iconColor: Colors.lightBlueAccent,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreerOffreEmploiScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  PublishOptionCard(
+                    backgroundColor: const Color(0xFFE6F7EF),
+                    borderColor: const Color(0xFF3AAE5E),
+                    titleColor: const Color(0xFF3AAE5E),
+                    title: 'Publier une Formation',
+                    description:
+                        'Proposez vos formations et partagez vos connaissances avec les membres.',
+                    icon: Icons.school_outlined,
+                    iconColor: const Color(0xFF3AAE5E),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreerFormationScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 PublishOptionCard(
                   backgroundColor: const Color(0xFFE0F2F1),
                   borderColor: const Color(0xFF00897B),
