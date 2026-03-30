@@ -4,6 +4,8 @@ import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/user_detail_card.dart';
@@ -74,6 +76,93 @@ class JobDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Future<void> applyToJobOffer() async {
+      if (isOwner) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Vous ne pouvez pas postuler à votre propre offre."),
+          ),
+        );
+        return;
+      }
+
+      final id = jobOfferId?.toString();
+      if (id == null || id.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Offre invalide.")));
+        return;
+      }
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF3AAE5E)),
+        ),
+      );
+
+      try {
+        // final profile = await ProfileService().getProfile();
+        // final user = profile['user'] is Map<String, dynamic>
+        //     ? profile['user'] as Map<String, dynamic>
+        //     : null;
+
+        // final accountType = (user?['account_type'] ?? user?['type'] ?? '')
+        //     .toString()
+        //     .toLowerCase();
+        // final hasParticulierProfile =
+        //     user?['particulier_profile'] != null ||
+        //     profile['particulier_profile'] != null;
+
+        // final isParticulier =
+        //     accountType.contains('particulier') || hasParticulierProfile;
+
+        // if (!isParticulier) {
+        //   if (context.mounted) Navigator.pop(context);
+        //   if (!context.mounted) return;
+        //   ScaffoldMessenger.of(context).showSnackBar(
+        //     const SnackBar(
+        //       content: Text(
+        //         "Seuls les profils particulier peuvent postuler à une offre d'emploi.",
+        //       ),
+        //     ),
+        //   );
+        //   return;
+        // }
+
+        final response = await ApiClient().authenticatedPost(
+          '/job-offers/$id/apply',
+          body: const <String, dynamic>{},
+        );
+
+        if (context.mounted) Navigator.pop(context);
+        if (!context.mounted) return;
+
+        final message =
+            response['message']?.toString() ??
+            'Candidature envoyée avec succès.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: const Color(0xFF3AAE5E),
+          ),
+        );
+      } on ApiException catch (e) {
+        if (context.mounted) Navigator.pop(context);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
+      } catch (e) {
+        if (context.mounted) Navigator.pop(context);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: ${e.toString()}')));
+      }
+    }
+
     // Debug: Check contact button conditions
     debugPrint('=== JOB CONTACT BUTTON DEBUG ===');
     debugPrint('isOwner: $isOwner');
@@ -517,7 +606,7 @@ class JobDetailScreen extends StatelessWidget {
                             ? Expanded(
                                 flex: applyButtonFlex,
                                 child: ElevatedButton(
-                                  onPressed: () {},
+                                  onPressed: applyToJobOffer,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFFFF9800),
                                     foregroundColor: Colors.white,

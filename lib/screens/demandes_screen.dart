@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/demande_card.dart';
+import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/screens/demande_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/config/api_config.dart';
 
@@ -17,11 +19,29 @@ class _DemandesScreenState extends State<DemandesScreen> {
   List<Map<String, dynamic>> _items = [];
   bool _isLoading = true;
   String? _error;
+  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
+    _ensureCurrentUserId();
     _loadData();
+  }
+
+  Future<String?> _ensureCurrentUserId() async {
+    if (_currentUserId != null && _currentUserId!.isNotEmpty) {
+      return _currentUserId;
+    }
+    try {
+      final response = await ApiClient().authenticatedGet('/profile/me');
+      final id = response['user']?['id']?.toString();
+      if (id != null && id.isNotEmpty) {
+        _currentUserId = id;
+      }
+      return _currentUserId;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _loadData() async {
@@ -370,30 +390,266 @@ class _DemandesScreenState extends State<DemandesScreen> {
   Widget _buildDemandeCard(Map<String, dynamic> demande) {
     final title = demande['title']?.toString() ?? 'Demande';
     final description = _stripHtml(demande['description']?.toString() ?? '');
-    final category = demande['category']?.toString() ?? '';
-    final location =
+    final nature = demande['nature']?.toString() ?? '';
+    final urgent = demande['urgent'] == true;
+    final nationwide = demande['nationwide'] == true;
+    final locationRaw =
         demande['location']?.toString() ?? demande['city']?.toString() ?? '';
+    final location = nationwide
+        ? 'Toute la France'
+        : (locationRaw.isNotEmpty ? locationRaw : 'Non spécifié');
+
     final createdAt = demande['created_at']?.toString();
-    final mediaFiles = demande['media'] as List? ?? [];
-    final imageUrl = mediaFiles.isNotEmpty
-        ? mediaFiles.first['url']?.toString()
+    final mediaFiles =
+        demande['media_files'] as List? ?? demande['media'] as List? ?? [];
+
+    String? imageUrl;
+    for (final m in mediaFiles) {
+      if (m is! Map) continue;
+      final url = m['url']?.toString();
+      if (url == null || url.isEmpty) continue;
+
+      final fileType = (m['file_type'] ?? m['type'] ?? m['mime_type'] ?? '')
+          .toString()
+          .toLowerCase();
+      final looksLikeImage =
+          fileType.contains('image') ||
+          url.toLowerCase().endsWith('.png') ||
+          url.toLowerCase().endsWith('.jpg') ||
+          url.toLowerCase().endsWith('.jpeg') ||
+          url.toLowerCase().endsWith('.webp') ||
+          url.toLowerCase().endsWith('.gif');
+
+      if (!looksLikeImage) continue;
+      imageUrl = url;
+      break;
+    }
+
+    final user = demande['user'] is Map<String, dynamic>
+        ? demande['user'] as Map<String, dynamic>
         : null;
-    final username =
-        demande['user']?['email']?.toString().split('@').first ?? 'Utilisateur';
+
+    // Username : particulier_profile.pseudo ou pro_profile.company_name
+    String username =
+        user?['name']?.toString() ??
+        user?['email']?.toString().split('@').first ??
+        'Utilisateur';
+    if (user != null) {
+      if (user['particulier_profile'] is Map) {
+        final p = user['particulier_profile'] as Map;
+        final pseudo = p['pseudo']?.toString() ?? '';
+        if (pseudo.isNotEmpty) username = pseudo;
+      } else if (user['pro_profile'] is Map) {
+        final p = user['pro_profile'] as Map;
+        final company = p['company_name']?.toString() ?? '';
+        if (company.isNotEmpty) username = company;
+      }
+    }
+
+    final avatarCandidates = <dynamic>[
+      if (user?['particulier_profile'] is Map)
+        (user!['particulier_profile'] as Map)['avatar_url'],
+      if (user?['pro_profile'] is Map)
+        (user!['pro_profile'] as Map)['avatar_url'],
+    ];
+
+    String profileImage = 'assets/images/dashboard_particulier/Ellipse 10.png';
+    for (final candidate in avatarCandidates) {
+      if (candidate == null) continue;
+      final resolved = _buildStorageUrl(candidate.toString());
+      if (resolved != null && resolved.isNotEmpty) {
+        profileImage = resolved;
+        break;
+      }
+    }
+
+    final categoryLabel = nature.isNotEmpty ? nature : 'Demande';
 
     return DemandeCard(
-      profileImage: 'assets/images/dashboard_particulier/Ellipse 10.png',
+      profileImage: profileImage,
       username: username,
-      categoryLabel: category.isNotEmpty ? category : 'Demande',
+      categoryLabel: urgent ? '$categoryLabel • Urgent' : categoryLabel,
       categoryColor: const Color(0xFF3AAE5E),
       title: title,
       description: description,
-      location: location.isNotEmpty ? location : 'Non spécifié',
+      location: location,
       postImage: _buildStorageUrl(imageUrl),
-      likesCount: demande['likes_count'] ?? 0,
-      commentsCount: demande['comments_count'] ?? 0,
+      likesCount: (demande['likes_count'] is int)
+          ? demande['likes_count'] as int
+          : int.tryParse(demande['likes_count']?.toString() ?? '') ?? 0,
+      commentsCount: (demande['comments_count'] is int)
+          ? demande['comments_count'] as int
+          : int.tryParse(demande['comments_count']?.toString() ?? '') ?? 0,
       timeAgo: _buildTimeAgo(createdAt),
-      onTapCTA: () {},
+      onTapCTA: () => _navigateToDemandeDetail(demande),
     );
+  }
+
+  Future<void> _navigateToDemandeDetail(Map<String, dynamic> d) async {
+    final demandeId = d['id']?.toString();
+    if (demandeId == null || demandeId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Impossible d'ouvrir cette demande")),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedGet(
+        '/demandes/$demandeId',
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      final data = response['data'] as Map<String, dynamic>? ?? response;
+
+      final user = data['user'] is Map<String, dynamic>
+          ? data['user'] as Map<String, dynamic>
+          : d['user'] as Map<String, dynamic>?;
+
+      final avatarCandidates = <dynamic>[
+        user?['avatar_url'],
+        if (user?['particulier_profile'] is Map)
+          (user!['particulier_profile'] as Map)['avatar_url'],
+        if (user?['pro_profile'] is Map)
+          (user!['pro_profile'] as Map)['avatar_url'],
+        if (user?['pro_profile'] is Map)
+          (user!['pro_profile'] as Map)['logo_url'],
+        user?['avatar'],
+      ];
+
+      String avatar = 'assets/images/dashboard_particulier/Ellipse 10.png';
+      for (final candidate in avatarCandidates) {
+        if (candidate == null) continue;
+        final resolved = _buildStorageUrl(candidate.toString());
+        if (resolved != null && resolved.isNotEmpty) {
+          avatar = resolved;
+          break;
+        }
+      }
+
+      String username =
+          user?['name']?.toString() ??
+          user?['email']?.toString().split('@').first ??
+          'Utilisateur';
+      if (user != null) {
+        if (user['particulier_profile'] is Map) {
+          final p = user['particulier_profile'] as Map;
+          final pseudo = p['pseudo']?.toString() ?? '';
+          if (pseudo.isNotEmpty) username = pseudo;
+        } else if (user['pro_profile'] is Map) {
+          final p = user['pro_profile'] as Map;
+          final company = p['company_name']?.toString() ?? '';
+          if (company.isNotEmpty) username = company;
+        }
+      }
+
+      final title = data['title']?.toString() ?? '';
+      final description = data['description']?.toString() ?? '';
+      final nature = data['nature']?.toString();
+      final type = data['type']?.toString();
+      final urgent = data['urgent'] == true;
+      final budgetMax = data['budget_max']?.toString();
+      final location = data['location']?.toString();
+      final nationwide = data['nationwide'] == true;
+      final searchRadiusKm = data['search_radius_km'] is int
+          ? data['search_radius_km'] as int
+          : int.tryParse(data['search_radius_km']?.toString() ?? '');
+      final showGoogleLocation = data['show_google_location'] == true;
+      final acceptMessages = data['accept_messages'] == true;
+      final createdAt = data['created_at']?.toString();
+      final mediaFiles =
+          data['media_files'] as List? ?? data['media'] as List? ?? [];
+
+      final images = mediaFiles
+          .where((m) => m is Map && m['url'] != null)
+          .map((m) => _buildStorageUrl((m as Map)['url']?.toString()) ?? '')
+          .where((url) => url.isNotEmpty)
+          .toList();
+
+      final categoryLabel = (type != null && type.isNotEmpty)
+          ? type
+          : (nature != null && nature.isNotEmpty ? nature : 'Demande');
+
+      final tags = <PostTag>[
+        PostTag(
+          title: categoryLabel,
+          icon: Icons.label_outline,
+          color: Colors.grey,
+        ),
+        if (urgent)
+          PostTag(
+            title: 'Urgent',
+            icon: Icons.warning_amber_rounded,
+            color: Colors.red,
+          ),
+        if (nationwide)
+          PostTag(
+            title: 'Toute la France',
+            icon: Icons.public,
+            color: Colors.blue,
+          ),
+      ];
+
+      final subTagsCat = nature != null && nature.isNotEmpty
+          ? nature
+          : 'Demande';
+
+      final subTag = PostTag(
+        title: subTagsCat,
+        icon: Icons.label_outline,
+        color: Colors.orange,
+      );
+
+      // Ownership
+      final demandeUserId =
+          d['user_id']?.toString() ?? data['user_id']?.toString();
+      final currentUserId = await _ensureCurrentUserId();
+      final isOwner =
+          demandeUserId != null &&
+          currentUserId != null &&
+          demandeUserId == currentUserId;
+
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DemandeDetailScreen(
+            images: images,
+            avatar: avatar,
+            username: username,
+            demandeTitle: title,
+            description: description,
+            tags: tags,
+            subtags: subTag,
+            timeAgo: _buildTimeAgo(createdAt),
+            nature: nature,
+            type: type,
+            urgent: urgent,
+            budgetMax: budgetMax,
+            location: location,
+            nationwide: nationwide,
+            searchRadiusKm: searchRadiusKm,
+            showGoogleLocation: showGoogleLocation,
+            acceptMessages: acceptMessages,
+            isOwner: isOwner,
+            demandeId: demandeId,
+            demandeData: data,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur lors du chargement: $e')));
+    }
   }
 }

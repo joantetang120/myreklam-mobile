@@ -3392,11 +3392,15 @@ class _ParticulierDashboardScreenState
         if (contractType.isNotEmpty)
           JobDetailTag(icon: Icons.description_outlined, text: contractType),
         if (workTime.isNotEmpty)
-          JobDetailTag(icon: Icons.access_time, text: workTime),
+          JobDetailTag(icon: Icons.access_time, text: _workTimeLabel(workTime)),
         if (category.isNotEmpty)
           JobDetailTag(icon: Icons.category_outlined, text: category),
         if (location.isNotEmpty)
           JobDetailTag(icon: Icons.location_on_outlined, text: location),
+        if (educationLevel != null && educationLevel.isNotEmpty)
+          JobDetailTag(icon: Icons.school_outlined, text: educationLevel),
+        if (experienceLevel != null && experienceLevel.isNotEmpty)
+          JobDetailTag(icon: Icons.trending_up_outlined, text: experienceLevel),
         if (salaryMin != null || salaryMax != null)
           JobDetailTag(
             icon: Icons.euro,
@@ -3424,13 +3428,34 @@ class _ParticulierDashboardScreenState
       final user = data['user'] as Map<String, dynamic>?;
       final acceptMessages = data['accept_messages'] == true;
 
+      String companyLogo = '';
+      if (user != null) {
+        final particulierProfile =
+            user['particulier_profile'] is Map<String, dynamic>
+            ? user['particulier_profile'] as Map<String, dynamic>
+            : null;
+        final proProfile = user['pro_profile'] is Map<String, dynamic>
+            ? user['pro_profile'] as Map<String, dynamic>
+            : null;
+        companyLogo =
+            (particulierProfile?['avatar_url'] ??
+                    proProfile?['avatar_url'] ??
+                    proProfile?['logo_url'])
+                ?.toString() ??
+            '';
+      }
+
+      final resolvedCompanyLogo =
+          _buildStorageUrl(companyLogo) ??
+          'assets/images/dashboard_particulier/Rectangle 13.png';
+
       // Navigate to detail screen
       final result = await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => JobDetailScreen(
             images: images,
-            companyLogo: 'assets/images/dashboard_particulier/Rectangle 13.png',
+            companyLogo: companyLogo,
             companyName: companyName,
             companyWebsite: companyWebsite,
             jobTitle: title,
@@ -3438,6 +3463,21 @@ class _ParticulierDashboardScreenState
             descriptionDelta: descriptionDelta,
             profileDescription: profileDescription,
             tags: tags,
+            postTags: <PostTag>[
+              if (workTime.isNotEmpty)
+                PostTag(
+                  title: workTime,
+                  icon: Icons.access_time,
+                  color: Colors.grey,
+                ),
+            ],
+            subtags: contractType.isNotEmpty
+                ? PostTag(
+                    title: contractType,
+                    icon: Icons.description_outlined,
+                    color: const Color(0xFF27A5FF),
+                  )
+                : null,
             advantages: advantagesList,
             timeAgo: createdAt != null ? _buildTimeAgo(createdAt) : '',
             location: location,
@@ -3888,7 +3928,26 @@ class _ParticulierDashboardScreenState
     } else if (max != null) {
       return 'Jusqu\'à ${max}€';
     }
-    return 'Non spécifié';
+    return 'Salaire non spécifié';
+  }
+
+  String _workTimeLabel(String val) {
+    switch (val) {
+      case 'FULL_TIME':
+        return 'Temps plein';
+      case 'PART_TIME':
+        return 'Temps partiel';
+      case 'INTERIM':
+        return 'Intérim';
+      case 'FREELANCE':
+        return 'Freelance';
+      case 'ALTERNANCE':
+        return 'Alternance';
+      case 'STAGE':
+        return 'Stage';
+      default:
+        return val;
+    }
   }
 
   List<String> _extractImages(List? mediaFiles) {
@@ -4041,121 +4100,6 @@ class _ParticulierDashboardScreenState
     if (url.startsWith('http')) return url;
     final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
     return '$serverBase/storage/$url';
-  }
-
-  Future<void> _startConversationWithAuthor(
-    Map<String, dynamic> authorData,
-  ) async {
-    final authorId = authorData['id']?.toString();
-
-    // Extraire le nom depuis le profil particulier
-    String authorName = 'Utilisateur';
-    if (authorData['particulier_profile'] != null) {
-      final particulierProfile =
-          authorData['particulier_profile'] as Map<String, dynamic>;
-      authorName =
-          particulierProfile['pseudo']?.toString() ??
-          authorData['email']?.toString().split('@').first ??
-          'Utilisateur';
-    } else if (authorData['pro_profile'] != null) {
-      final proProfile = authorData['pro_profile'] as Map<String, dynamic>;
-      authorName =
-          proProfile['company_name']?.toString() ??
-          (proProfile['first_name']?.toString() != null &&
-                  proProfile['last_name']?.toString() != null
-              ? '${proProfile['first_name']} ${proProfile['last_name']}'
-              : authorData['email']?.toString().split('@').first) ??
-          'Utilisateur';
-    }
-
-    // Extraire l'avatar depuis le profil approprié
-    String? authorAvatar;
-    if (authorData['particulier_profile'] != null) {
-      final particulierProfile =
-          authorData['particulier_profile'] as Map<String, dynamic>;
-      authorAvatar = particulierProfile['avatar_url']?.toString();
-    } else if (authorData['pro_profile'] != null) {
-      final proProfile = authorData['pro_profile'] as Map<String, dynamic>;
-      authorAvatar =
-          proProfile['avatar_url']?.toString() ??
-          proProfile['logo_url']?.toString();
-    }
-
-    if (authorId == null || authorId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Impossible de démarrer la conversation'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
-    final otherUserId = int.tryParse(authorId);
-    if (otherUserId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ID utilisateur invalide'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
-    try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
-
-      // Create or get conversation
-      final conversationService = ConversationService();
-      final conversation = await conversationService.getOrCreateConversation(
-        otherUserId,
-      );
-
-      // Close loading indicator
-      if (mounted) Navigator.pop(context);
-
-      // Navigate to chat conversation screen
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatConversationScreen(
-              conversationId: conversation.id.toString(),
-              name: authorName,
-              avatar:
-                  authorAvatar ??
-                  'assets/images/dashboard_particulier/Ellipse 10.png',
-              status: 'En ligne',
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      // Close loading indicator
-      if (mounted) Navigator.pop(context);
-
-      if (mounted) {
-        // Extract error message from exception
-        String errorMessage = 'Échec, veuillez réessayer';
-        final exceptionString = e.toString();
-        if (exceptionString.startsWith('Exception: ')) {
-          errorMessage = exceptionString.substring('Exception: '.length);
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.redAccent,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _refreshFeed() {
