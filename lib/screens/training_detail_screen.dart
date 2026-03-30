@@ -13,7 +13,7 @@ import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/screens/creer_formation_screen.dart';
 
-class TrainingDetailScreen extends StatelessWidget {
+class TrainingDetailScreen extends StatefulWidget {
   final List<String> images;
   final String companyLogo;
   final String companyName;
@@ -49,6 +49,8 @@ class TrainingDetailScreen extends StatelessWidget {
   final String? trainingId;
   final Map<String, dynamic>? trainingData;
   final bool returnToListingOnEdit;
+  // Author data for follow functionality
+  final Map<String, dynamic>? authorData;
 
   const TrainingDetailScreen({
     super.key,
@@ -86,7 +88,427 @@ class TrainingDetailScreen extends StatelessWidget {
     this.trainingId,
     this.trainingData,
     this.returnToListingOnEdit = false,
+    this.authorData,
   });
+
+  @override
+  State<TrainingDetailScreen> createState() => _TrainingDetailScreenState();
+}
+
+class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
+  bool _isFollowing = false;
+  bool _isLoadingFollow = false;
+  bool _isSubscribed = false;
+  bool _isLoadingSubscription = false;
+  List<Map<String, dynamic>> _comments = [];
+  bool _isLoadingComments = false;
+  int _commentsCount = 0;
+  bool _isLiked = false;
+  int _likesCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFollowStatus();
+    _checkSubscriptionStatus();
+    _fetchComments();
+    _fetchLikes();
+  }
+
+  Future<void> _fetchComments() async {
+    if (widget.trainingId == null) return;
+    
+    setState(() => _isLoadingComments = true);
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/comments?per_page=50'),
+        headers: {
+          'Authorization': 'Bearer ${await TokenStorage.getAccessToken()}',
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        List<Map<String, dynamic>> fetched = [];
+        if (data['data'] is Map && data['data']['data'] is List) {
+          fetched = List<Map<String, dynamic>>.from(data['data']['data']);
+        } else if (data['data'] is List) {
+          fetched = List<Map<String, dynamic>>.from(data['data']);
+        }
+        setState(() {
+          _comments = fetched;
+          _commentsCount = fetched.length;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching comments: $e');
+    } finally {
+      setState(() => _isLoadingComments = false);
+    }
+  }
+
+  Future<void> _fetchLikes() async {
+    if (widget.trainingId == null) return;
+    
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}'),
+        headers: {
+          'Authorization': 'Bearer ${await TokenStorage.getAccessToken()}',
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _likesCount = data['data']?['likes_count'] ?? 0;
+          _isLiked = data['data']?['user_has_liked'] ?? false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching likes: $e');
+    }
+  }
+
+  Future<void> _toggleLike() async {
+    if (widget.trainingId == null) return;
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter')),
+        );
+        return;
+      }
+      
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/reactions'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'type': 'like'}),
+      );
+      
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _isLiked = data['data']?['user_has_liked'] ?? !_isLiked;
+          _likesCount = data['data']?['likes_count'] ?? 
+            (_isLiked ? _likesCount + 1 : _likesCount - 1);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error toggling like: $e');
+    }
+  }
+
+  Future<void> _checkFollowStatus() async {
+    if (widget.isOwner || widget.authorData == null) return;
+    
+    final authorId = widget.authorData!['id']?.toString();
+    if (authorId == null) return;
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) return;
+      
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/profile/$authorId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['is_following'] == true) {
+          setState(() => _isFollowing = true);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking follow status: $e');
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    if (widget.isOwner || widget.authorData == null) return;
+    
+    final authorId = widget.authorData!['id']?.toString();
+    if (authorId == null) return;
+    
+    setState(() => _isLoadingFollow = true);
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter')),
+        );
+        return;
+      }
+      
+      if (_isFollowing) {
+        // Unfollow
+        final response = await http.delete(
+          Uri.parse('${ApiConfig.baseUrl}/profile/$authorId/unfollow'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        
+        if (response.statusCode == 200) {
+          setState(() => _isFollowing = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vous ne suivez plus cet utilisateur')),
+          );
+        }
+      } else {
+        // Follow
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}/profile/$authorId/follow'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        
+        if (response.statusCode == 200) {
+          setState(() => _isFollowing = true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vous suivez maintenant cet utilisateur')),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      setState(() => _isLoadingFollow = false);
+    }
+  }
+
+  Future<void> _checkSubscriptionStatus() async {
+    if (widget.isOwner || widget.trainingId == null) return;
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) return;
+      
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/subscription'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['data']?['is_subscribed'] == true) {
+          setState(() => _isSubscribed = true);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking subscription status: $e');
+    }
+  }
+
+  Future<void> _subscribe() async {
+    if (widget.isOwner || widget.trainingId == null) return;
+    
+    setState(() => _isLoadingSubscription = true);
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter')),
+        );
+        return;
+      }
+      
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/subscribe'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 201) {
+        setState(() => _isSubscribed = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Inscription enregistrée avec succès'),
+            backgroundColor: Color(0xFF3AAE5E),
+          ),
+        );
+      } else if (response.statusCode == 422) {
+        final data = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? 'Vous êtes déjà inscrit')),
+        );
+      } else {
+        throw Exception('Erreur ${response.statusCode}');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      setState(() => _isLoadingSubscription = false);
+    }
+  }
+
+  void _showSubscriptionDialog() {
+    if (widget.trainingId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible de s\'inscrire à cette formation')),
+      );
+      return;
+    }
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Confirmer l\'inscription',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Voulez-vous vraiment vous inscrire à cette formation ?',
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '"${widget.trainingTitle}"',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Organisme: ${_resolveOwnerName()}',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: _isLoadingSubscription
+                  ? null
+                  : () async {
+                      Navigator.pop(dialogContext);
+                      await _subscribe();
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF9800),
+                foregroundColor: Colors.white,
+              ),
+              child: _isLoadingSubscription
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Text('Confirmer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String? _resolveAvatarUrl() {
+    // First try authorData if available
+    if (widget.authorData != null) {
+      final user = widget.authorData!;
+      String? rawUrl;
+      
+      if (user['particulier_profile'] != null) {
+        rawUrl = user['particulier_profile']['avatar_url']?.toString();
+      } else if (user['pro_profile'] != null) {
+        rawUrl = user['pro_profile']['avatar_url']?.toString() ?? 
+                 user['pro_profile']['logo_url']?.toString();
+      }
+      
+      if (rawUrl != null && rawUrl.isNotEmpty) {
+        return ApiConfig.resolveMediaUrl(rawUrl);
+      }
+    }
+    
+    // Fall back to companyLogo parameter
+    if (widget.companyLogo.startsWith('http')) {
+      return widget.companyLogo;
+    }
+    return widget.companyLogo;
+  }
+
+  String _resolveOwnerName() {
+    if (widget.authorData != null) {
+      final user = widget.authorData!;
+      final proProfile = user['pro_profile'] as Map<String, dynamic>?;
+      final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
+      
+      // Try pro profile first
+      if (proProfile != null) {
+        final companyName = proProfile['company_name']?.toString();
+        if (companyName != null && companyName.isNotEmpty) return companyName;
+        
+        final firstName = proProfile['first_name']?.toString() ?? '';
+        final lastName = proProfile['last_name']?.toString() ?? '';
+        final fullName = '$firstName $lastName'.trim();
+        if (fullName.isNotEmpty) return fullName;
+      }
+      // Try particulier profile
+      if (particulierProfile != null) {
+        final pseudo = particulierProfile['pseudo']?.toString();
+        if (pseudo != null && pseudo.isNotEmpty) return pseudo;
+        
+        final firstName = particulierProfile['first_name']?.toString() ?? '';
+        final lastName = particulierProfile['last_name']?.toString() ?? '';
+        final fullName = '$firstName $lastName'.trim();
+        if (fullName.isNotEmpty) return fullName;
+      }
+      // Fallback to user name/email
+      final name = user['name']?.toString();
+      if (name != null && name.isNotEmpty) return name;
+      
+      final email = user['email']?.toString();
+      if (email != null && email.isNotEmpty) return email.split('@').first;
+    }
+    return widget.companyName;
+  }
+
+  String _resolveUserType() {
+    if (widget.authorData != null) {
+      final accountType = widget.authorData!['account_type']?.toString();
+      if (accountType == 'pro') return 'Pro';
+      if (accountType == 'particulier') return 'Particulier';
+    }
+    return 'Pro';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +544,7 @@ class TrainingDetailScreen extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
-          if (isOwner)
+          if (widget.isOwner)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Color(0xFF616161), size: 24),
               offset: const Offset(0, 45),
@@ -133,9 +555,9 @@ class TrainingDetailScreen extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) => CreerFormationScreen(
-                        trainingId: trainingId,
-                        initialData: trainingData,
-                        shouldReturnToListingOnSuccess: returnToListingOnEdit,
+                        trainingId: widget.trainingId,
+                        initialData: widget.trainingData,
+                        shouldReturnToListingOnSuccess: widget.returnToListingOnEdit,
                       ),
                     ),
                   );
@@ -192,8 +614,8 @@ class TrainingDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Image Carousel
-            if (images.isNotEmpty) ...[
-              ImageCarousel(images: images, discount: 'Formation'),
+            if (widget.images.isNotEmpty) ...[
+              ImageCarousel(images: widget.images, discount: 'Formation'),
               const SizedBox(height: 16),
             ],
 
@@ -201,10 +623,13 @@ class TrainingDetailScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: UserDetailCard(
-                avatar: companyLogo,
-                name: companyName,
-                userType: 'Pro',
-                onSubscribe: () {},
+                avatar: _resolveAvatarUrl() ?? 'assets/images/Formation.png',
+                name: _resolveOwnerName(),
+                userType: _resolveUserType(),
+                onSubscribe: widget.isOwner ? null : _toggleFollow,
+                showSubscribeButton: !widget.isOwner && widget.authorData != null,
+                isFollowing: _isFollowing,
+                isLoading: _isLoadingFollow,
               ),
             ),
             const SizedBox(height: 16),
@@ -212,22 +637,22 @@ class TrainingDetailScreen extends StatelessWidget {
             // 3. Post Content Card (Title & Info)
             PostContentCard(
               tags: [
-                if (trainingCategory != null && trainingCategory!.isNotEmpty)
+                if (widget.trainingCategory != null && widget.trainingCategory!.isNotEmpty)
                   PostTag(
-                    title: trainingCategory!,
+                    title: widget.trainingCategory!,
                     icon: Icons.category_outlined,
                     color: Colors.blue,
                   ),
-                if (trainingType != null && trainingType!.isNotEmpty)
+                if (widget.trainingType != null && widget.trainingType!.isNotEmpty)
                   PostTag(
-                    title: _formatEnumLabel(trainingType!),
+                    title: _formatEnumLabel(widget.trainingType!),
                     icon: Icons.school_outlined,
                     color: Colors.purple,
                   ),
               ],
-              title: trainingTitle,
-              time: timeAgo,
-              onLike: () {},
+              title: widget.trainingTitle,
+              time: widget.timeAgo,
+              onLike: _toggleLike,
               onShare: () {},
             ),
 
@@ -290,31 +715,31 @@ class TrainingDetailScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   const Divider(height: 1),
                   const SizedBox(height: 12),
-                  if (trainingStyle.isNotEmpty)
+                  if (widget.trainingStyle.isNotEmpty)
                     _buildInfoRow(Icons.laptop_chromebook, 'Type d\'enseignement',
-                        trainingStyle.map(_formatEnumLabel).join(', ')),
-                  if (trainingStyle.isNotEmpty) const SizedBox(height: 10),
-                  if (durationInH != null)
+                        widget.trainingStyle.map(_formatEnumLabel).join(', ')),
+                  if (widget.trainingStyle.isNotEmpty) const SizedBox(height: 10),
+                  if (widget.durationInH != null)
                     _buildInfoRow(Icons.timer_outlined, 'Durée',
-                        '$durationInH ${_durationUnitLabel(durationUnit)}'),
-                  if (durationInH != null) const SizedBox(height: 10),
-                  if (!dateToDefine && (startDate != null || endDate != null))
+                        '${widget.durationInH} ${_durationUnitLabel(widget.durationUnit)}'),
+                  if (widget.durationInH != null) const SizedBox(height: 10),
+                  if (!widget.dateToDefine && (widget.startDate != null || widget.endDate != null))
                     _buildInfoRow(Icons.calendar_today_outlined, 'Dates',
-                        _formatDates(startDate, endDate)),
-                  if (dateToDefine)
+                        _formatDates(widget.startDate, widget.endDate)),
+                  if (widget.dateToDefine)
                     _buildInfoRow(Icons.calendar_today_outlined, 'Dates', 'À définir'),
-                  if (startDate != null || endDate != null || dateToDefine)
+                  if (widget.startDate != null || widget.endDate != null || widget.dateToDefine)
                     const SizedBox(height: 10),
-                  if (requiredLevels.isNotEmpty)
-                    _buildInfoRow(Icons.school, 'Prérequis', requiredLevels.join(', ')),
-                  if (requiredLevels.isNotEmpty) const SizedBox(height: 10),
-                  if (trainingPublic.isNotEmpty)
+                  if (widget.requiredLevels.isNotEmpty)
+                    _buildInfoRow(Icons.school, 'Prérequis', widget.requiredLevels.join(', ')),
+                  if (widget.requiredLevels.isNotEmpty) const SizedBox(height: 10),
+                  if (widget.trainingPublic.isNotEmpty)
                     _buildInfoRow(Icons.people_outline, 'Public cible',
-                        trainingPublic.map(_formatEnumLabel).join(', ')),
-                  if (trainingPublic.isNotEmpty) const SizedBox(height: 10),
-                  if (certification.isNotEmpty)
+                        widget.trainingPublic.map(_formatEnumLabel).join(', ')),
+                  if (widget.trainingPublic.isNotEmpty) const SizedBox(height: 10),
+                  if (widget.certification.isNotEmpty)
                     _buildInfoRow(Icons.verified_outlined, 'Certifications',
-                        certification.join(', ')),
+                        widget.certification.join(', ')),
                 ],
               ),
             ),
@@ -329,14 +754,14 @@ class TrainingDetailScreen extends StatelessWidget {
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: tags.map((tag) => _buildTag(tag)).toList(),
+                children: widget.tags.map((tag) => _buildTag(tag)).toList(),
               ),
             ),
 
             const SizedBox(height: 8),
 
             // 7. Interested / Apply section
-            if (website != null && website!.isNotEmpty)
+            if (widget.website != null && widget.website!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Text(
@@ -350,7 +775,7 @@ class TrainingDetailScreen extends StatelessWidget {
               ),
 
             // 8. Price section
-            if (price != null || priceType != null)
+            if (widget.price != null || widget.priceType != null)
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 padding: const EdgeInsets.all(16),
@@ -371,11 +796,11 @@ class TrainingDetailScreen extends StatelessWidget {
                               color: Color(0xFF3AAE5E),
                             ),
                           ),
-                          if (trainingFunding.isNotEmpty)
+                          if (widget.trainingFunding.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
-                                'Financements: ${trainingFunding.map(_formatEnumLabel).join(', ')}',
+                                'Financements: ${widget.trainingFunding.map(_formatEnumLabel).join(', ')}',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[600],
@@ -397,13 +822,13 @@ class TrainingDetailScreen extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (website != null && website!.isNotEmpty) {
-                      _launchUrl(website!);
-                    }
-                  },
+                  onPressed: _isSubscribed
+                      ? null
+                      : () {
+                          _showSubscriptionDialog();
+                        },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9800),
+                    backgroundColor: _isSubscribed ? Colors.grey : const Color(0xFFFF9800),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -411,7 +836,16 @@ class TrainingDetailScreen extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text("S'inscrire maintenant"),
+                  child: _isSubscribed
+                      ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text('Déjà inscrit'),
+                          ],
+                        )
+                      : const Text("S'inscrire maintenant"),
                 ),
               ),
             ),
@@ -419,7 +853,7 @@ class TrainingDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             // 10. Localisation Card
-            if (showLocation && (addressCity != null || addressLine1 != null))
+            if (widget.showLocation && (widget.addressCity != null || widget.addressLine1 != null))
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 padding: const EdgeInsets.all(16),
@@ -470,7 +904,7 @@ class TrainingDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 32),
 
-            // 11. Comments section (0 comments)
+            // 11. Comments section
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20),
               padding: const EdgeInsets.all(16),
@@ -479,18 +913,75 @@ class TrainingDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.comment_outlined, color: Color(0xFF616161), size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        '0 commentaires',
+                      Row(
+                        children: [
+                          const Icon(Icons.comment_outlined, color: Color(0xFF616161), size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            '$_commentsCount commentaire${_commentsCount != 1 ? 's' : ''}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_comments.isNotEmpty)
+                        TextButton(
+                          onPressed: () => _showCommentsSheet(),
+                          child: const Text(
+                            'Voir tout',
+                            style: TextStyle(
+                              color: Color(0xFF3AAE5E),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+                  if (_isLoadingComments)
+                    const Center(child: CircularProgressIndicator())
+                  else if (_comments.isEmpty)
+                    Center(
+                      child: Text(
+                        'Aucun commentaire',
                         style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
+                          fontSize: 13,
+                          color: Colors.grey[500],
                         ),
                       ),
-                    ],
+                    )
+                  else
+                    ..._comments.take(3).map((comment) => _buildCommentItem(comment)),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () => _showCommentsSheet(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, size: 16, color: Colors.grey[600]),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Ajouter un commentaire...',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -542,15 +1033,15 @@ class TrainingDetailScreen extends StatelessWidget {
   }
 
   Widget _buildDescription() {
-    if (descriptionDelta != null && descriptionDelta.toString().isNotEmpty) {
+    if (widget.descriptionDelta != null && widget.descriptionDelta.toString().isNotEmpty) {
       try {
         dynamic rawData;
-        if (descriptionDelta is List) {
-          rawData = descriptionDelta;
-        } else if (descriptionDelta is Map) {
-          rawData = descriptionDelta;
+        if (widget.descriptionDelta is List) {
+          rawData = widget.descriptionDelta;
+        } else if (widget.descriptionDelta is Map) {
+          rawData = widget.descriptionDelta;
         } else {
-          String jsonString = descriptionDelta.toString();
+          String jsonString = widget.descriptionDelta.toString();
           // Handle JavaScript object notation
           jsonString = jsonString.replaceAllMapped(
             RegExp(r'(\{|,)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:'),
@@ -614,7 +1105,7 @@ class TrainingDetailScreen extends StatelessWidget {
     }
 
     return Text(
-      description,
+      widget.description,
       style: TextStyle(
         fontSize: 14,
         color: Colors.grey[600],
@@ -694,7 +1185,7 @@ class TrainingDetailScreen extends StatelessWidget {
   }
 
   void _showDeleteDialog(BuildContext context) {
-    if (trainingId == null) {
+    if (widget.trainingId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Impossible de supprimer cette formation')),
       );
@@ -729,7 +1220,7 @@ class TrainingDetailScreen extends StatelessWidget {
                           final token = await TokenStorage.getAccessToken();
                           if (token == null) throw Exception('Session expirée');
                           final response = await http.delete(
-                            Uri.parse('${ApiConfig.baseUrl}/trainings/$trainingId'),
+                            Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}'),
                             headers: {
                               'Authorization': 'Bearer $token',
                               'Accept': 'application/json',
@@ -795,13 +1286,13 @@ class TrainingDetailScreen extends StatelessWidget {
   }
 
   String _formatPrice() {
-    if (priceType == '4') return 'Gratuit';
-    if (priceType == '5') return 'Sur devis';
-    if (price != null) {
-      final priceLabel = _priceTypeLabel(priceType);
-      final tempoLabel = _tempoLabel(tempo);
-      final publicLabel = _publicTypeLabel(publicType);
-      return '${price} € $priceLabel $publicLabel $tempoLabel'.trim();
+    if (widget.priceType == '4') return 'Gratuit';
+    if (widget.priceType == '5') return 'Sur devis';
+    if (widget.price != null) {
+      final priceLabel = _priceTypeLabel(widget.priceType);
+      final tempoLabel = _tempoLabel(widget.tempo);
+      final publicLabel = _publicTypeLabel(widget.publicType);
+      return '${widget.price} € $priceLabel $publicLabel $tempoLabel'.trim();
     }
     return 'Prix non spécifié';
   }
@@ -837,10 +1328,260 @@ class TrainingDetailScreen extends StatelessWidget {
 
   String _buildLocationString() {
     final parts = <String>[];
-    if (addressLine1 != null && addressLine1!.isNotEmpty) parts.add(addressLine1!);
-    if (addressZipcode != null && addressZipcode!.isNotEmpty) parts.add(addressZipcode!);
-    if (addressCity != null && addressCity!.isNotEmpty) parts.add(addressCity!);
+    if (widget.addressLine1 != null && widget.addressLine1!.isNotEmpty) parts.add(widget.addressLine1!);
+    if (widget.addressZipcode != null && widget.addressZipcode!.isNotEmpty) parts.add(widget.addressZipcode!);
+    if (widget.addressCity != null && widget.addressCity!.isNotEmpty) parts.add(widget.addressCity!);
     return parts.isNotEmpty ? parts.join(', ') : 'Localisation non spécifiée';
+  }
+
+  Widget _buildCommentItem(Map<String, dynamic> comment) {
+    final user = comment['user'] as Map<String, dynamic>?;
+    final body = comment['body']?.toString() ?? '';
+    final createdAt = comment['created_at']?.toString() ?? '';
+    
+    // Extract user name from nested profiles
+    String displayName = 'Utilisateur';
+    if (user != null) {
+      if (user['particulier_profile'] != null) {
+        final profile = user['particulier_profile'] as Map<String, dynamic>;
+        displayName = profile['pseudo']?.toString() ?? 
+                     user['name']?.toString() ?? 
+                     'Utilisateur';
+      } else if (user['pro_profile'] != null) {
+        final profile = user['pro_profile'] as Map<String, dynamic>;
+        displayName = profile['company_name']?.toString() ?? 
+                     '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'.trim();
+        if (displayName.isEmpty) displayName = user['name']?.toString() ?? 'Utilisateur';
+      } else {
+        displayName = user['name']?.toString() ?? 'Utilisateur';
+      }
+    }
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: const Color(0xFF3AAE5E).withOpacity(0.1),
+            child: Text(
+              displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+              style: const TextStyle(
+                color: Color(0xFF3AAE5E),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  body,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                if (createdAt.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      createdAt,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCommentsSheet() {
+    if (widget.trainingId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible de charger les commentaires')),
+      );
+      return;
+    }
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, modalSetState) {
+            final commentCtrl = TextEditingController();
+            
+            Future<void> submitComment() async {
+              final text = commentCtrl.text.trim();
+              if (text.isEmpty) return;
+              
+              try {
+                final token = await TokenStorage.getAccessToken();
+                if (token == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Veuillez vous connecter')),
+                  );
+                  return;
+                }
+                
+                final response = await http.post(
+                  Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/comments'),
+                  headers: {
+                    'Authorization': 'Bearer $token',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                  },
+                  body: jsonEncode({'body': text}),
+                );
+                
+                if (response.statusCode == 201 || response.statusCode == 200) {
+                  final data = jsonDecode(response.body);
+                  final newComment = data['data'] as Map<String, dynamic>?;
+                  if (newComment != null) {
+                    modalSetState(() {
+                      _comments.insert(0, newComment);
+                      _commentsCount++;
+                    });
+                    setState(() {});
+                  }
+                  commentCtrl.clear();
+                  FocusScope.of(ctx).unfocus();
+                }
+              } catch (e) {
+                debugPrint('Error posting comment: $e');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Erreur lors de l\'envoi')),
+                );
+              }
+            }
+            
+            return DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.7,
+              minChildSize: 0.4,
+              maxChildSize: 0.95,
+              builder: (_, scrollController) {
+                return Column(
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: Colors.grey[200]!),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '$_commentsCount commentaire${_commentsCount != 1 ? 's' : ''}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Comments list
+                    Expanded(
+                      child: _isLoadingComments
+                          ? const Center(child: CircularProgressIndicator())
+                          : _comments.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    'Aucun commentaire',
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  controller: scrollController,
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: _comments.length,
+                                  itemBuilder: (context, index) {
+                                    return _buildCommentItem(_comments[index]);
+                                  },
+                                ),
+                    ),
+                    // Input field
+                    Container(
+                      padding: EdgeInsets.only(
+                        left: 16,
+                        right: 16,
+                        top: 8,
+                        bottom: MediaQuery.of(ctx).viewInsets.bottom + 8,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: Colors.grey[200]!),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: commentCtrl,
+                              decoration: InputDecoration(
+                                hintText: 'Ajouter un commentaire...',
+                                filled: true,
+                                fillColor: Colors.grey[100],
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(24),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            onPressed: submitComment,
+                            icon: const Icon(Icons.send, color: Color(0xFF3AAE5E)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _launchUrl(String url) async {

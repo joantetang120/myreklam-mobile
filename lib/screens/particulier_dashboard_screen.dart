@@ -1399,9 +1399,17 @@ class _ParticulierDashboardScreenState
     final companyLogoUrl =
         _buildStorageUrl(avatarUrl) ?? 'assets/images/Formation.png';
 
+    // Extract owner name from profiles
+    final ownerName = proProfile?['company_name']?.toString() ??
+                      proProfile?['first_name']?.toString() ??
+                      particulierProfile?['pseudo']?.toString() ??
+                      particulierProfile?['first_name']?.toString() ??
+                      training['provider_name']?.toString() ??
+                      'Organisme';
+
     return FormationCard(
       companyLogo: companyLogoUrl,
-      companyName: provider,
+      companyName: ownerName,
       formationTitle: title,
       description: description.isNotEmpty
           ? description
@@ -1439,7 +1447,14 @@ class _ParticulierDashboardScreenState
         user?['avatar']?.toString();
 
     final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
-    final username = user?['name']?.toString() ?? 'Organisateur';
+
+    // Extract owner name from profiles
+    final ownerName = proProfile?['company_name']?.toString() ??
+                      proProfile?['first_name']?.toString() ??
+                      particulierProfile?['pseudo']?.toString() ??
+                      particulierProfile?['first_name']?.toString() ??
+                      user?['name']?.toString() ??
+                      'Organisateur';
     final eventTitle = event['title']?.toString() ?? 'Évènement';
     final eventImage =
         _extractMediaUrl(event) ?? 'assets/images/default_event.png';
@@ -1459,7 +1474,7 @@ class _ParticulierDashboardScreenState
 
     return EvenementCard(
       profileImage: profileImage,
-      username: username,
+      username: ownerName,
       userType: 'Évènement',
       eventTitle: eventTitle,
       eventImage: eventImage,
@@ -3606,6 +3621,9 @@ class _ParticulierDashboardScreenState
           currentUserId != null &&
           trainingUserId == currentUserId;
 
+      // Extract user data for owner card
+      final userData = data['user'] as Map<String, dynamic>?;
+
       final result = await Navigator.push(
         context,
         MaterialPageRoute(
@@ -3641,6 +3659,10 @@ class _ParticulierDashboardScreenState
             showLocation: showLocation,
             certification: certification,
             isOwner: isOwner,
+            trainingId: trainingId,
+            trainingData: data,
+            returnToListingOnEdit: false,
+            authorData: userData,
           ),
         ),
       );
@@ -3674,10 +3696,12 @@ class _ParticulierDashboardScreenState
       Navigator.pop(context);
 
       final data = response['data'] as Map<String, dynamic>? ?? response;
+      debugPrint('DASHBOARD NAV: data.keys = ${data.keys.toList()}');
+      debugPrint('DASHBOARD NAV: data[user] = ${data['user']}');
+      debugPrint('DASHBOARD NAV: data[user] runtimeType = ${data['user']?.runtimeType}');
 
-      final user = ev['user'] as Map<String, dynamic>?;
-      final profileImage =
-          _buildStorageUrl(user?['avatar']?.toString()) ?? _defaultAvatar;
+      final user = data['user'] as Map<String, dynamic>?;
+      final profileImage = _defaultAvatar;
       final userName = user?['name']?.toString() ?? 'Organisateur';
 
       final title = data['title']?.toString() ?? '';
@@ -3787,6 +3811,10 @@ class _ParticulierDashboardScreenState
             landingUrl: landingUrl,
             acceptMessages: acceptMessages,
             isOwner: isOwner,
+            eventId: eventId,
+            eventData: data,
+            returnToListingOnEdit: false,
+            authorData: user,
           ),
         ),
       );

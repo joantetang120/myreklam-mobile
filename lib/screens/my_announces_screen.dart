@@ -1646,6 +1646,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
             eventId: eventId,
             eventData: data,
             returnToListingOnEdit: true,
+            authorData: data['user'] as Map<String, dynamic>?,
           ),
         ),
       );

@@ -1544,6 +1544,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             eventId: eventId,
             eventData: data,
             returnToListingOnEdit: true,
+            authorData: data['user'] as Map<String, dynamic>?,
           ),
         ),
       );
