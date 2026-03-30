@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:myreklam/screens/profile_pro/pro_profile_screen.dart';
 import 'package:myreklam/screens/splash_screen.dart';
 import 'package:myreklam/services/chat_service.dart';
 import 'package:myreklam/services/chat_notification_service.dart';
@@ -48,7 +49,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B8D4B)),
           useMaterial3: true,
         ),
-        home: const SplashScreen(),
+        home: const ProfileProScreen(),
       ),
     );
   }

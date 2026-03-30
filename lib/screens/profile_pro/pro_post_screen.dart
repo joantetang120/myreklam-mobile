@@ -45,9 +45,17 @@ class _ProPostScreenState extends State<ProPostScreen> {
         });
       }
     } on ApiException catch (e) {
-      if (mounted) setState(() { _error = e.message; _isLoading = false; });
+      if (mounted)
+        setState(() {
+          _error = e.message;
+          _isLoading = false;
+        });
     } catch (e) {
-      if (mounted) setState(() { _error = 'Impossible de charger vos posts.'; _isLoading = false; });
+      if (mounted)
+        setState(() {
+          _error = 'Impossible de charger vos posts.';
+          _isLoading = false;
+        });
     }
   }
 
@@ -87,14 +95,18 @@ class _ProPostScreenState extends State<ProPostScreen> {
           children: [
             const SizedBox(height: 8),
             Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
                 color: Colors.grey[300],
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.edit_outlined, color: Color(0xFFFF9800)),
+              leading: const Icon(
+                Icons.edit_outlined,
+                color: Color(0xFFFF9800),
+              ),
               title: const Text('Modifier'),
               onTap: () {
                 Navigator.pop(context);
@@ -102,8 +114,14 @@ class _ProPostScreenState extends State<ProPostScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              title: const Text('Supprimer', style: TextStyle(color: Colors.redAccent)),
+              leading: const Icon(
+                Icons.delete_outline,
+                color: Colors.redAccent,
+              ),
+              title: const Text(
+                'Supprimer',
+                style: TextStyle(color: Colors.redAccent),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _confirmDeletePost(postId);
@@ -135,7 +153,9 @@ class _ProPostScreenState extends State<ProPostScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Supprimer le post'),
-        content: const Text('Êtes-vous sûr de vouloir supprimer ce post ? Cette action est irréversible.'),
+        content: const Text(
+          'Êtes-vous sûr de vouloir supprimer ce post ? Cette action est irréversible.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -225,7 +245,12 @@ class _ProPostScreenState extends State<ProPostScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.only(left: 20, right: 16, top: 16, bottom: 6),
+                padding: const EdgeInsets.only(
+                  left: 20,
+                  right: 16,
+                  top: 16,
+                  bottom: 6,
+                ),
                 child: Text(
                   'Mes posts (${_myPosts.length})',
                   style: const TextStyle(
@@ -245,12 +270,18 @@ class _ProPostScreenState extends State<ProPostScreen> {
                 )
               else if (_error != null)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 20,
+                  ),
                   child: Column(
                     children: [
                       Text(_error!, style: const TextStyle(color: Colors.red)),
                       const SizedBox(height: 8),
-                      TextButton(onPressed: _loadPosts, child: const Text('Réessayer')),
+                      TextButton(
+                        onPressed: _loadPosts,
+                        child: const Text('Réessayer'),
+                      ),
                     ],
                   ),
                 )
@@ -286,7 +317,9 @@ class _ProPostScreenState extends State<ProPostScreen> {
       PostTag(
         title: userType,
         icon: userType.toUpperCase() == 'PRO' ? Icons.business : Icons.person,
-        color: userType.toUpperCase() == 'PRO' ? const Color(0xFF2E9B5B) : const Color(0xFF3AAE5E),
+        color: userType.toUpperCase() == 'PRO'
+            ? const Color(0xFF2E9B5B)
+            : const Color(0xFF3AAE5E),
       ),
     ];
 

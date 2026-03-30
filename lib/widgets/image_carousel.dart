@@ -21,8 +21,9 @@ class _ImageCarouselState extends State<ImageCarousel> {
   }
 
   Widget _buildImage(String imagePath) {
-    final isNetworkImage = imagePath.startsWith('http://') || imagePath.startsWith('https://');
-    
+    final isNetworkImage =
+        imagePath.startsWith('http://') || imagePath.startsWith('https://');
+
     if (isNetworkImage) {
       return Image.network(
         imagePath,
@@ -36,7 +37,8 @@ class _ImageCarouselState extends State<ImageCarousel> {
             child: Center(
               child: CircularProgressIndicator(
                 value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
                     : null,
                 strokeWidth: 2,
               ),
@@ -47,7 +49,11 @@ class _ImageCarouselState extends State<ImageCarousel> {
           return Container(
             color: Colors.grey[200],
             child: const Center(
-              child: Icon(Icons.image_not_supported, color: Colors.grey, size: 48),
+              child: Icon(
+                Icons.image_not_supported,
+                color: Colors.grey,
+                size: 48,
+              ),
             ),
           );
         },
@@ -62,7 +68,11 @@ class _ImageCarouselState extends State<ImageCarousel> {
           return Container(
             color: Colors.grey[200],
             child: const Center(
-              child: Icon(Icons.image_not_supported, color: Colors.grey, size: 48),
+              child: Icon(
+                Icons.image_not_supported,
+                color: Colors.grey,
+                size: 48,
+              ),
             ),
           );
         },
@@ -79,9 +89,8 @@ class _ImageCarouselState extends State<ImageCarousel> {
           children: [
             // Carousel background container with shadow
             Container(
-              height: 240,
+              height: 210,
               width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -95,12 +104,11 @@ class _ImageCarouselState extends State<ImageCarousel> {
                 ],
               ),
             ),
-            
+
             // Image carousel
             Container(
-              height: 220,
+              height: 200,
               width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: PageView.builder(
