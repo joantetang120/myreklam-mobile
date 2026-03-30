@@ -37,7 +37,8 @@ class ApiConfig {
     if (path == null) return null;
     final trimmed = path.trim();
     if (trimmed.isEmpty) return null;
-    if (trimmed.startsWith('http')) return trimmed;
+    if (trimmed.startsWith('http') || trimmed.startsWith('https'))
+      return trimmed;
 
     final host = _apiHost();
     if (trimmed.startsWith('/')) {

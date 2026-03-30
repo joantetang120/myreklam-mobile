@@ -30,7 +30,7 @@ class JobAnnouncementCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 4),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -45,189 +45,193 @@ class JobAnnouncementCard extends StatelessWidget {
       child: Stack(
         children: [
           Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              GestureDetector(
-                onTap: onAvatarTap,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFFE6F7EF),
-                    border: Border.all(color: const Color(0xFF3AAE5E).withOpacity(0.2)),
-                    image: companyLogo.isNotEmpty
-                        ? DecorationImage(
-                            image: companyLogo.startsWith('http')
-                                ? NetworkImage(companyLogo)
-                                : AssetImage(companyLogo) as ImageProvider,
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                  ),
-                  child: companyLogo.isEmpty
-                      ? const Icon(
-                          Icons.business_rounded,
-                          color: Color(0xFF1B8D4B),
-                          size: 24,
-                        )
-                      : null,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: onAvatarTap,
-                            child: Text(
-                              companyName,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF616161),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.verified,
-                          color: Colors.orange,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 2,
-                      ),
+              // Header
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: onAvatarTap,
+                    child: Container(
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
+                        shape: BoxShape.circle,
                         color: const Color(0xFFE6F7EF),
-                        borderRadius: BorderRadius.circular(5),
                         border: Border.all(
                           color: const Color(0xFF3AAE5E).withOpacity(0.2),
                         ),
+                        image: companyLogo.isNotEmpty
+                            ? DecorationImage(
+                                image: companyLogo.startsWith('http')
+                                    ? NetworkImage(companyLogo)
+                                    : AssetImage(companyLogo) as ImageProvider,
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                       ),
-                      child: const Text(
-                        'Pro',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Color(0xFF3AAE5E),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: companyLogo.isEmpty
+                          ? const Icon(
+                              Icons.business_rounded,
+                              color: Color(0xFF1B8D4B),
+                              size: 24,
+                            )
+                          : null,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: onAvatarTap,
+                                child: Text(
+                                  companyName,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF616161),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.verified,
+                              color: Colors.orange,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE6F7EF),
+                            borderRadius: BorderRadius.circular(5),
+                            border: Border.all(
+                              color: const Color(0xFF3AAE5E).withOpacity(0.2),
+                            ),
+                          ),
+                          child: const Text(
+                            'Pro',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF3AAE5E),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                ],
               ),
-              const Spacer(),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Job Title
-          Text(
-            jobTitle,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF757575),
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Description
-          Text(
-            description,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF616161),
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 15),
-          const Divider(height: 1),
-          const SizedBox(height: 15),
-          // Tags
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: tags.map((tag) => _buildDetailTag(tag)).toList(),
-          ),
-          const SizedBox(height: 15),
-          const Divider(height: 1),
-          const SizedBox(height: 15),
-          // Avantages
-          const Text(
-            'Avantages',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF616161),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: advantages.map((adv) => _buildAdvantageTag(adv)).toList(),
-          ),
-          const SizedBox(height: 15),
-          const Divider(height: 1),
-          const SizedBox(height: 15),
-          // Footer
-          Row(
-            children: [
-              Icon(
-                Icons.access_time,
-                color: Colors.grey.withOpacity(0.7),
-                size: 20,
-              ),
-              const SizedBox(width: 6),
+              const SizedBox(height: 20),
+              // Job Title
               Text(
-                timeAgo,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const Spacer(),
-              ElevatedButton.icon(
-                onPressed: onApply,
-                icon: const Icon(Icons.work_outline, size: 18),
-                label: const Text("Voir l'offre d'emploi"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF9800),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
+                jobTitle,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF757575),
                 ),
               ),
+              const SizedBox(height: 8),
+              // Description
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF616161),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 15),
+              const Divider(height: 1),
+              const SizedBox(height: 15),
+              // Tags
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: tags.map((tag) => _buildDetailTag(tag)).toList(),
+              ),
+              const SizedBox(height: 15),
+              const Divider(height: 1),
+              const SizedBox(height: 15),
+              // Avantages
+              const Text(
+                'Avantages',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF616161),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: advantages
+                    .map((adv) => _buildAdvantageTag(adv))
+                    .toList(),
+              ),
+              const SizedBox(height: 15),
+              const Divider(height: 1),
+              const SizedBox(height: 15),
+              // Footer
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    color: Colors.grey.withOpacity(0.7),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    timeAgo,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const Spacer(),
+                  ElevatedButton.icon(
+                    onPressed: onApply,
+                    icon: const Icon(Icons.work_outline, size: 18),
+                    label: const Text("Voir l'offre d'emploi"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF9800),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ],
+              ),
+              if (reactionBar != null) ...[
+                const SizedBox(height: 20),
+                const Divider(height: 1),
+                const SizedBox(height: 10),
+                reactionBar!,
+                const SizedBox(height: 10),
+                const Divider(height: 1),
+              ],
+              const SizedBox(height: 10),
             ],
           ),
-          if (reactionBar != null) ...[
-            const SizedBox(height: 20),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-            reactionBar!,
-            const SizedBox(height: 10),
-            const Divider(height: 1),
-          ],
-          const SizedBox(height: 10),
-        ],
-      ),
           Positioned(
             top: 0,
             right: 0,
@@ -235,7 +239,10 @@ class JobAnnouncementCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [const Color(0xFF3AAE5E), const Color(0xFF3AAE5E).withOpacity(0.8)],
+                  colors: [
+                    const Color(0xFF3AAE5E),
+                    const Color(0xFF3AAE5E).withOpacity(0.8),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),

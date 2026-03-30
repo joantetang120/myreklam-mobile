@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/screens/creer_offre_emploi_screen.dart';
 
 class ProSpaceProScreen extends StatefulWidget {
   const ProSpaceProScreen({super.key});
@@ -12,16 +14,270 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
   late TabController _tabController;
   String selectedCategory = 'Tout';
 
+  String? _currentUserId;
+  bool _isLoadingJobOffers = true;
+  String? _jobOffersError;
+  List<Map<String, dynamic>> _myJobOffers = [];
+
+  bool _isLoadingMyApplications = true;
+  String? _myApplicationsError;
+  List<Map<String, dynamic>> _myApplications = [];
+  int _myApplicationsTotal = 0;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _bootstrap();
+  }
+
+  Future<void> _loadMyApplications() async {
+    setState(() {
+      _isLoadingMyApplications = true;
+      _myApplicationsError = null;
+    });
+    try {
+      final response = await ApiClient().authenticatedGet(
+        '/job-offers/my-applications',
+      );
+      final data = response['data'];
+
+      List<Map<String, dynamic>> items;
+      if (data is List) {
+        items = List<Map<String, dynamic>>.from(data);
+      } else if (data is Map && data['data'] is List) {
+        items = List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        items = [];
+      }
+
+      final meta = response['meta'];
+      final totalRaw = meta is Map ? meta['total'] : null;
+      final total = totalRaw is int
+          ? totalRaw
+          : int.tryParse(totalRaw?.toString() ?? '') ?? items.length;
+
+      if (!mounted) return;
+      setState(() {
+        _myApplications = items;
+        _myApplicationsTotal = total;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _myApplicationsError = e.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _myApplicationsError = 'Erreur de chargement');
+    } finally {
+      if (mounted) setState(() => _isLoadingMyApplications = false);
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _bootstrap() async {
+    await _ensureCurrentUserId();
+    await _loadMyJobOffers();
+    await _loadMyApplications();
+  }
+
+  Future<void> _ensureCurrentUserId() async {
+    try {
+      final response = await ApiClient().authenticatedGet('/profile/me');
+      final id = response['user']?['id']?.toString();
+      if (!mounted) return;
+      setState(() => _currentUserId = id);
+    } catch (_) {
+      // Keep null; UI will show error if job offers fail.
+    }
+  }
+
+  Future<void> _loadMyJobOffers() async {
+    setState(() {
+      _isLoadingJobOffers = true;
+      _jobOffersError = null;
+    });
+    try {
+      final response = await ApiClient().authenticatedGet('/job-offers');
+      final data = response['data'];
+
+      List<Map<String, dynamic>> all;
+      if (data is List) {
+        all = List<Map<String, dynamic>>.from(data);
+      } else if (data is Map && data['data'] is List) {
+        all = List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        all = [];
+      }
+
+      final myId = _currentUserId;
+      final filtered = myId == null
+          ? all
+          : all
+                .where(
+                  (o) =>
+                      o['user_id']?.toString() == myId ||
+                      (o['user'] is Map &&
+                          (o['user']['id']?.toString() == myId)),
+                )
+                .toList();
+
+      if (!mounted) return;
+      setState(() => _myJobOffers = filtered);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _jobOffersError = e.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _jobOffersError = 'Erreur de chargement');
+    } finally {
+      if (mounted) setState(() => _isLoadingJobOffers = false);
+    }
+  }
+
+  int _applicationsCountForOffer(Map<String, dynamic> offer) {
+    final candidatesRaw =
+        offer['applications'] ?? offer['candidatures'] ?? offer['candidates'];
+    if (candidatesRaw is List) return candidatesRaw.length;
+
+    final directCount = offer['applications_count'];
+    if (directCount is int) return directCount;
+    return int.tryParse(directCount?.toString() ?? '') ?? 0;
+  }
+
+  List<Map<String, dynamic>> _applicationsForOffer(Map<String, dynamic> offer) {
+    final candidatesRaw = offer['applications'] ?? offer['candidatures'];
+    if (candidatesRaw is List) {
+      return candidatesRaw
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    return const [];
+  }
+
+  String _formatDate(dynamic value) {
+    final raw = value?.toString();
+    if (raw == null || raw.isEmpty) return '';
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) return raw;
+    const months = [
+      'janvier',
+      'février',
+      'mars',
+      'avril',
+      'mai',
+      'juin',
+      'juillet',
+      'août',
+      'septembre',
+      'octobre',
+      'novembre',
+      'décembre',
+    ];
+    return '${parsed.day} ${months[parsed.month - 1]} ${parsed.year}';
+  }
+
+  String _applicationStatusLabel(dynamic value) {
+    final raw = value?.toString().trim();
+    if (raw == null || raw.isEmpty) return 'actif';
+    return raw;
+  }
+
+  String _companyNameForOffer(Map<String, dynamic> offer) {
+    final company = offer['company'] ?? offer['company_name'];
+    if (company is Map) {
+      return (company['name'] ?? company['title'] ?? 'Entreprise').toString();
+    }
+    final fromUser = offer['user'] is Map
+        ? (offer['user']['name'] ?? offer['user']['username'])
+        : null;
+    return (company ?? fromUser ?? 'Entreprise').toString();
+  }
+
+  Future<void> _editJobOffer(Map<String, dynamic> offer) async {
+    final id = offer['id']?.toString();
+    if (id == null || id.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Offre invalide")));
+      return;
+    }
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            CreerOffreEmploiScreen(jobOfferId: id, initialData: offer),
+      ),
+    );
+
+    if (!mounted) return;
+    if (result != null) {
+      await _loadMyJobOffers();
+    }
+  }
+
+  Future<void> _deleteJobOffer(Map<String, dynamic> offer) async {
+    final id = offer['id']?.toString();
+    if (id == null || id.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Offre invalide")));
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer l\'offre'),
+        content: const Text('Voulez-vous vraiment supprimer cette offre ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await ApiClient().authenticatedDelete('/job-offers/$id');
+      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Offre supprimée')));
+      await _loadMyJobOffers();
+    } on ApiException catch (e) {
+      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (_) {
+      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Erreur de suppression')));
+    }
   }
 
   @override
@@ -136,8 +392,8 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                   const SizedBox(width: 8),
                   Text(
                     _tabController.index == 0
-                        ? 'Total : 2 offre(s) publiée(s)'
-                        : 'Total : 2 Candidature(s) envoyée(s)',
+                        ? 'Total : ${_myJobOffers.length} offre(s) publiée(s)'
+                        : 'Total : $_myApplicationsTotal Candidature(s) envoyée(s)',
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.black,
@@ -148,234 +404,295 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
               ),
             ),
             const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Sélectionner la catégorie',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  _buildCategoryChip('Tout', selectedCategory == 'Tout'),
-                  const SizedBox(width: 8),
-                  _buildCategoryChip('Emploi', selectedCategory == 'Emploi'),
-                  const SizedBox(width: 8),
-                  _buildCategoryChip(
-                    'Formations',
-                    selectedCategory == 'Formations',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
+            // Padding(
+            //   padding: const EdgeInsets.symmetric(horizontal: 16),
+            //   child: Text(
+            //     'Sélectionner la catégorie',
+            //     style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            //   ),
+            // ),
+            // const SizedBox(height: 12),
+            // Padding(
+            //   padding: const EdgeInsets.symmetric(horizontal: 16),
+            //   child: Row(
+            //     children: [
+            //       _buildCategoryChip('Tout', selectedCategory == 'Tout'),
+            //       const SizedBox(width: 8),
+            //       _buildCategoryChip('Emploi', selectedCategory == 'Emploi'),
+            //       const SizedBox(width: 8),
+            //       _buildCategoryChip(
+            //         'Formations',
+            //         selectedCategory == 'Formations',
+            //       ),
+            //     ],
+            //   ),
+            // ),
+            // const SizedBox(height: 20),
             if (_tabController.index == 0) ...[
-              _buildOffreCard(
-                companyName: 'Dyson Sarl',
-                isPro: true,
-                jobTitle: 'Operateur téléphonique',
-                description:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit',
-                category: 'Offre d\'emploi',
-                date: '11 novembre 2025',
-                candidatures: 3,
-                views: 201,
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 35),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Candidatures (3)',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black.withOpacity(0.5),
+              if (_isLoadingJobOffers)
+                const Center(child: CircularProgressIndicator())
+              else if (_jobOffersError != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _jobOffersError!,
+                        style: TextStyle(fontSize: 12, color: Colors.red[400]),
                       ),
-                    ),
-                    Text(
-                      'Tout afficher',
-                      style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 14, bottom: 20),
-                    child: Column(
-                      children: [
-                        _buildCandidatureItem(
-                          name: 'Jacob Jones',
-                          email: 'jacobjones@gmail.com',
-                          avatarPath:
-                              'assets/images/dashboard_particulier/Ellipse 10.png',
-                          jobTitle: 'Operateur téléphonique',
-                          submissionDate: '11 Décembre 2025',
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: _loadMyJobOffers,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF8A40),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                        _buildCandidatureItem(
-                          name: 'Brooklyn Simmons',
-                          email: 'sara.cruz@example.com',
-                          avatarPath:
-                              'assets/images/dashboard_particulier/Ellipse 10.png',
-                          jobTitle: 'Operateur téléphonique',
-                          submissionDate: '11 Décembre 2025',
-                        ),
-                        _buildCandidatureItem(
-                          name: 'Jean Pierr',
-                          email: 'jeanpierr@gmail.com',
-                          avatarPath:
-                              'assets/images/dashboard_particulier/Ellipse 10.png',
-                          jobTitle: 'Operateur téléphonique',
-                          submissionDate: '04 Septembre 2025',
-                        ),
-                      ],
-                    ),
+                        child: const Text('Réessayer'),
+                      ),
+                    ],
                   ),
+                )
+              else ...[
+                for (int index = 0; index < _myJobOffers.length; index++) ...[
+                  Builder(
+                    builder: (context) {
+                      final offer = _myJobOffers[index];
+                      final jobTitle = offer['title']?.toString() ?? '';
+                      final description =
+                          (offer['description'] ?? offer['summary'] ?? '')
+                              .toString();
+                      final date = _formatDate(
+                        offer['created_at'] ?? offer['published_at'],
+                      );
+                      final views =
+                          int.tryParse(
+                            (offer['views'] ??
+                                    offer['view_count'] ??
+                                    offer['views_count'] ??
+                                    0)
+                                .toString(),
+                          ) ??
+                          0;
+                      final appsCount = _applicationsCountForOffer(offer);
+                      final companyName = _companyNameForOffer(offer);
 
-                  Positioned(
-                    left: 7,
-                    child: Container(
-                      height: MediaQuery.of(context).size.height - 310,
-                      width: 1.5,
-                      color: Colors.black.withOpacity(0.2),
-                    ),
-                  ),
+                      final avatarRaw =
+                          (offer['user']['particulier_profile'] is Map
+                          ? offer['user']['particulier_profile']['avatar_url']
+                          : offer['user']['pro_profile']['avatar_url']);
+                      final avatar = avatarRaw?.toString() ?? '';
 
-                  Positioned(
-                    top: 0,
-                    left: 25,
-                    right: 25,
-                    child: Container(
-                      height: 1,
-                      width: 500,
-                      color: Colors.black.withOpacity(0.2),
-                    ),
-                  ),
+                      final applications = _applicationsForOffer(offer);
 
-                  Positioned(
-                    bottom: 0,
-                    left: 7,
-                    right: 25,
-                    child: Container(
-                      height: 1,
-                      width: 500,
-                      color: Colors.black.withOpacity(0.2),
-                    ),
+                      return Column(
+                        children: [
+                          _buildOffreCard(
+                            avatar: avatar,
+                            companyName: companyName,
+                            isPro: true,
+                            jobTitle: jobTitle,
+                            description: description,
+                            category: "Offre d'emploi",
+                            date: date,
+                            candidatures: appsCount,
+                            views: views,
+                            onEdit: () => _editJobOffer(offer),
+                            onDelete: () => _deleteJobOffer(offer),
+                          ),
+                          const SizedBox(height: 12),
+                          appsCount > 0
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 35,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Candidatures ($appsCount)',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black.withOpacity(0.5),
+                                        ),
+                                      ),
+                                      Text(
+                                        'Tout afficher',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey[500],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : SizedBox.shrink(),
+                          appsCount > 0
+                              ? const SizedBox(height: 12)
+                              : SizedBox.shrink(),
+                          Stack(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  top: 14,
+                                  bottom: 20,
+                                ),
+                                child: Column(
+                                  children: [
+                                    for (final app in applications.take(3))
+                                      _buildCandidatureItem(
+                                        name:
+                                            (app['user'] is Map
+                                                    ? (app['user']['particulier_profile']['pseudo'] ??
+                                                          app['user']['pro_profile']['company_name'] ??
+                                                          '')
+                                                    : ('assets/images/details_bon_plans/Ellipse 11 (6).png'))
+                                                .toString(),
+                                        email:
+                                            (app['user'] is Map
+                                                    ? (app['user']['email'] ??
+                                                          '')
+                                                    : (app['email'] ?? ''))
+                                                .toString(),
+                                        avatarPath:
+                                            app['user']['particulier_profile']['avatar_url'] ??
+                                            app['user']['pro_profile']['avatar_url'] ??
+                                            '',
+                                        jobTitle: jobTitle,
+                                        submissionDate: _formatDate(
+                                          app['created_at'] ??
+                                              app['submitted_at'],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Positioned(
+                                left: 7,
+                                child: Container(
+                                  height:
+                                      MediaQuery.of(context).size.height - 310,
+                                  width: 1.5,
+                                  color: Colors.black.withOpacity(0.2),
+                                ),
+                              ),
+                              Positioned(
+                                top: 0,
+                                left: 25,
+                                right: 25,
+                                child: Container(
+                                  height: 1,
+                                  width: 500,
+                                  color: Colors.black.withOpacity(0.2),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                left: 7,
+                                right: 25,
+                                child: Container(
+                                  height: 1,
+                                  width: 500,
+                                  color: Colors.black.withOpacity(0.2),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (index != _myJobOffers.length - 1)
+                            const SizedBox(height: 20),
+                        ],
+                      );
+                    },
                   ),
                 ],
-              ),
-              const SizedBox(height: 20),
-              _buildOffreCard(
-                companyName: 'Dyson Sarl',
-                isPro: true,
-                jobTitle: 'Comptable Senior',
-                description:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit',
-                category: 'Offre d\'emploi',
-                date: '11 novembre 2025',
-                candidatures: 1,
-                views: 150,
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 35),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Candidatures (1)',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black.withOpacity(0.5),
-                      ),
-                    ),
-                    Text(
-                      'Tout afficher',
-                      style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 14, bottom: 20),
-                    child: Column(
-                      children: [
-                        _buildCandidatureItem(
-                          name: 'Leslie Alexandra',
-                          email: 'lesliealexandra@gmail.com',
-                          avatarPath:
-                              'assets/images/dashboard_particulier/Ellipse 10.png',
-                          jobTitle: 'Comptable Senior',
-                          submissionDate: '12 Décembre 2025',
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Positioned(
-                    left: 7,
-                    child: Container(
-                      height: MediaQuery.of(context).size.height - 310,
-                      width: 1.5,
-                      color: Colors.black.withOpacity(0.2),
-                    ),
-                  ),
-
-                  Positioned(
-                    top: 0,
-                    left: 25,
-                    right: 25,
-                    child: Container(
-                      height: 1,
-                      width: 500,
-                      color: Colors.black.withOpacity(0.2),
-                    ),
-                  ),
-
-                  Positioned(
-                    bottom: 0,
-                    left: 7,
-                    right: 25,
-                    child: Container(
-                      height: 1,
-                      width: 500,
-                      color: Colors.black.withOpacity(0.2),
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ] else ...[
-              _buildCandidatureCard(
-                icon: 'assets/images/profil_pro/space-pro-cand.png',
-                jobTitle: 'Plombier(e)',
-                companyDescription: 'Description de l\'entreprise',
-                description:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad.',
-                date: '10 décembre 2025',
-                status: 'actif',
-              ),
-              const SizedBox(height: 12),
-              _buildCandidatureCard(
-                icon: 'assets/images/profil_pro/space-pro-cand.png',
-                jobTitle: 'Plombier(e)',
-                companyDescription: 'Description de l\'entreprise',
-                description:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad.',
-                date: '10 décembre 2025',
-                status: 'actif',
-              ),
+              if (_isLoadingMyApplications)
+                const Center(child: CircularProgressIndicator())
+              else if (_myApplicationsError != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _myApplicationsError!,
+                        style: TextStyle(fontSize: 12, color: Colors.red[400]),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: _loadMyApplications,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF8A40),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Réessayer'),
+                      ),
+                    ],
+                  ),
+                )
+              else ...[
+                for (int i = 0; i < _myApplications.length; i++) ...[
+                  Builder(
+                    builder: (context) {
+                      final app = _myApplications[i];
+                      final jobOffer = app['job_offer'] is Map
+                          ? app['job_offer'] as Map<String, dynamic>
+                          : null;
+
+                      final jobTitle =
+                          (jobOffer?['title'] ?? app['job_title'] ?? '')
+                              .toString();
+                      final description =
+                          (jobOffer?['description'] ?? app['description'] ?? '')
+                              .toString();
+
+                      final companyName =
+                          (jobOffer?['company_name'] ??
+                                  (jobOffer?['user'] is Map
+                                      ? (jobOffer?['user']['pro_profile'] is Map
+                                            ? (jobOffer?['user']['pro_profile']['company_name'] ??
+                                                  '')
+                                            : '')
+                                      : '') ??
+                                  '')
+                              .toString();
+
+                      final date = _formatDate(
+                        app['created_at'] ?? app['submitted_at'],
+                      );
+                      final status = _applicationStatusLabel(app['status']);
+
+                      return Column(
+                        children: [
+                          _buildCandidatureCard(
+                            icon: 'assets/images/profil_pro/space-pro-cand.png',
+                            jobTitle: jobTitle,
+                            companyDescription: companyName.isNotEmpty
+                                ? companyName
+                                : "Description de l'entreprise",
+                            description: description,
+                            date: date,
+                            status: status,
+                          ),
+                          if (i != _myApplications.length - 1)
+                            const SizedBox(height: 12),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ],
             ],
 
             const SizedBox(height: 35),
@@ -385,31 +702,32 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
     );
   }
 
-  Widget _buildCategoryChip(String label, bool isSelected) {
-    return GestureDetector(
-      onTap: () => setState(() => selectedCategory = label),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
-        decoration: BoxDecoration(
-          color: isSelected ? Color(0xFF2A8143) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected ? Colors.green : Colors.grey[300]!,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: isSelected ? Colors.white : Colors.grey[600],
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildCategoryChip(String label, bool isSelected) {
+  //   return GestureDetector(
+  //     onTap: () => setState(() => selectedCategory = label),
+  //     child: Container(
+  //       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
+  //       decoration: BoxDecoration(
+  //         color: isSelected ? Color(0xFF2A8143) : Colors.white,
+  //         borderRadius: BorderRadius.circular(14),
+  //         border: Border.all(
+  //           color: isSelected ? Colors.green : Colors.grey[300]!,
+  //         ),
+  //       ),
+  //       child: Text(
+  //         label,
+  //         style: TextStyle(
+  //           fontSize: 12,
+  //           color: isSelected ? Colors.white : Colors.grey[600],
+  //           fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildOffreCard({
+    required String avatar,
     required String companyName,
     required bool isPro,
     required String jobTitle,
@@ -418,6 +736,8 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
     required String date,
     required int candidatures,
     required int views,
+    VoidCallback? onEdit,
+    VoidCallback? onDelete,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -433,26 +753,26 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Image.asset(
-                    'assets/images/profil_pro/space-pro-offer.png',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Text(
-                        'dyson',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      );
-                    },
+              Center(
+                child: SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: CircleAvatar(
+                    radius: 25,
+                    backgroundColor: Colors.white,
+                    backgroundImage:
+                        avatar.isNotEmpty &&
+                            (avatar.startsWith('http://') ||
+                                avatar.startsWith('https://'))
+                        ? NetworkImage(avatar)
+                        : const AssetImage(
+                            'assets/images/profil_pro/space-pro-offer.png',
+                          ),
+                    onBackgroundImageError:
+                        (Object exception, StackTrace? stackTrace) {
+                          // keep fallback
+                        },
+                    child: const SizedBox.shrink(),
                   ),
                 ),
               ),
@@ -502,9 +822,12 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                   color: const Color(0xFF2E9B5B),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: Image.asset('assets/images/profil_pro/btn-edit.png'),
+                child: GestureDetector(
+                  onTap: onEdit,
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Image.asset('assets/images/profil_pro/btn-edit.png'),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -515,9 +838,14 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                   color: const Color(0xFFF44336),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: Image.asset('assets/images/profil_pro/btn-delete.png'),
+                child: GestureDetector(
+                  onTap: onDelete,
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Image.asset(
+                      'assets/images/profil_pro/btn-delete.png',
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -808,7 +1136,15 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
         children: [
           Row(
             children: [
-              CircleAvatar(radius: 24, backgroundImage: AssetImage(avatarPath)),
+              CircleAvatar(
+                radius: 24,
+                backgroundImage:
+                    avatarPath.isNotEmpty &&
+                        (avatarPath.startsWith('http') ||
+                            avatarPath.startsWith('https'))
+                    ? NetworkImage(avatarPath)
+                    : AssetImage(avatarPath),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -870,9 +1206,12 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                 height: 15,
               ),
               const SizedBox(width: 4),
-              Text(
-                jobTitle,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  jobTitle,
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                ),
               ),
               const Spacer(),
               Container(

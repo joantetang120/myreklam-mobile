@@ -114,9 +114,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
             : 'Aucune demande publiée',
       );
     }
-    return Column(
-      children: items.map(_buildDemandeCard).toList(),
-    );
+    return Column(children: items.map(_buildDemandeCard).toList());
   }
 
   Widget _buildDemandeCard(Map<String, dynamic> d) {
@@ -132,7 +130,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
         ? _buildImageUrl(mediaFiles.first['url']?.toString() ?? '')
         : null;
 
-    final categoryLabel = type.isNotEmpty ? type : (nature.isNotEmpty ? nature : 'Demande');
+    final categoryLabel = type.isNotEmpty
+        ? type
+        : (nature.isNotEmpty ? nature : 'Demande');
     final displayLocation = nationwide
         ? 'Toute la France'
         : (location.isNotEmpty ? location : 'Non spécifié');
@@ -171,7 +171,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
     );
 
     try {
-      final response = await ApiClient().authenticatedGet('/demandes/$demandeId');
+      final response = await ApiClient().authenticatedGet(
+        '/demandes/$demandeId',
+      );
       Navigator.pop(context);
 
       final data = response['data'] as Map<String, dynamic>? ?? response;
@@ -190,7 +192,8 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       final showGoogleLocation = data['show_google_location'] == true;
       final acceptMessages = data['accept_messages'] == true;
       final createdAt = data['created_at']?.toString();
-      final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+      final mediaFiles =
+          data['media_files'] as List? ?? data['media'] as List? ?? [];
 
       final images = mediaFiles
           .where((m) => m is Map && m['url'] != null)
@@ -203,11 +206,23 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
           : (nature != null && nature.isNotEmpty ? nature : 'Demande');
 
       final tags = <PostTag>[
-        PostTag(title: categoryLabel, icon: Icons.label_outline, color: Colors.orange),
+        PostTag(
+          title: categoryLabel,
+          icon: Icons.label_outline,
+          color: Colors.orange,
+        ),
         if (urgent)
-          PostTag(title: 'Urgent', icon: Icons.warning_amber_rounded, color: Colors.red),
+          PostTag(
+            title: 'Urgent',
+            icon: Icons.warning_amber_rounded,
+            color: Colors.red,
+          ),
         if (nationwide)
-          PostTag(title: 'Toute la France', icon: Icons.public, color: Colors.blue),
+          PostTag(
+            title: 'Toute la France',
+            icon: Icons.public,
+            color: Colors.blue,
+          ),
       ];
 
       final result = await Navigator.push(
@@ -217,7 +232,6 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
             images: images,
             avatar: 'assets/images/default_profile.png',
             username: 'Ma demande',
-            userType: categoryLabel,
             demandeTitle: title,
             description: description,
             tags: tags,
@@ -268,9 +282,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
             : 'Aucune formation publiée',
       );
     }
-    return Column(
-      children: items.map(_buildTrainingCard).toList(),
-    );
+    return Column(children: items.map(_buildTrainingCard).toList());
   }
 
   Widget _buildTrainingCard(Map<String, dynamic> tr) {
@@ -301,7 +313,8 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       if (durationHours != null)
         FormationTag(
           icon: Icons.timer_outlined,
-          text: '$durationHours h${durationUnit != null ? ' / $durationUnit' : ''}',
+          text:
+              '$durationHours h${durationUnit != null ? ' / $durationUnit' : ''}',
         ),
       if (status.isNotEmpty)
         FormationTag(icon: Icons.flag_outlined, text: _statusLabel(status)),
@@ -311,7 +324,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       companyLogo: 'assets/images/Formation.png',
       companyName: 'Ma formation',
       formationTitle: title,
-      description: description.isNotEmpty ? description : 'Aucune description fournie.',
+      description: description.isNotEmpty
+          ? description
+          : 'Aucune description fournie.',
       tags: tags,
       timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
       onApply: () {
@@ -322,7 +337,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
   }
 
   String _stripHtml(String value) {
-    return value.replaceAll(RegExp(r'<[^>]*>'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+    return value
+        .replaceAll(RegExp(r'<[^>]*>'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   Future<void> _loadTrainings() async {
@@ -469,29 +487,65 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
     }).toList();
   }
 
-  int get _totalCount => _bonPlans.length + _jobOffers.length + _trainings.length + _events.length + _demandes.length;
+  int get _totalCount =>
+      _bonPlans.length +
+      _jobOffers.length +
+      _trainings.length +
+      _events.length +
+      _demandes.length;
 
   int get _activeCount {
-    final activeBp = _bonPlans.where((bp) =>
-        bp['status'] == 'published' || bp['status'] == 'PUBLISHED').length;
-    final activeJo = _jobOffers.where((jo) =>
-        jo['status'] == 'PUBLISHED' || jo['status'] == 'published').length;
-    final activeTrainings = _trainings.where((tr) =>
-        (tr['status'] ?? '').toString().toUpperCase() == 'PUBLISHED').length;
-    final activeEvents = _events.where((ev) =>
-        (ev['status'] ?? '').toString().toUpperCase() == 'PUBLISHED').length;
-    final activeDemandes = _demandes.where((d) =>
-        (d['status'] ?? '').toString().toUpperCase() == 'PUBLISHED').length;
-    return activeBp + activeJo + activeTrainings + activeEvents + activeDemandes;
+    final activeBp = _bonPlans
+        .where(
+          (bp) => bp['status'] == 'published' || bp['status'] == 'PUBLISHED',
+        )
+        .length;
+    final activeJo = _jobOffers
+        .where(
+          (jo) => jo['status'] == 'PUBLISHED' || jo['status'] == 'published',
+        )
+        .length;
+    final activeTrainings = _trainings
+        .where(
+          (tr) => (tr['status'] ?? '').toString().toUpperCase() == 'PUBLISHED',
+        )
+        .length;
+    final activeEvents = _events
+        .where(
+          (ev) => (ev['status'] ?? '').toString().toUpperCase() == 'PUBLISHED',
+        )
+        .length;
+    final activeDemandes = _demandes
+        .where(
+          (d) => (d['status'] ?? '').toString().toUpperCase() == 'PUBLISHED',
+        )
+        .length;
+    return activeBp +
+        activeJo +
+        activeTrainings +
+        activeEvents +
+        activeDemandes;
   }
 
   int get _expiredCount {
-    final expBp = _bonPlans.where((bp) =>
-        bp['status'] == 'rejected' || bp['status'] == 'REJECTED' ||
-        bp['status'] == 'ARCHIVED' || bp['status'] == 'archived').length;
-    final expJo = _jobOffers.where((jo) =>
-        jo['status'] == 'REJECTED' || jo['status'] == 'rejected' ||
-        jo['status'] == 'ARCHIVED' || jo['status'] == 'archived').length;
+    final expBp = _bonPlans
+        .where(
+          (bp) =>
+              bp['status'] == 'rejected' ||
+              bp['status'] == 'REJECTED' ||
+              bp['status'] == 'ARCHIVED' ||
+              bp['status'] == 'archived',
+        )
+        .length;
+    final expJo = _jobOffers
+        .where(
+          (jo) =>
+              jo['status'] == 'REJECTED' ||
+              jo['status'] == 'rejected' ||
+              jo['status'] == 'ARCHIVED' ||
+              jo['status'] == 'archived',
+        )
+        .length;
     final expTrainings = _trainings.where((tr) {
       final status = (tr['status'] ?? '').toString().toUpperCase();
       return status == 'REJECTED' || status == 'ARCHIVED';
@@ -513,8 +567,12 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
     return _trainings.where((tr) {
       final title = (tr['title'] ?? '').toString().toLowerCase();
       final category = (tr['training_category'] ?? '').toString().toLowerCase();
-      final subCategory = (tr['training_sub_category'] ?? '').toString().toLowerCase();
-      return title.contains(q) || category.contains(q) || subCategory.contains(q);
+      final subCategory = (tr['training_sub_category'] ?? '')
+          .toString()
+          .toLowerCase();
+      return title.contains(q) ||
+          category.contains(q) ||
+          subCategory.contains(q);
     }).toList();
   }
 
@@ -526,7 +584,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       final desc = (d['description'] ?? '').toString().toLowerCase();
       final nature = (d['nature'] ?? '').toString().toLowerCase();
       final type = (d['type'] ?? '').toString().toLowerCase();
-      return title.contains(q) || desc.contains(q) || nature.contains(q) || type.contains(q);
+      return title.contains(q) ||
+          desc.contains(q) ||
+          nature.contains(q) ||
+          type.contains(q);
     }).toList();
   }
 
@@ -558,7 +619,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
     );
 
     try {
-      final response = await ApiClient().authenticatedGet('/bonplans/$bonPlanId');
+      final response = await ApiClient().authenticatedGet(
+        '/bonplans/$bonPlanId',
+      );
       if (!mounted) return;
       Navigator.pop(context); // dismiss loading
 
@@ -573,8 +636,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
         profileImage = 'assets/images/default_profile.png';
       }
       // Use display_name which contains company_name for pro or pseudo for particulier
-      final username = user?['display_name']?.toString() ?? 
-          user?['name']?.toString() ?? 
+      final username =
+          user?['display_name']?.toString() ??
+          user?['name']?.toString() ??
           'Mon bon plan';
       final userType = user?['account_type']?.toString() ?? 'Particulier';
       final title = data['title']?.toString() ?? 'Bon plan';
@@ -583,7 +647,8 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       final category = data['category']?.toString() ?? '';
       final subCategory = data['sub_category']?.toString() ?? '';
       final type = data['type']?.toString() ?? '';
-      final availableAt = data['available_at_name']?.toString() ?? 'Non spécifié';
+      final availableAt =
+          data['available_at_name']?.toString() ?? 'Non spécifié';
       final validityType = data['validity_type']?.toString() ?? 'permanent';
       final validFrom = data['valid_from']?.toString();
       final validUntil = data['valid_until']?.toString();
@@ -597,11 +662,23 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
 
       final tags = <PostTag>[
         if (category.isNotEmpty)
-          PostTag(title: category, icon: Icons.local_offer_outlined, color: Colors.orange),
+          PostTag(
+            title: category,
+            icon: Icons.local_offer_outlined,
+            color: Colors.orange,
+          ),
         if (subCategory.isNotEmpty)
-          PostTag(title: subCategory, icon: Icons.grid_view_outlined, color: Colors.grey),
+          PostTag(
+            title: subCategory,
+            icon: Icons.grid_view_outlined,
+            color: Colors.grey,
+          ),
         if (type.isNotEmpty)
-          PostTag(title: type, icon: Icons.check_circle_outline, color: Colors.green),
+          PostTag(
+            title: type,
+            icon: Icons.check_circle_outline,
+            color: Colors.green,
+          ),
       ];
 
       if (!mounted) return;
@@ -641,9 +718,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       if (!mounted) return;
       Navigator.pop(context); // dismiss loading
       debugPrint('Error fetching bon plan detail: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors du chargement: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur lors du chargement: $e')));
     }
   }
 
@@ -677,7 +754,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
     );
 
     try {
-      final response = await ApiClient().authenticatedGet('/trainings/$trainingId');
+      final response = await ApiClient().authenticatedGet(
+        '/trainings/$trainingId',
+      );
       Navigator.pop(context); // Dismiss loading
 
       final data = response['data'] as Map<String, dynamic>? ?? response;
@@ -728,7 +807,8 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
           ? certificationRaw.map((e) => e.toString()).toList()
           : <String>[];
       final createdAt = data['created_at']?.toString();
-      final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+      final mediaFiles =
+          data['media_files'] as List? ?? data['media'] as List? ?? [];
 
       // Build images
       final images = mediaFiles
@@ -742,7 +822,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
         if (trainingCategory != null && trainingCategory.isNotEmpty)
           FormationTag(icon: Icons.category_outlined, text: trainingCategory),
         if (trainingSubCategory != null && trainingSubCategory.isNotEmpty)
-          FormationTag(icon: Icons.subdirectory_arrow_right, text: trainingSubCategory),
+          FormationTag(
+            icon: Icons.subdirectory_arrow_right,
+            text: trainingSubCategory,
+          ),
         if (trainingType != null && trainingType.isNotEmpty)
           FormationTag(icon: Icons.school_outlined, text: trainingType),
         if (durationInH != null)
@@ -806,7 +889,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
     final jobId = jo['id']?.toString();
     if (jobId == null || jobId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible d\'ouvrir cette offre d\'emploi')),
+        const SnackBar(
+          content: Text('Impossible d\'ouvrir cette offre d\'emploi'),
+        ),
       );
       return;
     }
@@ -825,12 +910,17 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       final data = response['data'] as Map<String, dynamic>? ?? response;
 
       debugPrint('JOB DETAIL API response keys: ${data.keys.toList()}');
-      debugPrint('JOB DETAIL description type: ${data['description']?.runtimeType}');
+      debugPrint(
+        'JOB DETAIL description type: ${data['description']?.runtimeType}',
+      );
       debugPrint('JOB DETAIL description value: ${data['description']}');
       debugPrint('JOB DETAIL description_delta: ${data['description_delta']}');
       data.forEach((key, value) {
-        if (key.toLowerCase().contains('desc') || key.toLowerCase().contains('delta')) {
-          debugPrint('JOB DETAIL key=$key type=${value?.runtimeType} value=$value');
+        if (key.toLowerCase().contains('desc') ||
+            key.toLowerCase().contains('delta')) {
+          debugPrint(
+            'JOB DETAIL key=$key type=${value?.runtimeType} value=$value',
+          );
         }
       });
 
@@ -838,31 +928,52 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       final title = data['title']?.toString() ?? '';
       final descriptionRaw = data['description'];
       final description = descriptionRaw?.toString() ?? '';
-      final descriptionDelta = data['description_delta'] ?? (descriptionRaw is List ? descriptionRaw : null);
+      final descriptionDelta =
+          data['description_delta'] ??
+          (descriptionRaw is List ? descriptionRaw : null);
       final profileDescription = data['profile_description']?.toString();
       final companyName = data['company_name']?.toString() ?? 'Entreprise';
       final companyWebsite = data['company_website']?.toString() ?? '';
       final contractTypeRaw = data['contract_type'];
-      final contractType = contractTypeRaw is Map ? (contractTypeRaw['name'] ?? contractTypeRaw.toString()) : (contractTypeRaw?.toString() ?? '');
+      final contractType = contractTypeRaw is Map
+          ? (contractTypeRaw['name'] ?? contractTypeRaw.toString())
+          : (contractTypeRaw?.toString() ?? '');
       final workTimeRaw = data['work_time'];
-      final workTime = workTimeRaw is Map ? (workTimeRaw['name'] ?? workTimeRaw.toString()) : (workTimeRaw?.toString() ?? '');
+      final workTime = workTimeRaw is Map
+          ? (workTimeRaw['name'] ?? workTimeRaw.toString())
+          : (workTimeRaw?.toString() ?? '');
       final locationRaw = data['location'];
-      final location = locationRaw is Map ? (locationRaw['city'] ?? locationRaw['name'] ?? locationRaw.toString()) : (locationRaw?.toString() ?? '');
+      final location = locationRaw is Map
+          ? (locationRaw['city'] ??
+                locationRaw['name'] ??
+                locationRaw.toString())
+          : (locationRaw?.toString() ?? '');
       final categoryRaw = data['category'];
-      final category = categoryRaw is Map ? (categoryRaw['name'] ?? categoryRaw.toString()) : (categoryRaw?.toString() ?? '');
+      final category = categoryRaw is Map
+          ? (categoryRaw['name'] ?? categoryRaw.toString())
+          : (categoryRaw?.toString() ?? '');
       final salaryMin = data['salary_min'];
       final salaryMax = data['salary_max'];
       final advantagesRaw = data['advantages'];
       final advantages = advantagesRaw is List
-          ? advantagesRaw.map((a) => a is Map ? (a['name'] ?? a.toString()) : a.toString()).toList()
+          ? advantagesRaw
+                .map(
+                  (a) => a is Map ? (a['name'] ?? a.toString()) : a.toString(),
+                )
+                .toList()
           : <String>[];
       final createdAt = data['created_at']?.toString();
-      final mediaRaw = data['media'] as List? ?? data['media_files'] as List? ?? [];
+      final mediaRaw =
+          data['media'] as List? ?? data['media_files'] as List? ?? [];
       final remoteWork = data['remote_work'] == true;
       final educationLevelRaw = data['education_level'];
-      final educationLevel = educationLevelRaw is Map ? (educationLevelRaw['name'] ?? educationLevelRaw.toString()) : educationLevelRaw?.toString();
+      final educationLevel = educationLevelRaw is Map
+          ? (educationLevelRaw['name'] ?? educationLevelRaw.toString())
+          : educationLevelRaw?.toString();
       final experienceLevelRaw = data['experience_level'];
-      final experienceLevel = experienceLevelRaw is Map ? (experienceLevelRaw['name'] ?? experienceLevelRaw.toString()) : experienceLevelRaw?.toString();
+      final experienceLevel = experienceLevelRaw is Map
+          ? (experienceLevelRaw['name'] ?? experienceLevelRaw.toString())
+          : experienceLevelRaw?.toString();
 
       // Build images list
       final images = mediaRaw
@@ -894,7 +1005,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       ];
 
       // Build advantages list
-      final advantagesList = advantages.take(3).map((a) => a.toString()).toList();
+      final advantagesList = advantages
+          .take(3)
+          .map((a) => a.toString())
+          .toList();
 
       // Navigate to detail screen
       final result = await Navigator.push(
@@ -945,7 +1059,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
         }
       }
     }
-    return images.isNotEmpty ? images : ['assets/images/details_bon_plans/Rectangle 35.png'];
+    return images.isNotEmpty
+        ? images
+        : ['assets/images/details_bon_plans/Rectangle 35.png'];
   }
 
   String _timeAgo(String? dateStr) {
@@ -965,23 +1081,35 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
 
   String _statusLabel(String? status) {
     switch (status?.toUpperCase()) {
-      case 'PUBLISHED': return 'Publié';
-      case 'PENDING_REVIEW': return 'En attente';
-      case 'DRAFT': return 'Brouillon';
-      case 'REJECTED': return 'Rejeté';
-      case 'ARCHIVED': return 'Archivé';
-      default: return status ?? '';
+      case 'PUBLISHED':
+        return 'Publié';
+      case 'PENDING_REVIEW':
+        return 'En attente';
+      case 'DRAFT':
+        return 'Brouillon';
+      case 'REJECTED':
+        return 'Rejeté';
+      case 'ARCHIVED':
+        return 'Archivé';
+      default:
+        return status ?? '';
     }
   }
 
   Color _statusColor(String? status) {
     switch (status?.toUpperCase()) {
-      case 'PUBLISHED': return const Color(0xFF4CAF50);
-      case 'PENDING_REVIEW': return const Color(0xFFFF9800);
-      case 'DRAFT': return Colors.grey;
-      case 'REJECTED': return const Color(0xFFF44336);
-      case 'ARCHIVED': return Colors.blueGrey;
-      default: return Colors.grey;
+      case 'PUBLISHED':
+        return const Color(0xFF4CAF50);
+      case 'PENDING_REVIEW':
+        return const Color(0xFFFF9800);
+      case 'DRAFT':
+        return Colors.grey;
+      case 'REJECTED':
+        return const Color(0xFFF44336);
+      case 'ARCHIVED':
+        return Colors.blueGrey;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -1055,8 +1183,15 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                     onChanged: (v) => setState(() => _searchQuery = v),
                     decoration: InputDecoration(
                       hintText: 'Faire une recherche',
-                      hintStyle: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey[600], size: 20),
+                      hintStyle: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Colors.grey[600],
+                        size: 20,
+                      ),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.close, size: 18),
@@ -1135,7 +1270,8 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const PublishOptionsScreen(),
+                              builder: (context) =>
+                                  const PublishOptionsScreen(),
                             ),
                           ).then((_) {
                             _loadBonPlans();
@@ -1176,7 +1312,8 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                           iconColor: const Color.fromARGB(255, 252, 116, 37),
                           bgColor: const Color(0xFFFFE0B2).withOpacity(0.2),
                           icon: Icons.card_giftcard_outlined,
-                          onTap: () => setState(() => _selectedFilter = 'Bons plans'),
+                          onTap: () =>
+                              setState(() => _selectedFilter = 'Bons plans'),
                         ),
                         const SizedBox(width: 15),
                         CategoriesIcon(
@@ -1184,7 +1321,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                           iconColor: Colors.lightBlueAccent,
                           bgColor: const Color(0xFFB3E5FC).withOpacity(0.2),
                           iconAsset: 'assets/images/offres.png',
-                          onTap: () => setState(() => _selectedFilter = "Offre d'emploi"),
+                          onTap: () => setState(
+                            () => _selectedFilter = "Offre d'emploi",
+                          ),
                         ),
                         const SizedBox(width: 15),
                         CategoriesIcon(
@@ -1192,7 +1331,8 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                           iconColor: Colors.purple,
                           bgColor: const Color(0xFFE1BEE7).withOpacity(0.1),
                           iconAsset: 'assets/images/Formation.png',
-                          onTap: () => setState(() => _selectedFilter = 'Formations'),
+                          onTap: () =>
+                              setState(() => _selectedFilter = 'Formations'),
                         ),
                         const SizedBox(width: 15),
                         CategoriesIcon(
@@ -1200,15 +1340,22 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                           iconColor: Colors.green,
                           bgColor: const Color(0xFFE6F7EF).withOpacity(0.5),
                           icon: Icons.event_outlined,
-                          onTap: () => setState(() => _selectedFilter = 'Événement'),
+                          onTap: () =>
+                              setState(() => _selectedFilter = 'Événement'),
                         ),
                         const SizedBox(width: 15),
                         CategoriesIcon(
                           title: 'Demandes',
                           iconColor: const Color.fromARGB(255, 252, 231, 49),
-                          bgColor: const Color.fromARGB(255, 255, 250, 178).withOpacity(0.2),
+                          bgColor: const Color.fromARGB(
+                            255,
+                            255,
+                            250,
+                            178,
+                          ).withOpacity(0.2),
                           icon: Icons.chat_outlined,
-                          onTap: () => setState(() => _selectedFilter = 'Demandes'),
+                          onTap: () =>
+                              setState(() => _selectedFilter = 'Demandes'),
                         ),
                       ],
                     ),
@@ -1260,9 +1407,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
             : 'Aucun bon plan publié',
       );
     }
-    return Column(
-      children: items.map((bp) => _buildBonPlanCard(bp)).toList(),
-    );
+    return Column(children: items.map((bp) => _buildBonPlanCard(bp)).toList());
   }
 
   Widget _buildJobOffersList() {
@@ -1285,9 +1430,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
             : "Aucune offre d'emploi publiée",
       );
     }
-    return Column(
-      children: items.map((jo) => _buildJobOfferCard(jo)).toList(),
-    );
+    return Column(children: items.map((jo) => _buildJobOfferCard(jo)).toList());
   }
 
   Widget _buildEventsList() {
@@ -1310,9 +1453,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
             : 'Aucun événement publié',
       );
     }
-    return Column(
-      children: items.map((ev) => _buildEventCard(ev)).toList(),
-    );
+    return Column(children: items.map((ev) => _buildEventCard(ev)).toList());
   }
 
   Widget _buildEventCard(Map<String, dynamic> ev) {
@@ -1328,9 +1469,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
     final categoryCode = ev['category_code']?.toString() ?? '';
     final subCategoryCode = ev['sub_category_code']?.toString() ?? '';
     final formatType = ev['format_type']?.toString() ?? '';
-    
+
     final mediaFiles = ev['media_files'] as List? ?? [];
-    final eventImage = mediaFiles.isNotEmpty 
+    final eventImage = mediaFiles.isNotEmpty
         ? _buildImageUrl(mediaFiles.first['url']?.toString() ?? '')
         : 'assets/images/default_event.png';
 
@@ -1419,9 +1560,13 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       final priceType = data['price_type']?.toString();
       final pricingMode = data['pricing_mode']?.toString();
       final priceAmount = data['price_amount']?.toString();
-      final priceCategories = (data['price_categories'] as List?)
-          ?.map<Map<String, dynamic>>((c) => Map<String, dynamic>.from(c as Map))
-          .toList() ?? <Map<String, dynamic>>[];
+      final priceCategories =
+          (data['price_categories'] as List?)
+              ?.map<Map<String, dynamic>>(
+                (c) => Map<String, dynamic>.from(c as Map),
+              )
+              .toList() ??
+          <Map<String, dynamic>>[];
       final reservationMode = data['reservation_mode']?.toString();
       final coverageArea = data['coverage_area']?.toString();
       final isNationwide = data['is_nationwide'] == true;
@@ -1431,7 +1576,8 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       final landingUrl = data['landing_url']?.toString();
       final acceptMessages = data['accept_messages'] == true;
       final createdAt = data['created_at']?.toString();
-      final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+      final mediaFiles =
+          data['media_files'] as List? ?? data['media'] as List? ?? [];
 
       final images = mediaFiles
           .where((m) => m is Map && m['url'] != null)
@@ -1441,11 +1587,23 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
 
       final tags = <PostTag>[
         if (categoryCode != null && categoryCode.isNotEmpty)
-          PostTag(title: categoryCode, icon: Icons.local_offer_outlined, color: Colors.green),
+          PostTag(
+            title: categoryCode,
+            icon: Icons.local_offer_outlined,
+            color: Colors.green,
+          ),
         if (subCategoryCode != null && subCategoryCode.isNotEmpty)
-          PostTag(title: subCategoryCode, icon: Icons.grid_view_outlined, color: Colors.grey),
+          PostTag(
+            title: subCategoryCode,
+            icon: Icons.grid_view_outlined,
+            color: Colors.grey,
+          ),
         if (formatType != null && formatType.isNotEmpty)
-          PostTag(title: formatType, icon: Icons.videocam_outlined, color: Colors.blue),
+          PostTag(
+            title: formatType,
+            icon: Icons.videocam_outlined,
+            color: Colors.blue,
+          ),
       ];
 
       final result = await Navigator.push(
@@ -1454,7 +1612,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
           builder: (_) => EventDetailScreen(
             images: images,
             avatar: 'assets/images/default_profile.png',
-            username: isOrganizer ? 'Mon événement' : (organizerName ?? 'Organisateur'),
+            username: isOrganizer
+                ? 'Mon événement'
+                : (organizerName ?? 'Organisateur'),
             userType: 'Évènement',
             eventTitle: title,
             description: description,
@@ -1510,7 +1670,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
     final locationType = bp['available_location_type'] ?? '';
     final createdAt = bp['created_at']?.toString();
     final mediaFiles = bp['media_files'] as List? ?? [];
-    final imageUrl = mediaFiles.isNotEmpty ? mediaFiles.first['url']?.toString() : null;
+    final imageUrl = mediaFiles.isNotEmpty
+        ? mediaFiles.first['url']?.toString()
+        : null;
 
     return Container(
       margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
@@ -1549,7 +1711,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                 decoration: BoxDecoration(
                   color: _statusColor(status).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: _statusColor(status).withOpacity(0.5)),
+                  border: Border.all(
+                    color: _statusColor(status).withOpacity(0.5),
+                  ),
                 ),
                 child: Text(
                   _statusLabel(status),
@@ -1580,7 +1744,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                   return Container(
                     height: 180,
                     color: Colors.grey[100],
-                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   );
                 },
                 errorBuilder: (_, error, ___) {
@@ -1588,7 +1754,12 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                   return Container(
                     height: 100,
                     color: Colors.grey[200],
-                    child: const Center(child: Icon(Icons.image_not_supported, color: Colors.grey)),
+                    child: const Center(
+                      child: Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey,
+                      ),
+                    ),
                   );
                 },
               ),
@@ -1600,8 +1771,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
             spacing: 8,
             runSpacing: 6,
             children: [
-              if (category.isNotEmpty) _buildTag(category, Icons.local_offer_outlined),
-              if (subCategory.isNotEmpty) _buildTag(subCategory, Icons.subdirectory_arrow_right),
+              if (category.isNotEmpty)
+                _buildTag(category, Icons.local_offer_outlined),
+              if (subCategory.isNotEmpty)
+                _buildTag(subCategory, Icons.subdirectory_arrow_right),
               if (type.isNotEmpty) _buildTag(type, Icons.label_outline),
             ],
           ),
@@ -1662,16 +1835,20 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
     final contractType = jo['contract_type'] ?? '';
     final workTime = jo['work_time'] ?? '';
     final companyRaw = jo['company'];
-    final companyName = companyRaw is Map ? (companyRaw['name'] ?? '') : (companyRaw ?? '').toString();
+    final companyName = companyRaw is Map
+        ? (companyRaw['name'] ?? '')
+        : (companyRaw ?? '').toString();
     final locationRaw = jo['location'];
     final city = locationRaw is Map ? (locationRaw['city'] ?? '') : '';
     final createdAt = jo['created_at']?.toString();
     final categoryRaw = jo['category'];
-    final categoryName = categoryRaw is Map ? (categoryRaw['name'] ?? '') : (categoryRaw ?? '').toString();
+    final categoryName = categoryRaw is Map
+        ? (categoryRaw['name'] ?? '')
+        : (categoryRaw ?? '').toString();
     final advantages = jo['advantages'] as List? ?? [];
     final salaryMin = jo['salary_min'];
     final salaryMax = jo['salary_max'];
-    
+
     // Extract description
     String description = '';
     final descriptionDelta = jo['description_delta'];
@@ -1709,7 +1886,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
     } else {
       description = jo['description']?.toString() ?? '';
     }
-    
+
     // Build tags
     final tags = <JobDetailTag>[
       if (contractType.isNotEmpty)
@@ -1727,7 +1904,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
           isSpecial: true,
         ),
     ];
-    
+
     // Build advantages list
     final advantagesList = advantages.take(3).map((a) => a.toString()).toList();
 
@@ -1742,7 +1919,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       onApply: () => _navigateToJobDetail(jo),
     );
   }
-  
+
   String _formatSalary(dynamic min, dynamic max) {
     if (min != null && max != null) {
       return '${min}€ - ${max}€';
@@ -1771,9 +1948,12 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
 
   String _workTimeLabel(String val) {
     switch (val) {
-      case 'FULL_TIME': return 'Temps plein';
-      case 'PART_TIME': return 'Temps partiel';
-      default: return val;
+      case 'FULL_TIME':
+        return 'Temps plein';
+      case 'PART_TIME':
+        return 'Temps partiel';
+      default:
+        return val;
     }
   }
 
@@ -1858,7 +2038,11 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
 
     return Text(
       descriptionPlain,
-      style: const TextStyle(fontSize: 13, color: Color(0xFF666666), height: 1.5),
+      style: const TextStyle(
+        fontSize: 13,
+        color: Color(0xFF666666),
+        height: 1.5,
+      ),
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
     );
@@ -1917,10 +2101,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 12),
-              TextButton(
-                onPressed: onRetry,
-                child: const Text('Réessayer'),
-              ),
+              TextButton(onPressed: onRetry, child: const Text('Réessayer')),
             ],
           ],
         ),

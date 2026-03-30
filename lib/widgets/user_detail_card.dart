@@ -9,6 +9,7 @@ class UserDetailCard extends StatelessWidget {
   final bool showSubscribeButton;
   final bool isFollowing;
   final bool isLoading;
+  final bool isOwner;
 
   const UserDetailCard({
     super.key,
@@ -20,16 +21,16 @@ class UserDetailCard extends StatelessWidget {
     this.showSubscribeButton = true,
     this.isFollowing = false,
     this.isLoading = false,
+    this.isOwner = false,
   });
 
   @override
   Widget build(BuildContext context) {
     Widget cardContent = Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.grey.withOpacity(0.15)),
         boxShadow: [
           BoxShadow(
@@ -60,22 +61,29 @@ class UserDetailCard extends StatelessWidget {
                     color: Color(0xFF616161),
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
-                    vertical: 2,
+                    vertical: 1,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEEEEEE),
+                    color: const Color.fromARGB(255, 203, 236, 224),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    border: Border.all(
+                      color: const Color.fromARGB(
+                        255,
+                        98,
+                        93,
+                        93,
+                      ).withOpacity(0.3),
+                    ),
                   ),
                   child: Text(
                     userType,
                     style: const TextStyle(
                       fontSize: 11,
-                      color: Colors.grey,
+                      color: Color(0XFF04BC7B),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -83,48 +91,57 @@ class UserDetailCard extends StatelessWidget {
               ],
             ),
           ),
-          if (showSubscribeButton)
+          if (showSubscribeButton && !isOwner)
             isLoading
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Color(0xFFFF9800),
-                  ),
-                )
-              : OutlinedButton.icon(
-                  onPressed: onSubscribe,
-                  icon: Icon(
-                    isFollowing ? Icons.check : Icons.person_add_outlined,
-                    size: 14,
-                  ),
-                  label: Text(
-                    isFollowing ? 'Suivis' : 'Suivre',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: isFollowing ? const Color(0xFF3AAE5E) : const Color(0xFFFF9800),
-                    side: BorderSide(
-                      color: isFollowing ? const Color(0xFF3AAE5E) : const Color(0xFFFFCCBC),
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFFFF9800),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    minimumSize: const Size(0, 0),
-                    backgroundColor: isFollowing ? const Color(0xFFE6F7EF) : const Color(0xFFFFF3E0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                  )
+                : OutlinedButton.icon(
+                    onPressed: onSubscribe,
+                    icon: Icon(
+                      isFollowing ? Icons.check : Icons.person_add_outlined,
+                      size: 14,
+                    ),
+                    label: Text(
+                      isFollowing ? 'Suivis' : 'Suivre',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isFollowing
+                          ? const Color(0xFF3AAE5E)
+                          : const Color(0xFFFF9800),
+                      side: BorderSide(
+                        color: isFollowing
+                            ? const Color(0xFF3AAE5E)
+                            : const Color(0xFFFFCCBC),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      minimumSize: const Size(0, 0),
+                      backgroundColor: isFollowing
+                          ? const Color(0xFFE6F7EF)
+                          : const Color(0xFFFFF3E0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
-                ),
         ],
       ),
     );
 
     if (onTap != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: cardContent,
-      );
+      return GestureDetector(onTap: onTap, child: cardContent);
     }
 
     return cardContent;

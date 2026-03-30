@@ -220,7 +220,7 @@ class ApiClient {
       final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
 
       final request = http.MultipartRequest(method, url);
-      
+
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }
@@ -230,35 +230,51 @@ class ApiClient {
         request.fields.addAll(fields);
       }
 
-      final multipartFile = await http.MultipartFile.fromPath(fileField, file.path);
+      final multipartFile = await http.MultipartFile.fromPath(
+        fileField,
+        file.path,
+      );
       request.files.add(multipartFile);
 
-      final streamedResponse = await request.send().timeout(ApiConfig.connectTimeout);
+      final streamedResponse = await request.send().timeout(
+        ApiConfig.connectTimeout,
+      );
       final response = await http.Response.fromStream(streamedResponse);
-      
+
       return _handleResponse(response);
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         final refreshed = await _tryRefreshToken();
         if (refreshed) {
-           final token = await TokenStorage.getAccessToken();
-           final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
-           final request = http.MultipartRequest(method, url);
-           request.headers['Authorization'] = 'Bearer $token';
-           request.headers['Accept'] = 'application/json';
-           if (fields != null) request.fields.addAll(fields);
-           final multipartFile = await http.MultipartFile.fromPath(fileField, file.path);
-           request.files.add(multipartFile);
-           final streamedResponse = await request.send().timeout(ApiConfig.connectTimeout);
-           final response = await http.Response.fromStream(streamedResponse);
-           return _handleResponse(response);
+          final token = await TokenStorage.getAccessToken();
+          final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+          final request = http.MultipartRequest(method, url);
+          request.headers['Authorization'] = 'Bearer $token';
+          request.headers['Accept'] = 'application/json';
+          if (fields != null) request.fields.addAll(fields);
+          final multipartFile = await http.MultipartFile.fromPath(
+            fileField,
+            file.path,
+          );
+          request.files.add(multipartFile);
+          final streamedResponse = await request.send().timeout(
+            ApiConfig.connectTimeout,
+          );
+          final response = await http.Response.fromStream(streamedResponse);
+          return _handleResponse(response);
         }
       }
       rethrow;
     } on TimeoutException {
-      throw ApiException(statusCode: 0, message: 'Le serveur met trop de temps à répondre.');
+      throw ApiException(
+        statusCode: 0,
+        message: 'Le serveur met trop de temps à répondre.',
+      );
     } on SocketException {
-      throw ApiException(statusCode: 0, message: 'Impossible de se connecter au serveur.');
+      throw ApiException(
+        statusCode: 0,
+        message: 'Impossible de se connecter au serveur.',
+      );
     } on Exception {
       throw ApiException(statusCode: 0, message: 'Erreur inattendue.');
     }
