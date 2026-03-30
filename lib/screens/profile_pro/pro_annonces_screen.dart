@@ -979,8 +979,6 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final mediaFiles =
           data['media_files'] as List? ?? data['media'] as List? ?? [];
 
-      print("Medias: $mediaFiles");
-
       final images = mediaFiles
           .where((m) => m is Map && m['url'] != null)
           .map((m) => m['url']?.toString() ?? '')
