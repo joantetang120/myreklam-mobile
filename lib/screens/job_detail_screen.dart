@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
-import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/user_detail_card.dart';
@@ -17,7 +16,7 @@ import 'package:myreklam/screens/creer_offre_emploi_screen.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/conversation_service.dart';
 
-class JobDetailScreen extends StatelessWidget {
+class JobDetailScreen extends StatefulWidget {
   final List<String> images;
   final String companyLogo;
   final String companyName;
@@ -75,9 +74,534 @@ class JobDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<JobDetailScreen> createState() => _JobDetailScreenState();
+}
+
+class _JobDetailScreenState extends State<JobDetailScreen> {
+  bool _isFollowing = false;
+  bool _isLoadingFollow = false;
+  List<Map<String, dynamic>> _comments = [];
+  bool _isLoadingComments = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFollowStatus();
+    _fetchComments();
+  }
+
+  Future<void> _fetchComments() async {
+    if (widget.jobOfferId == null) return;
+
+    setState(() => _isLoadingComments = true);
+    try {
+      final response = await ApiClient().authenticatedGet(
+        '/job-offers/${widget.jobOfferId}/comments?per_page=50',
+      );
+
+      final data = response['data'];
+      List<Map<String, dynamic>> fetched = [];
+      if (data is List) {
+        fetched = List<Map<String, dynamic>>.from(data);
+      } else if (data is Map && data['data'] is List) {
+        fetched = List<Map<String, dynamic>>.from(data['data']);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _comments = fetched;
+      });
+    } catch (e) {
+      debugPrint('Error fetching comments: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingComments = false);
+    }
+  }
+
+  void _showCommentsSheet(BuildContext context) {
+    if (widget.jobOfferId == null) return;
+
+    int? replyingToId;
+    String? replyingToName;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, modalSetState) {
+            final commentCtrl = TextEditingController();
+
+            Future<void> submitComment() async {
+              final text = commentCtrl.text.trim();
+              if (text.isEmpty) return;
+
+              try {
+                Map<String, dynamic> response;
+                if (replyingToId != null) {
+                  response = await ApiClient().authenticatedPost(
+                    '/job-offers/${widget.jobOfferId}/comments/$replyingToId/reply',
+                    body: {'body': text},
+                  );
+                } else {
+                  response = await ApiClient().authenticatedPost(
+                    '/job-offers/${widget.jobOfferId}/comments',
+                    body: {'body': text},
+                  );
+                }
+
+                final newComment = response['data'] as Map<String, dynamic>?;
+                if (newComment != null) {
+                  modalSetState(() {
+                    if (replyingToId != null) {
+                      final parent = _comments.firstWhere(
+                        (c) => c['id'] == replyingToId,
+                        orElse: () => <String, dynamic>{},
+                      );
+                      if (parent.isNotEmpty) {
+                        final replies = List<Map<String, dynamic>>.from(
+                          (parent['replies'] as List?) ?? [],
+                        );
+                        replies.add(newComment);
+                        parent['replies'] = replies;
+                        parent['replies_count'] =
+                            (parent['replies_count'] as int? ?? 0) + 1;
+                      }
+                    } else {
+                      _comments.insert(0, newComment);
+                    }
+                    replyingToId = null;
+                    replyingToName = null;
+                  });
+                  setState(() {});
+                }
+
+                commentCtrl.clear();
+                FocusScope.of(ctx).unfocus();
+              } catch (e) {
+                debugPrint('Error posting comment: $e');
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Erreur lors de l\'envoi')),
+                  );
+                }
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: SizedBox(
+                height: MediaQuery.of(ctx).size.height * 0.85,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(top: 10, bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Commentaires (${_comments.length})',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (replyingToName != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Réponse à $replyingToName',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[600],
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                modalSetState(() {
+                                  replyingToId = null;
+                                  replyingToName = null;
+                                });
+                              },
+                              child: const Text('Annuler'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: _isLoadingComments
+                          ? const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : _comments.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 20,
+                                ),
+                                child: Text(
+                                  'Aucun commentaire. Soyez le premier !',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[500],
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _comments.length,
+                              itemBuilder: (context, index) {
+                                return _buildCommentItem(
+                                  _comments[index],
+                                  onReply: (id, name) {
+                                    modalSetState(() {
+                                      replyingToId = id;
+                                      replyingToName = name;
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: commentCtrl,
+                              minLines: 1,
+                              maxLines: 3,
+                              decoration: InputDecoration(
+                                hintText: 'Écrire un commentaire...',
+                                filled: true,
+                                fillColor: Colors.grey[100],
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: submitComment,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3AAE5E),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                            ),
+                            child: const Icon(Icons.send, size: 18),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(() {
+      _fetchComments();
+    });
+  }
+
+  Widget _buildCommentItem(
+    Map<String, dynamic> comment, {
+    bool isReply = false,
+    void Function(int id, String name)? onReply,
+  }) {
+    final user = comment['user'] as Map<String, dynamic>?;
+
+    String displayName = 'Utilisateur';
+    if (user != null) {
+      if (user['particulier_profile'] != null) {
+        final profile = user['particulier_profile'] as Map<String, dynamic>;
+        displayName =
+            profile['pseudo']?.toString() ??
+            user['name']?.toString() ??
+            'Utilisateur';
+      } else if (user['pro_profile'] != null) {
+        final profile = user['pro_profile'] as Map<String, dynamic>;
+        displayName =
+            profile['company_name']?.toString() ??
+            user['name']?.toString() ??
+            'Utilisateur';
+      } else {
+        displayName = user['name']?.toString() ?? 'Utilisateur';
+      }
+    }
+
+    String? rawAvatarUrl;
+    if (user != null) {
+      if (user['particulier_profile'] != null) {
+        rawAvatarUrl = user['particulier_profile']['avatar_url']?.toString();
+      } else if (user['pro_profile'] != null) {
+        rawAvatarUrl = user['pro_profile']['avatar_url']?.toString();
+      }
+    }
+    final avatarUrl = ApiConfig.resolveMediaUrl(rawAvatarUrl);
+
+    final body = (comment['body'] ?? '').toString();
+    final createdAt = comment['created_at'];
+    String timeAgo = 'Il y a un moment';
+    if (createdAt != null) {
+      try {
+        final date = DateTime.parse(createdAt.toString());
+        final diff = DateTime.now().difference(date);
+        if (diff.inDays > 0) {
+          timeAgo = 'Il y a ${diff.inDays}j';
+        } else if (diff.inHours > 0) {
+          timeAgo = 'Il y a ${diff.inHours}h';
+        } else if (diff.inMinutes > 0) {
+          timeAgo = 'Il y a ${diff.inMinutes}min';
+        }
+      } catch (_) {}
+    }
+
+    final replies = List<Map<String, dynamic>>.from(
+      (comment['replies'] as List?) ?? [],
+    );
+
+    final id = comment['id'];
+    final idInt = id is int ? id : int.tryParse(id?.toString() ?? '');
+
+    return Padding(
+      padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: isReply ? 14 : 18,
+                backgroundImage: avatarUrl != null
+                    ? NetworkImage(avatarUrl)
+                    : const AssetImage(
+                            'assets/images/dashboard_particulier/Ellipse 10.png',
+                          )
+                          as ImageProvider,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          displayName,
+                          style: TextStyle(
+                            fontSize: isReply ? 12 : 13,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF333333),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          timeAgo,
+                          style: TextStyle(
+                            fontSize: isReply ? 10 : 11,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      body,
+                      style: TextStyle(
+                        fontSize: isReply ? 12 : 13,
+                        color: Colors.grey[700],
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    if (!isReply && idInt != null && onReply != null)
+                      GestureDetector(
+                        onTap: () => onReply(idInt, displayName),
+                        child: Text(
+                          'Répondre',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (!isReply && replies.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...replies.map(
+              (r) => _buildCommentItem(r, isReply: true, onReply: onReply),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Map<String, dynamic>? _effectiveAuthorData() {
+    if (widget.authorData != null) return widget.authorData;
+    final user = widget.jobOfferData?['user'];
+    if (user is Map<String, dynamic>) return user;
+    if (user is String) {
+      try {
+        final decoded = jsonDecode(user);
+        if (decoded is Map<String, dynamic>) return decoded;
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  Future<void> _checkFollowStatus() async {
+    final author = _effectiveAuthorData();
+    if (author == null) return;
+    final authorId = author['id']?.toString();
+    if (authorId == null) return;
+
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/profile/$authorId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['is_following'] == true) {
+          setState(() => _isFollowing = true);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking follow status: $e');
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    final author = _effectiveAuthorData();
+    if (author == null) return;
+    final authorId = author['id']?.toString();
+    if (authorId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible de suivre cet utilisateur')),
+      );
+      return;
+    }
+
+    setState(() => _isLoadingFollow = true);
+
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter')),
+        );
+        return;
+      }
+
+      if (_isFollowing) {
+        final response = await http.delete(
+          Uri.parse('${ApiConfig.baseUrl}/profile/$authorId/unfollow'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        if (!mounted) return;
+        if (response.statusCode == 200) {
+          setState(() => _isFollowing = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vous ne suivez plus cet utilisateur'),
+            ),
+          );
+        }
+      } else {
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}/profile/$authorId/follow'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        if (!mounted) return;
+        if (response.statusCode == 200) {
+          setState(() => _isFollowing = true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vous suivez maintenant cet utilisateur'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoadingFollow = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     Future<void> applyToJobOffer() async {
-      if (isOwner) {
+      if (widget.isOwner) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Vous ne pouvez pas postuler à votre propre offre."),
@@ -86,7 +610,7 @@ class JobDetailScreen extends StatelessWidget {
         return;
       }
 
-      final id = jobOfferId?.toString();
+      final id = widget.jobOfferId?.toString();
       if (id == null || id.isEmpty) {
         ScaffoldMessenger.of(
           context,
@@ -165,17 +689,12 @@ class JobDetailScreen extends StatelessWidget {
 
     // Debug: Check contact button conditions
     debugPrint('=== JOB CONTACT BUTTON DEBUG ===');
-    debugPrint('isOwner: $isOwner');
-    debugPrint('acceptMessages: $acceptMessages');
-    debugPrint('authorData: $authorData');
-    debugPrint('authorData != null: ${authorData != null}');
-    debugPrint(
-      'Should show button: ${!isOwner && acceptMessages && authorData != null}',
-    );
-    debugPrint('================================');
+    debugPrint('isOwner: ${widget.isOwner}');
+    debugPrint('acceptMessages: ${widget.acceptMessages}');
+    debugPrint('authorData: ${widget.authorData}');
+    debugPrint('authorData != null: ${widget.authorData != null}');
 
     return AppLayout(
-      currentIndex: 0,
       backgroundColor: const Color(0xFFF9F9FB),
       onTabTapped: (index) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -207,7 +726,7 @@ class JobDetailScreen extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
-          if (isOwner)
+          if (widget.isOwner)
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
@@ -222,13 +741,14 @@ class JobDetailScreen extends StatelessWidget {
                 ),
                 onSelected: (value) {
                   if (value == 'edit') {
-                    if (jobOfferId != null && jobOfferData != null) {
+                    if (widget.jobOfferId != null &&
+                        widget.jobOfferData != null) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => CreerOffreEmploiScreen(
-                            jobOfferId: jobOfferId,
-                            initialData: jobOfferData,
+                            jobOfferId: widget.jobOfferId,
+                            initialData: widget.jobOfferData,
                           ),
                         ),
                       );
@@ -308,26 +828,28 @@ class JobDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. Image Carousel
-              if (images.isNotEmpty) ...[
-                ImageCarousel(images: images),
+              if (widget.images.isNotEmpty) ...[
+                ImageCarousel(images: widget.images),
                 const SizedBox(height: 16),
               ],
 
               // 2. User Detail Card
               UserDetailCard(
-                avatar: companyLogo,
-                name: companyName,
+                avatar: widget.companyLogo,
+                name: widget.companyName,
                 userType: 'Pro',
-                onSubscribe: () {},
-                isOwner: isOwner,
+                onSubscribe: _toggleFollow,
+                isOwner: widget.isOwner,
+                isFollowing: _isFollowing,
+                isLoading: _isLoadingFollow,
               ),
               const SizedBox(height: 16),
 
               PostContentCard(
-                tags: postTags,
-                subtags: subtags,
-                title: jobTitle,
-                time: timeAgo,
+                tags: widget.postTags,
+                subtags: widget.subtags,
+                title: widget.jobTitle,
+                time: widget.timeAgo,
                 onLike: () {},
                 onShare: () {},
               ),
@@ -443,7 +965,7 @@ class JobDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      description,
+                      widget.description,
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.grey[600],
@@ -455,9 +977,9 @@ class JobDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              if (educationLevel != null ||
-                  experienceLevel != null ||
-                  remoteWork)
+              if (widget.educationLevel != null ||
+                  widget.experienceLevel != null ||
+                  widget.remoteWork)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -494,27 +1016,27 @@ class JobDetailScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      if (educationLevel != null) ...[
+                      if (widget.educationLevel != null) ...[
                         _buildInfoRow(
                           null,
                           'Niveau d\'études requis',
-                          educationLevel!,
+                          widget.educationLevel!,
                         ),
                         const SizedBox(height: 8),
                       ],
-                      if (experienceLevel != null) ...[
+                      if (widget.experienceLevel != null) ...[
                         _buildInfoRow(
                           null,
                           'Expérience professionnelle',
-                          experienceLevel!,
+                          widget.experienceLevel!,
                         ),
                         const SizedBox(height: 8),
                       ],
-                      if (profileDescription != null) ...[
+                      if (widget.profileDescription != null) ...[
                         _buildInfoRow(
                           null,
                           'Description du profil',
-                          profileDescription!,
+                          widget.profileDescription!,
                         ),
                         const SizedBox(height: 8),
                       ],
@@ -595,16 +1117,16 @@ class JobDetailScreen extends StatelessWidget {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: advantages
+                      children: widget.advantages
                           .map((adv) => _buildAdvantageTag(adv))
                           .toList(),
                     ),
                     const SizedBox(height: 18),
                     Row(
                       children: [
-                        !isOwner
+                        !widget.isOwner
                             ? Expanded(
-                                flex: applyButtonFlex,
+                                flex: widget.applyButtonFlex,
                                 child: ElevatedButton(
                                   onPressed: applyToJobOffer,
                                   style: ElevatedButton.styleFrom(
@@ -622,13 +1144,13 @@ class JobDetailScreen extends StatelessWidget {
                                 ),
                               )
                             : const SizedBox.shrink(),
-                        !isOwner
+                        !widget.isOwner
                             ? const SizedBox(width: 12)
                             : const SizedBox.shrink(),
                         Expanded(
-                          flex: websiteButtonFlex,
+                          flex: widget.websiteButtonFlex,
                           child: OutlinedButton.icon(
-                            onPressed: companyWebsite.isNotEmpty
+                            onPressed: widget.companyWebsite.isNotEmpty
                                 ? () => _openCompanyWebsite(context)
                                 : null,
                             icon: const Icon(Icons.language, size: 18),
@@ -651,13 +1173,16 @@ class JobDetailScreen extends StatelessWidget {
               const SizedBox(height: 16),
 
               // Contact button - only if not owner and acceptMessages is true
-              if (!isOwner && acceptMessages && authorData != null)
+              if (!widget.isOwner &&
+                  widget.acceptMessages &&
+                  widget.authorData != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () => _startConversation(context, authorData!),
+                      onPressed: () =>
+                          _startConversation(context, widget.authorData!),
                       icon: const Icon(Icons.chat_outlined, size: 20),
                       label: const Text('Contacter'),
                       style: ElevatedButton.styleFrom(
@@ -672,7 +1197,9 @@ class JobDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (!isOwner && acceptMessages && authorData != null)
+              if (!widget.isOwner &&
+                  widget.acceptMessages &&
+                  widget.authorData != null)
                 const SizedBox(height: 16),
 
               // Localisation Card
@@ -723,8 +1250,8 @@ class JobDetailScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      location.isNotEmpty
-                          ? location
+                      widget.location.isNotEmpty
+                          ? widget.location
                           : 'Localisation non spécifiée',
                       style: const TextStyle(
                         fontSize: 14,
@@ -770,41 +1297,66 @@ class JobDetailScreen extends StatelessWidget {
                             color: Colors.grey[700],
                           ),
                         ),
+                        const Spacer(),
+                        Text(
+                          '${_comments.length}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.edit_outlined,
-                            size: 18,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Laisser votre avis',
+                    const SizedBox(height: 12),
+                    if (_isLoadingComments)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    else if (_comments.isEmpty)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Text(
+                            'Aucun commentaire. Soyez le premier !',
                             style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[400],
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                              fontStyle: FontStyle.italic,
                             ),
                           ),
-                        ],
+                        ),
+                      )
+                    else
+                      Column(
+                        children: _comments
+                            .take(2)
+                            .map(
+                              (comment) =>
+                                  _buildCommentItem(comment, onReply: null),
+                            )
+                            .toList(),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: Text(
-                        'Aucun commentaire pour le moment',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showCommentsSheet(context),
+                        icon: const Icon(Icons.chat_outlined, size: 18),
+                        label: Text(
+                          _comments.isEmpty
+                              ? 'Ajouter un commentaire'
+                              : 'Voir tous les commentaires',
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF3AAE5E),
+                          side: const BorderSide(color: Color(0xFF3AAE5E)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1072,21 +1624,21 @@ class JobDetailScreen extends StatelessWidget {
 
   Widget _buildDescription() {
     debugPrint(
-      'JOB DETAIL _buildDescription: descriptionDelta type=${descriptionDelta?.runtimeType}, value=$descriptionDelta',
+      'JOB DETAIL _buildDescription: descriptionDelta type=${widget.descriptionDelta?.runtimeType}, value=$widget.descriptionDelta',
     );
-    if (descriptionDelta != null) {
+    if (widget.descriptionDelta != null) {
       try {
         List opsList;
 
-        if (descriptionDelta is List) {
+        if (widget.descriptionDelta is List) {
           // Already a List<dynamic> from the API — best case
-          opsList = descriptionDelta as List;
-        } else if (descriptionDelta is Map &&
-            (descriptionDelta as Map)['ops'] is List) {
-          opsList = (descriptionDelta as Map)['ops'] as List;
-        } else if (descriptionDelta is String &&
-            (descriptionDelta as String).isNotEmpty) {
-          String jsonString = descriptionDelta as String;
+          opsList = widget.descriptionDelta as List;
+        } else if (widget.descriptionDelta is Map &&
+            (widget.descriptionDelta as Map)['ops'] is List) {
+          opsList = (widget.descriptionDelta as Map)['ops'] as List;
+        } else if (widget.descriptionDelta is String &&
+            (widget.descriptionDelta as String).isNotEmpty) {
+          String jsonString = widget.descriptionDelta as String;
           // Fix unquoted keys
           jsonString = jsonString.replaceAllMapped(
             RegExp(r'(\{|,)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:'),
@@ -1114,7 +1666,7 @@ class JobDetailScreen extends StatelessWidget {
           }
         } else {
           throw Exception(
-            'Unsupported descriptionDelta type: ${descriptionDelta.runtimeType}',
+            'Unsupported descriptionDelta type: ${widget.descriptionDelta.runtimeType}',
           );
         }
 
@@ -1156,13 +1708,13 @@ class JobDetailScreen extends StatelessWidget {
     }
 
     return Text(
-      description,
+      widget.description,
       style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
     );
   }
 
   void _showDeleteDialog(BuildContext context) {
-    if (jobOfferId == null) {
+    if (widget.jobOfferId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Impossible de supprimer cette offre d\'emploi'),
@@ -1204,7 +1756,7 @@ class JobDetailScreen extends StatelessWidget {
                           if (token == null) throw Exception('Session expirée');
                           final response = await http.delete(
                             Uri.parse(
-                              '${ApiConfig.baseUrl}/job-offers/$jobOfferId',
+                              '${ApiConfig.baseUrl}/job-offers/${widget.jobOfferId}',
                             ),
                             headers: {
                               'Authorization': 'Bearer $token',
@@ -1283,7 +1835,7 @@ class JobDetailScreen extends StatelessWidget {
 
   List<_InfoTileData> _buildInfoTiles() {
     String firstTagText(bool Function(JobDetailTag) test) {
-      return tags
+      return widget.tags
           .where(test)
           .map((t) => t.text)
           .firstWhere((t) => t.trim().isNotEmpty, orElse: () => '');
@@ -1295,31 +1847,24 @@ class JobDetailScreen extends StatelessWidget {
           t.icon == Icons.monetization_on_outlined ||
           t.icon == Icons.monetization_on,
     );
-    final educationText = educationLevel?.trim().isNotEmpty == true
-        ? educationLevel!
+    final educationText = widget.educationLevel?.trim().isNotEmpty == true
+        ? widget.educationLevel!
         : firstTagText(
             (t) => t.icon == Icons.school_outlined || t.icon == Icons.school,
           );
-    final experienceText = experienceLevel?.trim().isNotEmpty == true
-        ? experienceLevel!
+    final experienceText = widget.experienceLevel?.trim().isNotEmpty == true
+        ? widget.experienceLevel!
         : firstTagText(
             (t) =>
                 t.icon == Icons.trending_up_outlined ||
                 t.icon == Icons.work_history_outlined ||
                 t.icon == Icons.work_history,
           );
-    final locationText = location.trim().isNotEmpty
-        ? location
+    final locationText = widget.location.trim().isNotEmpty
+        ? widget.location
         : firstTagText((t) => t.icon == Icons.location_on_outlined);
-    final availabilityText = subtags?.title.trim().isNotEmpty == true
-        ? subtags!.title
-        : firstTagText(
-            (t) =>
-                t.icon == Icons.description_outlined ||
-                t.icon == Icons.access_time,
-          );
 
-    final workPolicyText = remoteWork
+    final workPolicyText = widget.remoteWork
         ? 'Télétravail possible'
         : 'Pas de télétravail';
 
@@ -1443,7 +1988,7 @@ class JobDetailScreen extends StatelessWidget {
   }
 
   Future<void> _openCompanyWebsite(BuildContext context) async {
-    final uri = Uri.tryParse(companyWebsite);
+    final uri = Uri.tryParse(widget.companyWebsite);
     if (uri == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Impossible d'ouvrir le site")),
