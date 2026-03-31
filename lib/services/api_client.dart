@@ -208,6 +208,21 @@ class ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> authenticatedPostMultipart(
+    String endpoint, {
+    required File file,
+    required String fileField,
+    Map<String, String>? fields,
+  }) async {
+    return authenticatedMultipart(
+      endpoint,
+      file: file,
+      fileField: fileField,
+      fields: fields,
+      method: 'POST',
+    );
+  }
+
   Future<Map<String, dynamic>> authenticatedMultipart(
     String endpoint, {
     required File file,
