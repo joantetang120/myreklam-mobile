@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/creer_demande_screen.dart';
+import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/user_detail_card.dart';
@@ -11,7 +13,7 @@ import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 
-class DemandeDetailScreen extends StatelessWidget {
+class DemandeDetailScreen extends StatefulWidget {
   final List<String> images;
   final String avatar;
   final String username;
@@ -59,6 +61,530 @@ class DemandeDetailScreen extends StatelessWidget {
     this.demandeData,
     this.returnToListingOnEdit = false,
   });
+
+  @override
+  State<DemandeDetailScreen> createState() => _DemandeDetailScreenState();
+}
+
+class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
+  bool _isFollowing = false;
+  bool _isLoadingFollow = false;
+  List<Map<String, dynamic>> _comments = [];
+  bool _isLoadingComments = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFollowStatus();
+    _fetchComments();
+  }
+
+  Future<void> _fetchComments() async {
+    if (widget.demandeId == null) return;
+
+    setState(() => _isLoadingComments = true);
+    try {
+      final response = await ApiClient().authenticatedGet(
+        '/demandes/${widget.demandeId}/comments?per_page=50',
+      );
+
+      final data = response['data'];
+      List<Map<String, dynamic>> fetched = [];
+      if (data is List) {
+        fetched = List<Map<String, dynamic>>.from(data);
+      } else if (data is Map && data['data'] is List) {
+        fetched = List<Map<String, dynamic>>.from(data['data']);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _comments = fetched;
+      });
+    } catch (e) {
+      debugPrint('Error fetching comments: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingComments = false);
+    }
+  }
+
+  void _showCommentsSheet(BuildContext context) {
+    if (widget.demandeId == null) return;
+
+    int? replyingToId;
+    String? replyingToName;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, modalSetState) {
+            final commentCtrl = TextEditingController();
+
+            Future<void> submitComment() async {
+              final text = commentCtrl.text.trim();
+              if (text.isEmpty) return;
+
+              try {
+                Map<String, dynamic> response;
+                if (replyingToId != null) {
+                  response = await ApiClient().authenticatedPost(
+                    '/demandes/${widget.demandeId}/comments/$replyingToId/reply',
+                    body: {'body': text},
+                  );
+                } else {
+                  response = await ApiClient().authenticatedPost(
+                    '/demandes/${widget.demandeId}/comments',
+                    body: {'body': text},
+                  );
+                }
+
+                final newComment = response['data'] as Map<String, dynamic>?;
+                if (newComment != null) {
+                  modalSetState(() {
+                    if (replyingToId != null) {
+                      final parent = _comments.firstWhere(
+                        (c) => c['id'] == replyingToId,
+                        orElse: () => <String, dynamic>{},
+                      );
+                      if (parent.isNotEmpty) {
+                        final replies = List<Map<String, dynamic>>.from(
+                          (parent['replies'] as List?) ?? [],
+                        );
+                        replies.add(newComment);
+                        parent['replies'] = replies;
+                        parent['replies_count'] =
+                            (parent['replies_count'] as int? ?? 0) + 1;
+                      }
+                    } else {
+                      _comments.insert(0, newComment);
+                    }
+                    replyingToId = null;
+                    replyingToName = null;
+                  });
+                  setState(() {});
+                }
+
+                commentCtrl.clear();
+                FocusScope.of(ctx).unfocus();
+              } catch (e) {
+                debugPrint('Error posting comment: $e');
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Erreur lors de l\'envoi')),
+                  );
+                }
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: SizedBox(
+                height: MediaQuery.of(ctx).size.height * 0.85,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(top: 10, bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Commentaires (${_comments.length})',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(ctx),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (replyingToName != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Réponse à $replyingToName',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[600],
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                modalSetState(() {
+                                  replyingToId = null;
+                                  replyingToName = null;
+                                });
+                              },
+                              child: const Text('Annuler'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: _isLoadingComments
+                          ? const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : _comments.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 20,
+                                ),
+                                child: Text(
+                                  'Aucun commentaire. Soyez le premier !',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[500],
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _comments.length,
+                              itemBuilder: (context, index) {
+                                return _buildCommentItem(
+                                  _comments[index],
+                                  onReply: (id, name) {
+                                    modalSetState(() {
+                                      replyingToId = id;
+                                      replyingToName = name;
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: commentCtrl,
+                              minLines: 1,
+                              maxLines: 3,
+                              decoration: InputDecoration(
+                                hintText: 'Écrire un commentaire...',
+                                filled: true,
+                                fillColor: Colors.grey[100],
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: submitComment,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF3AAE5E),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                            ),
+                            child: const Icon(Icons.send, size: 18),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(() {
+      _fetchComments();
+    });
+  }
+
+  Widget _buildCommentItem(
+    Map<String, dynamic> comment, {
+    bool isReply = false,
+    void Function(int id, String name)? onReply,
+  }) {
+    final user = comment['user'] as Map<String, dynamic>?;
+
+    String displayName = 'Utilisateur';
+    if (user != null) {
+      if (user['particulier_profile'] != null) {
+        final profile = user['particulier_profile'] as Map<String, dynamic>;
+        displayName =
+            profile['pseudo']?.toString() ??
+            user['name']?.toString() ??
+            'Utilisateur';
+      } else if (user['pro_profile'] != null) {
+        final profile = user['pro_profile'] as Map<String, dynamic>;
+        displayName =
+            profile['company_name']?.toString() ??
+            user['name']?.toString() ??
+            'Utilisateur';
+      } else {
+        displayName = user['name']?.toString() ?? 'Utilisateur';
+      }
+    }
+
+    String? rawAvatarUrl;
+    if (user != null) {
+      if (user['particulier_profile'] != null) {
+        rawAvatarUrl = user['particulier_profile']['avatar_url']?.toString();
+      } else if (user['pro_profile'] != null) {
+        rawAvatarUrl = user['pro_profile']['avatar_url']?.toString();
+      }
+    }
+    final avatarUrl = ApiConfig.resolveMediaUrl(rawAvatarUrl);
+
+    final body = (comment['body'] ?? '').toString();
+    final createdAt = comment['created_at'];
+    String timeAgo = 'Il y a un moment';
+    if (createdAt != null) {
+      try {
+        final date = DateTime.parse(createdAt.toString());
+        final diff = DateTime.now().difference(date);
+        if (diff.inDays > 0) {
+          timeAgo = 'Il y a ${diff.inDays}j';
+        } else if (diff.inHours > 0) {
+          timeAgo = 'Il y a ${diff.inHours}h';
+        } else if (diff.inMinutes > 0) {
+          timeAgo = 'Il y a ${diff.inMinutes}min';
+        }
+      } catch (_) {}
+    }
+
+    final replies = List<Map<String, dynamic>>.from(
+      (comment['replies'] as List?) ?? [],
+    );
+
+    final id = comment['id'];
+    final idInt = id is int ? id : int.tryParse(id?.toString() ?? '');
+
+    return Padding(
+      padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: isReply ? 14 : 18,
+                backgroundImage: avatarUrl != null
+                    ? NetworkImage(avatarUrl)
+                    : const AssetImage(
+                            'assets/images/dashboard_particulier/Ellipse 10.png',
+                          )
+                          as ImageProvider,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          displayName,
+                          style: TextStyle(
+                            fontSize: isReply ? 12 : 13,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF333333),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          timeAgo,
+                          style: TextStyle(
+                            fontSize: isReply ? 10 : 11,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      body,
+                      style: TextStyle(
+                        fontSize: isReply ? 12 : 13,
+                        color: Colors.grey[700],
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    if (!isReply && idInt != null && onReply != null)
+                      GestureDetector(
+                        onTap: () => onReply(idInt, displayName),
+                        child: Text(
+                          'Répondre',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (!isReply && replies.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...replies.map(
+              (r) => _buildCommentItem(r, isReply: true, onReply: onReply),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Map<String, dynamic>? _effectiveAuthorData() {
+    final user = widget.demandeData?['user'];
+    if (user is Map<String, dynamic>) return user;
+    if (user is String) {
+      try {
+        final decoded = jsonDecode(user);
+        if (decoded is Map<String, dynamic>) return decoded;
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  Future<void> _checkFollowStatus() async {
+    final author = _effectiveAuthorData();
+    if (author == null) return;
+    final authorId = author['id']?.toString();
+    if (authorId == null) return;
+
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) return;
+
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/profile/$authorId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['is_following'] == true) {
+          setState(() => _isFollowing = true);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking follow status: $e');
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    final author = _effectiveAuthorData();
+    if (author == null) return;
+    final authorId = author['id']?.toString();
+    if (authorId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible de suivre cet utilisateur')),
+      );
+      return;
+    }
+
+    setState(() => _isLoadingFollow = true);
+
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter')),
+        );
+        return;
+      }
+
+      if (_isFollowing) {
+        final response = await http.delete(
+          Uri.parse('${ApiConfig.baseUrl}/profile/$authorId/unfollow'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        if (!mounted) return;
+        if (response.statusCode == 200) {
+          setState(() => _isFollowing = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vous ne suivez plus cet utilisateur'),
+            ),
+          );
+        }
+      } else {
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}/profile/$authorId/follow'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        if (!mounted) return;
+        if (response.statusCode == 200) {
+          setState(() => _isFollowing = true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vous suivez maintenant cet utilisateur'),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoadingFollow = false);
+    }
+  }
 
   Future<void> _startConversationWithAuthor(
     BuildContext context,
@@ -202,7 +728,7 @@ class DemandeDetailScreen extends StatelessWidget {
         ),
         centerTitle: true,
         actions: [
-          if (isOwner)
+          if (widget.isOwner)
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
@@ -217,13 +743,14 @@ class DemandeDetailScreen extends StatelessWidget {
                 ),
                 onSelected: (value) {
                   if (value == 'edit') {
-                    if (demandeId != null && demandeData != null) {
+                    if (widget.demandeId != null &&
+                        widget.demandeData != null) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (_) => CreerDemandeScreen(
-                            demandeId: demandeId,
-                            initialData: demandeData,
+                            demandeId: widget.demandeId,
+                            initialData: widget.demandeData,
                           ),
                         ),
                       );
@@ -297,34 +824,36 @@ class DemandeDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. Image Carousel
-              if (images.isNotEmpty) ...[
-                ImageCarousel(images: images),
+              if (widget.images.isNotEmpty) ...[
+                ImageCarousel(images: widget.images),
                 const SizedBox(height: 16),
               ],
 
               // 2. User Detail Card
               UserDetailCard(
-                avatar: avatar,
-                name: username,
-                userType: nature ?? 'Demande',
-                onSubscribe: () {},
-                isOwner: isOwner,
+                avatar: widget.avatar,
+                name: widget.username,
+                userType: widget.nature ?? 'Demande',
+                onSubscribe: _toggleFollow,
+                isOwner: widget.isOwner,
+                isFollowing: _isFollowing,
+                isLoading: _isLoadingFollow,
               ),
               const SizedBox(height: 16),
 
               // 3. Post Content Card (Tags & Title)
               PostContentCard(
-                tags: tags,
-                subtags: subtags,
-                title: demandeTitle,
-                time: timeAgo,
+                tags: widget.tags,
+                subtags: widget.subtags,
+                title: widget.demandeTitle,
+                time: widget.timeAgo,
                 onLike: () {},
                 onShare: () {},
               ),
               const SizedBox(height: 16),
 
               // 4. Urgent badge
-              if (urgent)
+              if (widget.urgent)
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20),
                   padding: const EdgeInsets.symmetric(
@@ -356,7 +885,7 @@ class DemandeDetailScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-              if (urgent) const SizedBox(height: 16),
+              if (widget.urgent) const SizedBox(height: 16),
 
               // 5. Description Section
               Container(
@@ -387,8 +916,8 @@ class DemandeDetailScreen extends StatelessWidget {
                     const Divider(height: 1),
                     const SizedBox(height: 12),
                     Text(
-                      description.isNotEmpty
-                          ? description
+                      widget.description.isNotEmpty
+                          ? widget.description
                           : 'Aucune description fournie.',
                       style: TextStyle(
                         fontSize: 14,
@@ -452,7 +981,7 @@ class DemandeDetailScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            location ?? 'Localisation non specifie',
+                            widget.location ?? 'Localisation non specifie',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Colors.grey,
@@ -463,12 +992,12 @@ class DemandeDetailScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    if (!isOwner && acceptMessages)
+                    if (!widget.isOwner && widget.acceptMessages)
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            final author = demandeData?['user'];
+                            final author = widget.demandeData?['user'];
                             if (author is Map<String, dynamic>) {
                               _startConversationWithAuthor(context, author);
                               return;
@@ -527,7 +1056,7 @@ class DemandeDetailScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      if (showGoogleLocation)
+                      if (widget.showGoogleLocation)
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: Image.asset(
@@ -549,7 +1078,7 @@ class DemandeDetailScreen extends StatelessWidget {
                             },
                           ),
                         ),
-                      if (showGoogleLocation) const SizedBox(height: 16),
+                      if (widget.showGoogleLocation) const SizedBox(height: 16),
                       Row(
                         children: [
                           const Icon(
@@ -560,9 +1089,9 @@ class DemandeDetailScreen extends StatelessWidget {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              nationwide
+                              widget.nationwide
                                   ? 'Toute la France'
-                                  : (location ?? 'Non spécifié'),
+                                  : (widget.location ?? 'Non spécifié'),
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF616161),
@@ -600,41 +1129,66 @@ class DemandeDetailScreen extends StatelessWidget {
                             color: Colors.grey[700],
                           ),
                         ),
+                        const Spacer(),
+                        Text(
+                          '${_comments.length}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.edit_outlined,
-                            size: 18,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Laisser votre avis',
+                    const SizedBox(height: 12),
+                    if (_isLoadingComments)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    else if (_comments.isEmpty)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Text(
+                            'Aucun commentaire. Soyez le premier !',
                             style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[400],
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                              fontStyle: FontStyle.italic,
                             ),
                           ),
-                        ],
+                        ),
+                      )
+                    else
+                      Column(
+                        children: _comments
+                            .take(2)
+                            .map(
+                              (comment) =>
+                                  _buildCommentItem(comment, onReply: null),
+                            )
+                            .toList(),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: Text(
-                        'Aucun commentaire pour le moment',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showCommentsSheet(context),
+                        icon: const Icon(Icons.chat_outlined, size: 18),
+                        label: Text(
+                          _comments.isEmpty
+                              ? 'Ajouter un commentaire'
+                              : 'Voir tous les commentaires',
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF3AAE5E),
+                          side: const BorderSide(color: Color(0xFF3AAE5E)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -685,7 +1239,7 @@ class DemandeDetailScreen extends StatelessWidget {
   }
 
   void _showDeleteDialog(BuildContext context) {
-    if (demandeId == null) {
+    if (widget.demandeId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Impossible de supprimer cette demande')),
       );
@@ -725,7 +1279,7 @@ class DemandeDetailScreen extends StatelessWidget {
                           if (token == null) throw Exception('Session expirée');
                           final response = await http.delete(
                             Uri.parse(
-                              '${ApiConfig.baseUrl}/demandes/$demandeId',
+                              '${ApiConfig.baseUrl}/demandes/$widget.demandeId',
                             ),
                             headers: {
                               'Authorization': 'Bearer $token',
@@ -806,7 +1360,8 @@ class DemandeDetailScreen extends StatelessWidget {
   }
 
   bool _hasLocation() {
-    return nationwide || (location != null && location!.isNotEmpty);
+    return widget.nationwide ||
+        (widget.location != null && widget.location!.isNotEmpty);
   }
 
   Widget _buildDetailsGrid() {
@@ -833,9 +1388,9 @@ class DemandeDetailScreen extends StatelessWidget {
   }
 
   List<Widget> _buildDetailTiles() {
-    final data = demandeData ?? const <String, dynamic>{};
+    final data = widget.demandeData ?? const <String, dynamic>{};
 
-    final n = (nature ?? '').toString().trim().toLowerCase();
+    final n = (widget.nature ?? '').toString().trim().toLowerCase();
     final isFormation = n.contains('formation');
     final isImmobilier = n.contains('immobilier');
     final isStage = n.contains('stage');
