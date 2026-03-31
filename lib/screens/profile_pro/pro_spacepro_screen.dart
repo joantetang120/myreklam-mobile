@@ -1,7 +1,12 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/screens/creer_offre_emploi_screen.dart';
+import 'package:myreklam/screens/profile_pro/pdf_viewer_screen.dart';
 
 class ProSpaceProScreen extends StatefulWidget {
   const ProSpaceProScreen({super.key});
@@ -1847,48 +1852,125 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
   }
 
   void _viewDocument(String url, String fileName) {
-    // For now, open in browser/system viewer
-    // You can use url_launcher or a PDF viewer package
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(fileName),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 400,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.file_present, size: 64, color: Colors.grey),
-                const SizedBox(height: 16),
-                Text('URL: $url'),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    // Use url_launcher to open
-                  },
-                  child: const Text('Ouvrir dans le navigateur'),
-                ),
-              ],
-            ),
-          ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PdfViewerScreen(
+          url: url,
+          fileName: fileName,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
-          ),
-        ],
       ),
     );
   }
 
-  void _downloadDocument(String url, String fileName) {
+  void _downloadDocument(String url, String fileName) async {
+    // Check and request storage permission
+    var status = await Permission.storage.request();
+    
+    if (!status.isGranted) {
+      // Permission denied, show dialog to ask user
+      final bool? shouldRequest = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Permission requise'),
+          content: const Text('L\'application a besoin d\'accéder au stockage pour télécharger les fichiers. Voulez-vous accorder cette permission ?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Non'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Oui'),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldRequest == true) {
+        status = await Permission.storage.request();
+        if (!status.isGranted) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Permission refusée. Impossible de télécharger.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      } else {
+        return;
+      }
+    }
+    
+    // Show downloading indicator
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Téléchargement de $fileName...')),
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            ),
+            const SizedBox(width: 12),
+            const Text('Téléchargement...'),
+          ],
+        ),
+        duration: const Duration(seconds: 30),
+      ),
     );
-    // Implementation would use flutter_downloader or similar
+    
+    try {
+      // Get Downloads directory
+      Directory? downloadsDir;
+      if (Platform.isAndroid) {
+        downloadsDir = Directory('/storage/emulated/0/Download');
+      } else {
+        downloadsDir = await getApplicationDocumentsDirectory();
+      }
+      
+      if (!downloadsDir!.existsSync()) {
+        downloadsDir.createSync(recursive: true);
+      }
+      
+      // Create unique filename
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final cleanFileName = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+      final savePath = '${downloadsDir.path}/${timestamp}_$cleanFileName';
+      
+      // Download file using Dio
+      final dio = Dio();
+      await dio.download(url, savePath);
+      
+      if (!mounted) return;
+      
+      // Hide loading snackbar and show success
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Téléchargé dans Téléchargements')),
+            ],
+          ),
+          backgroundColor: const Color(0xFF2E9B5B),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   String _formatFileSize(int bytes) {

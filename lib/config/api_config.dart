@@ -51,6 +51,12 @@ class ApiConfig {
     if (trimmed.startsWith('storage/')) {
       return '$host/$trimmed';
     }
+    // Handle candidate-documents paths
+    if (trimmed.startsWith('candidate-documents/')) {
+      final result = '$host/storage/$trimmed';
+      debugPrint('candidate-documents result: $result');
+      return result;
+    }
     // Handle avatar paths and other storage paths without storage/ prefix
     if (trimmed.startsWith('avatars/')) {
       final result = '$host/storage/$trimmed';
