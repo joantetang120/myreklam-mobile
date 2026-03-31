@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B8D4B)),
           useMaterial3: true,
         ),
-        home: const SplashScreen(),
+        home: const LoginScreen(),
       ),
     );
   }
