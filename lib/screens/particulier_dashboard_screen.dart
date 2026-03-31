@@ -182,11 +182,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             },
                             child: CircleAvatar(
                               radius: 20,
-                              backgroundImage:
-                                  widget.author.avatar.startsWith('http')
+                              backgroundImage: widget.author.avatar.startsWith('http')
                                   ? NetworkImage(widget.author.avatar)
                                         as ImageProvider
-                                  : AssetImage(widget.author.avatar),
+                                  : widget.author.avatar.startsWith('assets/')
+                                      ? AssetImage(widget.author.avatar)
+                                      : NetworkImage(ApiConfig.resolveMediaUrl(widget.author.avatar) ?? '') as ImageProvider,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -720,7 +721,9 @@ class _ParticulierDashboardScreenState
                             radius: 24,
                             backgroundImage: avatarUrl.startsWith('http')
                                 ? NetworkImage(avatarUrl)
-                                : AssetImage(avatarUrl) as ImageProvider,
+                                : avatarUrl.startsWith('assets/')
+                                    ? AssetImage(avatarUrl) as ImageProvider
+                                    : NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? '') as ImageProvider,
                           ),
                           const SizedBox(height: 6),
                           Text(
