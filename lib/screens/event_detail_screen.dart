@@ -9,8 +9,10 @@ import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/user_detail_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/creer_evenement_screen.dart';
+import 'package:myreklam/screens/public_profile_screen.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final List<String> images;
@@ -98,12 +100,258 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   bool _isLoadingFollow = false;
   bool _isParticipating = false;
   bool _isLoadingParticipation = false;
+  
+  // Comments state
+  List<Map<String, dynamic>> _comments = [];
+  bool _isLoadingComments = true;
+  
+  // Similar events state
+  List<Map<String, dynamic>> _similarEvents = [];
+  bool _isLoadingSimilar = true;
 
   @override
   void initState() {
     super.initState();
     _checkFollowStatus();
     _checkParticipationStatus();
+    _fetchComments();
+    _fetchSimilarEvents();
+  }
+
+  Future<void> _fetchComments() async {
+    if (widget.eventId == null) {
+      setState(() => _isLoadingComments = false);
+      return;
+    }
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/events/${widget.eventId}/comments?per_page=50'),
+        headers: {'Accept': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<Map<String, dynamic>> fetched = [];
+        if (data['data'] is Map && data['data']['data'] is List) {
+          fetched.addAll(List<Map<String, dynamic>>.from(data['data']['data']));
+        } else if (data['data'] is List) {
+          fetched.addAll(List<Map<String, dynamic>>.from(data['data']));
+        }
+        setState(() {
+          _comments = fetched;
+          _isLoadingComments = false;
+        });
+      } else {
+        setState(() => _isLoadingComments = false);
+      }
+    } catch (e) {
+      debugPrint('Error fetching comments: $e');
+      setState(() => _isLoadingComments = false);
+    }
+  }
+
+  Future<void> _fetchSimilarEvents() async {
+    if (widget.eventId == null) {
+      setState(() => _isLoadingSimilar = false);
+      return;
+    }
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/events/${widget.eventId}/similar?limit=3'),
+        headers: {'Accept': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<Map<String, dynamic>> fetched = [];
+        if (data['data'] is List) {
+          fetched.addAll(List<Map<String, dynamic>>.from(data['data']));
+        }
+        setState(() {
+          _similarEvents = fetched;
+          _isLoadingSimilar = false;
+        });
+      } else {
+        setState(() => _isLoadingSimilar = false);
+      }
+    } catch (e) {
+      debugPrint('Error fetching similar events: $e');
+      setState(() => _isLoadingSimilar = false);
+    }
+  }
+
+  Future<void> _navigateToSimilarEvent(Map<String, dynamic> event) async {
+    final mediaFiles = event['media_files'] as List? ?? [];
+    final images = mediaFiles
+        .where((m) => m is Map && m['url'] != null)
+        .map((m) {
+          final url = m['url']?.toString() ?? '';
+          if (url.startsWith('http')) return url;
+          final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+          return '$serverBase/storage/$url';
+        })
+        .where((url) => url.isNotEmpty)
+        .toList();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EventDetailScreen(
+          images: images,
+          avatar: '',
+          username: '',
+          eventTitle: event['title']?.toString() ?? '',
+          description: event['description']?.toString() ?? '',
+          descriptionDelta: event['description_delta'],
+          timeAgo: event['created_at']?.toString() ?? '',
+          eventId: event['id']?.toString(),
+          eventData: event,
+          authorData: event['user'] as Map<String, dynamic>?,
+          priceType: event['price_type']?.toString(),
+          priceAmount: event['price_amount']?.toString(),
+          pricingMode: event['pricing_mode']?.toString(),
+          priceCategories: [],
+          reservationMode: event['reservation_mode']?.toString(),
+          coverageArea: event['coverage_area']?.toString(),
+          websiteUrl: event['website_url']?.toString(),
+          categoryCode: event['category_code']?.toString(),
+          subCategoryCode: event['sub_category_code']?.toString(),
+          formatType: event['format_type']?.toString(),
+          durationType: event['duration_type']?.toString(),
+          eventDate: event['event_date']?.toString(),
+          startDate: event['start_date']?.toString(),
+          endDate: event['end_date']?.toString(),
+          startTime: event['start_time']?.toString(),
+          endTime: event['end_time']?.toString(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSimilarEventCard(Map<String, dynamic> event) {
+    // Extract user data
+    final user = event['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
+
+    final avatarUrl =
+        proProfile?['logo_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        particulierProfile?['avatar_url']?.toString() ??
+        user?['avatar']?.toString();
+
+    final profileImage = avatarUrl?.isNotEmpty == true
+        ? (avatarUrl!.startsWith('http')
+            ? avatarUrl
+            : '${ApiConfig.baseUrl.replaceAll('/api', '')}/storage/$avatarUrl')
+        : 'assets/images/dashboard_particulier/Ellipse 12.png';
+
+    // Extract owner name from profiles
+    final ownerName = proProfile?['company_name']?.toString() ??
+                      proProfile?['first_name']?.toString() ??
+                      particulierProfile?['pseudo']?.toString() ??
+                      particulierProfile?['first_name']?.toString() ??
+                      user?['name']?.toString() ??
+                      'Organisateur';
+
+    final eventTitle = event['title']?.toString() ?? 'Évènement';
+
+    // Extract media
+    final mediaFiles = event['media_files'] as List? ?? [];
+    final images = mediaFiles
+        .where((m) => m is Map && m['url'] != null)
+        .map((m) {
+          final url = m['url']?.toString() ?? '';
+          if (url.startsWith('http')) return url;
+          final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+          return '$serverBase/storage/$url';
+        })
+        .where((url) => url.isNotEmpty)
+        .toList();
+    final eventImage = images.isNotEmpty
+        ? images.first
+        : 'assets/images/dashboard_particulier/Rectangle 12 (4).png';
+
+    // Categories
+    final categories = <String>[
+      if (event['category_label']?.toString().isNotEmpty ?? false)
+        event['category_label'].toString(),
+      if (event['sub_category_label']?.toString().isNotEmpty ?? false)
+        event['sub_category_label'].toString(),
+    ];
+
+    // Price
+    final priceType = event['price_type']?.toString();
+    final priceAmount = event['price_amount']?.toString();
+    final price = priceType == 'gratuit'
+        ? 'Gratuit'
+        : (priceAmount?.isNotEmpty == true ? '$priceAmount €' : 'Gratuit');
+
+    // Location
+    final coverageArea =
+        event['coverage_area']?.toString() ??
+        event['location']?.toString() ??
+        'Non spécifié';
+
+    // Date
+    final eventDate =
+        event['event_date']?.toString() ??
+        event['start_date']?.toString() ??
+        '';
+
+    // Tags
+    final tags = <String>[
+      if (event['sub_category_code']?.toString().isNotEmpty ?? false)
+        event['sub_category_code'].toString(),
+      if (event['format_type']?.toString().isNotEmpty ?? false)
+        event['format_type'].toString(),
+    ];
+
+    final eventId = event['id']?.toString() ?? '';
+
+    return EvenementCard(
+      profileImage: profileImage,
+      username: ownerName,
+      userType: user?['account_type']?.toString() ?? 'particulier',
+      eventTitle: eventTitle,
+      eventImage: eventImage,
+      badge: event['status']?.toString(),
+      categories: categories.isNotEmpty ? categories : ['Général'],
+      eventDate: eventDate.isNotEmpty ? eventDate : 'Date à définir',
+      location: coverageArea,
+      timeAgo: event['created_at']?.toString() ?? '',
+      price: price,
+      likesCount: (event['likes_count'] as int?) ?? 0,
+      commentsCount: (event['comments_count'] as int?) ?? 0,
+      onTapCTA: () => _navigateToSimilarEvent(event),
+      tags: tags.isNotEmpty ? tags : null,
+      onAvatarTap: () {
+        if (user?['id'] != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  PublicProfileScreen(userId: user!['id'].toString()),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  String _formatTimeAgo(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      final now = DateTime.now();
+      final diff = now.difference(date);
+      if (diff.inDays > 365) return 'Il y a ${diff.inDays ~/ 365} an(s)';
+      if (diff.inDays > 30) return 'Il y a ${diff.inDays ~/ 30} mois';
+      if (diff.inDays > 0) return 'Il y a ${diff.inDays} jour(s)';
+      if (diff.inHours > 0) return 'Il y a ${diff.inHours} heure(s)';
+      if (diff.inMinutes > 0) return 'Il y a ${diff.inMinutes} minute(s)';
+      return 'À l\'instant';
+    } catch (_) {
+      return dateStr;
+    }
   }
 
   Future<void> _checkFollowStatus() async {
@@ -483,14 +731,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite_border, color: Color(0xFF616161)),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.share_outlined, color: Color(0xFF616161)),
-            onPressed: () {},
-          ),
           if (widget.isOwner)
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Color(0xFF616161), size: 24),
@@ -560,340 +800,218 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Image Carousel
-            if (widget.images.isNotEmpty) ...[
+            // 1. Image Carousel - full width
+            if (widget.images.isNotEmpty)
               ImageCarousel(images: widget.images),
-              const SizedBox(height: 16),
-            ],
 
-            // 2. User Detail Card
+            // 2. Main content section - no card, edge to edge
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: UserDetailCard(
-                avatar: _resolveAvatarUrl(),
-                name: _resolveOwnerName(),
-                userType: _resolveUserType(),
-                onSubscribe: _toggleFollow,
-                isFollowing: _isFollowing,
-                isLoading: _isLoadingFollow,
-                showSubscribeButton: !widget.isOwner && _effectiveAuthorData() != null,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 3. Post Content Card (Tags & Title)
-            PostContentCard(
-              tags: widget.tags,
-              title: widget.eventTitle,
-              time: widget.timeAgo,
-              onLike: () {},
-              onShare: () {},
-            ),
-            const SizedBox(height: 16),
-
-            // 4. "À propos de cet événement" - Description Section
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'À propos de cet événement',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
+                  // Category tags with icons (like training screen)
+                  if (widget.categoryCode != null || widget.formatType != null)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        if (widget.categoryCode != null)
+                          _buildTag(
+                            widget.categoryCode!,
+                            Icons.category_outlined,
+                            const Color(0xFF9C27B0),
+                          ),
+                        if (widget.formatType != null)
+                          _buildTag(
+                            widget.formatType!,
+                            Icons.event_available_outlined,
+                            Colors.blue,
+                          ),
+                      ],
+                    ),
+                  if (widget.categoryCode != null || widget.formatType != null)
+                    const SizedBox(height: 12),
+
+                  // Title - big and bold
+                  Text(
+                    widget.eventTitle,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                      height: 1.3,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+
+            // 3. Description - no card, full width
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Description',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   _buildDescription(),
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            // 5. Informations
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
+            // 4. Event details section - no card, full width
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Informations',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'Informations',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                  // Catégorie
                   if (widget.categoryCode != null && widget.categoryCode!.isNotEmpty)
-                    _buildInfoRow(Icons.category_outlined, 'Catégorie', widget.categoryCode!),
+                    _buildDetailItem(
+                      icon: Icons.category_outlined,
+                      iconColor: const Color(0xFF9C27B0),
+                      bgColor: const Color(0xFF9C27B0).withOpacity(0.1),
+                      label: 'Catégorie',
+                      value: widget.categoryCode!,
+                    ),
                   if (widget.categoryCode != null && widget.categoryCode!.isNotEmpty)
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
+                  // Sous-catégorie
                   if (widget.subCategoryCode != null && widget.subCategoryCode!.isNotEmpty)
-                    _buildInfoRow(Icons.subdirectory_arrow_right, 'Sous-catégorie', widget.subCategoryCode!),
+                    _buildDetailItem(
+                      icon: Icons.subdirectory_arrow_right,
+                      iconColor: Colors.orange,
+                      bgColor: Colors.orange.withOpacity(0.1),
+                      label: "Type d'evenements",
+                      value: widget.subCategoryCode!,
+                    ),
                   if (widget.subCategoryCode != null && widget.subCategoryCode!.isNotEmpty)
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
+                  // Format
                   if (widget.formatType != null && widget.formatType!.isNotEmpty)
-                    _buildInfoRow(Icons.event_available_outlined, 'Format', widget.formatType!),
+                    _buildDetailItem(
+                      icon: Icons.event_available_outlined,
+                      iconColor: Colors.blue,
+                      bgColor: Colors.blue.withOpacity(0.1),
+                      label: 'Format',
+                      value: widget.formatType!,
+                    ),
                   if (widget.formatType != null && widget.formatType!.isNotEmpty)
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
+                  // Date
                   if (_hasDateInfo())
-                    _buildInfoRow(Icons.event_outlined, 'Date', _buildDateDisplay()),
-                  if (_hasDateInfo()) const SizedBox(height: 10),
+                    _buildDetailItem(
+                      icon: Icons.event_outlined,
+                      iconColor: const Color(0xFF3AAE5E),
+                      bgColor: const Color(0xFFE6F7EF),
+                      label: 'Date',
+                      value: _buildDateDisplay(),
+                    ),
+                  if (_hasDateInfo())
+                    const SizedBox(height: 12),
+                  // Horaires
                   if (widget.startTime != null && widget.startTime!.isNotEmpty)
-                    _buildInfoRow(
-                      Icons.schedule,
-                      'Horaires',
-                      '${widget.startTime ?? ''}${(widget.endTime != null && widget.endTime!.isNotEmpty) ? ' - ${widget.endTime}' : ''}'.trim(),
+                    _buildDetailItem(
+                      icon: Icons.access_time,
+                      iconColor: Colors.teal,
+                      bgColor: Colors.teal.withOpacity(0.1),
+                      label: 'Horaires',
+                      value: _buildTimeDisplay(),
                     ),
                   if (widget.startTime != null && widget.startTime!.isNotEmpty)
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
+                  // Lieu
                   if (widget.coverageArea != null && widget.coverageArea!.isNotEmpty)
-                    _buildInfoRow(Icons.location_on_outlined, 'Lieu', widget.coverageArea!),
+                    _buildDetailItem(
+                      icon: Icons.location_on_outlined,
+                      iconColor: const Color(0xFF3AAE5E),
+                      bgColor: const Color(0xFFE6F7EF),
+                      label: 'Lieu',
+                      value: widget.coverageArea!,
+                    ),
                   if (widget.coverageArea != null && widget.coverageArea!.isNotEmpty)
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
+                  // Réservation
                   if (widget.reservationMode != null && widget.reservationMode!.isNotEmpty)
-                    _buildInfoRow(Icons.confirmation_num_outlined, 'Réservation', widget.reservationMode!),
+                    _buildDetailItem(
+                      icon: Icons.confirmation_num_outlined,
+                      iconColor: Colors.purple,
+                      bgColor: Colors.purple.withOpacity(0.1),
+                      label: 'Réservation',
+                      value: widget.reservationMode!,
+                    ),
                   if (widget.reservationMode != null && widget.reservationMode!.isNotEmpty)
-                    const SizedBox(height: 10),
-                  if (widget.priceAmount != null && widget.priceAmount!.isNotEmpty)
-                    _buildInfoRow(Icons.euro, 'Prix', widget.priceAmount!),
-                  if (widget.priceAmount != null && widget.priceAmount!.isNotEmpty)
-                    const SizedBox(height: 10),
-                  if (widget.websiteUrl != null && widget.websiteUrl!.isNotEmpty)
-                    _buildInfoRow(Icons.link, 'Site web', widget.websiteUrl!),
-                  if (widget.landingUrl != null && widget.landingUrl!.isNotEmpty)
-                    _buildInfoRow(Icons.open_in_new, 'Lien', widget.landingUrl!),
+                    const SizedBox(height: 12),
+                  // Prix - Dynamic based on price_type and pricing_mode (last in Informations)
+                  if (widget.priceType != null)
+                    _buildPriceSection(),
+                  if (widget.priceType != null)
+                    const SizedBox(height: 12),
+                  const SizedBox(height: 5),
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
 
-            // 6. Date Section
-            if (_hasDateInfo())
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                padding: const EdgeInsets.all(16),
-                decoration: _cardDecoration(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today_outlined,
-                            color: Color(0xFF3AAE5E), size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Date',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _buildDateDisplay(),
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                    if (widget.reservationMode != null && widget.reservationMode!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.confirmation_num_outlined,
-                                size: 16, color: Color(0xFFFF9800)),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Réservation: ${_reservationLabel(widget.reservationMode)}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 8),
-
-            // 7. Horaires Section
-            if (widget.startTime != null || widget.endTime != null)
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                padding: const EdgeInsets.all(16),
-                decoration: _cardDecoration(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time,
-                            color: Color(0xFF3AAE5E), size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Horaires',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _buildTimeDisplay(),
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 8),
-
-            // 8. "Participer à l'événement?"
-            if (!widget.isOwner)
+            // Site web link button (outside Informations section)
+            if (widget.websiteUrl != null && widget.websiteUrl!.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Text(
-                  'Participer à l\'événement?',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      final uri = Uri.parse(widget.websiteUrl!);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                    label: const Text('Visiter le site web'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
                   ),
                 ),
               ),
+            if (widget.websiteUrl != null && widget.websiteUrl!.isNotEmpty)
+              const SizedBox(height: 16),
 
-            // 9. Price Section
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-              padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.euro_outlined, color: Color(0xFF3AAE5E), size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Tarification',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (widget.priceType == 'gratuit')
-                    const Text(
-                      'Gratuit',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF3AAE5E),
-                      ),
-                    )
-                  else if (widget.pricingMode == 'categories' && widget.priceCategories.isNotEmpty) ...[
-                    ...widget.priceCategories.map((cat) {
-                      final name = cat['name']?.toString() ?? '-';
-                      final price = cat['price'];
-                      final priceStr = price != null
-                          ? '${price.toString().replaceAll(RegExp(r'\.0+$'), '')} €'
-                          : '-';
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF3AAE5E),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  name,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[700],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              priceStr,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF3AAE5E),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ] else ...[
-                    Text(
-                      _buildPriceDisplay(),
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF3AAE5E),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            // 10. "Je participe" button
+            // 5. "Je participe" button - full width
             if (!widget.isOwner)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _isParticipating
                         ? null
-                        : () {
-                            _showParticipationDialog();
-                          },
+                        : () => _showParticipationDialog(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _isParticipating ? Colors.grey : const Color(0xFF3AAE5E),
                       foregroundColor: Colors.white,
@@ -907,45 +1025,151 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         ? const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.check_circle, color: Colors.white),
-                              SizedBox(width: 8),
-                              Text('Déjà inscrit'),
+                              Icon(Icons.check_circle, color: Colors.white, size: 18),
+                              SizedBox(width: 6),
+                              Text('Inscrit', style: TextStyle(fontSize: 14)),
                             ],
                           )
-                        : const Text('Je participe'),
+                        : const Text(
+                            'Je participe',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
                   ),
                 ),
               ),
+            if (!widget.isOwner)
+              const SizedBox(height: 16),
+
+            // 6. Action buttons row (Favoris, Partager)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () {},
+                      icon: Icon(Icons.favorite_outline, color: Colors.grey[600], size: 24),
+                    ),
+                    Text('Favoris', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  ],
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () {},
+                      icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
+                    ),
+                    Text('Partager', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  ],
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
 
-            // 11. Localisation Card
+            // 7. Company/Owner section - no card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: widget.authorData != null ? () => _navigateToUserProfile(context) : null,
+                    child: CircleAvatar(
+                      radius: 24,
+                      backgroundImage: (_resolveAvatarUrl() ?? '').startsWith('http')
+                          ? NetworkImage(_resolveAvatarUrl()!)
+                          : AssetImage(_resolveAvatarUrl() ?? 'assets/images/Evenement.png') as ImageProvider,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: widget.authorData != null ? () => _navigateToUserProfile(context) : null,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _resolveOwnerName(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                          Text(
+                            _resolveUserType(),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (!widget.isOwner)
+                    _isLoadingFollow
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : TextButton(
+                            onPressed: _toggleFollow,
+                            style: TextButton.styleFrom(
+                              foregroundColor: _isFollowing
+                                  ? Colors.grey[600]
+                                  : const Color(0xFF3AAE5E),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                side: BorderSide(
+                                  color: _isFollowing
+                                      ? Colors.grey[400]!
+                                      : const Color(0xFF3AAE5E),
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              _isFollowing ? 'Suivis' : 'Suivre',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // 8. Posted time
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                widget.timeAgo.isNotEmpty ? widget.timeAgo : 'Posté récemment',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[500],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 9. Localisation - no card
             if (widget.coverageArea != null && widget.coverageArea!.isNotEmpty)
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                padding: const EdgeInsets.all(16),
-                decoration: _cardDecoration(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          color: Color(0xFF3AAE5E),
-                          size: 22,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Localisation',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ],
+                    const Text(
+                      'Localisation',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
+                      ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.asset(
@@ -953,52 +1177,51 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         width: double.infinity,
                         height: 180,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: double.infinity,
-                            height: 180,
-                            color: Colors.grey[200],
-                            child: const Icon(Icons.map, size: 50, color: Colors.grey),
-                          );
-                        },
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const Icon(Icons.place, size: 16, color: Color(0xFF3AAE5E)),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            widget.isNationwide
-                                ? 'Toute la France'
-                                : (widget.coverageArea ?? 'Non spécifié'),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF616161),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.isNationwide
+                          ? 'Toute la France'
+                          : (widget.coverageArea ?? 'Non spécifié'),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF616161),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
               ),
-            const SizedBox(height: 16),
+            if (widget.coverageArea != null && widget.coverageArea!.isNotEmpty)
+              const SizedBox(height: 16),
 
-            // 12. Commentaires Section
+            // 10. Comments Card
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
+              margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.grey.withOpacity(0.15)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.comment_outlined,
-                          color: Color(0xFF616161), size: 20),
+                      const Icon(
+                        Icons.comment_outlined,
+                        color: Color(0xFF616161),
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Commentaires',
@@ -1008,39 +1231,62 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           color: Colors.grey[700],
                         ),
                       ),
+                      const Spacer(),
+                      Text(
+                        '${_comments.length}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[500],
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  // Comment input placeholder
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit_outlined, size: 18, color: Colors.grey[400]),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Laisser votre avis',
-                          style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                  const SizedBox(height: 12),
+                  if (_isLoadingComments)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else if (_comments.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Text(
+                          'Aucun commentaire. Soyez le premier !',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                      ],
+                      ),
+                    )
+                  else
+                    Column(
+                      children: _comments
+                          .take(2)
+                          .map((comment) => _buildCommentItem(comment))
+                          .toList(),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  // "..." icon
-                  const Center(
-                    child: Icon(Icons.more_horiz, color: Colors.grey, size: 28),
-                  ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      'Aucun commentaire pour le moment',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[400],
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.chat_outlined, size: 18),
+                      label: Text(
+                        _comments.isEmpty
+                            ? 'Ajouter un commentaire'
+                            : 'Voir tous les commentaires',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF3AAE5E),
+                        side: const BorderSide(color: Color(0xFF3AAE5E)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -1049,10 +1295,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             ),
             const SizedBox(height: 32),
 
-            // 13. Similar events header
+            // 11. Similar events header - always visible
             const Center(
               child: Text(
-                'Événements similaires',
+                'Autres événements similaires',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -1063,8 +1309,40 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Container(height: 1, color: Colors.grey[300]),
+              child: Container(
+                height: 1,
+                color: Colors.grey[300],
+              ),
             ),
+            const SizedBox(height: 16),
+            if (_isLoadingSimilar)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else if (_similarEvents.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: _similarEvents.map((event) => _buildSimilarEventCard(event)).toList(),
+                ),
+              )
+            else
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    'Aucun événement similaire trouvé',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
             const SizedBox(height: 30),
           ],
         ),
@@ -1155,22 +1433,20 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  BoxDecoration _cardDecoration() {
-    return BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.grey.withOpacity(0.15)),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    );
-  }
-
   Widget _buildDescription() {
+    // Prioritize plain description field over descriptionDelta
+    if (widget.description.isNotEmpty) {
+      return Text(
+        widget.description,
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.grey[600],
+          height: 1.5,
+        ),
+      );
+    }
+
+    // Fallback to descriptionDelta if description is empty
     if (widget.descriptionDelta != null && widget.descriptionDelta.toString().isNotEmpty) {
       try {
         dynamic rawData;
@@ -1302,30 +1578,121 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   String _buildTimeDisplay() {
-    final parts = <String>[];
-    if (widget.startTime != null && widget.startTime!.isNotEmpty) {
-      parts.add('De ${_formatTime(widget.startTime!)}');
+    final start = widget.startTime;
+    final end = widget.endTime;
+
+    // Format time without seconds (HH:MM)
+    String formatTime(String? time) {
+      if (time == null || time.isEmpty) return '';
+      final parts = time.split(':');
+      if (parts.length >= 2) {
+        return '${parts[0]}h${parts[1]}';
+      }
+      return time;
     }
-    if (widget.endTime != null && widget.endTime!.isNotEmpty) {
-      parts.add('à ${_formatTime(widget.endTime!)}');
+
+    final startFormatted = formatTime(start);
+    final endFormatted = formatTime(end);
+
+    if (startFormatted.isNotEmpty && endFormatted.isNotEmpty) {
+      return 'De $startFormatted à $endFormatted';
+    } else if (startFormatted.isNotEmpty) {
+      return 'À partir de $startFormatted';
+    } else if (endFormatted.isNotEmpty) {
+      return "Jusqu'à $endFormatted";
     }
-    return parts.isNotEmpty ? parts.join(' ') : 'Horaires non spécifiés';
+    return 'Horaires non spécifiés';
+  }
+
+  Widget _buildCommentItem(Map<String, dynamic> comment) {
+    final user = comment['user'] as Map<String, dynamic>?;
+    final body = comment['body']?.toString() ?? '';
+    final createdAt = comment['created_at']?.toString() ?? '';
+    
+    String displayName = 'Utilisateur';
+    if (user != null) {
+      if (user['particulier_profile'] != null) {
+        final profile = user['particulier_profile'] as Map<String, dynamic>;
+        displayName = profile['pseudo']?.toString() ?? 
+                     user['name']?.toString() ?? 
+                     'Utilisateur';
+      } else if (user['pro_profile'] != null) {
+        final profile = user['pro_profile'] as Map<String, dynamic>;
+        displayName = profile['company_name']?.toString() ?? 
+                     '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'.trim();
+        if (displayName.isEmpty) displayName = user['name']?.toString() ?? 'Utilisateur';
+      } else {
+        displayName = user['name']?.toString() ?? 'Utilisateur';
+      }
+    }
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: const Color(0xFF3AAE5E).withOpacity(0.1),
+            child: Text(
+              displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+              style: const TextStyle(
+                color: Color(0xFF3AAE5E),
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  body,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                if (createdAt.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      createdAt,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatDate(String dateStr) {
     try {
       final date = DateTime.parse(dateStr);
-      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+      const months = [
+        'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+        'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+      ];
+      return '${date.day} ${months[date.month - 1]} ${date.year}';
     } catch (_) {
       return dateStr;
     }
-  }
-
-  String _formatTime(String timeStr) {
-    // Handle "HH:MM:SS" or "HH:MM"
-    final parts = timeStr.split(':');
-    if (parts.length >= 2) return '${parts[0]}h${parts[1]}';
-    return timeStr;
   }
 
   String _buildPriceDisplay() {
@@ -1345,10 +1712,188 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     }
   }
 
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url.startsWith('http') ? url : 'https://$url');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Widget _buildTag(String tag, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            tag,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailItem({
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: iconColor, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriceSection() {
+    final priceType = widget.priceType?.toLowerCase() ?? '';
+    
+    // Gratuit case
+    if (priceType == 'gratuit') {
+      return _buildDetailItem(
+        icon: Icons.euro,
+        iconColor: const Color(0xFFFF9800),
+        bgColor: const Color(0xFFFF9800).withOpacity(0.1),
+        label: 'Prix',
+        value: 'Gratuit',
+      );
+    }
+    
+    // Payant case
+    if (priceType == 'payant') {
+      final pricingMode = widget.pricingMode?.toLowerCase() ?? '';
+      
+      // Unique price
+      if (pricingMode == 'unique') {
+        final amount = widget.priceAmount ?? '';
+        return _buildDetailItem(
+          icon: Icons.euro,
+          iconColor: const Color(0xFFFF9800),
+          bgColor: const Color(0xFFFF9800).withOpacity(0.1),
+          label: 'Prix',
+          value: amount.isNotEmpty ? '$amount €' : 'Payant',
+        );
+      }
+      
+      // Categories price
+      if (pricingMode == 'categories') {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF9800).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.euro, color: Color(0xFFFF9800), size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Prix',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ...widget.priceCategories.map((category) {
+                    final name = category['name']?.toString() ?? '';
+                    final tarif = category['tarif']?.toString() ?? '';
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(
+                        '$name: $tarif €',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ],
+              ),
+            ),
+          ],
+        );
+      }
+      
+      // Fallback for unknown pricing_mode
+      return _buildDetailItem(
+        icon: Icons.euro,
+        iconColor: const Color(0xFFFF9800),
+        bgColor: const Color(0xFFFF9800).withOpacity(0.1),
+        label: 'Prix',
+        value: 'Payant',
+      );
+    }
+    
+    // Fallback for unknown price_type
+    return _buildDetailItem(
+      icon: Icons.euro,
+      iconColor: const Color(0xFFFF9800),
+      bgColor: const Color(0xFFFF9800).withOpacity(0.1),
+      label: 'Prix',
+      value: widget.priceType!,
+    );
+  }
+
+  // Navigate to user profile
+  void _navigateToUserProfile(BuildContext context) {
+    if (widget.authorData != null && widget.authorData!['id'] != null) {
+      // TODO: Navigate to PublicProfileScreen if available
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (_) => PublicProfileScreen(userId: widget.authorData!['id'].toString()),
+      //   ),
+      // );
     }
   }
 }

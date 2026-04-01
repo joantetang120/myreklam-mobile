@@ -1023,8 +1023,57 @@ class _ParticulierDashboardScreenState
         })
         .where((url) => url.isNotEmpty)
         .toList();
+    // Check if already favorited from API data
+    final bool isFavorited = bp['is_favorited'] == true || bp['is_saved'] == true || bp['user_has_favorited'] == true;
 
-    return Container(
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool _isFavorited = isFavorited;
+        bool _isLoading = false;
+
+        Future<void> _toggleFavorite() async {
+          if (_isLoading || bpId.isEmpty) return;
+          
+          setState(() => _isLoading = true);
+          
+          try {
+            if (_isFavorited) {
+              // Remove from favorites
+              await ApiClient().authenticatedDelete('/bon-plans/$bpId/favorite');
+            } else {
+              // Add to favorites
+              await ApiClient().authenticatedPost('/bon-plans/$bpId/favorite', body: {});
+            }
+            
+            setState(() {
+              _isFavorited = !_isFavorited;
+              _isLoading = false;
+            });
+            
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(_isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            setState(() => _isLoading = false);
+            
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Erreur lors de la mise à jour des favoris'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        }
+
+        return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1081,22 +1130,32 @@ class _ParticulierDashboardScreenState
               ),
               const SizedBox(height: 12),
 
-              // Category & type tags
+              // Price instead of tags
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
+                child: Row(
                   children: [
-                    if (category.isNotEmpty)
-                      _buildBonPlanTag(category, Icons.local_offer_outlined),
-                    if (subCategory.isNotEmpty)
-                      _buildBonPlanTag(
-                        subCategory,
-                        Icons.subdirectory_arrow_right,
+                    Text(
+                      bp['price'] != null && bp['price'].toString().isNotEmpty
+                          ? '${bp['price']}€'
+                          : 'Gratuit',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2E9B5B),
                       ),
-                    if (type.isNotEmpty)
-                      _buildBonPlanTag(type, Icons.label_outline),
+                    ),
+                    if (bp['original_price'] != null && bp['original_price'].toString().isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '${bp['original_price']}€',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[500],
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1186,7 +1245,43 @@ class _ParticulierDashboardScreenState
               ),
             ],
           ),
-          // Type tag in top-right corner
+          // Favorite button at top-left
+          Positioned(
+            top: 12,
+            left: 12,
+            child: GestureDetector(
+              onTap: _isLoading ? null : _toggleFavorite,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: _isLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.grey[600],
+                        ),
+                      )
+                    : Icon(
+                        _isFavorited ? Icons.favorite : Icons.favorite_border,
+                        color: _isFavorited ? Colors.red : Colors.grey[600],
+                        size: 20,
+                      ),
+              ),
+            ),
+          ),
+          // Bon Plan tag at top-right
           Positioned(
             top: 12,
             right: 12,
@@ -1198,6 +1293,8 @@ class _ParticulierDashboardScreenState
           ),
         ],
       ),
+    );
+      },
     );
   }
 
@@ -1292,30 +1389,26 @@ class _ParticulierDashboardScreenState
         'Non spécifié';
     final contract = job['contract_type']?.toString() ?? '';
     final experience = job['experience_level']?.toString() ?? '';
-    final salary = job['salary_label']?.toString() ?? job['salary']?.toString();
+    final salary = job['salary_label']?.toString() ?? 
+        _buildJobSalaryDisplay(job) ?? 
+        job['salary']?.toString();
+
+    // Check initial favorite status
+    final bool isFavorited = job['is_favorited'] == true ||
+        job['is_saved'] == true ||
+        job['user_has_favorited'] == true;
 
     final tags = <JobDetailTag>[
-      if (contract.isNotEmpty)
-        JobDetailTag(icon: Icons.description_outlined, text: contract),
+      // 1st: Place (location)
       if (location.isNotEmpty)
         JobDetailTag(icon: Icons.location_on_outlined, text: location),
-      if (experience.isNotEmpty)
-        JobDetailTag(icon: Icons.work_history_outlined, text: experience),
+      // 2nd: Contract duration
+      if (contract.isNotEmpty)
+        JobDetailTag(icon: Icons.description_outlined, text: contract),
+      // 3rd: Salary (depending on type)
       if (salary != null && salary.isNotEmpty)
         JobDetailTag(icon: Icons.euro, text: salary, isSpecial: true),
     ];
-
-    final advantages = <String>[];
-    if (job['advantages'] is List) {
-      advantages.addAll(
-        (job['advantages'] as List).whereType<String>().where(
-          (element) => element.isNotEmpty,
-        ),
-      );
-    }
-    if (advantages.isEmpty) {
-      advantages.add('Avantages non précisés');
-    }
 
     final user = job['user'] as Map<String, dynamic>?;
     final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
@@ -1332,31 +1425,82 @@ class _ParticulierDashboardScreenState
         _buildStorageUrl(avatarUrl) ??
         'assets/images/dashboard_particulier/Rectangle 13.png';
 
-    return JobAnnouncementCard(
-      companyLogo: companyLogoUrl,
-      companyName: companyName,
-      jobTitle: jobTitle,
-      description: description.isNotEmpty
-          ? description
-          : 'Description non disponible.',
-      tags: tags,
-      advantages: advantages,
-      timeAgo: _buildTimeAgo(job['created_at']?.toString()),
-      onApply: () => _navigateToJobDetail(job),
-      onAvatarTap: () {
-        if (user?['id'] != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  PublicProfileScreen(userId: user!['id'].toString()),
-            ),
-          );
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool _isFavorited = isFavorited;
+        bool _isLoading = false;
+
+        Future<void> _toggleFavorite() async {
+          if (_isLoading || jobId.isEmpty) return;
+
+          setState(() => _isLoading = true);
+
+          try {
+            if (_isFavorited) {
+              // Remove from favorites
+              await ApiClient().authenticatedDelete('/job-offers/$jobId/favorite');
+            } else {
+              // Add to favorites
+              await ApiClient().authenticatedPost('/job-offers/$jobId/favorite', body: {});
+            }
+
+            setState(() {
+              _isFavorited = !_isFavorited;
+              _isLoading = false;
+            });
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(_isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            setState(() => _isLoading = false);
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Erreur lors de la mise à jour des favoris'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
         }
+
+        return JobAnnouncementCard(
+          companyLogo: companyLogoUrl,
+          companyName: companyName,
+          jobTitle: jobTitle,
+          description: description.isNotEmpty
+              ? description
+              : 'Description non disponible.',
+          tags: tags,
+          timeAgo: _buildTimeAgo(job['created_at']?.toString()),
+          isFavorited: _isFavorited,
+          isLoadingFavorite: _isLoading,
+          onFavoriteToggle: _toggleFavorite,
+          onApply: () => _navigateToJobDetail(job),
+          onAvatarTap: () {
+            if (user?['id'] != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      PublicProfileScreen(userId: user!['id'].toString()),
+                ),
+              );
+            }
+          },
+          reactionBar: jobId.isNotEmpty
+              ? _buildReactionBar('job-offers', jobId)
+              : null,
+        );
       },
-      reactionBar: jobId.isNotEmpty
-          ? _buildReactionBar('job-offers', jobId)
-          : null,
     );
   }
 
@@ -1372,20 +1516,127 @@ class _ParticulierDashboardScreenState
     final subCategory = training['training_sub_category']?.toString() ?? '';
     final trainingType = training['training_type']?.toString() ?? '';
 
+    final addressCity = training['address_city']?.toString() ?? '';
+    
+    // Helper to extract array values
+    String _extractArrayValues(dynamic field) {
+      if (field is List) {
+        return field.map((item) {
+          if (item is Map) return item['value']?.toString() ?? item['name']?.toString() ?? '';
+          return item.toString();
+        }).where((s) => s.isNotEmpty).join(' · ');
+      }
+      return field?.toString() ?? '';
+    }
+    
+    // Translation for training_style
+    String _translateTrainingStyle(String value) {
+      switch (value.trim()) {
+        case 'Remote':
+          return 'En ligne';
+        case 'OnSite':
+          return 'Présentiel';
+        case 'Hybrid':
+          return 'Hybride';
+        default:
+          return value;
+      }
+    }
+    
+    // Extract and translate training_style values
+    String trainingStyleText = '';
+    final trainingStyleRaw = training['training_style'];
+    if (trainingStyleRaw is List) {
+      final translated = trainingStyleRaw.map((item) {
+        final value = item is Map ? (item['value']?.toString() ?? item.toString()) : item.toString();
+        return _translateTrainingStyle(value);
+      }).where((s) => s.isNotEmpty).join(' · ');
+      trainingStyleText = translated;
+    } else if (trainingStyleRaw != null) {
+      trainingStyleText = _translateTrainingStyle(trainingStyleRaw.toString());
+    }
+    
+    // Translation for training_public
+    String _translateTrainingPublic(String value) {
+      switch (value.trim()) {
+        case 'AllPublic':
+          return 'Tout public';
+        case 'Employed':
+          return 'Salarié en poste';
+        case 'JobSeeker':
+          return 'Demandeurs d\'emploi';
+        case 'Company':
+          return 'Entreprise';
+        case 'Student':
+          return 'Étudiant';
+        default:
+          return value;
+      }
+    }
+    
+    // Extract and translate training_public values
+    String trainingPublicText = '';
+    final trainingPublicRaw = training['training_public'];
+    if (trainingPublicRaw is List) {
+      final translated = trainingPublicRaw.map((item) {
+        final value = item is Map ? (item['value']?.toString() ?? item.toString()) : item.toString();
+        return _translateTrainingPublic(value);
+      }).where((s) => s.isNotEmpty).join(' · ');
+      trainingPublicText = translated;
+    } else if (trainingPublicRaw != null) {
+      trainingPublicText = _translateTrainingPublic(trainingPublicRaw.toString());
+    }
+    
+    final certification = _extractArrayValues(training['certification']);
+    
+    // Check if CPF is in training_funding array
+    final trainingFunding = training['training_funding'];
+    bool hasCpf = false;
+    if (trainingFunding is List) {
+      hasCpf = trainingFunding.any((funding) => 
+        funding.toString().toUpperCase() == 'CPF' ||
+        (funding is Map && funding['type']?.toString().toUpperCase() == 'CPF')
+      );
+    }
+
     final tags = <FormationTag>[
-      if (category.isNotEmpty)
-        FormationTag(icon: Icons.category_outlined, text: category),
-      if (subCategory.isNotEmpty)
-        FormationTag(icon: Icons.subdirectory_arrow_right, text: subCategory),
+      // 1st: Address city (location)
+      if (addressCity.isNotEmpty)
+        FormationTag(icon: Icons.location_on_outlined, text: addressCity),
+      // 2nd: Training public (translated)
+      if (trainingPublicText.isNotEmpty)
+        FormationTag(icon: Icons.people_outline, text: trainingPublicText),
+      // 3rd: Training style (translated)
+      if (trainingStyleText.isNotEmpty)
+        FormationTag(icon: Icons.style_outlined, text: trainingStyleText),
+      // 4th: Certification
+      if (certification.isNotEmpty)
+        FormationTag(icon: Icons.verified_outlined, text: certification),
+      // 5th: CPF eligibility
+      if (hasCpf)
+        FormationTag(icon: Icons.account_balance_wallet_outlined, text: 'Eligible CPF'),
+      // 6th: Training type
       if (trainingType.isNotEmpty)
         FormationTag(icon: Icons.school_outlined, text: trainingType),
+      // 7th: Duration
       if (duration != null)
         FormationTag(
           icon: Icons.timer_outlined,
           text: '$duration h${durationUnit != null ? ' / $durationUnit' : ''}',
         ),
-      if (price != null)
-        FormationTag(icon: Icons.euro, text: '$price €', isSpecial: true),
+      // 8th: Price (special/green) - LAST
+      if (price != null) ...[
+        () {
+          final publicType = training['public_type']?.toString() ?? '';
+          String priceText = '$price €';
+          if (publicType == 'personne') {
+            priceText += ' - Par personne';
+          } else if (publicType == 'groupe') {
+            priceText += ' - Par groupe';
+          }
+          return FormationTag(icon: Icons.euro, text: priceText, isSpecial: true);
+        }(),
+      ],
     ];
 
     final user = training['user'] as Map<String, dynamic>?;
@@ -1410,30 +1661,87 @@ class _ParticulierDashboardScreenState
                       training['provider_name']?.toString() ??
                       'Organisme';
 
-    return FormationCard(
-      companyLogo: companyLogoUrl,
-      companyName: ownerName,
-      formationTitle: title,
-      description: description.isNotEmpty
-          ? description
-          : 'Description non disponible.',
-      tags: tags,
-      timeAgo: _buildTimeAgo(training['created_at']?.toString()),
-      onApply: () => _navigateToTrainingDetail(training),
-      onAvatarTap: () {
-        if (user?['id'] != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  PublicProfileScreen(userId: user!['id'].toString()),
-            ),
-          );
+    // Check initial favorite status
+    final bool isFavorited = training['is_favorited'] == true ||
+        training['is_saved'] == true ||
+        training['user_has_favorited'] == true;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool _isFavorited = isFavorited;
+        bool _isLoading = false;
+
+        Future<void> _toggleFavorite() async {
+          if (_isLoading || trainingId.isEmpty) return;
+
+          setState(() => _isLoading = true);
+
+          try {
+            if (_isFavorited) {
+              // Remove from favorites
+              await ApiClient().authenticatedDelete('/trainings/$trainingId/favorite');
+            } else {
+              // Add to favorites
+              await ApiClient().authenticatedPost('/trainings/$trainingId/favorite', body: {});
+            }
+
+            setState(() {
+              _isFavorited = !_isFavorited;
+              _isLoading = false;
+            });
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(_isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            setState(() => _isLoading = false);
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Erreur lors de la mise à jour des favoris'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
         }
+
+        return FormationCard(
+          companyLogo: companyLogoUrl,
+          companyName: ownerName,
+          formationTitle: title,
+          description: description.isNotEmpty
+              ? description
+              : 'Description non disponible.',
+          tags: tags,
+          timeAgo: _buildTimeAgo(training['created_at']?.toString()),
+          isFavorited: _isFavorited,
+          isLoadingFavorite: _isLoading,
+          onFavoriteToggle: _toggleFavorite,
+          onApply: () => _navigateToTrainingDetail(training),
+          onAvatarTap: () {
+            if (user?['id'] != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      PublicProfileScreen(userId: user!['id'].toString()),
+                ),
+              );
+            }
+          },
+          reactionBar: trainingId.isNotEmpty
+              ? _buildReactionBar('trainings', trainingId)
+              : null,
+        );
       },
-      reactionBar: trainingId.isNotEmpty
-          ? _buildReactionBar('trainings', trainingId)
-          : null,
     );
   }
 
@@ -1475,10 +1783,30 @@ class _ParticulierDashboardScreenState
 
     final eventId = event['id']?.toString() ?? '';
 
+    // Build tags for display
+    final tags = <String>[];
+    
+    // Add sub_category_code if available
+    final subCategoryCode = event['sub_category_code']?.toString();
+    if (subCategoryCode != null && subCategoryCode.isNotEmpty) {
+      tags.add(subCategoryCode);
+    }
+    
+    // Add format_type if available
+    final formatType = event['format_type']?.toString();
+    if (formatType != null && formatType.isNotEmpty) {
+      const formatTranslations = {
+        'Présentiel': 'Présentiel',
+        'En ligne': 'En ligne',
+        'Hybride': 'Hybride',
+      };
+      tags.add(formatTranslations[formatType] ?? formatType);
+    }
+
     return EvenementCard(
       profileImage: profileImage,
       username: ownerName,
-      userType: 'Évènement',
+      userType: user?['account_type']?.toString() ?? 'particulier',
       eventTitle: eventTitle,
       eventImage: eventImage,
       badge: event['status']?.toString(),
@@ -1490,6 +1818,7 @@ class _ParticulierDashboardScreenState
       likesCount: _asInt(event['likes_count']),
       commentsCount: _asInt(event['comments_count']),
       onTapCTA: () => _navigateToEventDetail(event),
+      tags: tags.isNotEmpty ? tags : null,
       onAvatarTap: () {
         if (user?['id'] != null) {
           Navigator.push(
@@ -1608,6 +1937,51 @@ class _ParticulierDashboardScreenState
     return '$text €';
   }
 
+  String? _buildJobSalaryDisplay(Map<String, dynamic> job) {
+    final min = job['salary_min'];
+    final max = job['salary_max'];
+    final exact = job['salary_exact'];
+    final paymentType = job['salary_payment_type']?.toString(); // brut/net
+    final period = job['salary_period']?.toString(); // horaire/mensuel/annuel
+    
+    // Build period label
+    String periodLabel = '';
+    if (period == 'horaire') periodLabel = '/h';
+    else if (period == 'mensuel') periodLabel = '/mois';
+    else if (period == 'annuel') periodLabel = '/an';
+    
+    // Build payment label (brut/net)
+    String paymentLabel = paymentType == 'brut' ? ' brut' : (paymentType == 'net' ? ' net' : '');
+    
+    // If we have both min and max, show range
+    if (min != null && max != null) {
+      return '${min}€ - ${max}€$periodLabel$paymentLabel';
+    }
+    
+    // If we have exact salary
+    if (exact != null) {
+      return '${exact}€$periodLabel$paymentLabel';
+    }
+    
+    // If we have only min
+    if (min != null) {
+      return 'À partir de ${min}€$periodLabel$paymentLabel';
+    }
+    
+    // If we have only max
+    if (max != null) {
+      return 'Jusqu\'à ${max}€$periodLabel$paymentLabel';
+    }
+    
+    // Check for salary_type = selon_profil
+    final salaryType = job['salary_type']?.toString();
+    if (salaryType == 'selon_profil') {
+      return 'Selon profil';
+    }
+    
+    return null; // No salary info available
+  }
+
   String _formatEventDate(Map<String, dynamic> event) {
     final durationType = event['duration_type']?.toString();
     final eventDate = event['event_date']?.toString();
@@ -1617,7 +1991,11 @@ class _ParticulierDashboardScreenState
       if (iso == null) return '';
       try {
         final date = DateTime.parse(iso);
-        return '${date.day}/${date.month}/${date.year}';
+        const months = [
+          'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+          'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+        ];
+        return '${date.day} ${months[date.month - 1]} ${date.year}';
       } catch (_) {
         return iso;
       }
@@ -2161,6 +2539,58 @@ class _ParticulierDashboardScreenState
             ),
           ),
         ],
+        const Spacer(),
+        // Owner info - small avatar and name on the right
+        if (authorData != null)
+          GestureDetector(
+            onTap: () {
+              // Navigate to user profile
+              final userId = authorData['id']?.toString();
+              if (userId != null) {
+                // TODO: Navigate to user profile
+              }
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Owner name
+                Text(
+                  authorData['particulier_profile']?['pseudo']?.toString() ??
+                      authorData['pro_profile']?['company_name']?.toString() ??
+                      authorData['name']?.toString() ??
+                      'Utilisateur',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(width: 6),
+                // Owner avatar
+                CircleAvatar(
+                  radius: 12,
+                  backgroundImage: () {
+                    final rawAvatarUrl = authorData['particulier_profile']?['avatar_url']?.toString() ??
+                        authorData['pro_profile']?['avatar_url']?.toString() ??
+                        authorData['pro_profile']?['logo_url']?.toString() ??
+                        authorData['avatar_url']?.toString() ??
+                        authorData['avatar']?.toString() ??
+                        '';
+                    final avatarUrl = _buildStorageUrl(rawAvatarUrl);
+                    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+                      if (avatarUrl.startsWith('http')) {
+                        return NetworkImage(avatarUrl);
+                      }
+                      return AssetImage(avatarUrl) as ImageProvider;
+                    }
+                    return const AssetImage('assets/images/dashboard_particulier/Ellipse 10.png') as ImageProvider;
+                  }(),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -3589,6 +4019,11 @@ class _ParticulierDashboardScreenState
       final certification = certificationRaw is List
           ? certificationRaw.map((e) => e.toString()).toList()
           : <String>[];
+      final documentFilesRaw = data['document_files'] as List? ?? [];
+      final documents = documentFilesRaw
+          .where((d) => d is Map)
+          .map((d) => Map<String, dynamic>.from(d as Map))
+          .toList();
       final createdAt = data['created_at']?.toString();
       final mediaFiles =
           data['media_files'] as List? ?? data['media'] as List? ?? [];
@@ -3661,6 +4096,7 @@ class _ParticulierDashboardScreenState
             addressLine1: addressLine1,
             showLocation: showLocation,
             certification: certification,
+            documents: documents,
             isOwner: isOwner,
             trainingId: trainingId,
             trainingData: data,

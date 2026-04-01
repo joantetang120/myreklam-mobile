@@ -806,6 +806,11 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       final certification = certificationRaw is List
           ? certificationRaw.map((e) => e.toString()).toList()
           : <String>[];
+      final documentFilesRaw = data['document_files'] as List? ?? [];
+      final documents = documentFilesRaw
+          .where((d) => d is Map)
+          .map((d) => Map<String, dynamic>.from(d as Map))
+          .toList();
       final createdAt = data['created_at']?.toString();
       final mediaFiles =
           data['media_files'] as List? ?? data['media'] as List? ?? [];
@@ -868,6 +873,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
             addressLine1: addressLine1,
             showLocation: showLocation,
             certification: certification,
+            documents: documents,
             isOwner: true,
             trainingId: trainingId,
             trainingData: data,

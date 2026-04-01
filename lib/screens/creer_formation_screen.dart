@@ -757,7 +757,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       return;
     }
 
-    setState(() => _isSubmitting = true);
+    if (mounted) {
+      setState(() => _isSubmitting = true);
+    }
 
     try {
       final descriptionDelta = _descriptionQuillController.document.toDelta().toJson();
@@ -878,13 +880,17 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         }
 
         if (!_isEditMode) await _clearDraft();
-        setState(() => _isSubmitting = false);
+        if (mounted) {
+          setState(() => _isSubmitting = false);
+        }
         _showSuccessDialog();
       } else {
         throw Exception(response['message'] ?? (_isEditMode ? 'Erreur lors de la mise à jour' : 'Erreur lors de la création'));
       }
     } catch (e) {
-      setState(() => _isSubmitting = false);
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur: ${e.toString()}'),
@@ -1094,15 +1100,19 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     final key = media.id ?? media.url;
     if (_deletingMediaKeys.contains(key)) return;
 
-    setState(() => _deletingMediaKeys.add(key));
+    if (mounted) {
+      setState(() => _deletingMediaKeys.add(key));
+    }
 
     try {
       if (_isEditMode && widget.trainingId != null && media.id != null) {
         await _trainingService.deleteMedia(widget.trainingId!, media.id!);
       }
-      setState(() {
-        _existingMedia.removeWhere((m) => m.url == media.url && m.id == media.id);
-      });
+      if (mounted) {
+        setState(() {
+          _existingMedia.removeWhere((m) => m.url == media.url && m.id == media.id);
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1192,16 +1202,20 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     final key = doc.id ?? doc.url;
     if (_deletingDocumentKeys.contains(key)) return;
 
-    setState(() => _deletingDocumentKeys.add(key));
+    if (mounted) {
+      setState(() => _deletingDocumentKeys.add(key));
+    }
 
     try {
       if (_isEditMode && widget.trainingId != null && doc.id != null) {
         await _trainingService.deleteDocument(widget.trainingId!, doc.id!);
       }
 
-      setState(() {
-        _existingDocuments.removeWhere((d) => d.url == doc.url && d.id == doc.id);
-      });
+      if (mounted) {
+        setState(() {
+          _existingDocuments.removeWhere((d) => d.url == doc.url && d.id == doc.id);
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
