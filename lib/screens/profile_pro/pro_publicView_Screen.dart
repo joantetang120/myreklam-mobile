@@ -1057,10 +1057,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             child: CircleAvatar(
                               radius: 50,
                               backgroundImage: avatarUrl != null
-                                  ? NetworkImage(avatarUrl)
+                                  ? (avatarUrl.startsWith('http')
+                                      ? NetworkImage(avatarUrl) as ImageProvider
+                                      : NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? '') as ImageProvider)
                                   : AssetImage(
                                       'assets/images/dashboard_particulier/Ellipse 10.png',
-                                    ),
+                                    ) as ImageProvider,
                             ),
                           ),
                         ),

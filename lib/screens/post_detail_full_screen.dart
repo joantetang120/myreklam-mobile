@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/config/api_config.dart';
 
 class PostDetailFullScreen extends StatelessWidget {
   final Map<String, dynamic> author;
@@ -127,6 +128,9 @@ class PostDetailFullScreen extends StatelessWidget {
     if (avatar.startsWith('http')) {
       return NetworkImage(avatar);
     }
-    return AssetImage(avatar);
+    if (avatar.startsWith('assets/')) {
+      return AssetImage(avatar);
+    }
+    return NetworkImage(ApiConfig.resolveMediaUrl(avatar) ?? '') as ImageProvider;
   }
 }

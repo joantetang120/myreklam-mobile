@@ -178,10 +178,9 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                   ),
                   image: _avatarUrl != null
                       ? DecorationImage(
-                          image: NetworkImage(
-                            // "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${_avatarUrl!}",
-                            _avatarUrl!,
-                          ),
+                          image: _avatarUrl!.startsWith('http')
+                              ? NetworkImage(_avatarUrl!)
+                              : NetworkImage(ApiConfig.resolveMediaUrl(_avatarUrl!) ?? ''),
                           fit: BoxFit.cover,
                         )
                       : null,

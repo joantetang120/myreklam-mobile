@@ -1,6 +1,12 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
+import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/screens/creer_offre_emploi_screen.dart';
+import 'package:myreklam/screens/profile_pro/pdf_viewer_screen.dart';
 
 class ProSpaceProScreen extends StatefulWidget {
   const ProSpaceProScreen({super.key});
@@ -18,6 +24,14 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
   bool _isLoadingJobOffers = true;
   String? _jobOffersError;
   List<Map<String, dynamic>> _myJobOffers = [];
+
+  bool _isLoadingEvents = true;
+  String? _eventsError;
+  List<Map<String, dynamic>> _myEvents = [];
+
+  bool _isLoadingTrainings = true;
+  String? _trainingsError;
+  List<Map<String, dynamic>> _myTrainings = [];
 
   bool _isLoadingMyApplications = true;
   String? _myApplicationsError;
@@ -82,6 +96,8 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
   Future<void> _bootstrap() async {
     await _ensureCurrentUserId();
     await _loadMyJobOffers();
+    await _loadMyEvents();
+    await _loadMyTrainings();
     await _loadMyApplications();
   }
 
@@ -139,6 +155,99 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
     }
   }
 
+  Future<void> _loadMyEvents() async {
+    setState(() {
+      _isLoadingEvents = true;
+      _eventsError = null;
+    });
+    try {
+      final response = await ApiClient().authenticatedGet('/events');
+      final data = response['data'];
+      debugPrint('Events response: ${response.toString().length > 500 ? response.toString().substring(0, 500) : response.toString()}');
+
+      List<Map<String, dynamic>> all;
+      if (data is List) {
+        all = List<Map<String, dynamic>>.from(data);
+      } else if (data is Map && data['data'] is List) {
+        all = List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        all = [];
+      }
+
+      final myId = _currentUserId;
+      final filtered = myId == null
+          ? all
+          : all
+                .where(
+                  (o) =>
+                      o['user_id']?.toString() == myId ||
+                      (o['user'] is Map &&
+                          (o['user']['id']?.toString() == myId)),
+                )
+                .toList();
+
+      debugPrint('Filtered events count: ${filtered.length}');
+      if (filtered.isNotEmpty) {
+        debugPrint('First event user data: ${filtered.first['user']}');
+        debugPrint('First event participations: ${filtered.first['participations'] ?? filtered.first['participants']}');
+      }
+
+      if (!mounted) return;
+      setState(() => _myEvents = filtered);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _eventsError = e.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _eventsError = 'Erreur de chargement');
+    } finally {
+      if (mounted) setState(() => _isLoadingEvents = false);
+    }
+  }
+
+  Future<void> _loadMyTrainings() async {
+    setState(() {
+      _isLoadingTrainings = true;
+      _trainingsError = null;
+    });
+    try {
+      final response = await ApiClient().authenticatedGet('/trainings');
+      final data = response['data'];
+
+      List<Map<String, dynamic>> all;
+      if (data is List) {
+        all = List<Map<String, dynamic>>.from(data);
+      } else if (data is Map && data['data'] is List) {
+        all = List<Map<String, dynamic>>.from(data['data']);
+      } else {
+        all = [];
+      }
+
+      final myId = _currentUserId;
+      final filtered = myId == null
+          ? all
+          : all
+                .where(
+                  (o) =>
+                      o['user_id']?.toString() == myId ||
+                      (o['user'] is Map &&
+                          (o['user']['id']?.toString() == myId)),
+                )
+                .toList();
+
+      if (!mounted) return;
+      setState(() => _myTrainings = filtered);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _trainingsError = e.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _trainingsError = 'Erreur de chargement');
+    } finally {
+      if (mounted) setState(() => _isLoadingTrainings = false);
+    }
+  }
+
   int _applicationsCountForOffer(Map<String, dynamic> offer) {
     final candidatesRaw =
         offer['applications'] ?? offer['candidatures'] ?? offer['candidates'];
@@ -158,6 +267,97 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
           .toList();
     }
     return const [];
+  }
+
+  int _participantsCountForEvent(Map<String, dynamic> event) {
+    final participantsRaw = event['participations'] ?? event['participants'] ?? event['registrations'];
+    if (participantsRaw is List) return participantsRaw.length;
+
+    final directCount = event['participants_count'] ?? event['registrations_count'];
+    if (directCount is int) return directCount;
+    return int.tryParse(directCount?.toString() ?? '') ?? 0;
+  }
+
+  List<Map<String, dynamic>> _participantsForEvent(Map<String, dynamic> event) {
+    final participantsRaw = event['participations'] ?? event['participants'] ?? event['registrations'];
+    if (participantsRaw is List) {
+      return participantsRaw
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    return const [];
+  }
+
+  int _subscribersCountForTraining(Map<String, dynamic> training) {
+    final subscribersRaw = training['subscriptions'] ?? training['subscribers'] ?? training['registrations'];
+    if (subscribersRaw is List) return subscribersRaw.length;
+
+    final directCount = training['subscriptions_count'] ?? training['registrations_count'];
+    if (directCount is int) return directCount;
+    return int.tryParse(directCount?.toString() ?? '') ?? 0;
+  }
+
+  List<Map<String, dynamic>> _subscribersForTraining(Map<String, dynamic> training) {
+    final subscribersRaw = training['subscriptions'] ?? training['subscribers'] ?? training['registrations'];
+    if (subscribersRaw is List) {
+      return subscribersRaw
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    return const [];
+  }
+
+  String _extractParticipantName(Map<String, dynamic> participant) {
+    final user = participant['user'];
+    if (user is Map) {
+      final particulierProfile = user['particulier_profile'];
+      final proProfile = user['pro_profile'];
+      
+      if (particulierProfile is Map) {
+        return particulierProfile['pseudo']?.toString() ?? 
+               user['name']?.toString() ?? 
+               user['email']?.toString().split('@').first ?? 
+               'Utilisateur';
+      } else if (proProfile is Map) {
+        return proProfile['company_name']?.toString() ?? 
+               user['name']?.toString() ?? 
+               user['email']?.toString().split('@').first ?? 
+               'Utilisateur';
+      }
+      return user['name']?.toString() ?? 
+             user['email']?.toString().split('@').first ?? 
+             'Utilisateur';
+    }
+    return participant['name']?.toString() ?? 
+           participant['email']?.toString().split('@').first ?? 
+           'Utilisateur';
+  }
+
+  String _extractParticipantEmail(Map<String, dynamic> participant) {
+    final user = participant['user'];
+    if (user is Map) {
+      return user['email']?.toString() ?? participant['email']?.toString() ?? '';
+    }
+    return participant['email']?.toString() ?? '';
+  }
+
+  String _extractParticipantAvatar(Map<String, dynamic> participant) {
+    final user = participant['user'];
+    if (user is Map) {
+      final particulierProfile = user['particulier_profile'];
+      final proProfile = user['pro_profile'];
+      
+      if (particulierProfile is Map) {
+        return particulierProfile['avatar_url']?.toString() ?? '';
+      } else if (proProfile is Map) {
+        return proProfile['avatar_url']?.toString() ?? 
+               proProfile['logo_url']?.toString() ?? '';
+      }
+      return user['avatar']?.toString() ?? '';
+    }
+    return participant['avatar']?.toString() ?? '';
   }
 
   String _formatDate(dynamic value) {
@@ -280,6 +480,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
     }
   }
 
+  Future<void> _handleRefresh() async {
+    await _bootstrap();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -301,8 +505,13 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Column(
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: const Color(0xFFEF8A40),
+        backgroundColor: Colors.white,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
@@ -547,6 +756,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                   children: [
                                     for (final app in applications.take(3))
                                       _buildCandidatureItem(
+                                        userId: int.tryParse(app['user']?['id']?.toString() ?? '0') ?? 0,
                                         name:
                                             (app['user'] is Map
                                                     ? (app['user']['particulier_profile']['pseudo'] ??
@@ -610,6 +820,318 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                       );
                     },
                   ),
+                ],
+                // EVENTS SECTION
+                if (_myEvents.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Icon(Icons.event, color: const Color(0xFFEF8A40), size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Mes Événements (${_myEvents.length})',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  for (int index = 0; index < _myEvents.length; index++) ...[
+                    Builder(
+                      builder: (context) {
+                        final event = _myEvents[index];
+                        final eventTitle = event['title']?.toString() ?? '';
+                        final description = (event['description'] ?? '').toString();
+                        final date = _formatDate(event['created_at']);
+                        final views = int.tryParse(
+                              (event['views'] ?? event['view_count'] ?? 0).toString(),
+                            ) ?? 0;
+                        final participantsCount = _participantsCountForEvent(event);
+
+                        // Extract owner info - same pattern as job offers
+                        final eventUser = event['user'];
+                        String avatar = '';
+                        String companyName = 'Organisateur';
+                        
+                        if (eventUser is Map) {
+                          final particulierProfile = eventUser['particulier_profile'];
+                          final proProfile = eventUser['pro_profile'];
+                          
+                          if (particulierProfile is Map) {
+                            avatar = particulierProfile['avatar_url']?.toString() ?? '';
+                            companyName = particulierProfile['pseudo']?.toString() ?? 'Organisateur';
+                          } else if (proProfile is Map) {
+                            avatar = proProfile['avatar_url']?.toString() ?? 
+                                     proProfile['logo_url']?.toString() ?? '';
+                            companyName = proProfile['company_name']?.toString() ?? 'Organisateur';
+                          }
+                        }
+
+                        final participants = _participantsForEvent(event);
+
+                        return Column(
+                          children: [
+                            _buildOffreCard(
+                              avatar: avatar,
+                              companyName: companyName.toString(),
+                              isPro: true,
+                              jobTitle: eventTitle,
+                              description: description,
+                              category: 'Événement',
+                              date: date,
+                              candidatures: participantsCount,
+                              views: views,
+                              onEdit: null,
+                              onDelete: null,
+                            ),
+                            const SizedBox(height: 12),
+                            participantsCount > 0
+                                ? Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 35),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Participants ($participantsCount)',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black.withOpacity(0.5),
+                                          ),
+                                        ),
+                                        Text(
+                                          'Tout afficher',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey[500],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : SizedBox.shrink(),
+                            participantsCount > 0
+                                ? const SizedBox(height: 12)
+                                : SizedBox.shrink(),
+                            Stack(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 14, bottom: 20),
+                                  child: Column(
+                                    children: [
+                                      for (final participant in participants.take(3))
+                                        _buildCandidatureItem(
+                                          userId: int.tryParse(participant['user']?['id']?.toString() ?? '0') ?? 0,
+                                          name: _extractParticipantName(participant),
+                                          email: _extractParticipantEmail(participant),
+                                          avatarPath: _extractParticipantAvatar(participant),
+                                          jobTitle: eventTitle,
+                                          submissionDate: _formatDate(
+                                            participant['created_at'] ?? participant['registered_at'] ?? participant['participated_at'],
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                Positioned(
+                                  left: 7,
+                                  child: Container(
+                                    height: MediaQuery.of(context).size.height - 310,
+                                    width: 1.5,
+                                    color: Colors.black.withOpacity(0.2),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 0,
+                                  left: 25,
+                                  right: 25,
+                                  child: Container(
+                                    height: 1,
+                                    width: 500,
+                                    color: Colors.black.withOpacity(0.2),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  left: 7,
+                                  right: 25,
+                                  child: Container(
+                                    height: 1,
+                                    width: 500,
+                                    color: Colors.black.withOpacity(0.2),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (index != _myEvents.length - 1)
+                              const SizedBox(height: 20),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ],
+                // TRAININGS SECTION
+                if (_myTrainings.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Icon(Icons.school, color: const Color(0xFF2E9B5B), size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Mes Formations (${_myTrainings.length})',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  for (int index = 0; index < _myTrainings.length; index++) ...[
+                    Builder(
+                      builder: (context) {
+                        final training = _myTrainings[index];
+                        final trainingTitle = training['title']?.toString() ?? '';
+                        final description = (training['description'] ?? '').toString();
+                        final date = _formatDate(training['created_at']);
+                        final views = int.tryParse(
+                              (training['views'] ?? training['view_count'] ?? 0).toString(),
+                            ) ?? 0;
+                        final subscribersCount = _subscribersCountForTraining(training);
+
+                        // Extract owner info - same pattern as job offers
+                        final trainingUser = training['user'];
+                        String avatar = '';
+                        String companyName = 'Organisateur';
+                        
+                        if (trainingUser is Map) {
+                          final particulierProfile = trainingUser['particulier_profile'];
+                          final proProfile = trainingUser['pro_profile'];
+                          
+                          if (particulierProfile is Map) {
+                            avatar = particulierProfile['avatar_url']?.toString() ?? '';
+                            companyName = particulierProfile['pseudo']?.toString() ?? 'Organisateur';
+                          } else if (proProfile is Map) {
+                            avatar = proProfile['avatar_url']?.toString() ?? 
+                                     proProfile['logo_url']?.toString() ?? '';
+                            companyName = proProfile['company_name']?.toString() ?? 'Organisateur';
+                          }
+                        }
+
+                        final subscribers = _subscribersForTraining(training);
+
+                        return Column(
+                          children: [
+                            _buildOffreCard(
+                              avatar: avatar,
+                              companyName: companyName.toString(),
+                              isPro: true,
+                              jobTitle: trainingTitle,
+                              description: description,
+                              category: 'Formation',
+                              date: date,
+                              candidatures: subscribersCount,
+                              views: views,
+                              onEdit: null,
+                              onDelete: null,
+                            ),
+                            const SizedBox(height: 12),
+                            subscribersCount > 0
+                                ? Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 35),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Inscrits ($subscribersCount)',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black.withOpacity(0.5),
+                                          ),
+                                        ),
+                                        Text(
+                                          'Tout afficher',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey[500],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : SizedBox.shrink(),
+                            subscribersCount > 0
+                                ? const SizedBox(height: 12)
+                                : SizedBox.shrink(),
+                            Stack(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 14, bottom: 20),
+                                  child: Column(
+                                    children: [
+                                      for (final subscriber in subscribers.take(3))
+                                        _buildCandidatureItem(
+                                          userId: int.tryParse(subscriber['user']?['id']?.toString() ?? '0') ?? 0,
+                                          name: _extractParticipantName(subscriber),
+                                          email: _extractParticipantEmail(subscriber),
+                                          avatarPath: _extractParticipantAvatar(subscriber),
+                                          jobTitle: trainingTitle,
+                                          submissionDate: _formatDate(
+                                            subscriber['created_at'] ?? subscriber['subscribed_at'] ?? subscriber['registered_at'],
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                Positioned(
+                                  left: 7,
+                                  child: Container(
+                                    height: MediaQuery.of(context).size.height - 310,
+                                    width: 1.5,
+                                    color: Colors.black.withOpacity(0.2),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 0,
+                                  left: 25,
+                                  right: 25,
+                                  child: Container(
+                                    height: 1,
+                                    width: 500,
+                                    color: Colors.black.withOpacity(0.2),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 0,
+                                  left: 7,
+                                  right: 25,
+                                  child: Container(
+                                    height: 1,
+                                    width: 500,
+                                    color: Colors.black.withOpacity(0.2),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (index != _myTrainings.length - 1)
+                              const SizedBox(height: 20),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
                 ],
               ],
             ] else ...[
@@ -699,7 +1221,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
           ],
         ),
       ),
-    );
+    ));
   }
 
   // Widget _buildCategoryChip(String label, bool isSelected) {
@@ -764,10 +1286,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                         avatar.isNotEmpty &&
                             (avatar.startsWith('http://') ||
                                 avatar.startsWith('https://'))
-                        ? NetworkImage(avatar)
-                        : const AssetImage(
-                            'assets/images/profil_pro/space-pro-offer.png',
-                          ),
+                        ? NetworkImage(avatar) as ImageProvider
+                        : avatar.startsWith('assets/')
+                            ? AssetImage(avatar) as ImageProvider
+                            : NetworkImage(ApiConfig.resolveMediaUrl(avatar) ?? '') as ImageProvider,
                     onBackgroundImageError:
                         (Object exception, StackTrace? stackTrace) {
                           // keep fallback
@@ -1110,7 +1632,436 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
     );
   }
 
+  Future<void> _showCandidateDocuments(int userId, String candidateName) async {
+    showDialog(
+      context: context,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedGet('/candidate-documents?user_id=$userId');
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      final docs = response['data'] is List
+          ? List<Map<String, dynamic>>.from(response['data'])
+          : [];
+
+      // Filter only visible documents
+      final visibleDocs = docs.where((d) => d['is_visible'] == true || d['is_visible'] == 1).toList();
+
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            width: 400,
+            constraints: const BoxConstraints(maxHeight: 500),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: const Color(0xFFEF8A40).withOpacity(0.1),
+                      child: const Icon(Icons.folder_shared_outlined, color: Color(0xFFEF8A40), size: 28),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Documents de',
+                            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                          ),
+                          Text(
+                            candidateName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF333333),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.grey),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Flexible(
+                  child: visibleDocs.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.folder_off_outlined, size: 48, color: Colors.grey[400]),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Aucun document visible',
+                                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: visibleDocs.length,
+                          itemBuilder: (context, index) {
+                            final doc = visibleDocs[index];
+                            final fileUrl = ApiConfig.resolveMediaUrl(doc['file_path'] ?? '');
+                            final fileName = doc['original_name'] ?? 'Document ${index + 1}';
+                            final fileType = doc['type'] ?? 'document';
+                            final fileSize = _formatFileSize(doc['file_size'] ?? 0);
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey[200]!),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(14),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Row 1: Icon + File info
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          width: 48,
+                                          height: 48,
+                                          decoration: BoxDecoration(
+                                            color: _getFileTypeColor(fileType).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Icon(
+                                            _getFileTypeIcon(fileType),
+                                            color: _getFileTypeColor(fileType),
+                                            size: 24,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                fileName,
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0xFF333333),
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: _getFileTypeColor(fileType).withOpacity(0.1),
+                                                      borderRadius: BorderRadius.circular(4),
+                                                    ),
+                                                    child: Text(
+                                                      _getFileTypeLabel(fileType),
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight: FontWeight.w500,
+                                                        color: _getFileTypeColor(fileType),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    fileSize,
+                                                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    // Row 2: Action buttons (full width)
+                                    if (fileUrl != null) ...[
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _buildActionButton(
+                                              icon: Icons.visibility_outlined,
+                                              color: const Color(0xFF2E9B5B),
+                                              onTap: () => _viewDocument(fileUrl, fileName),
+                                              label: 'Voir',
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: _buildActionButton(
+                                              icon: Icons.download_outlined,
+                                              color: const Color(0xFFEF8A40),
+                                              onTap: () => _downloadDocument(fileUrl, fileName),
+                                              label: 'Télécharger',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    }
+  }
+
+  void _viewDocument(String url, String fileName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PdfViewerScreen(
+          url: url,
+          fileName: fileName,
+        ),
+      ),
+    );
+  }
+
+  void _downloadDocument(String url, String fileName) async {
+    // Check and request storage permission
+    var status = await Permission.storage.request();
+    
+    if (!status.isGranted) {
+      // Permission denied, show dialog to ask user
+      final bool? shouldRequest = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Permission requise'),
+          content: const Text('L\'application a besoin d\'accéder au stockage pour télécharger les fichiers. Voulez-vous accorder cette permission ?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Non'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Oui'),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldRequest == true) {
+        status = await Permission.storage.request();
+        if (!status.isGranted) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Permission refusée. Impossible de télécharger.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      } else {
+        return;
+      }
+    }
+    
+    // Show downloading indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            ),
+            const SizedBox(width: 12),
+            const Text('Téléchargement...'),
+          ],
+        ),
+        duration: const Duration(seconds: 30),
+      ),
+    );
+    
+    try {
+      // Get Downloads directory
+      Directory? downloadsDir;
+      if (Platform.isAndroid) {
+        downloadsDir = Directory('/storage/emulated/0/Download');
+      } else {
+        downloadsDir = await getApplicationDocumentsDirectory();
+      }
+      
+      if (!downloadsDir!.existsSync()) {
+        downloadsDir.createSync(recursive: true);
+      }
+      
+      // Create unique filename
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final cleanFileName = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+      final savePath = '${downloadsDir.path}/${timestamp}_$cleanFileName';
+      
+      // Download file using Dio
+      final dio = Dio();
+      await dio.download(url, savePath);
+      
+      if (!mounted) return;
+      
+      // Hide loading snackbar and show success
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Téléchargé dans Téléchargements')),
+            ],
+          ),
+          backgroundColor: const Color(0xFF2E9B5B),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  IconData _getFileTypeIcon(String type) {
+    switch (type) {
+      case 'cv':
+        return Icons.description_outlined;
+      case 'lettre':
+      case 'cover_letter':
+        return Icons.mail_outline;
+      case 'portfolio':
+        return Icons.folder_open_outlined;
+      case 'pdf':
+        return Icons.picture_as_pdf_outlined;
+      default:
+        return Icons.insert_drive_file_outlined;
+    }
+  }
+
+  Color _getFileTypeColor(String type) {
+    switch (type) {
+      case 'cv':
+        return const Color(0xFF2E9B5B);
+      case 'lettre':
+      case 'cover_letter':
+        return const Color(0xFFEF8A40);
+      case 'portfolio':
+        return const Color(0xFF2196F3);
+      default:
+        return const Color(0xFF666666);
+    }
+  }
+
+  String _getFileTypeLabel(String type) {
+    switch (type) {
+      case 'cv':
+        return 'CV';
+      case 'lettre':
+      case 'cover_letter':
+        return 'LETTRE';
+      case 'portfolio':
+        return 'PORTFOLIO';
+      default:
+        return type.toUpperCase();
+    }
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    required String label,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 18),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCandidatureItem({
+    required int userId,
     required String name,
     required String email,
     required String avatarPath,
@@ -1142,8 +2093,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                     avatarPath.isNotEmpty &&
                         (avatarPath.startsWith('http') ||
                             avatarPath.startsWith('https'))
-                    ? NetworkImage(avatarPath)
-                    : AssetImage(avatarPath),
+                    ? NetworkImage(avatarPath) as ImageProvider
+                    : avatarPath.startsWith('assets/')
+                        ? AssetImage(avatarPath) as ImageProvider
+                        : NetworkImage(ApiConfig.resolveMediaUrl(avatarPath) ?? '') as ImageProvider,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1217,7 +2170,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
               Container(
                 height: 32,
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () => _showCandidateDocuments(userId, name),
                   icon: const Icon(Icons.visibility_outlined, size: 18),
                   label: const Text(
                     'Voir les documents',

@@ -7,11 +7,10 @@ import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/widgets/image_carousel.dart';
-import 'package:myreklam/widgets/user_detail_card.dart';
-import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
+import 'package:myreklam/widgets/post_content_card.dart' show PostTag;
 import 'package:myreklam/screens/creer_offre_emploi_screen.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/conversation_service.dart';
@@ -82,12 +81,15 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   bool _isLoadingFollow = false;
   List<Map<String, dynamic>> _comments = [];
   bool _isLoadingComments = false;
+  List<Map<String, dynamic>> _similarJobOffers = [];
+  bool _isLoadingSimilar = false;
 
   @override
   void initState() {
     super.initState();
     _checkFollowStatus();
     _fetchComments();
+    _fetchSimilarJobOffers();
   }
 
   Future<void> _fetchComments() async {
@@ -598,6 +600,316 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     }
   }
 
+  Future<void> _fetchSimilarJobOffers() async {
+    setState(() => _isLoadingSimilar = true);
+    try {
+      // Fetch latest job offers from feed
+      final response = await ApiClient().authenticatedGet(
+        '/feed/latest?type=job_offer&per_type_limit=4',
+      );
+
+      if (response['success'] == true && response['data'] != null) {
+        final items = response['data']['items'] as List? ?? [];
+        // Extract resource data and filter out current job offer
+        final filtered = items
+            .map((item) {
+              dynamic resourceData = item['resource'];
+              Map<String, dynamic> resource;
+              
+              // Handle case where resource is a JSON string instead of Map
+              if (resourceData is String) {
+                resource = jsonDecode(resourceData) as Map<String, dynamic>;
+              } else if (resourceData is Map) {
+                resource = Map<String, dynamic>.from(resourceData);
+              } else {
+                resource = {};
+              }
+              
+              // Ensure id is available at top level for filtering
+              resource['id'] = item['id'];
+              return resource;
+            })
+            .where((job) => job['id'].toString() != widget.jobOfferId?.toString())
+            .take(3)
+            .toList();
+        setState(() {
+          _similarJobOffers = filtered;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching similar job offers: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingSimilar = false);
+    }
+  }
+
+  Widget _buildSimilarJobCard(Map<String, dynamic> job) {
+    final jobId = job['id']?.toString() ?? '';
+    final companyName = job['user']?['pro_profile']?['company_name']?.toString() ?? 
+                        job['user']?['name']?.toString() ?? 
+                        'Entreprise';
+    final jobTitle = job['title']?.toString() ?? 'Offre d\'emploi';
+    final description = _stripHtml(job['description']?.toString() ?? '');
+    final location = job['location']?.toString() ?? 
+                    job['city']?.toString() ?? 
+                    'Non spécifié';
+    final contract = job['contract_type']?.toString() ?? '';
+    final experience = job['experience_level']?.toString() ?? '';
+    final salary = job['salary_label']?.toString() ?? 
+        _buildJobSalaryDisplay(job) ?? 
+        job['salary']?.toString();
+
+    // Check initial favorite status
+    final bool isFavorited = job['is_favorited'] == true ||
+        job['is_saved'] == true ||
+        job['user_has_favorited'] == true;
+
+    final tags = <JobDetailTag>[
+      // 1st: Place (location)
+      if (location.isNotEmpty)
+        JobDetailTag(icon: Icons.location_on_outlined, text: location),
+      // 2nd: Contract duration
+      if (contract.isNotEmpty)
+        JobDetailTag(icon: Icons.description_outlined, text: contract),
+      // 3rd: Salary (depending on type)
+      if (salary != null && salary.isNotEmpty)
+        JobDetailTag(icon: Icons.euro, text: salary, isSpecial: true),
+    ];
+
+    final user = job['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
+
+    final avatarUrl = proProfile?['logo_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        particulierProfile?['avatar_url']?.toString() ??
+        user?['avatar']?.toString();
+
+    final companyLogoUrl = ApiConfig.resolveMediaUrl(avatarUrl) ??
+        'assets/images/dashboard_particulier/Rectangle 13.png';
+
+    return StatefulBuilder(
+      builder: (context, setCardState) {
+        bool localIsFavorited = isFavorited;
+        bool localIsLoading = false;
+
+        Future<void> toggleFavorite() async {
+          if (localIsLoading || jobId.isEmpty) return;
+
+          setCardState(() => localIsLoading = true);
+
+          try {
+            if (localIsFavorited) {
+              await ApiClient().authenticatedDelete('/job-offers/$jobId/favorite');
+            } else {
+              await ApiClient().authenticatedPost('/job-offers/$jobId/favorite', body: {});
+            }
+
+            setCardState(() {
+              localIsFavorited = !localIsFavorited;
+              localIsLoading = false;
+            });
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(localIsFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            setCardState(() => localIsLoading = false);
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Erreur lors de la mise à jour des favoris'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        }
+
+        return JobAnnouncementCard(
+          companyLogo: companyLogoUrl,
+          companyName: companyName,
+          jobTitle: jobTitle,
+          description: description.isNotEmpty
+              ? description
+              : 'Description non disponible.',
+          tags: tags,
+          timeAgo: _buildTimeAgo(job['created_at']?.toString()),
+          isFavorited: localIsFavorited,
+          isLoadingFavorite: localIsLoading,
+          onFavoriteToggle: toggleFavorite,
+          onApply: () => _navigateToSimilarJobDetail(job),
+        );
+      },
+    );
+  }
+
+  String? _buildJobSalaryDisplay(Map<String, dynamic> job) {
+    final min = job['salary_min'];
+    final max = job['salary_max'];
+    final exact = job['salary_exact'];
+    final paymentType = job['salary_payment_type']?.toString();
+    final period = job['salary_period']?.toString();
+    
+    String periodLabel = '';
+    if (period == 'horaire') periodLabel = '/h';
+    else if (period == 'mensuel') periodLabel = '/mois';
+    else if (period == 'annuel') periodLabel = '/an';
+    
+    String paymentLabel = paymentType == 'brut' ? ' brut' : (paymentType == 'net' ? ' net' : '');
+    
+    if (min != null && max != null) {
+      return '${min}€ - ${max}€$periodLabel$paymentLabel';
+    }
+    
+    if (exact != null) {
+      return '${exact}€$periodLabel$paymentLabel';
+    }
+    
+    if (min != null) {
+      return 'À partir de ${min}€$periodLabel$paymentLabel';
+    }
+    
+    if (max != null) {
+      return 'Jusqu\'à ${max}€$periodLabel$paymentLabel';
+    }
+    
+    final salaryType = job['salary_type']?.toString();
+    if (salaryType == 'selon_profil') {
+      return 'Selon profil';
+    }
+    
+    return null;
+  }
+
+  String _buildTimeAgo(String? createdAt) {
+    if (createdAt == null || createdAt.isEmpty) return 'Posté récemment';
+    try {
+      final date = DateTime.parse(createdAt);
+      final now = DateTime.now();
+      final diff = now.difference(date);
+      
+      if (diff.inDays > 365) {
+        final years = (diff.inDays / 365).floor();
+        return 'il y a $years an${years > 1 ? 's' : ''}';
+      } else if (diff.inDays > 30) {
+        final months = (diff.inDays / 30).floor();
+        return 'il y a $months mois';
+      } else if (diff.inDays > 0) {
+        return 'il y a ${diff.inDays} jour${diff.inDays > 1 ? 's' : ''}';
+      } else if (diff.inHours > 0) {
+        return 'il y a ${diff.inHours}h';
+      } else if (diff.inMinutes > 0) {
+        return 'il y a ${diff.inMinutes}min';
+      } else {
+        return 'À l\'instant';
+      }
+    } catch (_) {
+      return 'Posté récemment';
+    }
+  }
+
+  void _navigateToSimilarJobDetail(Map<String, dynamic> job) {
+    final jobId = job['id']?.toString();
+    if (jobId == null || jobId.isEmpty) return;
+
+    final user = job['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
+
+    final avatarUrl = proProfile?['logo_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        particulierProfile?['avatar_url']?.toString() ??
+        user?['avatar']?.toString();
+
+    final companyLogo = ApiConfig.resolveMediaUrl(avatarUrl) ??
+        'assets/images/dashboard_particulier/Rectangle 13.png';
+    
+    final companyName = proProfile?['company_name']?.toString() ?? 
+                        user?['name']?.toString() ?? 
+                        'Entreprise';
+    
+    final jobTitle = job['title']?.toString() ?? 'Offre d\'emploi';
+    final description = _stripHtml(job['description']?.toString() ?? '');
+    final location = job['location']?.toString() ?? job['city']?.toString() ?? '';
+    final contract = job['contract_type']?.toString() ?? '';
+    final experience = job['experience_level']?.toString() ?? '';
+    final education = job['education_level']?.toString() ?? '';
+    final remoteWork = job['remote_work'] == true;
+    final salary = job['salary_label']?.toString() ?? 
+                 _buildJobSalaryDisplay(job) ?? 
+                 job['salary']?.toString() ?? '';
+    final acceptMessages = job['accept_messages'] == true;
+
+    final tags = <JobDetailTag>[
+      if (location.isNotEmpty)
+        JobDetailTag(icon: Icons.location_on_outlined, text: location),
+      if (contract.isNotEmpty)
+        JobDetailTag(icon: Icons.description_outlined, text: contract),
+      if (experience.isNotEmpty)
+        JobDetailTag(icon: Icons.work_history_outlined, text: experience),
+      if (education.isNotEmpty)
+        JobDetailTag(icon: Icons.school_outlined, text: education),
+      if (salary.isNotEmpty)
+        JobDetailTag(icon: Icons.euro, text: salary, isSpecial: true),
+    ];
+
+    // Extract media files
+    final mediaFiles = <String>[];
+    final media = job['media'] ?? job['media_files'];
+    if (media is List) {
+      for (final item in media) {
+        if (item is Map<String, dynamic>) {
+          final url = item['url']?.toString();
+          if (url != null && url.isNotEmpty) {
+            if (url.startsWith('http')) {
+              mediaFiles.add(url);
+            } else {
+              mediaFiles.add("${ApiConfig.baseUrl.replaceFirst('/api', '')}$url");
+            }
+          }
+        }
+      }
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => JobDetailScreen(
+          companyLogo: companyLogo,
+          companyName: companyName,
+          companyWebsite: proProfile?['company_website']?.toString() ?? '',
+          jobTitle: jobTitle,
+          description: description,
+          descriptionDelta: job['description_delta'],
+          tags: tags,
+          jobOfferId: jobId,
+          jobOfferData: job,
+          timeAgo: _buildTimeAgo(job['created_at']?.toString()),
+          isOwner: false,
+          acceptMessages: acceptMessages,
+          authorData: user,
+          images: mediaFiles,
+          location: location,
+          educationLevel: education.isNotEmpty ? education : null,
+          experienceLevel: experience.isNotEmpty ? experience : null,
+          remoteWork: remoteWork,
+          profileDescription: job['profile_description']?.toString(),
+          advantages: job['advantages'] is List 
+              ? List<String>.from(job['advantages'] as List) 
+              : const [],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Future<void> applyToJobOffer() async {
@@ -821,299 +1133,202 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Image Carousel
-              if (widget.images.isNotEmpty) ...[
-                ImageCarousel(images: widget.images),
-                const SizedBox(height: 16),
-              ],
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Image Carousel - full width
+            if (widget.images.isNotEmpty)
+              ImageCarousel(images: widget.images),
 
-              // 2. User Detail Card
-              UserDetailCard(
-                avatar: widget.companyLogo,
-                name: widget.companyName,
-                userType: 'Pro',
-                onSubscribe: _toggleFollow,
-                isOwner: widget.isOwner,
-                isFollowing: _isFollowing,
-                isLoading: _isLoadingFollow,
-              ),
-              const SizedBox(height: 16),
-
-              PostContentCard(
-                tags: widget.postTags,
-                subtags: widget.subtags,
-                title: widget.jobTitle,
-                time: widget.timeAgo,
-                onLike: () {},
-                onShare: () {},
-              ),
-              const SizedBox(height: 16),
-
-              // 3. Qui sommes nous Section
-              // Container(
-              //   padding: const EdgeInsets.all(16),
-              //   decoration: BoxDecoration(
-              //     color: Colors.white,
-              //     borderRadius: BorderRadius.circular(20),
-              //     border: Border.all(color: Colors.grey.withOpacity(0.15)),
-              //     boxShadow: [
-              //       BoxShadow(
-              //         color: Colors.black.withOpacity(0.05),
-              //         blurRadius: 10,
-              //         offset: const Offset(0, 4),
-              //       ),
-              //     ],
-              //   ),
-              //   child: Column(
-              //     crossAxisAlignment: CrossAxisAlignment.start,
-              //     children: [
-              //       Row(
-              //         children: [
-              //           Icon(
-              //             Icons.business_outlined,
-              //             color: Colors.grey[600],
-              //             size: 20,
-              //           ),
-              //           const SizedBox(width: 8),
-              //           Text(
-              //             'Qui sommes nous',
-              //             style: TextStyle(
-              //               fontSize: 15,
-              //               fontWeight: FontWeight.bold,
-              //               color: Colors.grey[700],
-              //             ),
-              //           ),
-              //         ],
-              //       ),
-              //       const SizedBox(height: 12),
-              //       Text(
-              //         profileDescription ?? companyName,
-              //         style: TextStyle(
-              //           fontSize: 13,
-              //           color: Colors.grey[600],
-              //           height: 1.6,
-              //         ),
-              //       ),
-              //       if (companyWebsite.isNotEmpty) ...[
-              //         const SizedBox(height: 8),
-              //         Row(
-              //           children: [
-              //             Icon(
-              //               Icons.language,
-              //               size: 16,
-              //               color: Colors.blue[600],
-              //             ),
-              //             const SizedBox(width: 4),
-              //             Expanded(
-              //               child: Text(
-              //                 companyWebsite,
-              //                 style: TextStyle(
-              //                   fontSize: 13,
-              //                   color: Colors.blue[600],
-              //                   fontWeight: FontWeight.w500,
-              //                 ),
-              //                 overflow: TextOverflow.ellipsis,
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //       ],
-              //     ],
-              //   ),
-              // ),
-              // const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey.withOpacity(0.15)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+            // 2. Main content section - no card, edge to edge
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Category tag
+                  if (widget.jobOfferData != null)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
                       children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Colors.grey[600],
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Description',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
+                        // Category tag
+                        if (widget.jobOfferData!['category'] != null)
+                          _buildTag(
+                            widget.jobOfferData!['category'] is Map
+                                ? widget.jobOfferData!['category']['name']?.toString() ?? 'Offre d\'emploi'
+                                : widget.jobOfferData!['category']?.toString() ?? 'Offre d\'emploi',
+                            Icons.work_outline,
+                            const Color(0xFF3AAE5E),
                           ),
-                        ),
+                        // Contract type tag
+                        if (widget.jobOfferData!['contract_type'] != null)
+                          _buildTag(
+                            widget.jobOfferData!['contract_type']?.toString() ?? '',
+                            Icons.description_outlined,
+                            Colors.blue,
+                          ),
                       ],
                     ),
+                  if (widget.jobOfferData != null)
                     const SizedBox(height: 12),
-                    Text(
-                      widget.description,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                        height: 1.6,
-                      ),
+                  
+                  // Title - big and bold
+                  Text(
+                    widget.jobTitle,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                      height: 1.3,
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              if (widget.educationLevel != null ||
-                  widget.experienceLevel != null ||
-                  widget.remoteWork)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey.withOpacity(0.15)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.school_outlined,
-                            color: Colors.grey[600],
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Profil recherché',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      if (widget.educationLevel != null) ...[
-                        _buildInfoRow(
-                          null,
-                          'Niveau d\'études requis',
-                          widget.educationLevel!,
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      if (widget.experienceLevel != null) ...[
-                        _buildInfoRow(
-                          null,
-                          'Expérience professionnelle',
-                          widget.experienceLevel!,
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      if (widget.profileDescription != null) ...[
-                        _buildInfoRow(
-                          null,
-                          'Description du profil',
-                          widget.profileDescription!,
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                    ],
-                  ),
-                ),
-              const SizedBox(height: 16),
-
-              // Job Specific Content
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey.withOpacity(0.15)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Colors.grey[600],
-                          size: 22,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Informations supplementaires',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Divider(height: 1, color: Colors.grey[300]),
-                    const SizedBox(height: 16),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final tiles = _buildInfoTiles();
-
+                  const SizedBox(height: 16),
+                  
+                  // Tags (location, contract, etc.) - GRAY TAGS
+                  // Sort to put location first
+                  if (widget.tags.isNotEmpty) ...[
+                    Builder(
+                      builder: (context) {
+                        final sortedTags = List<JobDetailTag>.from(widget.tags)
+                          ..sort((a, b) {
+                            // Location tag comes first
+                            final aIsLocation = a.icon == Icons.location_on_outlined || 
+                                             a.icon == Icons.location_on;
+                            final bIsLocation = b.icon == Icons.location_on_outlined || 
+                                             b.icon == Icons.location_on;
+                            if (aIsLocation && !bIsLocation) return -1;
+                            if (!aIsLocation && bIsLocation) return 1;
+                            return 0;
+                          });
                         return Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: tiles
-                              .map(
-                                (t) => SizedBox(
-                                  width: constraints.maxWidth,
-                                  child: _buildInfoTile(t),
-                                ),
-                              )
-                              .toList(),
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: sortedTags.map((tag) => _buildDetailTag(tag)).toList(),
                         );
                       },
                     ),
-                    const SizedBox(height: 18),
-                    Divider(height: 1, color: Colors.grey[300]),
                     const SizedBox(height: 16),
+                  ],
+                  
+                  // Salary in green - BELOW GRAY TAGS
+                  _buildSalaryDisplay(),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            
+            // 3. Description - no card, full width
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Description',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDescription(),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // 5. Job details section - no card, full width
+            if (widget.educationLevel != null ||
+                widget.experienceLevel != null ||
+                widget.remoteWork ||
+                widget.tags.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Profil recherché',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (widget.educationLevel != null)
+                      _buildDetailItem(
+                        icon: Icons.school_outlined,
+                        iconColor: Colors.orange,
+                        bgColor: Colors.orange.withOpacity(0.1),
+                        label: 'Niveau d\'études',
+                        value: widget.educationLevel!,
+                      ),
+                    if (widget.educationLevel != null)
+                      const SizedBox(height: 12),
+                    if (widget.experienceLevel != null)
+                      _buildDetailItem(
+                        icon: Icons.work_history_outlined,
+                        iconColor: const Color(0xFF3AAE5E),
+                        bgColor: const Color(0xFFE6F7EF),
+                        label: 'Expérience requise',
+                        value: widget.experienceLevel!,
+                      ),
+                    if (widget.experienceLevel != null)
+                      const SizedBox(height: 12),
+                    if (widget.remoteWork)
+                      _buildDetailItem(
+                        icon: Icons.home_work_outlined,
+                        iconColor: Colors.blue,
+                        bgColor: Colors.blue.withOpacity(0.1),
+                        label: 'Télétravail',
+                        value: 'Possible',
+                      ),
+                    if (widget.remoteWork)
+                      const SizedBox(height: 5),
+                  ],
+                ),
+              ),
+            
+            // Profil recherché section - no card, full width (like Description)
+            if (widget.profileDescription != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.profileDescription!,
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+            if (widget.profileDescription != null)
+              const SizedBox(height: 16),
+            
+            // 6. Avantages - no card
+            if (widget.advantages.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     const Text(
                       'Avantages',
                       style: TextStyle(
-                        fontSize: 15,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF616161),
+                        color: Color(0xFF1A1A1A),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -1121,451 +1336,419 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                           .map((adv) => _buildAdvantageTag(adv))
                           .toList(),
                     ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        !widget.isOwner
-                            ? Expanded(
-                                flex: widget.applyButtonFlex,
-                                child: ElevatedButton(
-                                  onPressed: applyToJobOffer,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFFF9800),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: const Text('Postuler'),
-                                ),
-                              )
-                            : const SizedBox.shrink(),
-                        !widget.isOwner
-                            ? const SizedBox(width: 12)
-                            : const SizedBox.shrink(),
-                        Expanded(
-                          flex: widget.websiteButtonFlex,
-                          child: OutlinedButton.icon(
-                            onPressed: widget.companyWebsite.isNotEmpty
-                                ? () => _openCompanyWebsite(context)
-                                : null,
-                            icon: const Icon(Icons.language, size: 18),
-                            label: const Text("Le site de l'entreprise"),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFFFF9800),
-                              side: const BorderSide(color: Color(0xFFFF9800)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
+            if (widget.advantages.isNotEmpty)
               const SizedBox(height: 16),
-
-              // Contact button - only if not owner and acceptMessages is true
-              if (!widget.isOwner &&
-                  widget.acceptMessages &&
-                  widget.authorData != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () =>
-                          _startConversation(context, widget.authorData!),
-                      icon: const Icon(Icons.chat_outlined, size: 20),
-                      label: const Text('Contacter'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
-                        foregroundColor: Colors.white,
+            
+            // 7. Apply buttons - full width
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  if (!widget.isOwner) ...[
+                    Expanded(
+                      flex: widget.applyButtonFlex,
+                      child: ElevatedButton(
+                        onPressed: applyToJobOffer,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF9800),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Postuler',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    flex: widget.websiteButtonFlex,
+                    child: OutlinedButton.icon(
+                      onPressed: widget.companyWebsite.isNotEmpty
+                          ? () => _openCompanyWebsite(context)
+                          : null,
+                      icon: const Icon(Icons.language, size: 18),
+                      label: const Text("Le site de l'entreprise"),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFFF9800),
+                        side: const BorderSide(color: Color(0xFFFF9800)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        elevation: 0,
                       ),
                     ),
                   ),
-                ),
-              if (!widget.isOwner &&
-                  widget.acceptMessages &&
-                  widget.authorData != null)
-                const SizedBox(height: 16),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
 
-              // Localisation Card
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey.withOpacity(0.15)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+            // Favoris, Partager, Owner section - moved above Contacter button
+            // Action buttons row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // Favoris button
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        // TODO: Implement save/favorite functionality
+                      },
+                      icon: Icon(
+                        Icons.favorite_outline,
+                        color: Colors.grey[600],
+                        size: 24,
+                      ),
+                    ),
+                    Text(
+                      'Favoris',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
                     ),
                   ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // Partager button
+                Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          color: Color(0xFF3AAE5E),
-                          size: 22,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Localisation',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        'assets/images/details_bon_plans/Rectangle 128 (1).png',
-                        width: double.infinity,
-                        height: 180,
-                        fit: BoxFit.cover,
+                    IconButton(
+                      onPressed: () {
+                        // TODO: Implement share functionality
+                      },
+                      icon: Icon(
+                        Icons.share_outlined,
+                        color: Colors.grey[600],
+                        size: 24,
                       ),
                     ),
-                    const SizedBox(height: 16),
                     Text(
-                      widget.location.isNotEmpty
-                          ? widget.location
-                          : 'Localisation non spécifiée',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF616161),
-                        fontWeight: FontWeight.w500,
+                      'Partager',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Company/Owner section - no card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  // Avatar
+                  GestureDetector(
+                    onTap: widget.authorData != null ? () => _navigateToUserProfile(context) : null,
+                    child: CircleAvatar(
+                      radius: 24,
+                      backgroundImage: widget.companyLogo.startsWith('http')
+                          ? NetworkImage(widget.companyLogo)
+                          : AssetImage(widget.companyLogo) as ImageProvider,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Name and user type
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: widget.authorData != null ? () => _navigateToUserProfile(context) : null,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.companyName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                          Text(
+                            'Pro',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Subscribe/Follow button
+                  if (!widget.isOwner)
+                    _isLoadingFollow
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : TextButton(
+                            onPressed: _toggleFollow,
+                            style: TextButton.styleFrom(
+                              foregroundColor: _isFollowing
+                                  ? Colors.grey[600]
+                                  : const Color(0xFF3AAE5E),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                side: BorderSide(
+                                  color: _isFollowing
+                                      ? Colors.grey[400]!
+                                      : const Color(0xFF3AAE5E),
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              _isFollowing ? 'Suivis' : 'Suivre',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            
+            // Posted time
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                widget.timeAgo.isNotEmpty ? widget.timeAgo : 'Posté récemment',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[500],
                 ),
               ),
+            ),
+            const SizedBox(height: 16),
+
+            // Contact button - only if not owner and acceptMessages is true
+            if (!widget.isOwner &&
+                widget.acceptMessages &&
+                widget.authorData != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () =>
+                        _startConversation(context, widget.authorData!),
+                    icon: const Icon(Icons.chat_outlined, size: 20),
+                    label: const Text('Contacter'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3AAE5E),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ),
+            if (!widget.isOwner &&
+                widget.acceptMessages &&
+                widget.authorData != null)
               const SizedBox(height: 16),
 
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey.withOpacity(0.15)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+            // Localisation - no card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Localisation',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.comment_outlined,
-                          color: Color(0xFF616161),
-                          size: 20,
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset(
+                      'assets/images/details_bon_plans/Rectangle 128 (1).png',
+                      width: double.infinity,
+                      height: 180,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.location.isNotEmpty
+                        ? widget.location
+                        : 'Localisation non spécifiée',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF616161),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Comments Card
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.grey.withOpacity(0.15)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.comment_outlined,
+                        color: Color(0xFF616161),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Commentaires',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Commentaires',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey[700],
-                          ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${_comments.length}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[500],
                         ),
-                        const Spacer(),
-                        Text(
-                          '${_comments.length}',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (_isLoadingComments)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else if (_comments.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Text(
+                          'Aucun commentaire. Soyez le premier !',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[500],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (_isLoadingComments)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    else if (_comments.isEmpty)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: Text(
-                            'Aucun commentaire. Soyez le premier !',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[500],
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      Column(
-                        children: _comments
-                            .take(2)
-                            .map(
-                              (comment) =>
-                                  _buildCommentItem(comment, onReply: null),
-                            )
-                            .toList(),
-                      ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () => _showCommentsSheet(context),
-                        icon: const Icon(Icons.chat_outlined, size: 18),
-                        label: Text(
-                          _comments.isEmpty
-                              ? 'Ajouter un commentaire'
-                              : 'Voir tous les commentaires',
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF3AAE5E),
-                          side: const BorderSide(color: Color(0xFF3AAE5E)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            fontStyle: FontStyle.italic,
                           ),
                         ),
                       ),
+                    )
+                  else
+                    Column(
+                      children: _comments
+                          .take(2)
+                          .map(
+                            (comment) =>
+                                _buildCommentItem(comment, onReply: null),
+                          )
+                          .toList(),
                     ),
-                  ],
-                ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showCommentsSheet(context),
+                      icon: const Icon(Icons.chat_outlined, size: 18),
+                      label: Text(
+                        _comments.isEmpty
+                            ? 'Ajouter un commentaire'
+                            : 'Voir tous les commentaires',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF3AAE5E),
+                        side: const BorderSide(color: Color(0xFF3AAE5E)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
+            ),
+            const SizedBox(height: 32),
 
+            const Center(
+              child: Text(
+                "offres d'emplois similaires",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF616161),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 10,
+              ),
+              child: Container(
+                height: 1,
+                color: Colors.grey[300],
+              ),
+            ),
+
+            // Similar job offers - dynamically fetched
+            if (_isLoadingSimilar)
               const Center(
-                child: Text(
-                  "offres d'emplois similaires",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF616161),
-                  ),
-                  textAlign: TextAlign.center,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-              ),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ), // space on sides
-                child: Container(
-                  height: 1, // thin line
-                  color: Colors.grey[300], // light gray
-                ),
-              ),
-
-              SizedBox(height: 15),
-
-              JobAnnouncementCard(
-                companyLogo:
-                    'assets/images/dashboard_particulier/Rectangle 13.png',
-                companyName: 'The North Face Sarl',
-                jobTitle: 'Développeur Fullstack PHP',
-                description:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit',
-                tags: const [
-                  JobDetailTag(
-                    icon: Icons.description_outlined,
-                    text: 'Contrat à durée indéterminée',
-                  ),
-                  JobDetailTag(
-                    icon: Icons.location_on_outlined,
-                    text: 'Luxembourg',
-                  ),
-                  JobDetailTag(
-                    icon: Icons.school_outlined,
-                    text: 'Bac+2 / autre diplôme equivalent',
-                  ),
-                  JobDetailTag(
-                    icon: Icons.work_history_outlined,
-                    text: "intermédiaire : 1 an d'expérience",
-                  ),
-                  JobDetailTag(icon: Icons.access_time, text: 'Temps plein'),
-                  JobDetailTag(
-                    icon: Icons.home_work_outlined,
-                    text: 'Présentiel uniquement',
-                  ),
-                  JobDetailTag(
-                    icon: Icons.monetization_on_outlined,
-                    text: 'Selon le profil',
-                    isSpecial: true,
-                  ),
-                ],
-                advantages: const ['Primes', 'Heures supplementaires'],
-                timeAgo: 'il y a 2 jours',
-                onApply: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const JobDetailScreen(
-                        companyLogo:
-                            'assets/images/dashboard_particulier/Rectangle 13.png',
-                        companyName: 'Dyson Sarl',
-                        jobTitle: 'Développeur Fullstack PHP',
-                        description:
-                            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit',
-                        tags: [
-                          JobDetailTag(
-                            icon: Icons.description_outlined,
-                            text: 'Contrat à durée indéterminée',
-                          ),
-                          JobDetailTag(
-                            icon: Icons.location_on_outlined,
-                            text: 'Luxembourg',
-                          ),
-                          JobDetailTag(
-                            icon: Icons.school_outlined,
-                            text: 'Bac+2 / autre diplôme equivalent',
-                          ),
-                          JobDetailTag(
-                            icon: Icons.work_history_outlined,
-                            text: "intermédiaire : 1 an d'expérience",
-                          ),
-                          JobDetailTag(
-                            icon: Icons.access_time,
-                            text: 'Temps plein',
-                          ),
-                          JobDetailTag(
-                            icon: Icons.home_work_outlined,
-                            text: 'Présentiel uniquement',
-                          ),
-                          JobDetailTag(
-                            icon: Icons.monetization_on_outlined,
-                            text: 'Selon le profil',
-                            isSpecial: true,
-                          ),
-                        ],
-                        advantages: ['Primes', 'Heures supplementaires'],
-                        timeAgo: 'il y a 2 jours',
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 15),
-
-              JobAnnouncementCard(
-                companyLogo:
-                    'assets/images/dashboard_particulier/Rectangle 13.png',
-                companyName: 'The North Face Sarl',
-                jobTitle: 'Développeur Fullstack PHP',
-                description:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit',
-                tags: const [
-                  JobDetailTag(
-                    icon: Icons.description_outlined,
-                    text: 'Contrat à durée indéterminée',
-                  ),
-                  JobDetailTag(
-                    icon: Icons.location_on_outlined,
-                    text: 'Luxembourg',
-                  ),
-                  JobDetailTag(
-                    icon: Icons.school_outlined,
-                    text: 'Bac+2 / autre diplôme equivalent',
-                  ),
-                  JobDetailTag(
-                    icon: Icons.work_history_outlined,
-                    text: "intermédiaire : 1 an d'expérience",
-                  ),
-                  JobDetailTag(icon: Icons.access_time, text: 'Temps plein'),
-                  JobDetailTag(
-                    icon: Icons.home_work_outlined,
-                    text: 'Présentiel uniquement',
-                  ),
-                  JobDetailTag(
-                    icon: Icons.monetization_on_outlined,
-                    text: 'Selon le profil',
-                    isSpecial: true,
-                  ),
-                ],
-                advantages: const ['Primes', 'Heures supplementaires'],
-                timeAgo: 'il y a 2 jours',
-                onApply: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const JobDetailScreen(
-                        companyLogo:
-                            'assets/images/dashboard_particulier/Rectangle 13.png',
-                        companyName: 'Dyson Sarl',
-                        jobTitle: 'Développeur Fullstack PHP',
-                        description:
-                            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit',
-                        tags: [
-                          JobDetailTag(
-                            icon: Icons.description_outlined,
-                            text: 'Contrat à durée indéterminée',
-                          ),
-                          JobDetailTag(
-                            icon: Icons.location_on_outlined,
-                            text: 'Luxembourg',
-                          ),
-                          JobDetailTag(
-                            icon: Icons.school_outlined,
-                            text: 'Bac+2 / autre diplôme equivalent',
-                          ),
-                          JobDetailTag(
-                            icon: Icons.work_history_outlined,
-                            text: "intermédiaire : 1 an d'expérience",
-                          ),
-                          JobDetailTag(
-                            icon: Icons.access_time,
-                            text: 'Temps plein',
-                          ),
-                          JobDetailTag(
-                            icon: Icons.home_work_outlined,
-                            text: 'Présentiel uniquement',
-                          ),
-                          JobDetailTag(
-                            icon: Icons.monetization_on_outlined,
-                            text: 'Selon le profil',
-                            isSpecial: true,
-                          ),
-                        ],
-                        advantages: ['Primes', 'Heures supplementaires'],
-                        timeAgo: 'il y a 2 jours',
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 30),
-            ],
-          ),
+              )
+            else if (_similarJobOffers.isEmpty)
+              const SizedBox.shrink()
+            else
+              ..._similarJobOffers.map((job) => _buildSimilarJobCard(job)),
+            
+            const SizedBox(height: 30),
+          ],
         ),
       ),
     );
@@ -1623,6 +1806,15 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   }
 
   Widget _buildDescription() {
+    // First try plain text description (HTML stripped)
+    if (widget.description.isNotEmpty && widget.description != 'Description non disponible.') {
+      return Text(
+        _stripHtml(widget.description),
+        style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
+      );
+    }
+    
+    // Fallback to rich text delta if plain text is empty
     debugPrint(
       'JOB DETAIL _buildDescription: descriptionDelta type=${widget.descriptionDelta?.runtimeType}, value=$widget.descriptionDelta',
     );
@@ -1646,7 +1838,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           );
           // Fix unquoted string values
           jsonString = jsonString.replaceAllMapped(
-            RegExp(r':\s*([a-zA-Z_][a-zA-Z0-9_\s]*?)(\s*[,\}\]])'),
+            RegExp(r':\s*([a-zA-Z_][a-zA-Z0-9_\s]*?)(\s*[\}\]])'),
             (match) {
               final value = match.group(1)!.trim();
               if (value == 'true' || value == 'false' || value == 'null') {
@@ -1708,9 +1900,14 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     }
 
     return Text(
-      widget.description,
+      'Description non disponible.',
       style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
     );
+  }
+  
+  String _stripHtml(String text) {
+    final exp = RegExp(r'<[^>]*>', multiLine: true, caseSensitive: false);
+    return text.replaceAll(exp, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
   void _showDeleteDialog(BuildContext context) {
@@ -2019,6 +2216,255 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           color: Color(0xFF3AAE5E),
           fontWeight: FontWeight.bold,
         ),
+      ),
+    );
+  }
+
+  // Helper methods for new layout
+  Widget _buildTag(String text, IconData icon, Color color) {
+    if (text.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalaryDisplay() {
+    // Extract salary from tags or jobOfferData
+    String? salaryText;
+    
+    // First check tags for salary info
+    for (final tag in widget.tags) {
+      if (tag.icon == Icons.euro || 
+          tag.icon == Icons.monetization_on_outlined ||
+          tag.icon == Icons.monetization_on) {
+        salaryText = tag.text;
+        break;
+      }
+    }
+    
+    // If no salary in tags, check jobOfferData
+    if (salaryText == null && widget.jobOfferData != null) {
+      final salary = widget.jobOfferData!['salary'];
+      final salaryLabel = widget.jobOfferData!['salary_label'];
+      final salaryMin = widget.jobOfferData!['salary_min'];
+      final salaryMax = widget.jobOfferData!['salary_max'];
+      final salaryExact = widget.jobOfferData!['salary_exact'];
+      final salaryType = widget.jobOfferData!['salary_type']?.toString();
+      final paymentType = widget.jobOfferData!['salary_payment_type']?.toString(); // brut/net
+      final period = widget.jobOfferData!['salary_period']?.toString(); // horaire/mensuel/annuel
+      
+      // Build period label
+      String periodLabel = '';
+      if (period == 'horaire') periodLabel = '/h';
+      else if (period == 'mensuel') periodLabel = '/mois';
+      else if (period == 'annuel') periodLabel = '/an';
+      
+      // Build payment label (brut/net)
+      String paymentLabel = paymentType == 'brut' ? ' brut' : (paymentType == 'net' ? ' net' : '');
+      
+      // Handle different salary types
+      if (salaryType == 'selon_profil') {
+        salaryText = 'Selon profil';
+      } else if (salaryMin != null && salaryMax != null) {
+        salaryText = '${salaryMin}€ - ${salaryMax}€$periodLabel$paymentLabel';
+      } else if (salaryExact != null) {
+        salaryText = '${salaryExact}€$periodLabel$paymentLabel';
+      } else if (salaryLabel != null && salaryLabel.toString().isNotEmpty) {
+        // Clean up salaryLabel if it contains JSON
+        final labelStr = salaryLabel.toString();
+        if (labelStr.startsWith('{') || labelStr.startsWith('[')) {
+          // Try to parse as JSON and extract meaningful data
+          try {
+            final decoded = jsonDecode(labelStr);
+            if (decoded is Map) {
+              if (decoded['min'] != null && decoded['max'] != null) {
+                salaryText = '${decoded['min']}€ - ${decoded['max']}€$periodLabel$paymentLabel';
+              } else if (decoded['amount'] != null) {
+                salaryText = '${decoded['amount']}€$periodLabel$paymentLabel';
+              } else if (decoded['text'] != null) {
+                salaryText = decoded['text'].toString();
+              } else {
+                salaryText = 'Selon profil';
+              }
+            } else {
+              salaryText = 'Selon profil';
+            }
+          } catch (_) {
+            salaryText = 'Selon profil';
+          }
+        } else {
+          salaryText = labelStr;
+        }
+      } else if (salary != null) {
+        // Handle salary that might be a Map/JSON
+        if (salary is Map) {
+          if (salary['min'] != null && salary['max'] != null) {
+            salaryText = '${salary['min']}€ - ${salary['max']}€$periodLabel$paymentLabel';
+          } else if (salary['amount'] != null) {
+            salaryText = '${salary['amount']}€$periodLabel$paymentLabel';
+          } else if (salary['text'] != null) {
+            salaryText = salary['text'].toString();
+          } else {
+            salaryText = 'Selon profil';
+          }
+        } else {
+          final salaryStr = salary.toString();
+          if (salaryStr.startsWith('{') || salaryStr.startsWith('[')) {
+            try {
+              final decoded = jsonDecode(salaryStr);
+              if (decoded is Map) {
+                if (decoded['min'] != null && decoded['max'] != null) {
+                  salaryText = '${decoded['min']}€ - ${decoded['max']}€$periodLabel$paymentLabel';
+                } else if (decoded['amount'] != null) {
+                  salaryText = '${decoded['amount']}€$periodLabel$paymentLabel';
+                } else {
+                  salaryText = 'Selon profil';
+                }
+              } else {
+                salaryText = 'Selon profil';
+              }
+            } catch (_) {
+              salaryText = 'Selon profil';
+            }
+          } else {
+            salaryText = salaryStr + periodLabel + paymentLabel;
+          }
+        }
+      }
+    }
+    
+    if (salaryText == null || salaryText.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    return Text(
+      salaryText,
+      style: const TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF2E9B5B),
+      ),
+    );
+  }
+
+  Widget _buildDetailTag(JobDetailTag tag) {
+    final isSpecial = tag.isSpecial;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: isSpecial ? const Color(0xFFE6F7EF) : const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isSpecial
+              ? const Color(0xFF3AAE5E).withOpacity(0.5)
+              : Colors.grey.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            tag.icon,
+            size: 16,
+            color: isSpecial ? const Color(0xFF3AAE5E) : Colors.grey,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            tag.text,
+            style: TextStyle(
+              fontSize: 12,
+              color: isSpecial ? const Color(0xFF3AAE5E) : Colors.grey,
+              fontWeight: isSpecial ? FontWeight.bold : FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailItem({
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.8),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToUserProfile(BuildContext context) {
+    if (widget.authorData == null) return;
+    
+    final userId = widget.authorData!['id']?.toString();
+    if (userId == null) return;
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ParticulierMainScreen(initialIndex: 3),
       ),
     );
   }

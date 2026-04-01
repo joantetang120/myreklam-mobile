@@ -259,7 +259,9 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                 color: Colors.grey[300],
                                 image: _avatarUrl != null
                                     ? DecorationImage(
-                                        image: NetworkImage(_avatarUrl!),
+                                        image: _avatarUrl!.startsWith('http')
+                                            ? NetworkImage(_avatarUrl!)
+                                            : NetworkImage(ApiConfig.resolveMediaUrl(_avatarUrl!) ?? ''),
                                         fit: BoxFit.cover,
                                       )
                                     : null,

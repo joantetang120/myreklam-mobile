@@ -161,10 +161,12 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
                                   child: Column(
                                     children: [
                                       CircleAvatar(
-                                        radius: 35,
+                                        radius: 26,
                                         backgroundImage: avatarUrl.startsWith('http')
-                                            ? NetworkImage(avatarUrl)
-                                            : AssetImage(avatarUrl) as ImageProvider,
+                                            ? NetworkImage(avatarUrl) as ImageProvider
+                                            : avatarUrl.startsWith('assets/')
+                                                ? AssetImage(avatarUrl) as ImageProvider
+                                                : NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? '') as ImageProvider,
                                       ),
                                       const SizedBox(height: 12),
                                       Text(

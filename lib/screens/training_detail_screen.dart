@@ -1,13 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/widgets/image_carousel.dart';
-import 'package:myreklam/widgets/user_detail_card.dart';
-import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/widgets/formation_card.dart';
@@ -45,6 +46,7 @@ class TrainingDetailScreen extends StatefulWidget {
   final String? addressLine1;
   final bool showLocation;
   final List<String> certification;
+  final List<Map<String, dynamic>> documents;
   final bool isOwner;
   final String? trainingId;
   final Map<String, dynamic>? trainingData;
@@ -84,6 +86,7 @@ class TrainingDetailScreen extends StatefulWidget {
     this.addressLine1,
     this.showLocation = false,
     this.certification = const [],
+    this.documents = const [],
     this.isOwner = false,
     this.trainingId,
     this.trainingData,
@@ -105,6 +108,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   int _commentsCount = 0;
   bool _isLiked = false;
   int _likesCount = 0;
+  List<Map<String, dynamic>> _similarTrainings = [];
+  bool _isLoadingSimilar = false;
 
   @override
   void initState() {
@@ -113,6 +118,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     _checkSubscriptionStatus();
     _fetchComments();
     _fetchLikes();
+    _fetchSimilarTrainings();
   }
 
   Future<void> _fetchComments() async {
@@ -169,6 +175,34 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       }
     } catch (e) {
       debugPrint('Error fetching likes: $e');
+    }
+  }
+
+  Future<void> _fetchSimilarTrainings() async {
+    if (widget.trainingId == null) return;
+
+    setState(() => _isLoadingSimilar = true);
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/similar?limit=3'),
+        headers: {
+          'Authorization': 'Bearer ${await TokenStorage.getAccessToken()}',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['data'] is List) {
+          setState(() {
+            _similarTrainings = List<Map<String, dynamic>>.from(data['data']);
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching similar trainings: $e');
+    } finally {
+      setState(() => _isLoadingSimilar = false);
     }
   }
 
@@ -535,7 +569,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Details Formation',
+          'Detail de la formation',
           style: TextStyle(
             color: Color(0xFF616161),
             fontFamily: 'Manjari',
@@ -545,66 +579,71 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         centerTitle: true,
         actions: [
           if (widget.isOwner)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Color(0xFF616161), size: 24),
-              offset: const Offset(0, 45),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              onSelected: (value) {
-                if (value == 'edit') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CreerFormationScreen(
-                        trainingId: widget.trainingId,
-                        initialData: widget.trainingData,
-                        shouldReturnToListingOnSuccess: widget.returnToListingOnEdit,
+            Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Color(0xFF616161), size: 24),
+                offset: const Offset(0, 45),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CreerFormationScreen(
+                          trainingId: widget.trainingId,
+                          initialData: widget.trainingData,
+                          shouldReturnToListingOnSuccess: widget.returnToListingOnEdit,
+                        ),
                       ),
+                    );
+                  } else if (value == 'delete') {
+                    _showDeleteDialog(context);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined, size: 20, color: Color(0xFF616161)),
+                        SizedBox(width: 12),
+                        Text('Modifier'),
+                      ],
                     ),
-                  );
-                } else if (value == 'delete') {
-                  _showDeleteDialog(context);
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(Icons.edit_outlined, size: 20, color: Color(0xFF616161)),
-                      SizedBox(width: 12),
-                      Text('Modifier'),
-                    ],
                   ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                      SizedBox(width: 12),
-                      Text('Supprimer', style: TextStyle(color: Colors.red)),
-                    ],
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                        SizedBox(width: 12),
+                        Text('Supprimer', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             )
           else
-            GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Notifications activées')),
-                );
-              },
-              child: Container(
-                margin: const EdgeInsets.only(right: 14),
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFE6F7EF),
-                  border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
+            Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: GestureDetector(
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Notifications activées')),
+                  );
+                },
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFE6F7EF),
+                    border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
+                  ),
+                  child: const Icon(Icons.notifications, color: Color(0xFF2A8143), size: 18),
                 ),
-                child: const Icon(Icons.notifications, color: Color(0xFF2A8143), size: 18),
               ),
             ),
         ],
@@ -613,273 +652,463 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Image Carousel
-            if (widget.images.isNotEmpty) ...[
-              ImageCarousel(images: widget.images, discount: 'Formation'),
-              const SizedBox(height: 16),
-            ],
+            // 1. Image Carousel - full width
+            if (widget.images.isNotEmpty)
+              ImageCarousel(images: widget.images),
 
-            // 2. User Detail Card
+            // 2. Main content section - no card, edge to edge
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: UserDetailCard(
-                avatar: _resolveAvatarUrl() ?? 'assets/images/Formation.png',
-                name: _resolveOwnerName(),
-                userType: _resolveUserType(),
-                onSubscribe: widget.isOwner ? null : _toggleFollow,
-                showSubscribeButton: !widget.isOwner && widget.authorData != null,
-                isFollowing: _isFollowing,
-                isLoading: _isLoadingFollow,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 3. Post Content Card (Title & Info)
-            PostContentCard(
-              tags: [
-                if (widget.trainingCategory != null && widget.trainingCategory!.isNotEmpty)
-                  PostTag(
-                    title: widget.trainingCategory!,
-                    icon: Icons.category_outlined,
-                    color: Colors.blue,
-                  ),
-                if (widget.trainingType != null && widget.trainingType!.isNotEmpty)
-                  PostTag(
-                    title: _formatEnumLabel(widget.trainingType!),
-                    icon: Icons.school_outlined,
-                    color: Colors.purple,
-                  ),
-              ],
-              title: widget.trainingTitle,
-              time: widget.timeAgo,
-              onLike: _toggleLike,
-              onShare: () {},
-            ),
-
-            const SizedBox(height: 16),
-
-            // 4. Description Section (rich text)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.description_outlined, color: Colors.grey[600], size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Description',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
+                  // Category tags
+                  if (widget.trainingCategory != null || widget.trainingType != null)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        if (widget.trainingCategory != null)
+                          _buildTag(
+                            widget.trainingCategory!,
+                            Icons.category_outlined,
+                            const Color(0xFF9C27B0),
+                          ),
+                        if (widget.trainingType != null)
+                          _buildTag(
+                            _formatEnumLabel(widget.trainingType!),
+                            Icons.school_outlined,
+                            Colors.blue,
+                          ),
+                      ],
+                    ),
+                  if (widget.trainingCategory != null || widget.trainingType != null)
+                    const SizedBox(height: 12),
+
+                  // Title - big and bold
+                  Text(
+                    widget.trainingTitle,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                      height: 1.3,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1),
+                  const SizedBox(height: 16),
+
+                  // Tags (location, duration, etc.) - GRAY TAGS
+                  // if (widget.tags.isNotEmpty) ...[
+                  //   Builder(
+                  //     builder: (context) {
+                  //       // Filter out price tags (euro icon) since we show them separately
+                  //       final nonPriceTags = widget.tags.where((tag) => tag.icon != Icons.euro).toList();
+                  //       final sortedTags = List<FormationTag>.from(nonPriceTags)
+                  //         ..sort((a, b) {
+                  //           final aIsLocation = a.icon == Icons.location_on_outlined ||
+                  //                            a.icon == Icons.location_on;
+                  //           final bIsLocation = b.icon == Icons.location_on_outlined ||
+                  //                            b.icon == Icons.location_on;
+                  //           if (aIsLocation && !bIsLocation) return -1;
+                  //           if (!aIsLocation && bIsLocation) return 1;
+                  //           return 0;
+                  //         });
+                  //       return Wrap(
+                  //         spacing: 8,
+                  //         runSpacing: 8,
+                  //         children: sortedTags.map((tag) => _buildDetailTag(tag)).toList(),
+                  //       );
+                  //     },
+                  //   ),
+                  //   const SizedBox(height: 16),
+                  // ],
+
+                  // const SizedBox(height: 16),
+                ],
+              ),
+            ),
+            // const SizedBox(height: 8),
+
+            // 3. Description - no card, full width
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Description',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
                   const SizedBox(height: 12),
                   _buildDescription(),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
 
-            const SizedBox(height: 8),
-
-            // 5. Training Info Section
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
+            // 4. Training details section - no card, full width
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Informations',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'Informations',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                  // 1. Type d'enseignement
                   if (widget.trainingStyle.isNotEmpty)
-                    _buildInfoRow(Icons.laptop_chromebook, 'Type d\'enseignement',
-                        widget.trainingStyle.map(_formatEnumLabel).join(', ')),
-                  if (widget.trainingStyle.isNotEmpty) const SizedBox(height: 10),
-                  if (widget.durationInH != null)
-                    _buildInfoRow(Icons.timer_outlined, 'Durée',
-                        '${widget.durationInH} ${_durationUnitLabel(widget.durationUnit)}'),
-                  if (widget.durationInH != null) const SizedBox(height: 10),
-                  if (!widget.dateToDefine && (widget.startDate != null || widget.endDate != null))
-                    _buildInfoRow(Icons.calendar_today_outlined, 'Dates',
-                        _formatDates(widget.startDate, widget.endDate)),
-                  if (widget.dateToDefine)
-                    _buildInfoRow(Icons.calendar_today_outlined, 'Dates', 'À définir'),
-                  if (widget.startDate != null || widget.endDate != null || widget.dateToDefine)
-                    const SizedBox(height: 10),
-                  if (widget.requiredLevels.isNotEmpty)
-                    _buildInfoRow(Icons.school, 'Prérequis', widget.requiredLevels.join(', ')),
-                  if (widget.requiredLevels.isNotEmpty) const SizedBox(height: 10),
+                    _buildDetailItem(
+                      icon: Icons.laptop_chromebook,
+                      iconColor: Colors.orange,
+                      bgColor: Colors.orange.withOpacity(0.1),
+                      label: 'Type d\'enseignement',
+                      value: widget.trainingStyle.map(_formatEnumLabel).join(', '),
+                    ),
+                  if (widget.trainingStyle.isNotEmpty)
+                    const SizedBox(height: 12),
+                  // 2. Public cible
                   if (widget.trainingPublic.isNotEmpty)
-                    _buildInfoRow(Icons.people_outline, 'Public cible',
-                        widget.trainingPublic.map(_formatEnumLabel).join(', ')),
-                  if (widget.trainingPublic.isNotEmpty) const SizedBox(height: 10),
+                    _buildDetailItem(
+                      icon: Icons.people_outline,
+                      iconColor: Colors.teal,
+                      bgColor: Colors.teal.withOpacity(0.1),
+                      label: 'Public cible',
+                      value: widget.trainingPublic.map(_formatEnumLabel).join(', '),
+                    ),
+                  if (widget.trainingPublic.isNotEmpty)
+                    const SizedBox(height: 12),
+                  // 3. Prérequis
+                  if (widget.requiredLevels.isNotEmpty)
+                    _buildDetailItem(
+                      icon: Icons.school_outlined,
+                      iconColor: Colors.purple,
+                      bgColor: Colors.purple.withOpacity(0.1),
+                      label: 'Prérequis',
+                      value: widget.requiredLevels.join(', '),
+                    ),
+                  if (widget.requiredLevels.isNotEmpty)
+                    const SizedBox(height: 12),
+                  // 4. Durée
+                  if (widget.durationInH != null)
+                    _buildDetailItem(
+                      icon: Icons.timer_outlined,
+                      iconColor: const Color(0xFF3AAE5E),
+                      bgColor: const Color(0xFFE6F7EF),
+                      label: 'Durée',
+                      value: '${widget.durationInH} ${_durationUnitLabel(widget.durationUnit)}',
+                    ),
+                  if (widget.durationInH != null)
+                    const SizedBox(height: 12),
+                  // 5. Dates
+                  if (!widget.dateToDefine && (widget.startDate != null || widget.endDate != null))
+                    _buildDetailItem(
+                      icon: Icons.calendar_today_outlined,
+                      iconColor: Colors.blue,
+                      bgColor: Colors.blue.withOpacity(0.1),
+                      label: 'Dates',
+                      value: _formatDates(widget.startDate, widget.endDate),
+                    ),
+                  if (widget.dateToDefine)
+                    _buildDetailItem(
+                      icon: Icons.calendar_today_outlined,
+                      iconColor: Colors.blue,
+                      bgColor: Colors.blue.withOpacity(0.1),
+                      label: 'Dates',
+                      value: 'À définir',
+                    ),
+                  if (widget.startDate != null || widget.endDate != null || widget.dateToDefine)
+                    const SizedBox(height: 12),
+                  // 6. Certifications
                   if (widget.certification.isNotEmpty)
-                    _buildInfoRow(Icons.verified_outlined, 'Certifications',
-                        widget.certification.join(', ')),
+                    _buildDetailItem(
+                      icon: Icons.verified_outlined,
+                      iconColor: const Color(0xFFFF9800),
+                      bgColor: const Color(0xFFFF9800).withOpacity(0.1),
+                      label: 'Certifications',
+                      value: widget.certification.join(', '),
+                    ),
+                  if (widget.certification.isNotEmpty)
+                    const SizedBox(height: 12),
+                  // 7. Financement (CPF)
+                  if (widget.trainingFunding.contains('CPF'))
+                    _buildDetailItem(
+                      icon: Icons.account_balance_wallet_outlined,
+                      iconColor: const Color(0xFF3AAE5E),
+                      bgColor: const Color(0xFFE6F7EF),
+                      label: 'Financement',
+                      value: 'Éligible CPF',
+                    ),
+                  if (widget.trainingFunding.contains('CPF'))
+                    const SizedBox(height: 12),
+                  // 8. Prix
+                  _buildDetailItem(
+                    icon: Icons.euro,
+                    iconColor: const Color(0xFF3AAE5E),
+                    bgColor: const Color(0xFFE6F7EF),
+                    label: 'Prix',
+                    value: _formatPrice(),
+                  ),
+                  const SizedBox(height: 5),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
 
-            const SizedBox(height: 8),
-
-            // 6. Tags
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: widget.tags.map((tag) => _buildTag(tag)).toList(),
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // 7. Interested / Apply section
-            if (widget.website != null && widget.website!.isNotEmpty)
+            // 4.5 Voir le programme button (if documents exist)
+            if (widget.documents.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Text(
-                  'Intéressé par cette formation?',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _downloadProgramme,
+                    icon: const Icon(Icons.download_outlined, size: 18),
+                    label: const Text('Voir le programme'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3AAE5E),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
                   ),
                 ),
               ),
+            if (widget.documents.isNotEmpty)
+              const SizedBox(height: 16),
 
-            // 8. Price section
-            if (widget.price != null || widget.priceType != null)
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                padding: const EdgeInsets.all(16),
-                decoration: _cardDecoration(),
-                child: Row(
-                  children: [
-                    const Icon(Icons.euro, color: Color(0xFF3AAE5E), size: 22),
-                    const SizedBox(width: 12),
+            // 5. Apply buttons - full width
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  if (!widget.isOwner) ...[
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _formatPrice(),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF3AAE5E),
-                            ),
+                      flex: 1,
+                      child: ElevatedButton(
+                        onPressed: _isSubscribed
+                            ? null
+                            : () => _showSubscriptionDialog(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isSubscribed ? Colors.grey : const Color(0xFFFF9800),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          if (widget.trainingFunding.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                'Financements: ${widget.trainingFunding.map(_formatEnumLabel).join(', ')}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
+                          elevation: 0,
+                        ),
+                        child: _isSubscribed
+                            ? const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.check_circle, color: Colors.white, size: 18),
+                                  SizedBox(width: 6),
+                                  Text('Inscrit', style: TextStyle(fontSize: 14)),
+                                ],
+                              )
+                            : const Text(
+                                "S'inscrire",
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
-                            ),
-                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    flex: 2,
+                    child: OutlinedButton.icon(
+                      onPressed: widget.website != null && widget.website!.isNotEmpty
+                          ? () => _openWebsite(context)
+                          : null,
+                      icon: const Icon(Icons.language, size: 18),
+                      label: const Text("Site de l'organisme"),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFFF9800),
+                        side: const BorderSide(color: Color(0xFFFF9800)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 6. Action buttons row (Favoris, Partager)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // Favoris button
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        // TODO: Implement save/favorite functionality
+                      },
+                      icon: Icon(
+                        Icons.favorite_outline,
+                        color: Colors.grey[600],
+                        size: 24,
+                      ),
+                    ),
+                    Text(
+                      'Favoris',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ],
                 ),
-              ),
+                // Partager button
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        // TODO: Implement share functionality
+                      },
+                      icon: Icon(
+                        Icons.share_outlined,
+                        color: Colors.grey[600],
+                        size: 24,
+                      ),
+                    ),
+                    Text(
+                      'Partager',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
 
+            // 7. Company/Owner section - no card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  // Avatar
+                  GestureDetector(
+                    onTap: widget.authorData != null ? () => _navigateToUserProfile(context) : null,
+                    child: CircleAvatar(
+                      radius: 24,
+                      backgroundImage: (_resolveAvatarUrl() ?? '').startsWith('http')
+                          ? NetworkImage(_resolveAvatarUrl()!)
+                          : AssetImage(_resolveAvatarUrl() ?? 'assets/images/Formation.png') as ImageProvider,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Name and user type
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: widget.authorData != null ? () => _navigateToUserProfile(context) : null,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _resolveOwnerName(),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                          Text(
+                            'Pro',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Subscribe/Follow button
+                  if (!widget.isOwner)
+                    _isLoadingFollow
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : TextButton(
+                            onPressed: _toggleFollow,
+                            style: TextButton.styleFrom(
+                              foregroundColor: _isFollowing
+                                  ? Colors.grey[600]
+                                  : const Color(0xFF3AAE5E),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                side: BorderSide(
+                                  color: _isFollowing
+                                      ? Colors.grey[400]!
+                                      : const Color(0xFF3AAE5E),
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              _isFollowing ? 'Suivis' : 'Suivre',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                ],
+              ),
+            ),
             const SizedBox(height: 8),
 
-            // 9. Apply button
+            // 8. Posted time
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSubscribed
-                      ? null
-                      : () {
-                          _showSubscriptionDialog();
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _isSubscribed ? Colors.grey : const Color(0xFFFF9800),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isSubscribed
-                      ? const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.check_circle, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text('Déjà inscrit'),
-                          ],
-                        )
-                      : const Text("S'inscrire maintenant"),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                widget.timeAgo.isNotEmpty ? widget.timeAgo : 'Posté récemment',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[500],
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
 
-            // 10. Localisation Card
+            // 9. Localisation - no card
             if (widget.showLocation && (widget.addressCity != null || widget.addressLine1 != null))
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-                padding: const EdgeInsets.all(16),
-                decoration: _cardDecoration(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          color: Color(0xFF3AAE5E),
-                          size: 22,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Localisation',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ],
+                    const Text(
+                      'Localisation',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
+                      ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.asset(
@@ -889,7 +1118,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         fit: BoxFit.cover,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     Text(
                       _buildLocationString(),
                       style: const TextStyle(
@@ -901,138 +1130,203 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   ],
                 ),
               ),
+            if (widget.showLocation && (widget.addressCity != null || widget.addressLine1 != null))
+              const SizedBox(height: 16),
 
-            const SizedBox(height: 32),
-
-            // 11. Comments section
+            // 10. Comments Card
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
+              margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(16),
-              decoration: _cardDecoration(),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.grey.withOpacity(0.15)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.comment_outlined, color: Color(0xFF616161), size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            '$_commentsCount commentaire${_commentsCount != 1 ? 's' : ''}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ],
+                      const Icon(
+                        Icons.comment_outlined,
+                        color: Color(0xFF616161),
+                        size: 20,
                       ),
-                      if (_comments.isNotEmpty)
-                        TextButton(
-                          onPressed: () => _showCommentsSheet(),
-                          child: const Text(
-                            'Voir tout',
-                            style: TextStyle(
-                              color: Color(0xFF3AAE5E),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Commentaires',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
                         ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${_comments.length}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[500],
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Divider(height: 1),
-                  const SizedBox(height: 12),
                   if (_isLoadingComments)
-                    const Center(child: CircularProgressIndicator())
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
                   else if (_comments.isEmpty)
                     Center(
-                      child: Text(
-                        'Aucun commentaire',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[500],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Text(
+                          'Aucun commentaire. Soyez le premier !',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                       ),
                     )
                   else
-                    ..._comments.take(3).map((comment) => _buildCommentItem(comment)),
+                    Column(
+                      children: _comments
+                          .take(2)
+                          .map((comment) => _buildCommentItem(comment))
+                          .toList(),
+                    ),
                   const SizedBox(height: 12),
-                  InkWell(
-                    onTap: () => _showCommentsSheet(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showCommentsSheet(),
+                      icon: const Icon(Icons.chat_outlined, size: 18),
+                      label: Text(
+                        _comments.isEmpty
+                            ? 'Ajouter un commentaire'
+                            : 'Voir tous les commentaires',
                       ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, size: 16, color: Colors.grey[600]),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Ajouter un commentaire...',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF3AAE5E),
+                        side: const BorderSide(color: Color(0xFF3AAE5E)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 32),
 
-            // 12. Similar formations header
-            const Center(
-              child: Text(
-                'Autres formations qui pourraient vous intéresser',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF616161),
+            // 11. Similar formations header
+            if (_similarTrainings.isNotEmpty || _isLoadingSimilar) ...[
+              const Center(
+                child: Text(
+                  'Autres formations similaires',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF616161),
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Container(
-                height: 1,
-                color: Colors.grey[300],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: Container(
+                  height: 1,
+                  color: Colors.grey[300],
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              // Similar formations cards
+              if (_isLoadingSimilar)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              else
+                Column(
+                  children: _similarTrainings.map((training) {
+                      final mediaFiles = training['media_files'] as List? ?? [];
+                      final images = mediaFiles
+                          .where((m) => m is Map && m['url'] != null)
+                          .map((m) {
+                            final url = m['url']?.toString() ?? '';
+                            if (url.startsWith('http')) return url;
+                            final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+                            return '$serverBase/storage/$url';
+                          })
+                          .where((url) => url.isNotEmpty)
+                          .toList();
 
-            const SizedBox(height: 30),
+                      final trainingCategory = training['training_category']?.toString();
+                      final trainingType = training['training_type']?.toString();
+                      final durationInH = training['duration_in_h'] is int
+                          ? training['duration_in_h'] as int
+                          : int.tryParse(training['duration_in_h']?.toString() ?? '');
+                      final price = training['price']?.toString();
+
+                      final tags = <FormationTag>[
+                        if (trainingCategory != null && trainingCategory.isNotEmpty)
+                          FormationTag(icon: Icons.category_outlined, text: trainingCategory),
+                        if (trainingType != null && trainingType.isNotEmpty)
+                          FormationTag(icon: Icons.school_outlined, text: trainingType),
+                        if (durationInH != null)
+                          FormationTag(icon: Icons.timer_outlined, text: '$durationInH h'),
+                        if (price != null)
+                          FormationTag(icon: Icons.euro, text: '$price €', isSpecial: true),
+                      ];
+
+                      return FormationCard(
+                        companyLogo: training['company_logo']?.toString() ?? 'assets/images/Formation.png',
+                        companyName: training['owner_name']?.toString() ?? 'Organisme',
+                        formationTitle: training['title']?.toString() ?? '',
+                        description: training['description']?.toString() ?? '',
+                        tags: tags,
+                        timeAgo: _timeAgo(training['created_at']?.toString() ?? ''),
+                        onApply: () => _navigateToSimilarTraining(training),
+                      );
+                    }).toList(),
+                  ),
+              const SizedBox(height: 30),
+            ],
           ],
         ),
       ),
     );
   }
 
-  BoxDecoration _cardDecoration() {
-    return BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.grey.withOpacity(0.15)),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
-        ),
-      ],
-    );
-  }
-
   Widget _buildDescription() {
+    // Show plain text description instead of delta
+    if (widget.description.isNotEmpty) {
+      return Text(
+        widget.description,
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.grey[600],
+          height: 1.5,
+        ),
+      );
+    }
+
+    // Fallback: try to render delta if description is empty
     if (widget.descriptionDelta != null && widget.descriptionDelta.toString().isNotEmpty) {
       try {
         dynamic rawData;
@@ -1105,7 +1399,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     }
 
     return Text(
-      widget.description,
+      'Aucune description disponible.',
       style: TextStyle(
         fontSize: 14,
         color: Colors.grey[600],
@@ -1114,70 +1408,34 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: Colors.grey[600]),
-        const SizedBox(width: 8),
-        Text(
-          '$label: ',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[600],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTag(FormationTag tag) {
-    final isSpecial = tag.isSpecial;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: isSpecial ? const Color(0xFFE6F7EF) : const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isSpecial
-              ? const Color(0xFF3AAE5E).withOpacity(0.5)
-              : Colors.grey.withOpacity(0.2),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            tag.icon,
-            size: 16,
-            color: isSpecial ? const Color(0xFF3AAE5E) : Colors.grey,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            tag.text,
-            style: TextStyle(
-              fontSize: 12,
-              color: isSpecial ? const Color(0xFF3AAE5E) : Colors.grey,
-              fontWeight: isSpecial ? FontWeight.bold : FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   String _formatEnumLabel(String value) {
-    // Convert PascalCase / camelCase to readable
+    // Teaching types (training_style) translations
+    const teachingTypes = {
+      'All': 'Tout',
+      'OnSite': 'En centre',
+      'InCompany': 'En entreprise',
+      'Remote': 'À distance',
+      'InApprenticeship': 'En alternance',
+    };
+
+    // Target publics (training_public) translations
+    const targetPublics = {
+      'AllPublic': 'Tout public',
+      'Employed': 'Salarié en poste',
+      'JobSeeker': 'Demandeurs d\'emploi',
+      'Company': 'Entreprise',
+      'Student': 'Étudiant',
+    };
+
+    // Check for exact matches first
+    if (teachingTypes.containsKey(value)) {
+      return teachingTypes[value]!;
+    }
+    if (targetPublics.containsKey(value)) {
+      return targetPublics[value]!;
+    }
+
+    // Fallback: Convert PascalCase / camelCase to readable
     return value
         .replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (m) => '${m[1]} ${m[2]}')
         .replaceAll('_', ' ')
@@ -1279,9 +1537,28 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   }
 
   String _formatDates(String? start, String? end) {
-    if (start != null && end != null) return 'Du $start au $end';
-    if (start != null) return 'À partir du $start';
-    if (end != null) return "Jusqu'au $end";
+    String formatDate(String? dateStr) {
+      if (dateStr == null || dateStr.isEmpty) return '';
+      try {
+        final date = DateTime.parse(dateStr);
+        final months = [
+          'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+          'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+        ];
+        return '${date.day} ${months[date.month - 1]} ${date.year}';
+      } catch (e) {
+        return dateStr;
+      }
+    }
+
+    final formattedStart = formatDate(start);
+    final formattedEnd = formatDate(end);
+
+    if (formattedStart.isNotEmpty && formattedEnd.isNotEmpty) {
+      return 'Du $formattedStart au $formattedEnd';
+    }
+    if (formattedStart.isNotEmpty) return 'À partir du $formattedStart';
+    if (formattedEnd.isNotEmpty) return "Jusqu'au $formattedEnd";
     return 'À définir';
   }
 
@@ -1308,12 +1585,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   String _tempoLabel(String? t) {
     switch (t) {
-      case 'heure': return '/ heure';
-      case 'jour': return '/ jour';
-      case 'semaine': return '/ semaine';
-      case 'mois': return '/ mois';
-      case 'an': return '/ an';
-      case 'all': return '';
+      case 'heure': return 'par heure(s)';
+      case 'jour': return 'par jour(s)';
+      case 'semaine': return 'par semaine(s)';
+      case 'mois': return 'par mois(s)';
+      case 'an': return 'par an(s)';
+      case 'all': return 'pour toute la formation';
       default: return '';
     }
   }
@@ -1588,6 +1865,372 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     final uri = Uri.parse(url.startsWith('http') ? url : 'https://$url');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  // Helper method for colored category tags (like job detail)
+  Widget _buildTag(String text, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method for gray detail tags (like job detail)
+  Widget _buildDetailTag(FormationTag tag) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: tag.isSpecial ? const Color(0xFFE6F7EF) : Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: tag.isSpecial ? const Color(0xFF3AAE5E).withOpacity(0.3) : Colors.grey[300]!,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            tag.icon,
+            size: 14,
+            color: tag.isSpecial ? const Color(0xFF3AAE5E) : Colors.grey[600],
+          ),
+          const SizedBox(width: 6),
+          Text(
+            tag.text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: tag.isSpecial ? FontWeight.w600 : FontWeight.w500,
+              color: tag.isSpecial ? const Color(0xFF3AAE5E) : Colors.grey[700],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Navigate to similar training detail
+  Future<void> _navigateToSimilarTraining(Map<String, dynamic> training) async {
+    final trainingId = training['id']?.toString();
+    if (trainingId == null || trainingId.isEmpty) return;
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/trainings/$trainingId'),
+        headers: {
+          'Authorization': 'Bearer ${await TokenStorage.getAccessToken()}',
+          'Accept': 'application/json',
+        },
+      );
+
+      Navigator.pop(context); // Dismiss loading
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final trainingData = data['data'] as Map<String, dynamic>?;
+        if (trainingData == null) return;
+
+        // Extract training details
+        final title = trainingData['title']?.toString() ?? '';
+        final description = trainingData['description']?.toString() ?? '';
+        final descriptionDelta = trainingData['description_delta'];
+        final companyName = trainingData['company_name']?.toString() ?? 'Organisme';
+        final website = trainingData['website']?.toString();
+        final trainingType = trainingData['training_type']?.toString();
+        final trainingCategory = trainingData['training_category']?.toString();
+        final trainingSubCategory = trainingData['training_sub_category']?.toString();
+        final trainingStyle = (trainingData['training_style'] as List?)?.map((e) => e.toString()).toList() ?? [];
+        final trainingPublic = (trainingData['training_public'] as List?)?.map((e) => e.toString()).toList() ?? [];
+        final requiredLevels = (trainingData['required_levels'] as List?)?.map((e) => e.toString()).toList() ?? [];
+        final price = trainingData['price']?.toString();
+        final priceType = trainingData['price_type']?.toString();
+        final publicType = trainingData['public_type']?.toString();
+        final tempo = trainingData['tempo']?.toString();
+        final trainingFunding = (trainingData['training_funding'] as List?)?.map((e) => e.toString()).toList() ?? [];
+        final durationInH = trainingData['duration_in_h'] is int ? trainingData['duration_in_h'] as int : int.tryParse(trainingData['duration_in_h']?.toString() ?? '');
+        final durationUnit = trainingData['duration_unit']?.toString();
+        final startDate = trainingData['start_date']?.toString();
+        final endDate = trainingData['end_date']?.toString();
+        final dateToDefine = trainingData['date_to_define'] == true;
+        final addressCity = trainingData['address_city']?.toString();
+        final addressZipcode = trainingData['address_zipcode']?.toString();
+        final addressLine1 = trainingData['address_line1']?.toString();
+        final showLocation = trainingData['show_location'] == true;
+        final certification = (trainingData['certification'] as List?)?.map((e) => e.toString()).toList() ?? [];
+        final mediaFiles = trainingData['media_files'] as List? ?? trainingData['media'] as List? ?? [];
+        final documentFiles = trainingData['document_files'] as List? ?? trainingData['documents'] as List? ?? [];
+        final createdAt = trainingData['created_at']?.toString();
+        final userData = trainingData['user'] as Map<String, dynamic>?;
+
+        // Build images
+        final images = mediaFiles
+            .where((m) => m is Map && m['url'] != null)
+            .map((m) {
+              final url = m['url']?.toString() ?? '';
+              if (url.startsWith('http')) return url;
+              final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+              return '$serverBase/storage/$url';
+            })
+            .where((url) => url.isNotEmpty)
+            .toList();
+
+        // Build tags
+        final tags = <FormationTag>[
+          if (trainingCategory != null && trainingCategory.isNotEmpty)
+            FormationTag(icon: Icons.category_outlined, text: trainingCategory),
+          if (trainingSubCategory != null && trainingSubCategory.isNotEmpty)
+            FormationTag(icon: Icons.subdirectory_arrow_right, text: trainingSubCategory),
+          if (trainingType != null && trainingType.isNotEmpty)
+            FormationTag(icon: Icons.school_outlined, text: trainingType),
+          if (durationInH != null)
+            FormationTag(icon: Icons.timer_outlined, text: '$durationInH h'),
+          if (price != null)
+            FormationTag(icon: Icons.euro, text: '$price €', isSpecial: true),
+        ];
+
+        // Navigate to detail screen
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TrainingDetailScreen(
+              images: images,
+              companyLogo: 'assets/images/Formation.png',
+              companyName: companyName,
+              trainingTitle: title,
+              description: description,
+              descriptionDelta: descriptionDelta,
+              tags: tags,
+              timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
+              website: website,
+              trainingType: trainingType,
+              trainingCategory: trainingCategory,
+              trainingSubCategory: trainingSubCategory,
+              trainingStyle: trainingStyle,
+              trainingPublic: trainingPublic,
+              requiredLevels: requiredLevels,
+              price: price,
+              priceType: priceType,
+              publicType: publicType,
+              tempo: tempo,
+              trainingFunding: trainingFunding,
+              durationInH: durationInH,
+              durationUnit: durationUnit,
+              startDate: startDate,
+              endDate: endDate,
+              dateToDefine: dateToDefine,
+              addressCity: addressCity,
+              addressZipcode: addressZipcode,
+              addressLine1: addressLine1,
+              showLocation: showLocation,
+              certification: certification,
+              documents: documentFiles.whereType<Map<String, dynamic>>().toList(),
+              isOwner: false,
+              trainingId: trainingId,
+              trainingData: trainingData,
+              returnToListingOnEdit: false,
+              authorData: userData,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      debugPrint('Error navigating to similar training: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    }
+  }
+
+  String _timeAgo(String isoDate) {
+    try {
+      final created = DateTime.parse(isoDate).toLocal();
+      final diff = DateTime.now().difference(created);
+      if (diff.inMinutes < 1) return "à l'instant";
+      if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes} min';
+      if (diff.inHours < 24) return 'il y a ${diff.inHours} h';
+      if (diff.inDays < 7) return 'il y a ${diff.inDays} j';
+      final weeks = (diff.inDays / 7).floor();
+      if (weeks < 4) return 'il y a $weeks sem';
+      final months = (diff.inDays / 30).floor();
+      return 'il y a $months mois';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  // Helper method for detail items (like job detail)
+  Widget _buildDetailItem({
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 18, color: iconColor),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[800],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Open website URL
+  void _openWebsite(BuildContext context) {
+    if (widget.website != null && widget.website!.isNotEmpty) {
+      _launchUrl(widget.website!);
+    }
+  }
+
+  // Navigate to user profile
+  void _navigateToUserProfile(BuildContext context) {
+    if (widget.authorData != null && widget.authorData!['id'] != null) {
+      // TODO: Navigate to PublicProfileScreen if available
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(
+      //     builder: (_) => PublicProfileScreen(userId: widget.authorData!['id'].toString()),
+      //   ),
+      // );
+    }
+  }
+
+  // Download programme document
+  Future<void> _downloadProgramme() async {
+    if (widget.documents.isEmpty) return;
+
+    final document = widget.documents.first;
+    final String? url = document['url']?.toString();
+    final String? fileName = document['file_name']?.toString() ?? 'programme.pdf';
+
+    if (url == null || url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Document non disponible')),
+      );
+      return;
+    }
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Téléchargement en cours...')),
+      );
+
+      // Get directory for download
+      // On Android 10+, we use app's external storage directory to avoid scoped storage issues
+      Directory? downloadsDir;
+      if (Platform.isAndroid) {
+        downloadsDir = await getExternalStorageDirectory();
+        if (downloadsDir == null) {
+          throw Exception('Impossible d\'accéder au stockage externe');
+        }
+        // Create a Downloads subfolder in app's external storage
+        downloadsDir = Directory('${downloadsDir.path}/Download');
+        if (!downloadsDir.existsSync()) {
+          downloadsDir.createSync(recursive: true);
+        }
+      } else {
+        downloadsDir = await getDownloadsDirectory();
+        if (downloadsDir == null) {
+          throw Exception('Impossible d\'accéder au dossier Downloads');
+        }
+      }
+
+      // Create unique filename
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final String safeFileName = fileName?.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_') ?? 'programme.pdf';
+      final String finalFileName = '${timestamp}_$safeFileName';
+      final String savePath = '${downloadsDir.path}/$finalFileName';
+
+      // Download file using Dio
+      final dio = Dio();
+      final token = await TokenStorage.getAccessToken();
+      
+      await dio.download(
+        url,
+        savePath,
+        options: Options(
+          headers: token != null ? {'Authorization': 'Bearer $token'} : null,
+        ),
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            final progress = (received / total * 100).toStringAsFixed(0);
+            debugPrint('Download progress: $progress%');
+          }
+        },
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Document téléchargé: $finalFileName'),
+          backgroundColor: const Color(0xFF3AAE5E),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error downloading document: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors du téléchargement: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 }
