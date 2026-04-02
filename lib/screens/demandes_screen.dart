@@ -392,7 +392,11 @@ class _DemandesScreenState extends State<DemandesScreen> {
     final description = _stripHtml(demande['description']?.toString() ?? '');
     final nature = demande['nature']?.toString() ?? '';
     final urgent = demande['urgent'] == true;
-    final nationwide = demande['nationwide'] == true;
+    final nationwideRaw = demande['nationwide'];
+    final nationwide = nationwideRaw == true ||
+        nationwideRaw == 1 ||
+        nationwideRaw?.toString() == '1' ||
+        nationwideRaw?.toString().toLowerCase() == 'true';
     final locationRaw =
         demande['location']?.toString() ?? demande['city']?.toString() ?? '';
     final location = nationwide
@@ -463,7 +467,18 @@ class _DemandesScreenState extends State<DemandesScreen> {
       }
     }
 
-    final categoryLabel = nature.isNotEmpty ? nature : 'Demande';
+    const natureLabels = {
+      'emploi': 'Recherche d\'emploi',
+      'service': 'Recherche de service',
+      'logement': 'Recherche de logement',
+      'produit': 'Recherche de produit',
+      'formation': 'Recherche de formation',
+      'collaboration': 'Collaboration',
+      'autre': 'Autre demande',
+    };
+    final categoryLabel = nature.isNotEmpty
+        ? (natureLabels[nature.toLowerCase()] ?? nature)
+        : 'Demande';
 
     return DemandeCard(
       profileImage: profileImage,

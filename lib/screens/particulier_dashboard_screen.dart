@@ -1866,7 +1866,15 @@ class _ParticulierDashboardScreenState
     final categoryLabel = _getNatureLabel(nature);
 
     // Location
-    final location = demande['location']?.toString() ?? 'Non spécifié';
+    final nationwideRaw = demande['nationwide'];
+    final nationwide = nationwideRaw == true ||
+        nationwideRaw == 1 ||
+        nationwideRaw?.toString() == '1' ||
+        nationwideRaw?.toString().toLowerCase() == 'true';
+    final locationRaw = demande['location']?.toString() ?? demande['city']?.toString() ?? '';
+    final location = nationwide
+        ? 'Toute la France'
+        : (locationRaw.isNotEmpty ? locationRaw : 'Non spécifié');
 
     // Media
     final postImage = _extractMediaUrl(demande);
@@ -2013,19 +2021,26 @@ class _ParticulierDashboardScreenState
   }
 
   String _getNatureLabel(String nature) {
-    switch (nature) {
-      case 'SearchJob':
-        return 'Recherche Emploi';
-      case 'Internship':
+    switch (nature.toLowerCase()) {
+      case 'searchjob':
+      case 'emploi':
+        return 'Recherche d\'emploi';
+      case 'internship':
+      case 'stage':
         return 'Stage';
-      case 'Training':
-        return 'Formation';
-      case 'RealEstate':
-        return 'Immobilier';
-      case 'Service':
-        return 'Service';
-      case 'Product':
-        return 'Produit';
+      case 'training':
+      case 'formation':
+        return 'Recherche de formation';
+      case 'realestate':
+      case 'logement':
+        return 'Recherche de logement';
+      case 'service':
+        return 'Recherche de service';
+      case 'product':
+      case 'produit':
+        return 'Recherche de produit';
+      case 'collaboration':
+        return 'Collaboration';
       default:
         return nature;
     }
@@ -2539,58 +2554,6 @@ class _ParticulierDashboardScreenState
             ),
           ),
         ],
-        const Spacer(),
-        // Owner info - small avatar and name on the right
-        if (authorData != null)
-          GestureDetector(
-            onTap: () {
-              // Navigate to user profile
-              final userId = authorData['id']?.toString();
-              if (userId != null) {
-                // TODO: Navigate to user profile
-              }
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Owner name
-                Text(
-                  authorData['particulier_profile']?['pseudo']?.toString() ??
-                      authorData['pro_profile']?['company_name']?.toString() ??
-                      authorData['name']?.toString() ??
-                      'Utilisateur',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(width: 6),
-                // Owner avatar
-                CircleAvatar(
-                  radius: 12,
-                  backgroundImage: () {
-                    final rawAvatarUrl = authorData['particulier_profile']?['avatar_url']?.toString() ??
-                        authorData['pro_profile']?['avatar_url']?.toString() ??
-                        authorData['pro_profile']?['logo_url']?.toString() ??
-                        authorData['avatar_url']?.toString() ??
-                        authorData['avatar']?.toString() ??
-                        '';
-                    final avatarUrl = _buildStorageUrl(rawAvatarUrl);
-                    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-                      if (avatarUrl.startsWith('http')) {
-                        return NetworkImage(avatarUrl);
-                      }
-                      return AssetImage(avatarUrl) as ImageProvider;
-                    }
-                    return const AssetImage('assets/images/dashboard_particulier/Ellipse 10.png') as ImageProvider;
-                  }(),
-                ),
-              ],
-            ),
-          ),
       ],
     );
   }
