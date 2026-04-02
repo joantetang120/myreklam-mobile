@@ -13,6 +13,8 @@ class UserSession {
   bool _isEmailVerified = false;
   bool _profileCompleted = false;
   Map<String, dynamic>? _subscription;
+  String? _parrainageCode;
+  int _mys = 0;
 
   String get userType => _userType;
   String? get id => _id;
@@ -23,6 +25,8 @@ class UserSession {
   String? get subscriptionPlan => _subscription?['plan'];
   String? get subscriptionStatus => _subscription?['status'];
   bool get hasActiveSubscription => _subscription != null && _subscription!.isNotEmpty;
+  String? get parrainageCode => _parrainageCode;
+  int get mys => _mys;
 
   void setUserType(String type) {
     _userType = type;
@@ -38,6 +42,8 @@ class UserSession {
     bool? isEmailVerified,
     bool? profileCompleted,
     Map<String, dynamic>? subscription,
+    String? parrainageCode,
+    int? mys,
   }) {
     if (id != null) _id = id;
     if (email != null) _email = email;
@@ -45,6 +51,16 @@ class UserSession {
     if (isEmailVerified != null) _isEmailVerified = isEmailVerified;
     if (profileCompleted != null) _profileCompleted = profileCompleted;
     _subscription = subscription;
+    if (parrainageCode != null) _parrainageCode = parrainageCode;
+    if (mys != null) _mys = mys;
+  }
+
+  void updateMys(int mys) {
+    _mys = mys;
+  }
+
+  void updateParrainageCode(String? code) {
+    _parrainageCode = code;
   }
 
   void clear() {
@@ -54,6 +70,8 @@ class UserSession {
     _isEmailVerified = false;
     _profileCompleted = false;
     _subscription = null;
+    _parrainageCode = null;
+    _mys = 0;
   }
 
   bool get needsAccountType => _userType.isEmpty || _userType == 'particulier' && _id != null && !_profileCompleted;

@@ -7,6 +7,7 @@ import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/utils/user_session.dart';
 import 'dart:convert';
 
 class BonsPlansScreen extends StatefulWidget {
@@ -386,7 +387,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                     ),
                     SizedBox(width: 4),
                     Text(
-                      '145',
+                      UserSession().mys.toString(),
                       style: TextStyle(
                         color: Color(0xFFFFD700),
                         fontSize: 10,

@@ -398,7 +398,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                   ),
                                   SizedBox(width: 4),
                                   Text(
-                                    '145',
+                                    UserSession().mys.toString(),
                                     style: TextStyle(
                                       color: Color(0xFFFFD700),
                                       fontSize: 10,
@@ -608,7 +608,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       backgroundColor: const Color(0xFFFFE0B2),
                       title: 'Mes annonces',
                       description:
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                          'Gérez vos annonces actives et suivez les performances',
                       onTap: () {
                         Navigator.push(
                           context,
@@ -623,7 +623,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       backgroundColor: const Color(0xFFE6F7EF),
                       title: 'Mes posts',
                       description:
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                          'Consultez et gérez vos publications professionnelles',
                       color: const Color(0xFF04BC7B).withOpacity(0.15),
                       onTap: () {
                         Navigator.push(
@@ -639,7 +639,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       backgroundColor: const Color(0xFFE6F7EF),
                       title: 'Mes recherches sauvegardées',
                       description:
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                          'Retrouvez vos recherches et filtres enregistrés',
                       color: const Color(0xFF04BC7B).withOpacity(0.15),
                       onTap: () {
                         Navigator.push(
@@ -655,7 +655,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       backgroundColor: const Color(0xFFFFE0B2),
                       title: 'Favoris',
                       description:
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                          'Vos contenus préférés et opportunités sauvegardées',
                       onTap: () {
                         Navigator.push(
                           context,
@@ -670,7 +670,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       backgroundColor: const Color(0xFFFFE0B2),
                       title: 'Espace professionnel',
                       description:
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                          'Accédez à vos outils et services dédiés entreprise',
                       onTap: () {
                         Navigator.push(
                           context,
@@ -685,7 +685,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       backgroundColor: const Color(0xFFFFE0B2),
                       title: 'Paramètre du compte',
                       description:
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                          'Configurez vos préférences et sécurité du compte',
                       color: const Color(0xFF04BC7B).withOpacity(0.15),
                       onTap: () {
                         Navigator.push(
@@ -701,7 +701,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       backgroundColor: const Color(0xFFFFE0B2),
                       title: 'Recompenses ambassadeurs',
                       description:
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                          'Consultez vos points et avantages fidélité pro',
                       color: const Color(0xFF04BC7B).withOpacity(0.15),
                       onTap: () {
                         Navigator.push(
@@ -717,7 +717,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       backgroundColor: const Color(0xFFFFE0B2),
                       title: 'Parrainage',
                       description:
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                          'Invitez des entreprises et gagnez des récompenses',
                       onTap: () {
                         Navigator.push(
                           context,
@@ -732,7 +732,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       backgroundColor: const Color(0xFFFFE0B2),
                       title: 'Gérer Abonnement',
                       description:
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                          'Gérez votre forfait et les options de facturation',
                       onTap: () {
                         Navigator.push(
                           context,
@@ -747,7 +747,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       backgroundColor: const Color(0xFFFFE0B2),
                       title: 'Profil Entreprise',
                       description:
-                          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                          'Modifiez les informations et la présentation de votre société',
                       color: const Color(0xFF04BC7B).withOpacity(0.15),
                       onTap: () {
                         Navigator.push(

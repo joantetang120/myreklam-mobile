@@ -9,6 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 
@@ -1008,6 +1011,38 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           if (!mounted) return;
           setState(() => _isSubmitting = false);
           _showSuccessDialog();
+
+          // Award My's for creating a demande (only on create, not edit)
+          if (!_isEditMode) {
+            try {
+              final mysResponse = await MysEarningService().awardMys(
+                actionType: 'demande',
+                referenceId: demandeId,
+              );
+              
+              if (mysResponse['success'] == true && mounted) {
+                // Update UserSession with new balance
+                final newBalance = mysResponse['earning']?['new_balance'];
+                if (newBalance != null) {
+                  UserSession().updateMys(newBalance);
+                }
+                
+                // Show reward modal AFTER dialog closes - use microtask to avoid conflict
+                Future.microtask(() async {
+                  if (mounted) {
+                    await MysRewardModal.show(
+                      context,
+                      amount: mysResponse['earning']?['amount'] ?? 2,
+                      actionType: 'demande',
+                    );
+                  }
+                });
+              }
+            } catch (e) {
+              debugPrint("Error awarding My's for demande: $e");
+              // Don't block the user if awarding fails
+            }
+          }
           return;
         }
       }

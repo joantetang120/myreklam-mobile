@@ -7,7 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/token_storage.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/config/api_config.dart';
 
 class CreerOffreEmploiScreen extends StatefulWidget {
@@ -1152,7 +1155,44 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       // Clear saved progress after successful submission
       await _clearSavedProgress();
       
+      // Get job offer ID for My's awarding
+      final jobOfferId = _isEditMode
+          ? widget.jobOfferId
+          : (response['data']?['id'] ?? response['id'] ?? response['job_offer']?['id'])?.toString();
+      
       _showSuccessDialog();
+
+      // Award My's for creating a job offer (only on create, not edit)
+      if (!_isEditMode && jobOfferId != null) {
+        try {
+          final mysResponse = await MysEarningService().awardMys(
+            actionType: 'job_offer',
+            referenceId: jobOfferId,
+          );
+          
+          if (mysResponse['success'] == true && mounted) {
+            // Update UserSession with new balance
+            final newBalance = mysResponse['earning']?['new_balance'];
+            if (newBalance != null) {
+              UserSession().updateMys(newBalance);
+            }
+            
+            // Show reward modal AFTER dialog closes - use microtask to avoid conflict
+            Future.microtask(() async {
+              if (mounted) {
+                await MysRewardModal.show(
+                  context,
+                  amount: mysResponse['earning']?['amount'] ?? 2,
+                  actionType: 'job_offer',
+                );
+              }
+            });
+          }
+        } catch (e) {
+          debugPrint("Error awarding My's for job offer: $e");
+          // Don't block the user if awarding fails
+        }
+      }
     } on ApiException catch (e) {
       debugPrint('ApiException submitting job offer: ${e.message}');
       debugPrint('Validation errors: ${e.errors}');

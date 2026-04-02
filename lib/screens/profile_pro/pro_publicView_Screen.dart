@@ -57,7 +57,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       name: 'Bessie Cooper',
       timeAgo: 'Il y a 2 heures',
       reviewText:
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+          'Excellent service et très professionnel. Je recommande vivement cette entreprise pour la qualité de leurs prestations et leur réactivité.',
       rating: 5,
     ),
   ];

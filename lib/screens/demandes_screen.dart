@@ -7,6 +7,7 @@ import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/demande_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class DemandesScreen extends StatefulWidget {
   const DemandesScreen({super.key});
@@ -262,7 +263,7 @@ class _DemandesScreenState extends State<DemandesScreen> {
                     ),
                     SizedBox(width: 4),
                     Text(
-                      '145',
+                      UserSession().mys.toString(),
                       style: TextStyle(
                         color: Color(0xFFFFD700),
                         fontSize: 10,
