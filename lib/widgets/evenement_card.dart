@@ -18,6 +18,11 @@ class EvenementCard extends StatelessWidget {
   final Widget? reactionBar;
   final VoidCallback? onAvatarTap;
 
+  final List<String>? tags;
+
+  final bool isFavorite;
+  final VoidCallback? onFavoriteToggle;
+
   const EvenementCard({
     super.key,
     required this.profileImage,
@@ -36,6 +41,9 @@ class EvenementCard extends StatelessWidget {
     this.onTapCTA,
     this.reactionBar,
     this.onAvatarTap,
+    this.tags,
+    this.isFavorite = false,
+    this.onFavoriteToggle,
   });
 
   @override
@@ -116,12 +124,115 @@ class EvenementCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 15),
-          // Event Title
+          // Event Image (without badge)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(15),
+            child: eventImage.startsWith('http://') || eventImage.startsWith('https://')
+                ? Image.network(
+                    eventImage,
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        width: double.infinity,
+                        height: 200,
+                        color: Colors.grey[200],
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                                : null,
+                          ),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: double.infinity,
+                        height: 200,
+                        color: Colors.grey[200],
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                            SizedBox(height: 8),
+                            Text(
+                              'Image non disponible',
+                              style: TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  )
+                : Image.asset(
+                    eventImage,
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: double.infinity,
+                        height: 200,
+                        color: Colors.grey[200],
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                            SizedBox(height: 8),
+                            Text(
+                              'Image par défaut',
+                              style: TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          const SizedBox(height: 12),
+          // Tags (sub_category and format_type)
+          Builder(builder: (context) {
+            final tagsList = tags;
+            if (tagsList == null || tagsList.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: tagsList.map((tag) => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE3F2FD),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFF2196F3).withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      tag,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF1976D2),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  )).toList(),
+                ),
+                const SizedBox(height: 8),
+              ],
+            );
+          }),
+          // Event Title (moved below image)
           RichText(
             text: TextSpan(
               style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF757575),
+                fontSize: 16,
+                color: Colors.black,
                 fontWeight: FontWeight.bold,
                 height: 1.5,
               ),
@@ -137,136 +248,42 @@ class EvenementCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 15),
-          // Event Image with Badge
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: eventImage.startsWith('http://') || eventImage.startsWith('https://')
-                    ? Image.network(
-                        eventImage,
-                        width: double.infinity,
-                        height: 200,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            width: double.infinity,
-                            height: 200,
-                            color: Colors.grey[200],
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
+          const SizedBox(height: 12),
+          // Categories (hide if only 'Général')
+          if (categories.isNotEmpty && !(categories.length == 1 && categories.first == 'Général'))
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: categories
+                    .where((cat) => cat != 'Général')
+                    .map((cat) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.local_offer_outlined,
+                                  size: 14, color: Colors.grey),
+                              const SizedBox(width: 4),
+                              Text(
+                                cat,
+                                style: const TextStyle(
+                                    fontSize: 11, color: Colors.grey),
                               ),
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: double.infinity,
-                            height: 200,
-                            color: Colors.grey[200],
-                            child: const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.broken_image, size: 50, color: Colors.grey),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Image non disponible',
-                                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                              if (categories.indexOf(cat) <
+                                  categories.length - 1)
+                                const Padding(
+                                  padding: EdgeInsets.only(left: 8),
+                                  child: Text('|',
+                                      style: TextStyle(color: Colors.grey)),
                                 ),
-                              ],
-                            ),
-                          );
-                        },
-                      )
-                    : Image.asset(
-                        eventImage,
-                        width: double.infinity,
-                        height: 200,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: double.infinity,
-                            height: 200,
-                            color: Colors.grey[200],
-                            child: const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Image par défaut',
-                                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                            ],
+                          ),
+                        ))
+                    .toList(),
               ),
-              if (badge != null)
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF9800),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      badge!,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Categories
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: categories
-                  .map((cat) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.local_offer_outlined,
-                                size: 14, color: Colors.grey),
-                            const SizedBox(width: 4),
-                            Text(
-                              cat,
-                              style: const TextStyle(
-                                  fontSize: 11, color: Colors.grey),
-                            ),
-                            if (categories.indexOf(cat) <
-                                categories.length - 1)
-                              const Padding(
-                                padding: EdgeInsets.only(left: 8),
-                                child: Text('|',
-                                    style: TextStyle(color: Colors.grey)),
-                              ),
-                          ],
-                        ),
-                      ))
-                  .toList(),
             ),
-          ),
-          const SizedBox(height: 12),
+          if (categories.isNotEmpty && !(categories.length == 1 && categories.first == 'Général'))
+            const SizedBox(height: 12),
           const Divider(height: 1),
           const SizedBox(height: 12),
           // Date tag
@@ -296,7 +313,7 @@ class EvenementCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          // Location and time
+          // Location only (removed timeAgo)
           Row(
             children: [
               const Icon(Icons.location_on_outlined,
@@ -306,99 +323,135 @@ class EvenementCard extends StatelessWidget {
                 location,
                 style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
-              const SizedBox(width: 12),
-              const Icon(Icons.access_time, size: 16, color: Colors.grey),
-              const SizedBox(width: 4),
-              Text(
-                timeAgo,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
             ],
+          ),
+          const SizedBox(height: 8),
+          // Price (moved up to date/location section)
+          Text(
+            price,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFFFF9800),
+            ),
           ),
           const SizedBox(height: 12),
           const Divider(height: 1),
-          const SizedBox(height: 16),
-          // Price and CTA
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                price,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF9800),
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: onTapCTA,
-                icon: const Icon(Icons.event_outlined, size: 18),
-                label: const Text("Voir l'évènement"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF9800),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 12),
+          // Reaction bar (if exists)
           if (reactionBar != null) ...[
-            const SizedBox(height: 20),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
             reactionBar!,
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             const Divider(height: 1),
+            const SizedBox(height: 12),
           ],
+          // CTA Button (full width)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onTapCTA,
+              icon: const Icon(Icons.event_outlined, size: 18),
+              label: const Text("Voir l'évènement"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF9800),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+          // Time ago below reaction section
+          Padding(
+            padding: const EdgeInsets.only(top: 16, left: 4, right: 4),
+            child: Row(
+              children: [
+                const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  timeAgo,
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 10),
         ],
       ),
           Positioned(
             top: 0,
             right: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [const Color(0xFF2196F3), const Color(0xFF2196F3).withOpacity(0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(20),
-                  bottomLeft: Radius.circular(12),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2196F3).withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.event_outlined, size: 14, color: Colors.white),
-                  SizedBox(width: 4),
-                  Text(
-                    'Événement',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Favorites button
+                GestureDetector(
+                  onTap: onFavoriteToggle,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      size: 18,
+                      color: isFavorite ? Colors.red : Colors.grey[600],
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                // Événement tag
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [const Color(0xFF2196F3), const Color(0xFF2196F3).withOpacity(0.8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(20),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF2196F3).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.event_outlined, size: 14, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        'Événement',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],

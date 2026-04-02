@@ -427,127 +427,165 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
           children: [
             if (widget.images.isNotEmpty) ...[
               ImageCarousel(images: widget.images, discount: widget.discount),
-              const SizedBox(height: 16),
             ],
+            // Expiration banner
+            if (widget.validityType != 'permanent' && widget.validUntil != null && widget.validUntil!.isNotEmpty)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color:  Color.fromARGB(136, 231, 28, 28),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.access_time,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _formatExpirationDate(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            // Main content section - no card, edge to edge
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 5),
-              child: UserDetailCard(
-                avatar: widget.avatar,
-                name: widget.name,
-                userType: widget.userType,
-                onSubscribe: widget.isOwner ? null : _toggleFollow,
-                onTap: widget.authorData != null ? _navigateToUserProfile : null,
-                showSubscribeButton: !widget.isOwner,
-                isFollowing: _isFollowing,
-                isLoading: _isLoadingFollow,
-              ),
-            ),
-            const SizedBox(height: 16),
-            PostContentCard(
-              tags: widget.tags.isEmpty
-                  ? [
-                      PostTag(
-                        title: 'High-Tech',
-                        icon: Icons.local_offer_outlined,
-                        color: Colors.orange,
-                      ),
-                      PostTag(
-                        title: 'Photographie',
-                        icon: Icons.grid_view_outlined,
-                        color: Colors.grey,
-                      ),
-                      PostTag(
-                        title: 'Bons plans',
-                        icon: Icons.check_circle_outline,
-                        color: Colors.green,
-                      ),
-                    ]
-                  : widget.tags,
-              title: widget.title,
-              time: widget.time,
-              onLike: () {},
-              onShare: () {},
-            ),
-            const SizedBox(height: 16),
-            // Offer Details Card
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withOpacity(0.15)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
+                  // Tags section
+                  if (widget.bonPlanData != null)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        // Category tag
+                        if (widget.bonPlanData!['category'] != null)
+                          _buildTag(
+                            widget.bonPlanData!['category'] is Map
+                                ? widget.bonPlanData!['category']['name']?.toString() ?? ''
+                                : widget.bonPlanData!['category']?.toString() ?? '',
+                            Icons.local_offer_outlined,
+                            const Color(0xFF3AAE5E),
+                          ),
+                        // Subcategory tag
+                        if (widget.bonPlanData!['sub_category'] != null)
+                          _buildTag(
+                            widget.bonPlanData!['sub_category'] is Map
+                                ? widget.bonPlanData!['sub_category']['name']?.toString() ?? ''
+                                : widget.bonPlanData!['sub_category']?.toString() ?? '',
+                            Icons.subdirectory_arrow_right,
+                            Colors.orange,
+                          ),
+                        // Type tag
+                        if (widget.bonPlanData!['type'] != null && widget.bonPlanData!['type'].toString().isNotEmpty)
+                          _buildTag(
+                            widget.bonPlanData!['type']?.toString() ?? '',
+                            Icons.label_outline,
+                            Colors.blue,
+                          ),
+                      ],
+                    ),
+                  if (widget.bonPlanData != null)
+                    const SizedBox(height: 12),
+                  // Title - big and bold
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Price section
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Current price in green
+                      Text(
+                        widget.price ?? 'Gratuit',
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2E9B5B),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Original price crossed out
+                      if (widget.originalPrice != null && widget.originalPrice!.isNotEmpty)
+                        Text(
+                          widget.originalPrice!,
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[500],
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      const Spacer(),
+                      // Discount badge
+                      if (widget.discount != null && widget.discount!.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2E9B5B),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            widget.discount!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Availability info - removed "Gratuit depuis France"
                   Row(
                     children: [
                       Icon(
-                        Icons.info_outline,
+                        Icons.local_shipping_outlined,
+                        size: 16,
                         color: Colors.grey[600],
-                        size: 20,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
                       Text(
-                        'Details du bons plans',
+                        'Dispo. chez ',
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      Text(
+                        widget.availability.isNotEmpty && widget.availability != 'Non spécifié'
+                            ? widget.availability
+                            : 'Moto Axxe',
+                        style: const TextStyle(
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
+                          color: Color(0xFF1A1A1A),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1, thickness: 0.5),
-                  // Single Column Layout for Details
-                  _buildDetailItem(
-                    icon: Icons.euro_symbol,
-                    iconColor: Colors.orange,
-                    bgColor: Colors.orange.withOpacity(0.1),
-                    label: 'Prix',
-                    value: widget.price ?? 'Gratuit',
-                    originalValue: widget.originalPrice,
-                  ),
                   const SizedBox(height: 16),
-                  _buildDetailItem(
-                    icon: Icons.public,
-                    iconColor: const Color(0xFF3AAE5E),
-                    bgColor: const Color(0xFFE6F7EF),
-                    label: 'Disponibilité',
-                    value: widget.availability,
-                    prefixValue: 'Chez ',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDetailItem(
-                    icon: Icons.calendar_month_outlined,
-                    iconColor: Colors.lightBlue,
-                    bgColor: Colors.lightBlue.withOpacity(0.1),
-                    label: 'Validité',
-                    value: _formatValidity(),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDetailItem(
-                    icon: Icons.directions_bike,
-                    iconColor: Colors.purpleAccent,
-                    bgColor: Colors.purpleAccent.withOpacity(0.05),
-                    label: 'Livraison',
-                    value: widget.deliveryInfo,
-                  ),
-                  const SizedBox(height: 24),
-                  const Divider(height: 1),
-                  const SizedBox(height: 20),
-
-                  // Primary CTA
+                  // CTA Button - Voir le bon plan
                   if (widget.link != null && widget.link!.isNotEmpty)
                     SizedBox(
                       width: double.infinity,
@@ -561,64 +599,238 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                             );
                           }
                         },
-                        icon: const Icon(Icons.description_outlined),
-                        label: const Text('Voir le bon plan'),
+                        icon: const Icon(Icons.open_in_new, size: 20),
+                        label: const Text(
+                          'Voir le bon plan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFF9800),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(25),
                           ),
                           elevation: 0,
                         ),
                       ),
                     ),
+                  const SizedBox(height: 16),
+                  // Action buttons row: Favoris, Partager
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Favoris button
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              // TODO: Implement save/favorite functionality
+                            },
+                            icon: Icon(
+                              Icons.favorite_outline,
+                              color: Colors.grey[600],
+                              size: 24,
+                            ),
+                          ),
+                          Text(
+                            'Favoris',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Partager button
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              // TODO: Implement share functionality
+                            },
+                            icon: Icon(
+                              Icons.share_outlined,
+                              color: Colors.grey[600],
+                              size: 24,
+                            ),
+                          ),
+                          Text(
+                            'Partager',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Posted time
+                  Text(
+                    widget.time.isNotEmpty ? widget.time : 'Posté il y a 4 h.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Owner section - no card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  // Avatar
+                  GestureDetector(
+                    onTap: widget.authorData != null ? _navigateToUserProfile : null,
+                    child: CircleAvatar(
+                      radius: 24,
+                      backgroundImage: widget.avatar.startsWith('http')
+                          ? NetworkImage(widget.avatar)
+                          : AssetImage(widget.avatar) as ImageProvider,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Name and user type
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: widget.authorData != null ? _navigateToUserProfile : null,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                          Text(
+                            widget.userType,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Subscribe/Follow button
+                  if (!widget.isOwner)
+                    _isLoadingFollow
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : TextButton(
+                            onPressed: _toggleFollow,
+                            style: TextButton.styleFrom(
+                              foregroundColor: _isFollowing
+                                  ? Colors.grey[600]
+                                  : const Color(0xFF3AAE5E),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                side: BorderSide(
+                                  color: _isFollowing
+                                      ? Colors.grey[400]!
+                                      : const Color(0xFF3AAE5E),
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              _isFollowing ? 'Suivis' : 'Suivre',
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Description - no card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Description',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDescription(),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            // Description Card
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withOpacity(0.15)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
+            // Details du bon plan - no card, full width
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Colors.grey[600],
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Description',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'Details du bon plan',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  const Divider(height: 1, thickness: 0.5),
-                  const SizedBox(height: 12),
-                  _buildDescription(),
+                  const SizedBox(height: 16),
+                  // Prix
+                  _buildDetailItem(
+                    icon: Icons.euro_symbol,
+                    iconColor: Colors.orange,
+                    bgColor: Colors.orange.withOpacity(0.1),
+                    label: 'Prix',
+                    value: widget.price ?? 'Gratuit',
+                    originalValue: widget.originalPrice,
+                  ),
+                  const SizedBox(height: 16),
+                  // Disponibilité
+                  _buildDetailItem(
+                    icon: Icons.public,
+                    iconColor: const Color(0xFF3AAE5E),
+                    bgColor: const Color(0xFFE6F7EF),
+                    label: 'Disponibilité',
+                    value: widget.availability,
+                    prefixValue: 'Chez ',
+                  ),
+                  const SizedBox(height: 16),
+                  // Validité
+                  _buildDetailItem(
+                    icon: Icons.calendar_month_outlined,
+                    iconColor: Colors.lightBlue,
+                    bgColor: Colors.lightBlue.withOpacity(0.1),
+                    label: 'Validité',
+                    value: _formatValidity(),
+                  ),
+                  const SizedBox(height: 16),
+                  // Livraison
+                  _buildDetailItem(
+                    icon: Icons.directions_bike,
+                    iconColor: Colors.purpleAccent,
+                    bgColor: Colors.purpleAccent.withOpacity(0.05),
+                    label: 'Livraison',
+                    value: widget.deliveryInfo,
+                  ),
                 ],
               ),
             ),
@@ -647,45 +859,22 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               ),
             if (!widget.isOwner && widget.acceptMessages && widget.authorData != null)
               const SizedBox(height: 16),
-            // Localisation Card
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withOpacity(0.15)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
+            // Localisation - no card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        color: Color(0xFF3AAE5E),
-                        size: 22,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Localisation',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'Localisation',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
                   ),
+                  const SizedBox(height: 12),
                   if (widget.location != null && widget.location!.isNotEmpty) ...[
-                    const SizedBox(height: 16),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.asset(
@@ -695,7 +884,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         fit: BoxFit.cover,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     Text(
                       widget.location!,
                       style: const TextStyle(
@@ -705,7 +894,6 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       ),
                     ),
                   ] else ...[
-                    const SizedBox(height: 16),
                     Text(
                       'Localisation non spécifiée',
                       style: TextStyle(
@@ -967,6 +1155,27 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         return 'Du ${from.day}/${from.month}/${from.year} au ${until.day}/${until.month}/${until.year}';
       } catch (_) {
         return 'Dates spécifiées';
+      }
+    }
+    return 'Offre permanente';
+  }
+
+  String _formatExpirationDate() {
+    if (widget.validUntil != null && widget.validUntil!.isNotEmpty) {
+      try {
+        final date = DateTime.parse(widget.validUntil!);
+        // Get month name in French
+        final months = [
+          'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+          'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+        ];
+        final month = months[date.month - 1];
+        // Format hour with leading zero
+        final hour = date.hour.toString().padLeft(2, '0');
+        final minute = date.minute.toString().padLeft(2, '0');
+        return 'Ce bon plan expire le ${date.day} $month ';
+      } catch (_) {
+        return 'Date de fin: ${widget.validUntil}';
       }
     }
     return 'Offre permanente';
@@ -1838,6 +2047,33 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildTag(String text, IconData icon, Color color) {
+    if (text.isEmpty) return const SizedBox.shrink();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

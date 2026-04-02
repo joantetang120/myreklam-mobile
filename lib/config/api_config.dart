@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class ApiConfig {
   // ============================================================
   // 🔧 CHANGE THIS URL TO POINT TO YOUR BACKEND SERVER
@@ -34,6 +36,7 @@ class ApiConfig {
   /// Resolves backend media/storage URLs (which may be relative) into
   /// fully-qualified URLs reachable by the client.
   static String? resolveMediaUrl(String? path) {
+    debugPrint('resolveMediaUrl input: $path');
     if (path == null) return null;
     final trimmed = path.trim();
     if (trimmed.isEmpty) return null;
@@ -41,16 +44,26 @@ class ApiConfig {
       return trimmed;
 
     final host = _apiHost();
+    debugPrint('host: $host, trimmed: $trimmed');
     if (trimmed.startsWith('/')) {
       return '$host$trimmed';
     }
     if (trimmed.startsWith('storage/')) {
       return '$host/$trimmed';
     }
+    // Handle candidate-documents paths
+    if (trimmed.startsWith('candidate-documents/')) {
+      final result = '$host/storage/$trimmed';
+      debugPrint('candidate-documents result: $result');
+      return result;
+    }
     // Handle avatar paths and other storage paths without storage/ prefix
     if (trimmed.startsWith('avatars/')) {
-      return '$host/storage/$trimmed';
+      final result = '$host/storage/$trimmed';
+      debugPrint('avatars result: $result');
+      return result;
     }
+    debugPrint('fallback return: $trimmed');
     return trimmed;
   }
 }

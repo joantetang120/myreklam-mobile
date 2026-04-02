@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/config/api_config.dart';
 
 class UserDetailCard extends StatelessWidget {
   final String avatar;
@@ -45,8 +46,10 @@ class UserDetailCard extends StatelessWidget {
           CircleAvatar(
             radius: 26,
             backgroundImage: avatar.startsWith('http')
-                ? NetworkImage(avatar)
-                : AssetImage(avatar) as ImageProvider,
+                ? NetworkImage(avatar) as ImageProvider
+                : avatar.startsWith('assets/')
+                    ? AssetImage(avatar) as ImageProvider
+                    : NetworkImage(ApiConfig.resolveMediaUrl(avatar) ?? '') as ImageProvider,
           ),
           const SizedBox(width: 12),
           Expanded(

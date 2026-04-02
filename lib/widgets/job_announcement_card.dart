@@ -6,11 +6,14 @@ class JobAnnouncementCard extends StatelessWidget {
   final String jobTitle;
   final String description;
   final List<JobDetailTag> tags;
-  final List<String> advantages;
+  final List<String>? advantages;
   final String timeAgo;
   final VoidCallback? onApply;
   final Widget? reactionBar;
   final VoidCallback? onAvatarTap;
+  final bool isFavorited;
+  final VoidCallback? onFavoriteToggle;
+  final bool isLoadingFavorite;
 
   const JobAnnouncementCard({
     super.key,
@@ -19,11 +22,14 @@ class JobAnnouncementCard extends StatelessWidget {
     required this.jobTitle,
     required this.description,
     required this.tags,
-    required this.advantages,
+    this.advantages = const [],
     required this.timeAgo,
     this.onApply,
     this.reactionBar,
     this.onAvatarTap,
+    this.isFavorited = false,
+    this.onFavoriteToggle,
+    this.isLoadingFavorite = false,
   });
 
   @override
@@ -101,10 +107,37 @@ class JobAnnouncementCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(
-                              Icons.verified,
-                              color: Colors.orange,
-                              size: 18,
+                            // Favorite heart button
+                            GestureDetector(
+                              onTap: isLoadingFavorite ? null : onFavoriteToggle,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: isLoadingFavorite
+                                    ? SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.grey[600],
+                                        ),
+                                      )
+                                    : Icon(
+                                        isFavorited ? Icons.favorite : Icons.favorite_border,
+                                        color: isFavorited ? Colors.red : Colors.grey[600],
+                                        size: 18,
+                                      ),
+                              ),
                             ),
                           ],
                         ),
@@ -146,16 +179,6 @@ class JobAnnouncementCard extends StatelessWidget {
                   color: Color(0xFF757575),
                 ),
               ),
-              const SizedBox(height: 8),
-              // Description
-              Text(
-                description,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF616161),
-                  height: 1.5,
-                ),
-              ),
               const SizedBox(height: 15),
               const Divider(height: 1),
               const SizedBox(height: 15),
@@ -168,58 +191,60 @@ class JobAnnouncementCard extends StatelessWidget {
               const SizedBox(height: 15),
               const Divider(height: 1),
               const SizedBox(height: 15),
-              // Avantages
-              const Text(
-                'Avantages',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+              // Description
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 13,
                   color: Color(0xFF616161),
+                  height: 1.5,
                 ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: advantages
-                    .map((adv) => _buildAdvantageTag(adv))
-                    .toList(),
               ),
               const SizedBox(height: 15),
               const Divider(height: 1),
               const SizedBox(height: 15),
-              // Footer
-              Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    color: Colors.grey.withOpacity(0.7),
-                    size: 20,
+              // Avantages (only show if not null and not empty)
+              if (advantages?.isNotEmpty == true) ...[
+                const Text(
+                  'Avantages',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF616161),
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    timeAgo,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const Spacer(),
-                  ElevatedButton.icon(
-                    onPressed: onApply,
-                    icon: const Icon(Icons.work_outline, size: 18),
-                    label: const Text("Voir l'offre d'emploi"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF9800),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 0,
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: advantages!
+                      .map((adv) => _buildAdvantageTag(adv))
+                      .toList(),
+                ),
+                const SizedBox(height: 15),
+                const Divider(height: 1),
+                const SizedBox(height: 15),
+              ],
+              // Footer - button only (timeAgo moved below)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: onApply,
+                  icon: const Icon(Icons.work_outline, size: 18),
+                  label: const Text("Voir l'offre d'emploi"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF9800),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 0,
                   ),
-                ],
+                ),
               ),
               if (reactionBar != null) ...[
                 const SizedBox(height: 20),
@@ -229,6 +254,24 @@ class JobAnnouncementCard extends StatelessWidget {
                 const SizedBox(height: 10),
                 const Divider(height: 1),
               ],
+              // Time ago below reaction section
+              Padding(
+                padding: const EdgeInsets.only(top: 16, left: 4, right: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.access_time,
+                      color: Colors.grey.withOpacity(0.7),
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      timeAgo,
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 10),
             ],
           ),

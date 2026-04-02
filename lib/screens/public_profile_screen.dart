@@ -330,7 +330,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                         backgroundColor: Colors.white,
                         backgroundImage: avatar.startsWith('http') 
                           ? NetworkImage(avatar) as ImageProvider 
-                          : AssetImage(avatar),
+                          : avatar.startsWith('assets/')
+                              ? AssetImage(avatar)
+                              : NetworkImage(ApiConfig.resolveMediaUrl(avatar) ?? '') as ImageProvider,
                       ),
                     ),
                   ),
