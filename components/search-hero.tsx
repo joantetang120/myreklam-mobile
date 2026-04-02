@@ -24,6 +24,12 @@ export function SearchHero() {
   const [isGettingLocation, setIsGettingLocation] = useState(false)
   const [showCitySuggestions, setShowCitySuggestions] = useState(false)
   
+  // États spécifiques pour l'emploi
+  const [jobContract, setJobContract] = useState("all")
+  const [jobExperience, setJobExperience] = useState("all")
+  const [jobRemote, setJobRemote] = useState("all")
+  const [jobSalary, setJobSalary] = useState("")
+  
   const router = useRouter()
   const { toast } = useToast()
 
@@ -114,6 +120,13 @@ export function SearchHero() {
     
     searchParams.set('radius', distance.toString())
     console.log('Added radius to params:', distance.toString())
+
+    if (selectedCategory === 'emploi') {
+      if (jobContract !== 'all') searchParams.set('contract', jobContract)
+      if (jobExperience !== 'all') searchParams.set('experience', jobExperience)
+      if (jobRemote !== 'all') searchParams.set('remote', jobRemote)
+      if (jobSalary) searchParams.set('minSalary', jobSalary)
+    }
     
     // Router vers la page appropriée selon la catégorie
     const categoryRoutes = {
@@ -296,6 +309,69 @@ export function SearchHero() {
                   Utiliser ma position actuelle
                 </label>
               </div>
+
+              {/* Filtres supplémentaires pour l'emploi */}
+              {selectedCategory === 'emploi' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/30 rounded-xl border border-dashed animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type de contrat</label>
+                    <Select value={jobContract} onValueChange={setJobContract}>
+                      <SelectTrigger className="h-10 bg-background">
+                        <SelectValue placeholder="Tous les contrats" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les contrats</SelectItem>
+                        <SelectItem value="PermanentContract">CDI</SelectItem>
+                        <SelectItem value="FixedTermContract">CDD</SelectItem>
+                        <SelectItem value="TemporaryWork">Intérim</SelectItem>
+                        <SelectItem value="Internship">Stage</SelectItem>
+                        <SelectItem value="Apprenticeship">Alternance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Niveau d'expérience</label>
+                    <Select value={jobExperience} onValueChange={setJobExperience}>
+                      <SelectTrigger className="h-10 bg-background">
+                        <SelectValue placeholder="Tous niveaux" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous niveaux</SelectItem>
+                        <SelectItem value="Beginner0To1Year">0 - 1 an</SelectItem>
+                        <SelectItem value="Intermediate2To4Years">2 - 4 ans</SelectItem>
+                        <SelectItem value="Experienced5To9Years">5 - 9 ans</SelectItem>
+                        <SelectItem value="Senior10YearsOrMore">10 ans+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Télétravail</label>
+                    <Select value={jobRemote} onValueChange={setJobRemote}>
+                      <SelectTrigger className="h-10 bg-background">
+                        <SelectValue placeholder="Indifférent" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Indifférent</SelectItem>
+                        <SelectItem value="remote">Télétravail</SelectItem>
+                        <SelectItem value="onsite">Sur site</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Salaire min.</label>
+                    <Input 
+                      type="number" 
+                      placeholder="Ex: 35000" 
+                      className="h-10 bg-background"
+                      value={jobSalary}
+                      onChange={(e) => setJobSalary(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Distance */}
               <div>

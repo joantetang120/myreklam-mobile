@@ -398,7 +398,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                   ),
                                   SizedBox(width: 4),
                                   Text(
-                                    '145',
+                                    UserSession().mys.toString(),
                                     style: TextStyle(
                                       color: Color(0xFFFFD700),
                                       fontSize: 10,

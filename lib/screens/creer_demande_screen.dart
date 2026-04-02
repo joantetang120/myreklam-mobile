@@ -9,6 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 
@@ -288,8 +291,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   String? _trancheSalariale;
   final TextEditingController _salaryMinController = TextEditingController();
   final TextEditingController _salaryMaxController = TextEditingController();
-  String? _salaryNetOrBrut; // 'net' ou 'brut'
-  String? _salaryIndiceTemporel; // 'annees' ou 'heures'
+  String? _salaryNetOrBrut = 'brut'; // 'net' ou 'brut'
+  String? _salaryIndiceTemporel = 'annees'; // 'annees' ou 'heures'
   String? _niveauEtudes;
   String? _niveauExperience;
   bool _accepteTeletravaill = false;
@@ -1001,13 +1004,45 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           final demandeId = _isEditMode
               ? widget.demandeId
               : (demandeData is Map ? demandeData['id']?.toString() : null);
-          if (_selectedMediaFiles.isNotEmpty && demandeId != null) {
+          if ((_selectedMediaFiles.isNotEmpty || _selectedDocumentFiles.isNotEmpty) && demandeId != null) {
             await _uploadMediaFiles(demandeId);
           }
           await _clearSavedProgress();
           if (!mounted) return;
           setState(() => _isSubmitting = false);
           _showSuccessDialog();
+
+          // Award My's for creating a demande (only on create, not edit)
+          if (!_isEditMode) {
+            try {
+              final mysResponse = await MysEarningService().awardMys(
+                actionType: 'demande',
+                referenceId: demandeId,
+              );
+              
+              if (mysResponse['success'] == true && mounted) {
+                // Update UserSession with new balance
+                final newBalance = mysResponse['earning']?['new_balance'];
+                if (newBalance != null) {
+                  UserSession().updateMys(newBalance);
+                }
+                
+                // Show reward modal AFTER dialog closes - use microtask to avoid conflict
+                Future.microtask(() async {
+                  if (mounted) {
+                    await MysRewardModal.show(
+                      context,
+                      amount: mysResponse['earning']?['amount'] ?? 2,
+                      actionType: 'demande',
+                    );
+                  }
+                });
+              }
+            } catch (e) {
+              debugPrint("Error awarding My's for demande: $e");
+              // Don't block the user if awarding fails
+            }
+          }
           return;
         }
       }
@@ -1108,6 +1143,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
       // Documents
       if (_docCand != null) 'use_candidate_documents': _docCand,
+      if (_selectedCvOptions.isNotEmpty) 'cv_options': _selectedCvOptions,
 
       // Variables spécifiques Formation
       if (_nbPersonnesController.text.trim().isNotEmpty)
@@ -1346,37 +1382,21 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         (cat) => cat['code'] == 'Internship',
       );
       if (!hasInternship) {
-        // Ajouter "Recherche de stage/Alternance" pour les particuliers
-        final updatedCategories = <Map<String, String>>[];
-
-        // Convertir toutes les catégories existantes en Map<String, String>
-        for (final cat in categories) {
+        // L'API ne retourne pas Internship — l'insérer après SearchJob (index 1)
+        final updatedCategories = categories.map((cat) {
           final stringCat = <String, String>{};
           for (final key in cat.keys) {
             stringCat[key] = cat[key]?.toString() ?? '';
           }
-          updatedCategories.add(stringCat);
-        }
+          return stringCat;
+        }).toList();
 
-        // Insérer "Recherche de stage/Alternance" après "Recherche d'emploi"
-        // Vérifier si la liste a au moins 1 élément avant d'insérer à l'index 1
-        // final insertIndex = updatedCategories.isNotEmpty ? 1 : 0;
-        // updatedCategories.insertAll(insertIndex, [
-        //   {
-        //     'id': '999',
-        //     'code': 'Internship',
-        //     'label': 'Recherche de stage/Alternance',
-        //   },
-        //   {'id': '999', 'code': 'SearchJob', 'label': 'Recherche d\'emploi'},
-        //   {'id': '999', 'code': 'Training', 'label': 'Formation'},
-        //   {'id': '999', 'code': 'RealEstate', 'label': 'Immoblier'},
-        // ]);
-
-        // Mettre à jour _natureOptions directement
-        setState(() {
-          _natureOptions = updatedCategories;
-          print("Updated nature options with internship: $_natureOptions");
+        updatedCategories.insert(0, {
+          'id': '999',
+          'code': 'Internship',
+          'label': 'Recherche de stage/Alternance',
         });
+
         return updatedCategories.cast<Map<String, dynamic>>();
       }
     }
@@ -1445,6 +1465,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           if (_getFormationSectors(_selectedFormationCategory).isNotEmpty &&
               _selectedFormationSector == null) {
             return 'Veuillez sélectionner un secteur de formation.';
+          }
+          if (_selectedFinancingTypes.isEmpty) {
+            return 'Veuillez sélectionner au moins un type de financement.';
           }
         }
 
@@ -3430,6 +3453,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       value: _salaryIndiceTemporel,
                       items: [
                         {'code': 'annees', 'label': 'Années'},
+                        {'code': 'mois', 'label': 'Mois'},
                         {'code': 'heures', 'label': 'Heures'},
                       ],
                       onChanged: (val) =>
@@ -3625,9 +3649,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Type de stage recherché (choix multiple)
+            // Type de contrat recherché (choix multiple)
             _buildCheckboxGroup(
-              title: "Type de stage recherché* (Choix multiple)",
+              title: "Type de contrat recherché* (Choix multiple)",
               options: [
                 {'code': 'apprentissage', 'label': 'Apprentissage/Alternance'},
                 {'code': 'stage', 'label': 'Stage'},

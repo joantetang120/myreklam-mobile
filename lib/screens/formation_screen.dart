@@ -4,6 +4,7 @@ import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class FormationScreen extends StatefulWidget {
   const FormationScreen({super.key});
@@ -236,7 +237,7 @@ class _FormationScreenState extends State<FormationScreen> {
                     ),
                     SizedBox(width: 4),
                     Text(
-                      '145',
+                      UserSession().mys.toString(),
                       style: TextStyle(
                         color: Color(0xFFFFD700),
                         fontSize: 10,

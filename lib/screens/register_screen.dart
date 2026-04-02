@@ -14,6 +14,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureText = true;
   bool _obscureConfirmText = true;
   bool _isLoading = false;
+  bool _isValidatingParrainage = false;
+  bool? _isParrainageValid;
+  String? _parrainageErrorMessage;
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -22,7 +25,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _authService = AuthService();
 
   @override
+  void initState() {
+    super.initState();
+    _couponController.addListener(_onParrainageCodeChanged);
+  }
+
+  @override
   void dispose() {
+    _couponController.removeListener(_onParrainageCodeChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -30,8 +40,103 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  void _onParrainageCodeChanged() {
+    final code = _couponController.text.trim();
+    if (code.isEmpty) {
+      setState(() {
+        _isParrainageValid = null;
+        _parrainageErrorMessage = null;
+      });
+      return;
+    }
+    _validateParrainageCode(code);
+  }
+
+  Future<void> _validateParrainageCode(String code) async {
+    if (_isValidatingParrainage) return;
+    
+    setState(() => _isValidatingParrainage = true);
+    
+    try {
+      final response = await _authService.validateParrainageCode(
+        parrainageCode: code,
+      );
+      if (mounted) {
+        setState(() {
+          _isParrainageValid = response['success'] == true;
+          _parrainageErrorMessage = null;
+        });
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() {
+          _isParrainageValid = false;
+          _parrainageErrorMessage = e.firstError;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isParrainageValid = false;
+          _parrainageErrorMessage = 'Code invalide';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isValidatingParrainage = false);
+      }
+    }
+  }
+
+  bool get _canRegister {
+    // Can register if parrainage code is empty OR valid
+    final code = _couponController.text.trim();
+    if (code.isEmpty) return true;
+    return _isParrainageValid == true;
+  }
+
+  Color _getParrainageBorderColor() {
+    if (_isParrainageValid == null) {
+      return const Color(0xFF1B8D4B).withOpacity(0.4);
+    }
+    if (_isParrainageValid!) {
+      return Colors.green;
+    }
+    return Colors.red;
+  }
+
+  Widget? _buildParrainageSuffixIcon() {
+    if (_isValidatingParrainage) {
+      return const SizedBox(
+        width: 20,
+        height: 20,
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Color(0xFF1B8D4B),
+          ),
+        ),
+      );
+    }
+    if (_isParrainageValid == null) {
+      return null;
+    }
+    if (_isParrainageValid!) {
+      return const Icon(
+        Icons.check_circle,
+        color: Colors.green,
+      );
+    }
+    return const Icon(
+      Icons.error,
+      color: Colors.red,
+    );
+  }
+
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
+    if (!_canRegister) return;
 
     setState(() => _isLoading = true);
 
@@ -39,7 +144,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await _authService.register(
         email: _emailController.text.trim(),
         password: _passwordController.text,
-        referralCode: _couponController.text.trim().isEmpty
+        parrainageCode: _couponController.text.trim().isEmpty
             ? null
             : _couponController.text.trim(),
       );
@@ -223,6 +328,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       // Parrainage Code Field
                       TextFormField(
                         controller: _couponController,
+                        keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.done,
                         decoration: InputDecoration(
                           hintText: 'Entrer le Code de parrainage (Facultatif)',
@@ -239,24 +345,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                             borderSide: BorderSide(
-                              color: const Color(0xFF1B8D4B).withOpacity(0.4),
+                              color: _getParrainageBorderColor(),
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                             borderSide: BorderSide(
-                              color: const Color(0xFF1B8D4B).withOpacity(0.4),
+                              color: _getParrainageBorderColor(),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF1B8D4B),
+                            borderSide: BorderSide(
+                              color: _getParrainageBorderColor(),
                               width: 2,
                             ),
                           ),
+                          suffixIcon: _buildParrainageSuffixIcon(),
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      // Validation feedback text
+                      if (_isParrainageValid != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: Text(
+                            _isParrainageValid! ? 'Code valide ✓' : (_parrainageErrorMessage ?? 'Code invalide'),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _isParrainageValid! ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 25),
                       // Register Button
                       SizedBox(
@@ -270,7 +391,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             elevation: 0,
                           ),
-                          onPressed: _isLoading ? null : () => _handleRegister(),
+                          onPressed: _isLoading || !_canRegister ? null : () => _handleRegister(),
                           child: _isLoading
                               ? const SizedBox(
                                   width: 24,

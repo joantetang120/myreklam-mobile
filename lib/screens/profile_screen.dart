@@ -327,8 +327,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     size: 14,
                                   ),
                                   const SizedBox(width: 4),
-                                  const Text(
-                                    '145',
+                                  Text(
+                                    UserSession().mys.toString(),
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,

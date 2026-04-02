@@ -62,49 +62,21 @@ class DemandeCard extends StatelessWidget {
                 onTap: onAvatarTap,
                 child: CircleAvatar(
                   radius: 24,
-                  backgroundImage: _buildImageProvider(profileImage),
+                  backgroundImage: profileImage.startsWith('http')
+                      ? NetworkImage(profileImage) as ImageProvider
+                      : AssetImage(profileImage),
                   backgroundColor: Colors.grey[200],
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: onAvatarTap,
-                      child: Text(
-                        username,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF616161),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: categoryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(
-                          color: categoryColor.withOpacity(0.3),
-                        ),
-                      ),
-                      child: Text(
-                        categoryLabel,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: categoryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  username,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF616161),
+                  ),
                 ),
               ),
               const Spacer(),
@@ -121,6 +93,24 @@ class DemandeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          // Category tag
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: categoryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(5),
+              border: Border.all(color: categoryColor.withValues(alpha: 0.3)),
+            ),
+            child: Text(
+              categoryLabel,
+              style: TextStyle(
+                fontSize: 11,
+                color: categoryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           // Description
           Text(
             description,
@@ -131,61 +121,27 @@ class DemandeCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 15),
-          // Location & Time
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      location,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    color: Colors.grey.withOpacity(0.7),
-                    size: 16,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    timeAgo,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          // Post image (optional)
-          if (postImage != null && postImage!.isNotEmpty) ...[
-            const SizedBox(height: 15),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(15),
-              child: _buildPostImage(postImage!),
+          // Location
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
             ),
-          ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(
+                  location,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 15),
           // CTA Button
           SizedBox(
@@ -205,7 +161,7 @@ class DemandeCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 12),
           // Reaction bar (if provided)
           if (reactionBar != null) ...[
             const Divider(height: 1),
@@ -213,7 +169,20 @@ class DemandeCard extends StatelessWidget {
             reactionBar!,
             const SizedBox(height: 10),
             const Divider(height: 1),
+            const SizedBox(height: 10),
           ],
+          // Time ago (below button)
+          Row(
+            children: [
+              Icon(Icons.access_time, color: Colors.grey.withValues(alpha: 0.7), size: 14),
+              const SizedBox(width: 4),
+              Text(
+                timeAgo,
+                style: const TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
         ],
       ),
           Positioned(
@@ -262,57 +231,5 @@ class DemandeCard extends StatelessWidget {
     );
   }
 
-  ImageProvider _buildImageProvider(String path) {
-    if (path.startsWith('http')) {
-      return NetworkImage(path);
-    }
-    return AssetImage(path);
-  }
 
-  Widget _buildPostImage(String path) {
-    if (path.startsWith('http')) {
-      return Image.network(
-        path,
-        width: double.infinity,
-        height: 180,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return SizedBox(
-            width: double.infinity,
-            height: 180,
-            child: Center(
-              child: CircularProgressIndicator(
-                value: progress.expectedTotalBytes != null
-                    ? progress.cumulativeBytesLoaded /
-                          progress.expectedTotalBytes!
-                    : null,
-              ),
-            ),
-          );
-        },
-      );
-    }
-    return Image.asset(
-      path,
-      width: double.infinity,
-      height: 180,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
-    );
-  }
-
-  Widget _buildImagePlaceholder() {
-    return Container(
-      width: double.infinity,
-      height: 180,
-      color: Colors.grey[200],
-      child: const Icon(
-        Icons.image_not_supported,
-        color: Colors.grey,
-        size: 36,
-      ),
-    );
-  }
 }

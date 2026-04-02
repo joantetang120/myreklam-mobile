@@ -155,26 +155,96 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       return;
     }
     try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        setState(() => _isLoadingSimilar = false);
+        return;
+      }
+
+      // Fetch a larger pool to apply similarity scoring
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/events/${widget.eventId}/similar?limit=3'),
-        headers: {'Accept': 'application/json'},
+        Uri.parse('${ApiConfig.baseUrl}/feed/latest?type=event&per_type_limit=30'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
       );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List<Map<String, dynamic>> fetched = [];
-        if (data['data'] is List) {
-          fetched.addAll(List<Map<String, dynamic>>.from(data['data']));
+        if (data['success'] == true && data['data'] != null) {
+          final items = data['data']['items'] as List? ?? [];
+
+          // Extract resource data from each feed item
+          final candidates = items.map((item) {
+            dynamic resourceData = item['resource'];
+            Map<String, dynamic> resource;
+            if (resourceData is String) {
+              resource = jsonDecode(resourceData) as Map<String, dynamic>;
+            } else if (resourceData is Map) {
+              resource = Map<String, dynamic>.from(resourceData);
+            } else {
+              resource = {};
+            }
+            resource['id'] = item['id'];
+            if (resource['user'] == null && item['user'] != null) {
+              resource['user'] = item['user'];
+            }
+            return resource;
+          }).where((e) => e['id']?.toString() != widget.eventId).toList();
+
+          // Scoring: rank by similarity criteria
+          final scored = candidates.map((e) {
+            int score = 0;
+            // Même catégorie principale → +3
+            if (widget.categoryCode != null &&
+                e['category_code']?.toString() == widget.categoryCode) {
+              score += 3;
+            }
+            // Même sous-catégorie → +2
+            if (widget.subCategoryCode != null &&
+                e['sub_category_code']?.toString() == widget.subCategoryCode) {
+              score += 2;
+            }
+            // Même lieu → +1
+            if (widget.coverageArea != null &&
+                widget.coverageArea!.isNotEmpty &&
+                e['coverage_area']?.toString() == widget.coverageArea) {
+              score += 1;
+            }
+            // Même format → +1
+            if (widget.formatType != null &&
+                e['format_type']?.toString() == widget.formatType) {
+              score += 1;
+            }
+            return MapEntry(score, e);
+          }).toList()
+            ..sort((a, b) => b.key.compareTo(a.key));
+
+          // Keep top 5 with at least some criteria matching, fallback to top 5 recent
+          var result = scored
+              .where((entry) => entry.key > 0)
+              .take(5)
+              .map((entry) => entry.value)
+              .toList();
+
+          if (result.isEmpty) {
+            result = scored.take(5).map((entry) => entry.value).toList();
+          }
+
+          if (mounted) {
+            setState(() {
+              _similarEvents = result;
+              _isLoadingSimilar = false;
+            });
+          }
+          return;
         }
-        setState(() {
-          _similarEvents = fetched;
-          _isLoadingSimilar = false;
-        });
-      } else {
-        setState(() => _isLoadingSimilar = false);
       }
+      if (mounted) setState(() => _isLoadingSimilar = false);
     } catch (e) {
       debugPrint('Error fetching similar events: $e');
-      setState(() => _isLoadingSimilar = false);
+      if (mounted) setState(() => _isLoadingSimilar = false);
     }
   }
 
@@ -292,10 +362,20 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         'Non spécifié';
 
     // Date
-    final eventDate =
-        event['event_date']?.toString() ??
-        event['start_date']?.toString() ??
-        '';
+    String eventDate = '';
+    final rawDate = event['event_date']?.toString() ?? event['start_date']?.toString() ?? '';
+    if (rawDate.isNotEmpty) {
+      try {
+        final d = DateTime.parse(rawDate);
+        const months = [
+          'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+          'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+        ];
+        eventDate = '${d.day} ${months[d.month - 1]} ${d.year}';
+      } catch (_) {
+        eventDate = rawDate;
+      }
+    }
 
     // Tags
     final tags = <String>[
@@ -722,7 +802,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Details Évènements',
+          'Détail Évènement',
           style: TextStyle(
             color: Color(0xFF616161),
             fontFamily: 'Manjari',
@@ -884,17 +964,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Catégorie
-                  if (widget.categoryCode != null && widget.categoryCode!.isNotEmpty)
-                    _buildDetailItem(
-                      icon: Icons.category_outlined,
-                      iconColor: const Color(0xFF9C27B0),
-                      bgColor: const Color(0xFF9C27B0).withOpacity(0.1),
-                      label: 'Catégorie',
-                      value: widget.categoryCode!,
-                    ),
-                  if (widget.categoryCode != null && widget.categoryCode!.isNotEmpty)
-                    const SizedBox(height: 12),
                   // Sous-catégorie
                   if (widget.subCategoryCode != null && widget.subCategoryCode!.isNotEmpty)
                     _buildDetailItem(
@@ -905,17 +974,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       value: widget.subCategoryCode!,
                     ),
                   if (widget.subCategoryCode != null && widget.subCategoryCode!.isNotEmpty)
-                    const SizedBox(height: 12),
-                  // Format
-                  if (widget.formatType != null && widget.formatType!.isNotEmpty)
-                    _buildDetailItem(
-                      icon: Icons.event_available_outlined,
-                      iconColor: Colors.blue,
-                      bgColor: Colors.blue.withOpacity(0.1),
-                      label: 'Format',
-                      value: widget.formatType!,
-                    ),
-                  if (widget.formatType != null && widget.formatType!.isNotEmpty)
                     const SizedBox(height: 12),
                   // Date
                   if (_hasDateInfo())
@@ -939,6 +997,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   if (widget.startTime != null && widget.startTime!.isNotEmpty)
                     const SizedBox(height: 12),
+                  // Organisateur
+                  _buildDetailItem(
+                    icon: Icons.person_outline,
+                    iconColor: const Color(0xFF1976D2),
+                    bgColor: const Color(0xFF1976D2).withValues(alpha: 0.1),
+                    label: 'Organisateur',
+                    value: _resolveOwnerName(),
+                  ),
+                  const SizedBox(height: 12),
                   // Lieu
                   if (widget.coverageArea != null && widget.coverageArea!.isNotEmpty)
                     _buildDetailItem(
@@ -955,17 +1022,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     _buildDetailItem(
                       icon: Icons.confirmation_num_outlined,
                       iconColor: Colors.purple,
-                      bgColor: Colors.purple.withOpacity(0.1),
+                      bgColor: Colors.purple.withValues(alpha: 0.1),
                       label: 'Réservation',
                       value: widget.reservationMode!,
                     ),
                   if (widget.reservationMode != null && widget.reservationMode!.isNotEmpty)
                     const SizedBox(height: 12),
-                  // Prix - Dynamic based on price_type and pricing_mode (last in Informations)
-                  if (widget.priceType != null)
-                    _buildPriceSection(),
-                  if (widget.priceType != null)
-                    const SizedBox(height: 12),
+                  // Prix - même logique que la liste (défaut: Gratuit)
+                  _buildPriceSection(),
+                  const SizedBox(height: 12),
                   const SizedBox(height: 5),
                 ],
               ),
@@ -1786,44 +1851,45 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   Widget _buildPriceSection() {
-    final priceType = widget.priceType?.toLowerCase() ?? '';
-    
-    // Gratuit case
-    if (priceType == 'gratuit') {
-      return _buildDetailItem(
-        icon: Icons.euro,
-        iconColor: const Color(0xFFFF9800),
-        bgColor: const Color(0xFFFF9800).withOpacity(0.1),
-        label: 'Prix',
-        value: 'Gratuit',
-      );
-    }
-    
-    // Payant case
+    // Same logic as event list: default to 'gratuit' if null
+    final priceType = widget.priceType?.toLowerCase() ?? 'gratuit';
+
     if (priceType == 'payant') {
       final pricingMode = widget.pricingMode?.toLowerCase() ?? '';
-      
+
       // Unique price
       if (pricingMode == 'unique') {
         final amount = widget.priceAmount ?? '';
         return _buildDetailItem(
           icon: Icons.euro,
           iconColor: const Color(0xFFFF9800),
-          bgColor: const Color(0xFFFF9800).withOpacity(0.1),
+          bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
           label: 'Prix',
-          value: amount.isNotEmpty ? '$amount €' : 'Payant',
+          value: amount.isNotEmpty ? '$amount €' : 'Gratuit',
         );
       }
-      
+
       // Categories price
       if (pricingMode == 'categories') {
+        final validCategories = widget.priceCategories
+            .where((c) => (c['tarif']?.toString() ?? '').isNotEmpty)
+            .toList();
+        if (validCategories.isEmpty) {
+          return _buildDetailItem(
+            icon: Icons.euro,
+            iconColor: const Color(0xFFFF9800),
+            bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
+            label: 'Prix',
+            value: 'Gratuit',
+          );
+        }
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF9800).withOpacity(0.1),
+                color: const Color(0xFFFF9800).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(Icons.euro, color: Color(0xFFFF9800), size: 20),
@@ -1842,7 +1908,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  ...widget.priceCategories.map((category) {
+                  ...validCategories.map((category) {
                     final name = category['name']?.toString() ?? '';
                     final tarif = category['tarif']?.toString() ?? '';
                     return Padding(
@@ -1864,23 +1930,23 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         );
       }
       
-      // Fallback for unknown pricing_mode
+      // payant but unknown pricingMode → Gratuit
       return _buildDetailItem(
         icon: Icons.euro,
         iconColor: const Color(0xFFFF9800),
-        bgColor: const Color(0xFFFF9800).withOpacity(0.1),
+        bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
         label: 'Prix',
-        value: 'Payant',
+        value: 'Gratuit',
       );
     }
-    
-    // Fallback for unknown price_type
+
+    // gratuit or unknown price_type → Gratuit
     return _buildDetailItem(
       icon: Icons.euro,
       iconColor: const Color(0xFFFF9800),
-      bgColor: const Color(0xFFFF9800).withOpacity(0.1),
+      bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
       label: 'Prix',
-      value: widget.priceType!,
+      value: 'Gratuit',
     );
   }
 

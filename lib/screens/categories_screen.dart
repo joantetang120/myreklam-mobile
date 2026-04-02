@@ -7,6 +7,7 @@ import 'package:myreklam/screens/offres_emploi_screen.dart';
 import 'package:myreklam/screens/formation_screen.dart';
 import 'package:myreklam/screens/evenements_screen.dart';
 import 'package:myreklam/screens/demandes_screen.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({super.key});
@@ -241,7 +242,7 @@ class CategoriesScreen extends StatelessWidget {
                     ),
                     SizedBox(width: 4),
                     Text(
-                      '145',
+                      UserSession().mys.toString(),
                       style: TextStyle(
                         color: Color(0xFFFFD700),
                         fontSize: 10,
