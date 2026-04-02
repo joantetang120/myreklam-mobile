@@ -1,4 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:myreklam/screens/login_screen.dart';
+import 'package:myreklam/services/token_storage.dart';
+import 'package:myreklam/config/api_config.dart';
 
 class ProSettingsScreen extends StatefulWidget {
   const ProSettingsScreen({super.key});
@@ -21,6 +26,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
   bool commentairesMobile = true;
   bool avisMobile = true;
   bool newsletterMobile = true;
+
+  // Account action expansion
+  bool _isAccountActionExpanded = false;
+  bool _isDeleting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -296,52 +305,75 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                   const SizedBox(height: 16),
 
                   // Action du compte
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.person_outline,
-                        size: 20,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Action du compte',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF333333),
+                  InkWell(
+                    onTap: () => setState(() => _isAccountActionExpanded = !_isAccountActionExpanded),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.settings_outlined,
+                          size: 20,
+                          color: Colors.grey[600],
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Action du compte',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF333333),
+                          ),
+                        ),
+                        const Spacer(),
+                        AnimatedRotation(
+                          turns: _isAccountActionExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 20,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => _showDeleteAccountDialog(),
-                    icon: Image.asset(
-                      'assets/images/profil_pro/btn-delete.png',
-                      width: 18,
-                      height: 18,
-                    ),
-                    label: const Text(
-                      'Supprimer mon compte',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                  if (_isAccountActionExpanded)
+                    ElevatedButton.icon(
+                      onPressed: _isDeleting ? null : _showDeleteAccountDialog,
+                      icon: _isDeleting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Image.asset(
+                              'assets/images/profil_pro/btn-delete.png',
+                              width: 18,
+                              height: 18,
+                            ),
+                      label: Text(
+                        _isDeleting ? 'Suppression...' : 'Supprimer mon compte',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF8A40),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF8A40),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -491,7 +523,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
             ),
           ),
           content: const Text(
-            'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.',
+            'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront perdues.',
             style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
           ),
           shape: RoundedRectangleBorder(
@@ -512,6 +544,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                _deleteAccount();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFF44336),
@@ -529,5 +562,57 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
         );
       },
     );
+  }
+
+  Future<void> _deleteAccount() async {
+    setState(() => _isDeleting = true);
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter')),
+        );
+        return;
+      }
+
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.baseUrl}/user/account'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        await TokenStorage.clearTokens();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Compte supprimé avec succès'),
+              backgroundColor: Color(0xFF3AAE5E),
+            ),
+          );
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
+          );
+        }
+      } else {
+        final data = jsonDecode(response.body);
+        throw Exception(data['message'] ?? 'Erreur lors de la suppression');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isDeleting = false);
+    }
   }
 }

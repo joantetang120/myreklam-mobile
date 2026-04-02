@@ -8,12 +8,16 @@ import 'package:myreklam/services/chat_service.dart';
 import 'package:myreklam/services/chat_notification_service.dart';
 import 'package:myreklam/screens/login_screen.dart';
 import 'package:myreklam/providers/conversation_provider.dart';
+import 'package:myreklam/services/auth_state_manager.dart';
 import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Set navigator key for AuthStateManager
+  AuthStateManager().setNavigatorKey(navigatorKey);
 
   // Initialisation de pusher
   await ChatService.initializePusher();
@@ -49,7 +53,11 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B8D4B)),
           useMaterial3: true,
         ),
-        home: const LoginScreen(),
+        // Define routes for navigation
+        routes: {
+          '/login': (context) => const LoginScreen(),
+        },
+        home: const SplashScreen(),
       ),
     );
   }

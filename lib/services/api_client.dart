@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/token_storage.dart';
+import 'package:myreklam/services/auth_state_manager.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -344,7 +345,11 @@ class ApiClient {
   Future<bool> _tryRefreshToken() async {
     try {
       final refreshToken = await TokenStorage.getRefreshToken();
-      if (refreshToken == null) return false;
+      if (refreshToken == null) {
+        // No refresh token, session expired
+        AuthStateManager().setSessionExpired();
+        return false;
+      }
 
       final url = Uri.parse('${ApiConfig.baseUrl}/auth/refresh-token');
       final response = await _client.post(
@@ -361,10 +366,14 @@ class ApiClient {
         return true;
       }
 
+      // Refresh failed (expired or invalid), clear tokens and notify
       await TokenStorage.clearTokens();
+      AuthStateManager().setSessionExpired();
       return false;
     } catch (_) {
+      // Any error during refresh means session is expired
       await TokenStorage.clearTokens();
+      AuthStateManager().setSessionExpired();
       return false;
     }
   }

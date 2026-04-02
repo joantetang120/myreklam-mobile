@@ -526,7 +526,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: const Color(0xFFFFE0B2),
                     title: 'Mes annonces',
                     description:
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                        'Gérez vos annonces actives, modifiez ou supprimez vos publications',
                     onTap: () {
                       Navigator.push(
                         context,
@@ -541,7 +541,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: const Color(0xFFE6F7EF),
                     title: 'Mes posts',
                     description:
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                        'Consultez et gérez vos publications sur le réseau social',
                     color: const Color(0xFF04BC7B).withOpacity(0.15),
                     onTap: () {
                       Navigator.push(
@@ -557,7 +557,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: const Color(0xFFE6F7EF),
                     title: 'Mes recherches sauvegardées',
                     description:
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                        'Retrouvez vos critères de recherche',
                     color: const Color(0xFF04BC7B).withOpacity(0.15),
                     onTap: () {
                       Navigator.push(
@@ -573,7 +573,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: const Color(0xFFFFE0B2),
                     title: 'Favoris',
                     description:
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                        'Vos contenus préférés et éléments sauvegardés',
                     onTap: () {
                       Navigator.push(
                         context,
@@ -588,7 +588,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: const Color(0xFFFFE0B2),
                     title: 'Paramètres du compte',
                     description:
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                        'Configurez vos préférences et sécurité',
                     onTap: () {
                       Navigator.push(
                         context,
@@ -603,7 +603,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: const Color(0xFFE6F7EF),
                     title: 'Espace candidat',
                     description:
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                        'Suivez vos candidatures et documents professionnels',
                     color: const Color(0xFF04BC7B).withOpacity(0.15),
                     onTap: () {
                       Navigator.push(
@@ -619,7 +619,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: const Color(0xFFE6F7EF),
                     title: 'Récompenses',
                     description:
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                        'Consultez vos points et avantages fidélité',
                     color: const Color(0xFF04BC7B).withOpacity(0.15),
                     onTap: () {
                       Navigator.push(
@@ -635,7 +635,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: const Color(0xFFFFE0B2),
                     title: 'Parrainage',
                     description:
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor',
+                        'Invitez vos amis et gagnez des récompenses',
                     onTap: () {
                       Navigator.push(
                         context,

@@ -5,7 +5,7 @@ class ApiConfig {
   // 🔧 CHANGE THIS URL TO POINT TO YOUR BACKEND SERVER
   // ============================================================
   // static const String baseUrl = 'https://myreklam-admin.maisoft-group.com/api';
-  static const String baseUrl = 'http://192.168.1.237:8000/api';
+  static const String baseUrl = 'http://192.168.10.169:8000/api';
   // Examples:
   //   Local Android emulator:  'http://10.0.2.2:8000/api'
   //   Local iOS simulator:     'http://localhost:8000/api'
@@ -16,9 +16,10 @@ class ApiConfig {
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
 
-  // Token expiry durations (for reference)
-  static const Duration accessTokenExpiry = Duration(minutes: 30);
-  static const Duration refreshTokenExpiry = Duration(days: 30);
+  // Token expiry durations (matching backend)
+  // Backend: access token = 2 hours, refresh token = 60 days
+  static const Duration accessTokenExpiry = Duration(hours: 2);
+  static const Duration refreshTokenExpiry = Duration(days: 60);
 
   // OTP expiry
   static const int otpExpirySeconds = 252; // 4 min 12 sec
