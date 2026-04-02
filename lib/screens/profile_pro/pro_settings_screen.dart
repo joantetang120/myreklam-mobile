@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/services/api_client.dart';
 
 class ProSettingsScreen extends StatefulWidget {
   const ProSettingsScreen({super.key});
@@ -170,7 +171,6 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                 children: [
                   // Sécurité du compte
                   InkWell(
-                    onTap: () {},
                     child: Row(
                       children: [
                         Container(
@@ -313,6 +313,30 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () => _showChangePasswordDialog(),
+                    icon: const Icon(Icons.lock),
+                    label: const Text(
+                      'Changer votre mot de passe',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF8A40),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
@@ -528,6 +552,242 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
           ],
         );
       },
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool isLoading = false;
+    String? errorMessage;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setState) => SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 15,
+              left: 16,
+              right: 16,
+              top: 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const Text(
+                  'Modifier le mot de passe',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: currentPasswordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Mot de passe actuel',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: newPasswordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Nouveau mot de passe',
+                    prefixIcon: const Icon(Icons.lock),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    helperText: 'Minimum 8 caractères',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmPasswordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Confirmer le mot de passe',
+                    prefixIcon: const Icon(Icons.lock),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                if (errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: Colors.red[700],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            errorMessage!,
+                            style: TextStyle(
+                              color: Colors.red[700],
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () => Navigator.pop(sheetContext),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Annuler'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                final currentPassword =
+                                    currentPasswordController.text.trim();
+                                final newPassword = newPasswordController.text
+                                    .trim();
+                                final confirmPassword =
+                                    confirmPasswordController.text.trim();
+
+                                if (currentPassword.isEmpty ||
+                                    newPassword.isEmpty ||
+                                    confirmPassword.isEmpty) {
+                                  setState(
+                                    () => errorMessage =
+                                        'Veuillez remplir tous les champs',
+                                  );
+                                  return;
+                                }
+
+                                if (newPassword.length < 8) {
+                                  setState(
+                                    () => errorMessage =
+                                        'Le mot de passe doit contenir au moins 8 caractères',
+                                  );
+                                  return;
+                                }
+
+                                if (newPassword != confirmPassword) {
+                                  setState(
+                                    () => errorMessage =
+                                        'Les mots de passe ne correspondent pas',
+                                  );
+                                  return;
+                                }
+
+                                setState(() {
+                                  isLoading = true;
+                                  errorMessage = null;
+                                });
+
+                                try {
+                                  final response = await ApiClient()
+                                      .authenticatedPost(
+                                        '/profile/me/password',
+                                        body: {
+                                          'current_password': currentPassword,
+                                          'new_password': newPassword,
+                                          'new_password_confirmation':
+                                              confirmPassword,
+                                        },
+                                      );
+
+                                  if (response['success'] == true) {
+                                    Navigator.pop(sheetContext);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Mot de passe modifié avec succès',
+                                        ),
+                                        backgroundColor: Color(0xFF2E9B5B),
+                                      ),
+                                    );
+                                  } else {
+                                    setState(
+                                      () => errorMessage =
+                                          response['message'] ??
+                                          'Erreur lors de la modification',
+                                    );
+                                  }
+                                } catch (e) {
+                                  setState(() => errorMessage = e.toString());
+                                } finally {
+                                  setState(() => isLoading = false);
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E9B5B),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Text('Modifier'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
