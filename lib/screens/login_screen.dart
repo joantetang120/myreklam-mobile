@@ -156,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             return 'Veuillez entrer votre email';
                           }
                           if (!RegExp(
-                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
                           ).hasMatch(value)) {
                             return 'Veuillez entrer un email valide';
                           }
@@ -249,19 +249,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   transitionDuration: const Duration(
                                     milliseconds: 500,
                                   ),
-                                  pageBuilder:
-                                      (
-                                        context,
-                                        animation,
-                                        secondaryAnimation,
-                                      ) => const RegisterScreen(),
-                                  transitionsBuilder:
-                                      (
-                                        context,
-                                        animation,
-                                        secondaryAnimation,
-                                        child,
-                                      ) {
+                                  pageBuilder: (context, animation,
+                                          secondaryAnimation) =>
+                                      const RegisterScreen(),
+                                  transitionsBuilder: (context, animation,
+                                          secondaryAnimation, child) {
                                         var begin = const Offset(1.0, 0.0);
                                         var end = Offset.zero;
                                         var curve = Curves.easeInOut;

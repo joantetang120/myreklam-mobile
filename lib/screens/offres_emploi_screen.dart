@@ -7,6 +7,7 @@ import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class OffresEmploiScreen extends StatefulWidget {
   const OffresEmploiScreen({super.key});
@@ -257,7 +258,7 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                     ),
                     SizedBox(width: 4),
                     Text(
-                      '145',
+                      UserSession().mys.toString(),
                       style: TextStyle(
                         color: Color(0xFFFFD700),
                         fontSize: 10,

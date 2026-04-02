@@ -13,17 +13,27 @@ class AuthService {
   Future<Map<String, dynamic>> register({
     required String email,
     required String password,
-    String? referralCode,
+    String? parrainageCode,
   }) async {
     final body = <String, dynamic>{
       'email': email,
       'password': password,
     };
-    if (referralCode != null && referralCode.isNotEmpty) {
-      body['referral_code'] = referralCode;
+    if (parrainageCode != null && parrainageCode.isNotEmpty) {
+      body['parrainage_code'] = parrainageCode;
     }
 
     final response = await _api.post('/auth/register', body: body);
+    return response;
+  }
+
+  /// POST /api/referral/validate
+  Future<Map<String, dynamic>> validateParrainageCode({
+    required String parrainageCode,
+  }) async {
+    final response = await _api.post('/referral/validate', body: {
+      'parrainage_code': parrainageCode,
+    });
     return response;
   }
 
@@ -214,6 +224,8 @@ class AuthService {
       isEmailVerified: user['is_email_verified'],
       profileCompleted: user['profile_completed'],
       subscription: subscription,
+      parrainageCode: user['parrainage_code'],
+      mys: user['mys'],
     );
   }
 }

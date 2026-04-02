@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class RecompensesScreen extends StatefulWidget {
   const RecompensesScreen({super.key});
@@ -194,8 +195,8 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text(
-                      '180',
+                    Text(
+                      UserSession().mys.toString(),
                       style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
@@ -429,8 +430,8 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      const Text(
-                        '180 My\'s',
+                      Text(
+                        '${UserSession().mys} My\'s',
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,

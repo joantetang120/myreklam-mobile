@@ -5,11 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/token_storage.dart';
-import 'package:myreklam/widgets/app_layout.dart';
-import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/mys_reward_modal.dart';
 
 class _CategoryLoadResult {
   final List<String> categories;
@@ -1305,7 +1308,37 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         await _clearSavedProgress();
       }
 
-      _showSuccessDialog();
+      // Show success dialog and wait for it to close
+      await _showSuccessDialog();
+
+      // Award My's for creating a bon plan (only on create, not edit)
+      // This happens AFTER the success dialog is closed
+      if (!_isEditMode && bonPlanId != null && mounted) {
+        try {
+          final mysResponse = await MysEarningService().awardMys(
+            actionType: 'bon_plan',
+            referenceId: bonPlanId,
+          );
+          
+          if (mysResponse['success'] == true && mounted) {
+            // Update UserSession with new balance
+            final newBalance = mysResponse['earning']?['new_balance'];
+            if (newBalance != null) {
+              UserSession().updateMys(newBalance);
+            }
+            
+            // Show reward modal after dialog is closed
+            await MysRewardModal.show(
+              context,
+              amount: mysResponse['earning']?['amount'] ?? 2,
+              actionType: 'bon_plan',
+            );
+          }
+        } catch (e) {
+          debugPrint("Error awarding My's for bon plan: $e");
+          // Don't block the user if awarding fails
+        }
+      }
     } on ApiException catch (e) {
       if (!mounted) return;
       _showSnack(e.firstError, isError: true);
@@ -1322,8 +1355,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     }
   }
 
-  void _showSuccessDialog() {
-    showDialog(
+  Future<void> _showSuccessDialog() async {
+    await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
@@ -1339,40 +1372,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 child: GestureDetector(
                   onTap: () {
                     Navigator.pop(context); // close dialog
-                    Navigator.pop(context); // pop edit/create screen
-                    if (_isEditMode) {
-                      Navigator.pop(
-                        context,
-                      ); // pop detail screen back to listing
-                    }
                   },
                   child: const Icon(Icons.close, color: Colors.grey, size: 22),
                 ),
               ),
               const SizedBox(height: 8),
-              // Container(
-              //   width: 120,
-              //   height: 120,
-              //   decoration: BoxDecoration(
-              //     shape: BoxShape.circle,
-              //     color: const Color(0xFFFFF3E0).withOpacity(0.5),
-              //   ),
-              //   child: Center(
-              //     child: Container(
-              //       width: 80,
-              //       height: 80,
-              //       decoration: const BoxDecoration(
-              //         shape: BoxShape.circle,
-              //         color: Color(0xFFE6F7EF),
-              //       ),
-              //       child: const Icon(
-              //         Icons.verified,
-              //         color: Color(0xFF3AAE5E),
-              //         size: 50,
-              //       ),
-              //     ),
-              //   ),
-              // ),
               Image.asset("assets/images/imagepop.png"),
               const SizedBox(height: 20),
               Text(
@@ -1401,6 +1405,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         ),
       ),
     );
+    
+    // Pop the creation screen after dialog is closed
+    if (mounted) {
+      Navigator.pop(context);
+      if (_isEditMode) {
+        Navigator.pop(context); // pop detail screen back to listing
+      }
+    }
   }
 
   Widget _buildSelectedMediaList() {

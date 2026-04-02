@@ -16,9 +16,10 @@ class ApiConfig {
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
 
-  // Token expiry durations (for reference)
-  static const Duration accessTokenExpiry = Duration(minutes: 30);
-  static const Duration refreshTokenExpiry = Duration(days: 30);
+  // Token expiry durations (matching backend)
+  // Backend: access token = 2 hours, refresh token = 60 days
+  static const Duration accessTokenExpiry = Duration(hours: 2);
+  static const Duration refreshTokenExpiry = Duration(days: 60);
 
   // OTP expiry
   static const int otpExpirySeconds = 252; // 4 min 12 sec
