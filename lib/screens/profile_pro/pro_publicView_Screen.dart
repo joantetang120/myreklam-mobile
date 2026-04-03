@@ -8,6 +8,7 @@ import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProPublicViewScreen extends StatefulWidget {
   const ProPublicViewScreen({super.key});
@@ -39,6 +40,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   final TextEditingController _reviewController = TextEditingController();
 
   String _selectedAnnonceFilter = 'Tout';
+
+  // Media gallery state
+  int _selectedMediaTab = 0; // 0 = photos, 1 = videos
 
   List<Map<String, dynamic>> _bonPlans = [];
   List<Map<String, dynamic>> _jobOffers = [];
@@ -887,6 +891,16 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         : null;
     final avatarUrl = _resolveAvatarUrl();
 
+    // Get social links
+    final socialLinks = profile is Map
+        ? (profile['social_links'] as Map<String, dynamic>? ?? {})
+        : <String, dynamic>{};
+    final facebookUrl = socialLinks['facebook']?.toString();
+    final instagramUrl = socialLinks['instagram']?.toString();
+    final youtubeUrl = socialLinks['youtube']?.toString();
+    // final linkedinUrl = socialLinks['linkedin']?.toString();
+    // final snapchatUrl = socialLinks['snapchat']?.toString();
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -1058,11 +1072,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                               radius: 50,
                               backgroundImage: avatarUrl != null
                                   ? (avatarUrl.startsWith('http')
-                                      ? NetworkImage(avatarUrl) as ImageProvider
-                                      : NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? '') as ImageProvider)
+                                        ? NetworkImage(avatarUrl)
+                                              as ImageProvider
+                                        : NetworkImage(
+                                                ApiConfig.resolveMediaUrl(
+                                                      avatarUrl,
+                                                    ) ??
+                                                    '',
+                                              )
+                                              as ImageProvider)
                                   : AssetImage(
-                                      'assets/images/dashboard_particulier/Ellipse 10.png',
-                                    ) as ImageProvider,
+                                          'assets/images/dashboard_particulier/Ellipse 10.png',
+                                        )
+                                        as ImageProvider,
                             ),
                           ),
                         ),
@@ -1072,61 +1094,109 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         left: 30,
                         child: Column(
                           children: [
-                            Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF1877F2,
-                                ).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: IconButton(
-                                onPressed: () {},
-                                icon: const Icon(
-                                  FontAwesomeIcons.facebook,
-                                  color: Color(0xFF1877F2),
-                                  size: 22,
+                            // Facebook
+                            if (facebookUrl != null && facebookUrl.isNotEmpty)
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF1877F2,
+                                  ).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                padding: EdgeInsets.zero,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              width: 38,
-                              height: 38,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE1306C).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: IconButton(
-                                onPressed: () {},
-                                icon: const Icon(
-                                  FontAwesomeIcons.instagram,
-                                  color: Color(0xFFE1306C),
-                                  size: 22,
+                                child: IconButton(
+                                  onPressed: () async {
+                                    final uri = Uri.parse(facebookUrl);
+                                    try {
+                                      await launchUrl(
+                                        uri,
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    } catch (e) {
+                                      debugPrint(
+                                        'Could not launch Facebook: $e',
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    FontAwesomeIcons.facebook,
+                                    color: Color(0xFF1877F2),
+                                    size: 22,
+                                  ),
+                                  padding: EdgeInsets.zero,
                                 ),
-                                padding: EdgeInsets.zero,
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF0000).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: IconButton(
-                                onPressed: () {},
-                                icon: const Icon(
-                                  FontAwesomeIcons.youtube,
-                                  color: Color(0xFFFF0000),
-                                  size: 22,
+                            if (facebookUrl != null && facebookUrl.isNotEmpty)
+                              const SizedBox(height: 12),
+                            // Instagram
+                            if (instagramUrl != null && instagramUrl.isNotEmpty)
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFFE1306C,
+                                  ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                padding: EdgeInsets.zero,
+                                child: IconButton(
+                                  onPressed: () async {
+                                    final uri = Uri.parse(instagramUrl);
+                                    try {
+                                      await launchUrl(
+                                        uri,
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    } catch (e) {
+                                      debugPrint(
+                                        'Could not launch Instagram: $e',
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    FontAwesomeIcons.instagram,
+                                    color: Color(0xFFE1306C),
+                                    size: 22,
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                ),
                               ),
-                            ),
+                            if (instagramUrl != null && instagramUrl.isNotEmpty)
+                              const SizedBox(height: 12),
+                            // YouTube
+                            if (youtubeUrl != null && youtubeUrl.isNotEmpty)
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFFFF0000,
+                                  ).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: IconButton(
+                                  onPressed: () async {
+                                    final uri = Uri.parse(youtubeUrl);
+                                    try {
+                                      await launchUrl(
+                                        uri,
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    } catch (e) {
+                                      debugPrint(
+                                        'Could not launch YouTube: $e',
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    FontAwesomeIcons.youtube,
+                                    color: Color(0xFFFF0000),
+                                    size: 22,
+                                  ),
+                                  padding: EdgeInsets.zero,
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -1215,12 +1285,43 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     final presentation = profile is Map
         ? profile['presentation']?.toString()
         : null;
+    final bannerUrl = profile is Map ? profile['banner_url']?.toString() : null;
+    final gallery = profile is Map
+        ? (profile['gallery'] as List<dynamic>? ?? [])
+        : <dynamic>[];
+
+    // Filter images and videos
+    final images = gallery.where((item) {
+      final url = item.toString().toLowerCase();
+      return !url.endsWith('.mp4') &&
+          !url.endsWith('.mov') &&
+          !url.endsWith('.avi') &&
+          !url.endsWith('.webm') &&
+          !url.endsWith('.mkv');
+    }).toList();
+
+    final videos = gallery.where((item) {
+      final url = item.toString().toLowerCase();
+      return url.endsWith('.mp4') ||
+          url.endsWith('.mov') ||
+          url.endsWith('.avi') ||
+          url.endsWith('.webm') ||
+          url.endsWith('.mkv');
+    }).toList();
+
+    String buildImageUrl(String? url) {
+      if (url == null || url.isEmpty) return '';
+      final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+      if (url.startsWith('http') || url.startsWith('https')) return url;
+      return '$serverBase/storage/$url';
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Banner Card
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -1247,28 +1348,44 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     ),
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Divider(color: Colors.grey[200]),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(10, 0, 10, 30),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      'assets/images/dashboard_particulier/Rectangle 12 (1).png',
-                      width: double.infinity,
-                      height: 150,
-                      fit: BoxFit.cover,
-                    ),
+                    child: bannerUrl != null && bannerUrl.isNotEmpty
+                        ? Image.network(
+                            buildImageUrl(bannerUrl),
+                            width: double.infinity,
+                            height: 150,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: double.infinity,
+                                height: 150,
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.image_not_supported),
+                              );
+                            },
+                          )
+                        : Container(
+                            width: double.infinity,
+                            height: 150,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image_not_supported),
+                          ),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
+          // Presentation Card
           Container(
             width: double.infinity,
-            padding: EdgeInsets.fromLTRB(16, 18, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -1294,7 +1411,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 const SizedBox(height: 12),
                 Text(
                   presentation?.trim().isNotEmpty == true ? presentation! : '—',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: Color(0xFF666666),
                     height: 1.5,
@@ -1303,9 +1420,175 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               ],
             ),
           ),
-          SizedBox(height: 30),
+          const SizedBox(height: 24),
+          // Media Gallery Card
+          if (gallery.isNotEmpty)
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(-2, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 15, 18, 0),
+                    child: Text(
+                      'Médias photos et vidéos',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black.withOpacity(0.5),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Tabs
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedMediaTab = 0),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.photo_library_outlined,
+                                color: _selectedMediaTab == 0
+                                    ? const Color(0xFFEF8A40)
+                                    : Colors.grey,
+                                size: 24,
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                height: 3,
+                                color: _selectedMediaTab == 0
+                                    ? const Color(0xFFEF8A40)
+                                    : Colors.transparent,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedMediaTab = 1),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.videocam_outlined,
+                                color: _selectedMediaTab == 1
+                                    ? const Color(0xFFEF8A40)
+                                    : Colors.grey,
+                                size: 24,
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                height: 3,
+                                color: _selectedMediaTab == 1
+                                    ? const Color(0xFFEF8A40)
+                                    : Colors.transparent,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 0, 10, 20),
+                    child: _selectedMediaTab == 0
+                        ? _buildPhotosGrid(images, buildImageUrl)
+                        : _buildVideosGrid(videos, buildImageUrl),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 30),
         ],
       ),
+    );
+  }
+
+  Widget _buildPhotosGrid(
+    List<dynamic> images,
+    String Function(String?) buildUrl,
+  ) {
+    if (images.isEmpty) {
+      return Center(
+        child: Text('Aucune photo', style: TextStyle(color: Colors.grey[600])),
+      );
+    }
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemCount: images.length,
+      itemBuilder: (context, index) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            buildUrl(images[index].toString()),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey[300],
+                child: const Icon(Icons.image_not_supported, size: 30),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildVideosGrid(
+    List<dynamic> videos,
+    String Function(String?) buildUrl,
+  ) {
+    if (videos.isEmpty) {
+      return Center(
+        child: Text('Aucune vidéo', style: TextStyle(color: Colors.grey[600])),
+      );
+    }
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemCount: videos.length,
+      itemBuilder: (context, index) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            color: Colors.grey[800],
+            child: const Center(
+              child: Icon(
+                Icons.play_circle_outline,
+                color: Colors.white,
+                size: 40,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
