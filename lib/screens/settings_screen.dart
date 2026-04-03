@@ -4,6 +4,9 @@ import 'package:http/http.dart' as http;
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/screens/login_screen.dart';
+import 'package:myreklam/services/token_storage.dart';
+import 'package:myreklam/config/api_config.dart';
 
 // Sub-page for account security settings
 class SecuritySettingsScreen extends StatelessWidget {
@@ -414,9 +417,6 @@ class SecuritySettingsScreen extends StatelessWidget {
     );
   }
 }
-import 'package:myreklam/screens/login_screen.dart';
-import 'package:myreklam/services/token_storage.dart';
-import 'package:myreklam/config/api_config.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -844,10 +844,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     children: [
                       InkWell(
-                        onTap: () => setState(() => _isAccountActionExpanded = !_isAccountActionExpanded),
+                        onTap: () => setState(
+                          () => _isAccountActionExpanded =
+                              !_isAccountActionExpanded,
+                        ),
                         borderRadius: BorderRadius.vertical(
                           top: const Radius.circular(16),
-                          bottom: _isAccountActionExpanded ? Radius.zero : const Radius.circular(16),
+                          bottom: _isAccountActionExpanded
+                              ? Radius.zero
+                              : const Radius.circular(16),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(16),
@@ -888,7 +893,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
-                              onPressed: _isDeleting ? null : _showDeleteAccountDialog,
+                              onPressed: _isDeleting
+                                  ? null
+                                  : _showDeleteAccountDialog,
                               icon: _isDeleting
                                   ? const SizedBox(
                                       width: 18,
@@ -900,7 +907,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     )
                                   : const Icon(Icons.delete_outline, size: 18),
                               label: Text(
-                                _isDeleting ? 'Suppression...' : 'Supprimer mon compte',
+                                _isDeleting
+                                    ? 'Suppression...'
+                                    : 'Supprimer mon compte',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -910,7 +919,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 backgroundColor: Colors.red,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -1065,7 +1076,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (response.statusCode == 200) {
         await TokenStorage.clearTokens();
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

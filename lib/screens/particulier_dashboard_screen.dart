@@ -13,7 +13,6 @@ import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/widgets/welcome_bonus_popup.dart';
-import 'package:myreklam/screens/favorite_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
 import 'package:myreklam/screens/event_detail_screen.dart';
@@ -25,14 +24,11 @@ import 'package:myreklam/screens/formation_screen.dart';
 import 'package:myreklam/screens/evenements_screen.dart';
 import 'package:myreklam/screens/demandes_screen.dart';
 import 'package:myreklam/screens/categories_screen.dart';
-import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/add_story_screen.dart';
 import 'package:myreklam/models/story_model.dart';
 import 'package:myreklam/screens/my_stories_screen.dart';
 import 'package:myreklam/services/story_store.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
-import 'package:myreklam/screens/chat_conversation_screen.dart';
-import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/screens/image_preview_screen.dart';
 import 'package:myreklam/screens/public_profile_screen.dart';
@@ -185,12 +181,19 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             },
                             child: CircleAvatar(
                               radius: 20,
-                              backgroundImage: widget.author.avatar.startsWith('http')
+                              backgroundImage:
+                                  widget.author.avatar.startsWith('http')
                                   ? NetworkImage(widget.author.avatar)
                                         as ImageProvider
                                   : widget.author.avatar.startsWith('assets/')
-                                      ? AssetImage(widget.author.avatar)
-                                      : NetworkImage(ApiConfig.resolveMediaUrl(widget.author.avatar) ?? '') as ImageProvider,
+                                  ? AssetImage(widget.author.avatar)
+                                  : NetworkImage(
+                                          ApiConfig.resolveMediaUrl(
+                                                widget.author.avatar,
+                                              ) ??
+                                              '',
+                                        )
+                                        as ImageProvider,
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -588,26 +591,28 @@ class _ParticulierDashboardScreenState
   Future<void> _checkAndShowWelcomeBonus() async {
     // Wait for user data to be fetched first
     await _getCurrentUserId();
-    
+
     if (!mounted) return;
-    
+
     // Check if user has 2 My's (new user bonus)
     final mys = UserSession().mys;
     debugPrint('Checking welcome bonus - mys: $mys');
-    
+
     if (mys >= 2) {
       // Check if popup was already shown
       final prefs = await SharedPreferences.getInstance();
       final userId = UserSession().id ?? 'unknown';
       final shownKey = 'welcome_bonus_shown_$userId';
       final alreadyShown = prefs.getBool(shownKey) ?? false;
-      
-      debugPrint('Welcome bonus check - alreadyShown: $alreadyShown, key: $shownKey');
-      
+
+      debugPrint(
+        'Welcome bonus check - alreadyShown: $alreadyShown, key: $shownKey',
+      );
+
       if (!alreadyShown && mounted) {
         // Mark as shown
         await prefs.setBool(shownKey, true);
-        
+
         // Show popup
         await showDialog(
           context: context,
@@ -762,8 +767,12 @@ class _ParticulierDashboardScreenState
                             backgroundImage: avatarUrl.startsWith('http')
                                 ? NetworkImage(avatarUrl)
                                 : avatarUrl.startsWith('assets/')
-                                    ? AssetImage(avatarUrl) as ImageProvider
-                                    : NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? '') as ImageProvider,
+                                ? AssetImage(avatarUrl) as ImageProvider
+                                : NetworkImage(
+                                        ApiConfig.resolveMediaUrl(avatarUrl) ??
+                                            '',
+                                      )
+                                      as ImageProvider,
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -884,7 +893,7 @@ class _ParticulierDashboardScreenState
       final response = await ApiClient().authenticatedGet('/profile/me');
       final data = response['user'] as Map<String, dynamic>?;
       final id = data?['id']?.toString();
-      
+
       // Sync mys and parrainage_code to UserSession
       if (data != null) {
         final mys = data['mys'];
@@ -896,7 +905,7 @@ class _ParticulierDashboardScreenState
           UserSession().updateParrainageCode(parrainageCode);
         }
       }
-      
+
       if (mounted) {
         setState(() => _currentUserId = id);
       } else {
@@ -1077,7 +1086,8 @@ class _ParticulierDashboardScreenState
         .where((url) => url.isNotEmpty)
         .toList();
     // Check if already favorited from API data
-    final bool isFavorited = bp['is_favorited'] == true || bp['is_saved'] == true || bp['user_has_favorited'] == true;
+    final favoris = bp['bon_plan_favorites'] as List? ?? [];
+    final bool isFavorited = favoris.isNotEmpty;
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -1086,35 +1096,39 @@ class _ParticulierDashboardScreenState
 
         Future<void> _toggleFavorite() async {
           if (_isLoading || bpId.isEmpty) return;
-          
+
           setState(() => _isLoading = true);
-          
+
           try {
             if (_isFavorited) {
               // Remove from favorites
-              await ApiClient().authenticatedDelete('/bon-plans/$bpId/favorite');
+              await ApiClient().authenticatedDelete('/bonplans/$bpId/favorite');
             } else {
               // Add to favorites
-              await ApiClient().authenticatedPost('/bon-plans/$bpId/favorite', body: {});
+              await ApiClient().authenticatedPost('/bonplans/$bpId/favorite');
             }
-            
+
             setState(() {
               _isFavorited = !_isFavorited;
               _isLoading = false;
             });
-            
+
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(_isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris'),
+                  content: Text(
+                    _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.green,
                 ),
               );
             }
           } catch (e) {
             debugPrint('Favorite toggle error: $e');
             setState(() => _isLoading = false);
-            
+
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -1127,226 +1141,233 @@ class _ParticulierDashboardScreenState
         }
 
         return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              // Image carousel at top
-              if (imageUrls.isNotEmpty)
-                _buildBonPlanImageCarousel(imageUrls)
-              else
-                Container(
-                  height: 120,
-                  width: double.infinity,
-                  color: Colors.grey[100],
-                  child: Center(
-                    child: Icon(
-                      Icons.card_giftcard,
-                      size: 48,
-                      color: Colors.grey[300],
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image carousel at top
+                  if (imageUrls.isNotEmpty)
+                    _buildBonPlanImageCarousel(imageUrls)
+                  else
+                    Container(
+                      height: 120,
+                      width: double.infinity,
+                      color: Colors.grey[100],
+                      child: Center(
+                        child: Icon(
+                          Icons.card_giftcard,
+                          size: 48,
+                          color: Colors.grey[300],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
 
-              // Title
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 100, 0),
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF333333),
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // Description
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildBonPlanDescription(bp),
-              ),
-              const SizedBox(height: 12),
-
-              // Price instead of tags
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Text(
-                      bp['price'] != null && bp['price'].toString().isNotEmpty
-                          ? '${bp['price']}€'
-                          : 'Gratuit',
+                  // Title
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 100, 0),
+                    child: Text(
+                      title,
                       style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2E9B5B),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF333333),
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (bp['original_price'] != null && bp['original_price'].toString().isNotEmpty) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        '${bp['original_price']}€',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                          decoration: TextDecoration.lineThrough,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
+                  ),
+                  const SizedBox(height: 8),
 
-              // Merchant + time
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    if (merchantName.isNotEmpty) ...[
-                      Icon(
-                        Icons.store_outlined,
-                        size: 14,
-                        color: Colors.grey[500],
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          '$locationType chez $merchantName',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ] else
-                      const Spacer(),
-                    if (createdAt != null) ...[
-                      Icon(
-                        Icons.access_time,
-                        size: 14,
-                        color: Colors.grey[500],
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _buildTimeAgo(createdAt),
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Divider(height: 1),
-              ),
-              const SizedBox(height: 10),
-              if (bpId.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _buildReactionBar(
-                    'bon-plans',
-                    bpId,
-                    acceptedMessages: bp['accept_messages'] == true,
-                    authorData: bp['user'] as Map<String, dynamic>?,
+                  // Description
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildBonPlanDescription(bp),
                   ),
-                ),
-              const SizedBox(height: 10),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Divider(height: 1),
-              ),
-              const SizedBox(height: 12),
-              // CTA Button
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _navigateToBonPlanDetail(bp),
-                    icon: const Icon(Icons.visibility_outlined, size: 18),
-                    label: const Text('VOIR LE BON PLAN'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF9800),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 0,
+                  const SizedBox(height: 12),
+
+                  // Price instead of tags
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Text(
+                          bp['price'] != null &&
+                                  bp['price'].toString().isNotEmpty
+                              ? '${bp['price']}€'
+                              : 'Gratuit',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2E9B5B),
+                          ),
+                        ),
+                        if (bp['original_price'] != null &&
+                            bp['original_price'].toString().isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '${bp['original_price']}€',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
+                  const SizedBox(height: 12),
+
+                  // Merchant + time
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        if (merchantName.isNotEmpty) ...[
+                          Icon(
+                            Icons.store_outlined,
+                            size: 14,
+                            color: Colors.grey[500],
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '$locationType chez $merchantName',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ] else
+                          const Spacer(),
+                        if (createdAt != null) ...[
+                          Icon(
+                            Icons.access_time,
+                            size: 14,
+                            color: Colors.grey[500],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _buildTimeAgo(createdAt),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Divider(height: 1),
+                  ),
+                  const SizedBox(height: 10),
+                  if (bpId.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildReactionBar(
+                        'bon-plans',
+                        bpId,
+                        acceptedMessages: bp['accept_messages'] == true,
+                        authorData: bp['user'] as Map<String, dynamic>?,
+                      ),
+                    ),
+                  const SizedBox(height: 10),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Divider(height: 1),
+                  ),
+                  const SizedBox(height: 12),
+                  // CTA Button
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _navigateToBonPlanDetail(bp),
+                        icon: const Icon(Icons.visibility_outlined, size: 18),
+                        label: const Text('VOIR LE BON PLAN'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF9800),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // Favorite button at top-left
+              Positioned(
+                top: 12,
+                left: 12,
+                child: GestureDetector(
+                  onTap: _isLoading ? null : _toggleFavorite,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: _isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.grey[600],
+                            ),
+                          )
+                        : Icon(
+                            _isFavorited
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: _isFavorited ? Colors.red : Colors.grey[600],
+                            size: 20,
+                          ),
+                  ),
+                ),
+              ),
+              // Bon Plan tag at top-right
+              Positioned(
+                top: 12,
+                right: 12,
+                child: _buildTypeTag(
+                  'Bon Plan',
+                  const Color(0xFFFF9800),
+                  Icons.local_offer,
                 ),
               ),
             ],
           ),
-          // Favorite button at top-left
-          Positioned(
-            top: 12,
-            left: 12,
-            child: GestureDetector(
-              onTap: _isLoading ? null : _toggleFavorite,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: _isLoading
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.grey[600],
-                        ),
-                      )
-                    : Icon(
-                        _isFavorited ? Icons.favorite : Icons.favorite_border,
-                        color: _isFavorited ? Colors.red : Colors.grey[600],
-                        size: 20,
-                      ),
-              ),
-            ),
-          ),
-          // Bon Plan tag at top-right
-          Positioned(
-            top: 12,
-            right: 12,
-            child: _buildTypeTag(
-              'Bon Plan',
-              const Color(0xFFFF9800),
-              Icons.local_offer,
-            ),
-          ),
-        ],
-      ),
-    );
+        );
       },
     );
   }
@@ -1442,14 +1463,14 @@ class _ParticulierDashboardScreenState
         'Non spécifié';
     final contract = job['contract_type']?.toString() ?? '';
     final experience = job['experience_level']?.toString() ?? '';
-    final salary = job['salary_label']?.toString() ?? 
-        _buildJobSalaryDisplay(job) ?? 
+    final salary =
+        job['salary_label']?.toString() ??
+        _buildJobSalaryDisplay(job) ??
         job['salary']?.toString();
 
     // Check initial favorite status
-    final bool isFavorited = job['is_favorited'] == true ||
-        job['is_saved'] == true ||
-        job['user_has_favorited'] == true;
+    final favoris = job['job_offer_favorites'] as List? ?? [];
+    final bool isFavorited = favoris.isNotEmpty;
 
     final tags = <JobDetailTag>[
       // 1st: Place (location)
@@ -1491,10 +1512,14 @@ class _ParticulierDashboardScreenState
           try {
             if (_isFavorited) {
               // Remove from favorites
-              await ApiClient().authenticatedDelete('/job-offers/$jobId/favorite');
+              await ApiClient().authenticatedDelete(
+                '/job-offers/$jobId/favorite',
+              );
             } else {
               // Add to favorites
-              await ApiClient().authenticatedPost('/job-offers/$jobId/favorite', body: {});
+              await ApiClient().authenticatedPost(
+                '/job-offers/$jobId/favorite',
+              );
             }
 
             setState(() {
@@ -1505,8 +1530,12 @@ class _ParticulierDashboardScreenState
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(_isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris'),
+                  content: Text(
+                    _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.green,
                 ),
               );
             }
@@ -1570,18 +1599,24 @@ class _ParticulierDashboardScreenState
     final trainingType = training['training_type']?.toString() ?? '';
 
     final addressCity = training['address_city']?.toString() ?? '';
-    
+
     // Helper to extract array values
     String _extractArrayValues(dynamic field) {
       if (field is List) {
-        return field.map((item) {
-          if (item is Map) return item['value']?.toString() ?? item['name']?.toString() ?? '';
-          return item.toString();
-        }).where((s) => s.isNotEmpty).join(' · ');
+        return field
+            .map((item) {
+              if (item is Map)
+                return item['value']?.toString() ??
+                    item['name']?.toString() ??
+                    '';
+              return item.toString();
+            })
+            .where((s) => s.isNotEmpty)
+            .join(' · ');
       }
       return field?.toString() ?? '';
     }
-    
+
     // Translation for training_style
     String _translateTrainingStyle(String value) {
       switch (value.trim()) {
@@ -1595,20 +1630,25 @@ class _ParticulierDashboardScreenState
           return value;
       }
     }
-    
+
     // Extract and translate training_style values
     String trainingStyleText = '';
     final trainingStyleRaw = training['training_style'];
     if (trainingStyleRaw is List) {
-      final translated = trainingStyleRaw.map((item) {
-        final value = item is Map ? (item['value']?.toString() ?? item.toString()) : item.toString();
-        return _translateTrainingStyle(value);
-      }).where((s) => s.isNotEmpty).join(' · ');
+      final translated = trainingStyleRaw
+          .map((item) {
+            final value = item is Map
+                ? (item['value']?.toString() ?? item.toString())
+                : item.toString();
+            return _translateTrainingStyle(value);
+          })
+          .where((s) => s.isNotEmpty)
+          .join(' · ');
       trainingStyleText = translated;
     } else if (trainingStyleRaw != null) {
       trainingStyleText = _translateTrainingStyle(trainingStyleRaw.toString());
     }
-    
+
     // Translation for training_public
     String _translateTrainingPublic(String value) {
       switch (value.trim()) {
@@ -1626,29 +1666,38 @@ class _ParticulierDashboardScreenState
           return value;
       }
     }
-    
+
     // Extract and translate training_public values
     String trainingPublicText = '';
     final trainingPublicRaw = training['training_public'];
     if (trainingPublicRaw is List) {
-      final translated = trainingPublicRaw.map((item) {
-        final value = item is Map ? (item['value']?.toString() ?? item.toString()) : item.toString();
-        return _translateTrainingPublic(value);
-      }).where((s) => s.isNotEmpty).join(' · ');
+      final translated = trainingPublicRaw
+          .map((item) {
+            final value = item is Map
+                ? (item['value']?.toString() ?? item.toString())
+                : item.toString();
+            return _translateTrainingPublic(value);
+          })
+          .where((s) => s.isNotEmpty)
+          .join(' · ');
       trainingPublicText = translated;
     } else if (trainingPublicRaw != null) {
-      trainingPublicText = _translateTrainingPublic(trainingPublicRaw.toString());
+      trainingPublicText = _translateTrainingPublic(
+        trainingPublicRaw.toString(),
+      );
     }
-    
+
     final certification = _extractArrayValues(training['certification']);
-    
+
     // Check if CPF is in training_funding array
     final trainingFunding = training['training_funding'];
     bool hasCpf = false;
     if (trainingFunding is List) {
-      hasCpf = trainingFunding.any((funding) => 
-        funding.toString().toUpperCase() == 'CPF' ||
-        (funding is Map && funding['type']?.toString().toUpperCase() == 'CPF')
+      hasCpf = trainingFunding.any(
+        (funding) =>
+            funding.toString().toUpperCase() == 'CPF' ||
+            (funding is Map &&
+                funding['type']?.toString().toUpperCase() == 'CPF'),
       );
     }
 
@@ -1667,7 +1716,10 @@ class _ParticulierDashboardScreenState
         FormationTag(icon: Icons.verified_outlined, text: certification),
       // 5th: CPF eligibility
       if (hasCpf)
-        FormationTag(icon: Icons.account_balance_wallet_outlined, text: 'Eligible CPF'),
+        FormationTag(
+          icon: Icons.account_balance_wallet_outlined,
+          text: 'Eligible CPF',
+        ),
       // 6th: Training type
       if (trainingType.isNotEmpty)
         FormationTag(icon: Icons.school_outlined, text: trainingType),
@@ -1687,7 +1739,11 @@ class _ParticulierDashboardScreenState
           } else if (publicType == 'groupe') {
             priceText += ' - Par groupe';
           }
-          return FormationTag(icon: Icons.euro, text: priceText, isSpecial: true);
+          return FormationTag(
+            icon: Icons.euro,
+            text: priceText,
+            isSpecial: true,
+          );
         }(),
       ],
     ];
@@ -1707,17 +1763,17 @@ class _ParticulierDashboardScreenState
         _buildStorageUrl(avatarUrl) ?? 'assets/images/Formation.png';
 
     // Extract owner name from profiles
-    final ownerName = proProfile?['company_name']?.toString() ??
-                      proProfile?['first_name']?.toString() ??
-                      particulierProfile?['pseudo']?.toString() ??
-                      particulierProfile?['first_name']?.toString() ??
-                      training['provider_name']?.toString() ??
-                      'Organisme';
+    final ownerName =
+        proProfile?['company_name']?.toString() ??
+        proProfile?['first_name']?.toString() ??
+        particulierProfile?['pseudo']?.toString() ??
+        particulierProfile?['first_name']?.toString() ??
+        training['provider_name']?.toString() ??
+        'Organisme';
 
     // Check initial favorite status
-    final bool isFavorited = training['is_favorited'] == true ||
-        training['is_saved'] == true ||
-        training['user_has_favorited'] == true;
+    final favoris = training['training_favorites'] as List? ?? [];
+    final bool isFavorited = favoris.isNotEmpty;
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -1732,10 +1788,14 @@ class _ParticulierDashboardScreenState
           try {
             if (_isFavorited) {
               // Remove from favorites
-              await ApiClient().authenticatedDelete('/trainings/$trainingId/favorite');
+              await ApiClient().authenticatedDelete(
+                '/trainings/$trainingId/favorite',
+              );
             } else {
               // Add to favorites
-              await ApiClient().authenticatedPost('/trainings/$trainingId/favorite', body: {});
+              await ApiClient().authenticatedPost(
+                '/trainings/$trainingId/favorite',
+              );
             }
 
             setState(() {
@@ -1746,8 +1806,11 @@ class _ParticulierDashboardScreenState
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(_isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris'),
+                  content: Text(
+                    _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                  ),
                   duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.green,
                 ),
               );
             }
@@ -1813,12 +1876,13 @@ class _ParticulierDashboardScreenState
     final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
 
     // Extract owner name from profiles
-    final ownerName = proProfile?['company_name']?.toString() ??
-                      proProfile?['first_name']?.toString() ??
-                      particulierProfile?['pseudo']?.toString() ??
-                      particulierProfile?['first_name']?.toString() ??
-                      user?['name']?.toString() ??
-                      'Organisateur';
+    final ownerName =
+        proProfile?['company_name']?.toString() ??
+        proProfile?['first_name']?.toString() ??
+        particulierProfile?['pseudo']?.toString() ??
+        particulierProfile?['first_name']?.toString() ??
+        user?['name']?.toString() ??
+        'Organisateur';
     final eventTitle = event['title']?.toString() ?? 'Évènement';
     final eventImage =
         _extractMediaUrl(event) ?? 'assets/images/default_event.png';
@@ -1838,13 +1902,13 @@ class _ParticulierDashboardScreenState
 
     // Build tags for display
     final tags = <String>[];
-    
+
     // Add sub_category_code if available
     final subCategoryCode = event['sub_category_code']?.toString();
     if (subCategoryCode != null && subCategoryCode.isNotEmpty) {
       tags.add(subCategoryCode);
     }
-    
+
     // Add format_type if available
     final formatType = event['format_type']?.toString();
     if (formatType != null && formatType.isNotEmpty) {
@@ -1854,6 +1918,49 @@ class _ParticulierDashboardScreenState
         'Hybride': 'Hybride',
       };
       tags.add(formatTranslations[formatType] ?? formatType);
+    }
+
+    final favoris = event['event_favorites'] as List? ?? [];
+    bool isFavorited = favoris.isNotEmpty;
+
+    Future<void> _toggleFavorite() async {
+      try {
+        if (isFavorited) {
+          // Remove from favorites
+          await ApiClient().authenticatedDelete('/events/$eventId/favorite');
+        } else {
+          // Add to favorites
+          await ApiClient().authenticatedPost('/events/$eventId/favorite');
+        }
+
+        setState(() {
+          isFavorited = !isFavorited;
+        });
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                style: TextStyle(color: Colors.white),
+              ),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Favorite toggle error: $e');
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erreur lors de la mise à jour des favoris'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
 
     return EvenementCard(
@@ -1886,6 +1993,8 @@ class _ParticulierDashboardScreenState
       reactionBar: eventId.isNotEmpty
           ? _buildReactionBar('events', eventId)
           : null,
+      isFavorite: isFavorited,
+      onFavoriteToggle: _toggleFavorite,
     );
   }
 
@@ -1920,11 +2029,13 @@ class _ParticulierDashboardScreenState
 
     // Location
     final nationwideRaw = demande['nationwide'];
-    final nationwide = nationwideRaw == true ||
+    final nationwide =
+        nationwideRaw == true ||
         nationwideRaw == 1 ||
         nationwideRaw?.toString() == '1' ||
         nationwideRaw?.toString().toLowerCase() == 'true';
-    final locationRaw = demande['location']?.toString() ?? demande['city']?.toString() ?? '';
+    final locationRaw =
+        demande['location']?.toString() ?? demande['city']?.toString() ?? '';
     final location = nationwide
         ? 'Toute la France'
         : (locationRaw.isNotEmpty ? locationRaw : 'Non spécifié');
@@ -1933,6 +2044,51 @@ class _ParticulierDashboardScreenState
     final postImage = _extractMediaUrl(demande);
 
     final demandeId = demande['id']?.toString() ?? '';
+
+    final favoris = demande['bon_plan_favorites'] as List? ?? [];
+    bool isFavorited = favoris.isNotEmpty;
+
+    Future<void> _toggleFavorite() async {
+      try {
+        if (isFavorited) {
+          // Remove from favorites
+          await ApiClient().authenticatedDelete(
+            '/bonplans/$demandeId/favorite',
+          );
+        } else {
+          // Add to favorites
+          await ApiClient().authenticatedPost('/bonplans/$demandeId/favorite');
+        }
+
+        setState(() {
+          isFavorited = !isFavorited;
+        });
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                style: TextStyle(color: Colors.white),
+              ),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Favorite toggle error: $e');
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erreur lors de la mise à jour des favoris'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
 
     return DemandeCard(
       profileImage: profileImage,
@@ -2004,42 +2160,47 @@ class _ParticulierDashboardScreenState
     final exact = job['salary_exact'];
     final paymentType = job['salary_payment_type']?.toString(); // brut/net
     final period = job['salary_period']?.toString(); // horaire/mensuel/annuel
-    
+
     // Build period label
     String periodLabel = '';
-    if (period == 'horaire') periodLabel = '/h';
-    else if (period == 'mensuel') periodLabel = '/mois';
-    else if (period == 'annuel') periodLabel = '/an';
-    
+    if (period == 'horaire')
+      periodLabel = '/h';
+    else if (period == 'mensuel')
+      periodLabel = '/mois';
+    else if (period == 'annuel')
+      periodLabel = '/an';
+
     // Build payment label (brut/net)
-    String paymentLabel = paymentType == 'brut' ? ' brut' : (paymentType == 'net' ? ' net' : '');
-    
+    String paymentLabel = paymentType == 'brut'
+        ? ' brut'
+        : (paymentType == 'net' ? ' net' : '');
+
     // If we have both min and max, show range
     if (min != null && max != null) {
       return '${min}€ - ${max}€$periodLabel$paymentLabel';
     }
-    
+
     // If we have exact salary
     if (exact != null) {
       return '${exact}€$periodLabel$paymentLabel';
     }
-    
+
     // If we have only min
     if (min != null) {
       return 'À partir de ${min}€$periodLabel$paymentLabel';
     }
-    
+
     // If we have only max
     if (max != null) {
       return 'Jusqu\'à ${max}€$periodLabel$paymentLabel';
     }
-    
+
     // Check for salary_type = selon_profil
     final salaryType = job['salary_type']?.toString();
     if (salaryType == 'selon_profil') {
       return 'Selon profil';
     }
-    
+
     return null; // No salary info available
   }
 
@@ -2053,8 +2214,18 @@ class _ParticulierDashboardScreenState
       try {
         final date = DateTime.parse(iso);
         const months = [
-          'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-          'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+          'janvier',
+          'février',
+          'mars',
+          'avril',
+          'mai',
+          'juin',
+          'juillet',
+          'août',
+          'septembre',
+          'octobre',
+          'novembre',
+          'décembre',
         ];
         return '${date.day} ${months[date.month - 1]} ${date.year}';
       } catch (_) {
@@ -4153,7 +4324,9 @@ class _ParticulierDashboardScreenState
       final data = response['data'] as Map<String, dynamic>? ?? response;
       debugPrint('DASHBOARD NAV: data.keys = ${data.keys.toList()}');
       debugPrint('DASHBOARD NAV: data[user] = ${data['user']}');
-      debugPrint('DASHBOARD NAV: data[user] runtimeType = ${data['user']?.runtimeType}');
+      debugPrint(
+        'DASHBOARD NAV: data[user] runtimeType = ${data['user']?.runtimeType}',
+      );
 
       final user = data['user'] as Map<String, dynamic>?;
       final profileImage = _defaultAvatar;
