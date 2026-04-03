@@ -94,18 +94,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               initAspectRatio: CropAspectRatioPreset.square,
               lockAspectRatio: true,
             ),
-            IOSUiSettings(
-              title: 'Ajuster l\'Avatar',
-            ),
+            IOSUiSettings(title: 'Ajuster l\'Avatar'),
           ],
         );
 
         if (croppedFile != null) {
           setState(() => _isLoading = true);
-          
+
           final file = File(croppedFile.path);
           final response = await _profileService.uploadAvatar(file);
-          
+
           if (response['success'] == true && response['avatar_url'] != null) {
             setState(() {
               _avatarUrl = response['avatar_url'];
@@ -124,10 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -246,454 +241,470 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
-          children: [
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      CircleAvatar(
-                        radius: 45,
-                        backgroundColor: Colors.grey[300],
-                        backgroundImage: _avatarUrl != null
-                            ? NetworkImage(
-                                "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${_avatarUrl!}",
-                              )
-                            : null,
-                        child: _avatarUrl == null
-                            ? const Icon(
-                                Icons.person,
-                                size: 50,
-                                color: Colors.white,
-                              )
-                            : null,
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: _pickAndUploadAvatar,
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF3AAE5E),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.edit,
-                              color: Colors.white,
-                              size: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              _pseudo ?? 'Utilisateur',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF616161),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
+                        CircleAvatar(
+                          radius: 45,
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage:
+                              _avatarUrl != null &&
+                                  (_avatarUrl!.startsWith('https') ||
+                                      _avatarUrl!.startsWith('http'))
+                              ? NetworkImage(_avatarUrl!)
+                              : (_avatarUrl != null
+                                    ? NetworkImage(
+                                        "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${_avatarUrl!}",
+                                      )
+                                    : null),
+                          child: _avatarUrl == null
+                              ? const Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: Colors.white,
+                                )
+                              : null,
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _pickAndUploadAvatar,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFF3E0),
-                                borderRadius: BorderRadius.circular(12),
+                                color: const Color(0xFF3AAE5E),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
                               ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.star,
-                                    color: Color(0xFFFF9800),
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    UserSession().mys.toString(),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFFFF9800),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    'My/s',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
+                              child: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 14,
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          UserSession().email ?? '',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF3AAE5E),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'Particulier',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MyPostsScreen(),
-                        ),
-                      );
-                    },
-                    child: _buildStatColumn(_postsCount.toString(), 'Post(s)'),
-                  ),
-                  Container(width: 1, height: 40, color: Colors.grey[300]),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FollowersScreen(
-                            userId: _userId,
-                          ),
-                        ),
-                      ).then((_) => _loadProfile());
-                    },
-                    child: _buildStatColumn(_followersCount.toString(), 'Follower(s)'),
-                  ),
-                  Container(width: 1, height: 40, color: Colors.grey[300]),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FollowersScreen(
-                            userId: _userId,
-                            initialShowFollowers: false,
-                          ),
-                        ),
-                      ).then((_) => _loadProfile());
-                    },
-                    child: _buildStatColumn(_followingCount.toString(), 'Suivi(s)'),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PublierScreen(),
-                            fullscreenDialog: true,
-                          ),
-                        ).then((_) => _loadProfile());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF8A40),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Image.asset(
-                            'assets/images/profil_pro/post.png',
-                            width: 20,
-                            height: 20,
-                            color: Colors.white,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _pseudo ?? 'Utilisateur',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF616161),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF3E0),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.star,
+                                      color: Color(0xFFFF9800),
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      UserSession().mys.toString(),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFFF9800),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      'My/s',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(height: 4),
                           Text(
-                            'Créer un post ou annonce',
-                            style: TextStyle(fontSize: 10),
+                            UserSession().email ?? '',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3AAE5E),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'Particulier',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const PublicProfileScreen(),
+                            builder: (context) => const MyPostsScreen(),
+                          ),
+                        );
+                      },
+                      child: _buildStatColumn(
+                        _postsCount.toString(),
+                        'Post(s)',
+                      ),
+                    ),
+                    Container(width: 1, height: 40, color: Colors.grey[300]),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                FollowersScreen(userId: _userId),
                           ),
                         ).then((_) => _loadProfile());
                       },
-                      icon: const Icon(Icons.visibility_outlined, size: 14),
-                      label: const Text(
-                        'Voir mon profil public',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: _buildStatColumn(
+                        _followersCount.toString(),
+                        'Follower(s)',
                       ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFFF9800),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 10,
+                    ),
+                    Container(width: 1, height: 40, color: Colors.grey[300]),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FollowersScreen(
+                              userId: _userId,
+                              initialShowFollowers: false,
+                            ),
+                          ),
+                        ).then((_) => _loadProfile());
+                      },
+                      child: _buildStatColumn(
+                        _followingCount.toString(),
+                        'Suivi(s)',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const PublierScreen(),
+                              fullscreenDialog: true,
+                            ),
+                          ).then((_) => _loadProfile());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF8A40),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                        side: const BorderSide(
-                          color: Color(0xFFFF9800),
-                          width: 1.5,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/images/profil_pro/post.png',
+                              width: 20,
+                              height: 20,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Créer un post ou annonce',
+                              style: TextStyle(fontSize: 10),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const PublicProfileScreen(),
+                            ),
+                          ).then((_) => _loadProfile());
+                        },
+                        icon: const Icon(Icons.visibility_outlined, size: 14),
+                        label: const Text(
+                          'Voir mon profil public',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFFF9800),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 10,
+                          ),
+                          side: const BorderSide(
+                            color: Color(0xFFFF9800),
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.85,
-                children: [
-                  _buildMenuCard(
-                    icon: 'assets/images/profil_pro/opt-1.png',
-                    backgroundColor: const Color(0xFFFFE0B2),
-                    title: 'Mes annonces',
-                    description:
-                        'Gérez vos annonces actives, modifiez ou supprimez vos publications',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MyAnnouncesScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: 'assets/images/profil_pro/opt-2.png',
-                    backgroundColor: const Color(0xFFE6F7EF),
-                    title: 'Mes posts',
-                    description:
-                        'Consultez et gérez vos publications sur le réseau social',
-                    color: const Color(0xFF04BC7B).withOpacity(0.15),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MyPostsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: 'assets/images/profil_pro/opt-3.png',
-                    backgroundColor: const Color(0xFFE6F7EF),
-                    title: 'Mes recherches sauvegardées',
-                    description:
-                        'Retrouvez vos critères de recherche',
-                    color: const Color(0xFF04BC7B).withOpacity(0.15),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SavedSearchesScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: 'assets/images/profil_pro/opt-4.png',
-                    backgroundColor: const Color(0xFFFFE0B2),
-                    title: 'Favoris',
-                    description:
-                        'Vos contenus préférés et éléments sauvegardés',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const FavoriteScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: 'assets/images/profil_pro/opt-6.png',
-                    backgroundColor: const Color(0xFFFFE0B2),
-                    title: 'Paramètres du compte',
-                    description:
-                        'Configurez vos préférences et sécurité',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: 'assets/images/profil_pro/opt-7.png',
-                    backgroundColor: const Color(0xFFE6F7EF),
-                    title: 'Espace candidat',
-                    description:
-                        'Suivez vos candidatures et documents professionnels',
-                    color: const Color(0xFF04BC7B).withOpacity(0.15),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const EspaceCandidatScreen(),
-                        ),
-                      ).then((_) => _loadProfile());
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: 'assets/images/profil_pro/opt-7.png',
-                    backgroundColor: const Color(0xFFE6F7EF),
-                    title: 'Récompenses',
-                    description:
-                        'Consultez vos points et avantages fidélité',
-                    color: const Color(0xFF04BC7B).withOpacity(0.15),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RecompensesScreen(),
-                        ),
-                      ).then((_) => _loadProfile());
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: 'assets/images/profil_pro/opt-8.png',
-                    backgroundColor: const Color(0xFFFFE0B2),
-                    title: 'Parrainage',
-                    description:
-                        'Invitez vos amis et gagnez des récompenses',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ParrainageScreen(),
-                        ),
-                      ).then((_) => _loadProfile());
-                    },
-                  ),
-                  _buildMenuCard(
-                    icon: 'assets/images/profil_pro/opt-1.png',
-                    backgroundColor: const Color(0xFFE6F7EF),
-                    title: 'Mon profil',
-                    description:
-                        'Gérez vos informations personnelles, votre présentation et vos réseaux sociaux',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const MonProfilParticulierScreen(),
-                        ),
-                      ).then((_) => _loadProfile());
-                    },
-                  ),
-                ],
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 0.85,
+                  children: [
+                    _buildMenuCard(
+                      icon: 'assets/images/profil_pro/opt-1.png',
+                      backgroundColor: const Color(0xFFFFE0B2),
+                      title: 'Mes annonces',
+                      description:
+                          'Gérez vos annonces actives, modifiez ou supprimez vos publications',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MyAnnouncesScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildMenuCard(
+                      icon: 'assets/images/profil_pro/opt-2.png',
+                      backgroundColor: const Color(0xFFE6F7EF),
+                      title: 'Mes posts',
+                      description:
+                          'Consultez et gérez vos publications sur le réseau social',
+                      color: const Color(0xFF04BC7B).withOpacity(0.15),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MyPostsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildMenuCard(
+                      icon: 'assets/images/profil_pro/opt-3.png',
+                      backgroundColor: const Color(0xFFE6F7EF),
+                      title: 'Mes recherches sauvegardées',
+                      description:
+                          'Retrouvez vos critères de recherche',
+                      color: const Color(0xFF04BC7B).withOpacity(0.15),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SavedSearchesScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildMenuCard(
+                      icon: 'assets/images/profil_pro/opt-4.png',
+                      backgroundColor: const Color(0xFFFFE0B2),
+                      title: 'Favoris',
+                      description:
+                          'Vos contenus préférés et éléments sauvegardés',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FavoriteScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildMenuCard(
+                      icon: 'assets/images/profil_pro/opt-6.png',
+                      backgroundColor: const Color(0xFFFFE0B2),
+                      title: 'Paramètres du compte',
+                      description:
+                          'Configurez vos préférences et sécurité',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SettingsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildMenuCard(
+                      icon: 'assets/images/profil_pro/opt-7.png',
+                      backgroundColor: const Color(0xFFE6F7EF),
+                      title: 'Espace candidat',
+                      description:
+                          'Suivez vos candidatures et documents professionnels',
+                      color: const Color(0xFF04BC7B).withOpacity(0.15),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EspaceCandidatScreen(),
+                          ),
+                        ).then((_) => _loadProfile());
+                      },
+                    ),
+                    _buildMenuCard(
+                      icon: 'assets/images/profil_pro/opt-7.png',
+                      backgroundColor: const Color(0xFFE6F7EF),
+                      title: 'Récompenses',
+                      description:
+                          'Consultez vos points et avantages fidélité',
+                      color: const Color(0xFF04BC7B).withOpacity(0.15),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RecompensesScreen(),
+                          ),
+                        ).then((_) => _loadProfile());
+                      },
+                    ),
+                    _buildMenuCard(
+                      icon: 'assets/images/profil_pro/opt-8.png',
+                      backgroundColor: const Color(0xFFFFE0B2),
+                      title: 'Parrainage',
+                      description:
+                          'Invitez vos amis et gagnez des récompenses',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ParrainageScreen(),
+                          ),
+                        ).then((_) => _loadProfile());
+                      },
+                    ),
+                    _buildMenuCard(
+                      icon: 'assets/images/profil_pro/opt-1.png',
+                      backgroundColor: const Color(0xFFE6F7EF),
+                      title: 'Mon profil',
+                      description:
+                          'Gérez vos informations personnelles, votre présentation et vos réseaux sociaux',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const MonProfilParticulierScreen(),
+                          ),
+                        ).then((_) => _loadProfile());
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  _buildMenuOption(
-                    icon: Icons.help_outline,
-                    iconColor: const Color(0xFF2E9B5B),
-                    title: 'Aide',
-                    onTap: () {},
-                    useProStyle: true,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildMenuOption(
-                    icon: Icons.logout,
-                    iconColor: const Color(0xFF2E9B5B),
-                    title: _isLoggingOut ? 'Déconnexion...' : 'Deconnexion',
-                    onTap: _isLoggingOut ? () {} : _handleLogout,
-                    useProStyle: true,
-                  ),
-                ],
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    _buildMenuOption(
+                      icon: Icons.help_outline,
+                      iconColor: const Color(0xFF2E9B5B),
+                      title: 'Aide',
+                      onTap: () {},
+                      useProStyle: true,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildMenuOption(
+                      icon: Icons.logout,
+                      iconColor: const Color(0xFF2E9B5B),
+                      title: _isLoggingOut ? 'Déconnexion...' : 'Deconnexion',
+                      onTap: _isLoggingOut ? () {} : _handleLogout,
+                      useProStyle: true,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 40),
-          ],
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildMenuCard({
     required String icon,

@@ -13,10 +13,10 @@ class ProfileService {
     required String pseudo,
     required String phone,
   }) async {
-    return await _api.authenticatedPut('/profile/particulier', body: {
-      'pseudo': pseudo,
-      'phone': phone,
-    });
+    return await _api.authenticatedPut(
+      '/profile/particulier',
+      body: {'pseudo': pseudo, 'phone': phone},
+    );
   }
 
   /// PUT /api/profile/pro/step1
@@ -88,7 +88,9 @@ class ProfileService {
   }
 
   /// PUT /api/profile/me
-  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> fields) async {
+  Future<Map<String, dynamic>> updateProfile(
+    Map<String, dynamic> fields,
+  ) async {
     return await _api.authenticatedPut('/profile/me', body: fields);
   }
 
@@ -99,6 +101,49 @@ class ProfileService {
       file: imageFile,
       fileField: 'image',
     );
+  }
+
+  /// POST /api/profile/me/banner
+  Future<Map<String, dynamic>> uploadBanner(File imageFile) async {
+    return await _api.authenticatedMultipart(
+      '/profile/me/banner',
+      file: imageFile,
+      fileField: 'image',
+    );
+  }
+
+  /// POST /api/profile/me/gallery - Upload single image
+  Future<Map<String, dynamic>> uploadGalleryImage(File imageFile) async {
+    return await _api.authenticatedMultipart(
+      '/profile/me/gallery',
+      file: imageFile,
+      fileField: 'image',
+    );
+  }
+
+  /// POST /api/profile/me/gallery - Upload multiple images
+  Future<Map<String, dynamic>> uploadGalleryImages(
+    List<File> imageFiles,
+  ) async {
+    return await _api.authenticatedMultipartMultiple(
+      '/profile/me/gallery',
+      files: imageFiles,
+      fileField: 'images',
+    );
+  }
+
+  /// POST /api/profile/me/gallery - Upload single video
+  Future<Map<String, dynamic>> uploadGalleryVideo(File videoFile) async {
+    return await _api.authenticatedMultipart(
+      '/profile/me/gallery',
+      file: videoFile,
+      fileField: 'video',
+    );
+  }
+
+  /// DELETE /api/profile/me/gallery/{index}
+  Future<Map<String, dynamic>> deleteGalleryImage(int index) async {
+    return await _api.authenticatedDelete('/profile/me/gallery/$index');
   }
 
   /// GET /api/profile/{userId}/followers
@@ -125,14 +170,21 @@ class ProfileService {
   /// GET /api/profile/pseudo/check?pseudo=xxx
   Future<Map<String, dynamic>> checkPseudo(String pseudo) async {
     final encodedPseudo = Uri.encodeComponent(pseudo);
-    return await _api.authenticatedGet('/profile/pseudo/check?pseudo=$encodedPseudo');
+    return await _api.authenticatedGet(
+      '/profile/pseudo/check?pseudo=$encodedPseudo',
+    );
   }
 
   /// GET /api/profile/pseudo/suggestions?pseudo=xxx
   Future<List<String>> getPseudoSuggestions(String pseudo) async {
     final encodedPseudo = Uri.encodeComponent(pseudo);
-    final response = await _api.authenticatedGet('/profile/pseudo/suggestions?pseudo=$encodedPseudo');
-    return (response['suggestions'] as List?)?.map((s) => s.toString()).toList() ?? [];
+    final response = await _api.authenticatedGet(
+      '/profile/pseudo/suggestions?pseudo=$encodedPseudo',
+    );
+    return (response['suggestions'] as List?)
+            ?.map((s) => s.toString())
+            .toList() ??
+        [];
   }
 
   /// GET /api/profile/me/pseudo-limit

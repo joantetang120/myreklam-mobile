@@ -409,13 +409,14 @@ class _MessageScreenState extends State<MessageScreen> {
                                           right: -2,
                                           child: GestureDetector(
                                             onTap: () async {
-                                              final result = await Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      const AddStoryScreen(),
-                                                ),
-                                              );
+                                              final result =
+                                                  await Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (_) =>
+                                                          const AddStoryScreen(),
+                                                    ),
+                                                  );
                                               if (result is StoryModel) {
                                                 _storyStore.addStory(result);
                                               }
@@ -455,8 +456,7 @@ class _MessageScreenState extends State<MessageScreen> {
                                 padding: const EdgeInsets.only(left: 12),
                                 child: AvatarsStory(
                                   name: group.userName.split(' ').first,
-                                  imageName:
-                                      group.userAvatar ?? _defaultAvatar,
+                                  imageName: group.userAvatar ?? _defaultAvatar,
                                   onTap: () => _openStory(context, group),
                                 ),
                               ),
@@ -570,22 +570,118 @@ class _MessageScreenState extends State<MessageScreen> {
                                 .getFormattedUserType();
                             final isPro = conversation.isOtherUserPro;
 
-                            return GestureDetector(
-                              onTap: () => _openConversation(conversation),
-                              child: ChatItemWidget(
-                                image:
-                                    otherUserAvatar ??
-                                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                                name: otherUserName,
-                                text:
-                                    conversation.lastMessage ??
-                                    'Commencer a discuter avec $otherUserName',
-                                time: _formatTime(conversation.lastMessageTime),
-                                isRead: unreadCount == 0,
-                                isFromMe: conversation.isLastMessageFromMe,
-                                userType: userType.isNotEmpty ? userType : null,
-                                isPro: isPro,
-                                unreadCount: unreadCount,
+                            return Dismissible(
+                              key: Key('conversation_${conversation.id}'),
+                              direction: DismissDirection.endToStart,
+                              background: Container(
+                                alignment: Alignment.centerRight,
+                                padding: const EdgeInsets.only(right: 20),
+                                color: Colors.red,
+                                child: const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.delete,
+                                      color: Colors.white,
+                                      size: 28,
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Supprimer',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              confirmDismiss: (direction) async {
+                                return await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text(
+                                      'Supprimer la conversation',
+                                    ),
+                                    content: const Text(
+                                      'Cette conversation sera supprimée de votre liste. Vous ne verrez plus les messages précédents, mais vous pourrez recevoir de nouveaux messages.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, false),
+                                        child: const Text('Annuler'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () =>
+                                            Navigator.pop(ctx, true),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                        child: const Text('Supprimer'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                              onDismissed: (direction) async {
+                                try {
+                                  await _conversationService.deleteConversation(
+                                    conversation.id,
+                                  );
+                                  setState(() {
+                                    _allConversations.removeWhere(
+                                      (c) => c.id == conversation.id,
+                                    );
+                                    _filteredConversations.removeWhere(
+                                      (c) => c.id == conversation.id,
+                                    );
+                                  });
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Conversation supprimée'),
+                                        backgroundColor: Color(0xFF3AAE5E),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  debugPrint('Error deleting conversation: $e');
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Erreur: $e'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                  // Recharger les conversations en cas d'erreur
+                                  await _loadConversations();
+                                }
+                              },
+                              child: GestureDetector(
+                                onTap: () => _openConversation(conversation),
+                                child: ChatItemWidget(
+                                  image:
+                                      otherUserAvatar ??
+                                      'assets/images/dashboard_particulier/Ellipse 10.png',
+                                  name: otherUserName,
+                                  text:
+                                      conversation.lastMessage ??
+                                      'Commencer a discuter avec $otherUserName',
+                                  time: _formatTime(
+                                    conversation.lastMessageTime,
+                                  ),
+                                  isRead: unreadCount == 0,
+                                  isFromMe: conversation.isLastMessageFromMe,
+                                  userType: userType.isNotEmpty
+                                      ? userType
+                                      : null,
+                                  isPro: isPro,
+                                  unreadCount: unreadCount,
+                                ),
                               ),
                             );
                           },

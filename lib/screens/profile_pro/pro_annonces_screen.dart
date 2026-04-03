@@ -1092,6 +1092,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
   }
 
   Widget _buildTrainingCard(Map<String, dynamic> tr) {
+    print("Training: ${tr['user']}");
+
     final title = tr['title']?.toString() ?? '';
     final description = _stripHtml(tr['description']?.toString() ?? '');
     final createdAt = tr['created_at']?.toString();
@@ -1102,6 +1104,14 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     final category = tr['training_category']?.toString() ?? '';
     final subCategory = tr['training_sub_category']?.toString() ?? '';
     final trainingType = tr['training_type']?.toString() ?? '';
+
+    final companyName = tr['user']['pro_profile'] != null
+        ? tr['user']['pro_profile']['company_name']?.toString()
+        : tr['user']['particulier_profile']['pseudo']?.toString();
+
+    final avatar = tr['user']['pro_profile'] != null
+        ? tr['user']['pro_profile']['avatar_url']?.toString()
+        : tr['user']['particulier_profile']['avatar_url']?.toString();
 
     final tags = <FormationTag>[
       if (category.isNotEmpty)
@@ -1127,8 +1137,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     ];
 
     return FormationCard(
-      companyLogo: 'assets/images/Formation.png',
-      companyName: 'Ma formation',
+      companyLogo: avatar ?? 'assets/images/Formation.png',
+      companyName: companyName ?? 'Ma formation',
       formationTitle: title,
       description: description.isNotEmpty
           ? description
@@ -1408,9 +1418,34 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       if (formatType.isNotEmpty) formatType,
     ];
 
+    // Extract user data for event card
+    final eventUser = ev['user'] is Map<String, dynamic>
+        ? ev['user'] as Map<String, dynamic>
+        : null;
+    String eventUsername = 'Mon événement';
+    String eventAvatar = '';
+    if (eventUser != null) {
+      if (eventUser['pro_profile'] is Map) {
+        final p = eventUser['pro_profile'] as Map;
+        final n = p['company_name']?.toString() ?? '';
+        if (n.isNotEmpty) eventUsername = n;
+        final logo =
+            p['avatar_url']?.toString() ?? p['logo_url']?.toString() ?? '';
+        if (logo.isNotEmpty) eventAvatar = _buildImageUrl(logo);
+      } else if (eventUser['particulier_profile'] is Map) {
+        final p = eventUser['particulier_profile'] as Map;
+        final n = p['pseudo']?.toString() ?? '';
+        if (n.isNotEmpty) eventUsername = n;
+        final logo = p['avatar_url']?.toString() ?? '';
+        if (logo.isNotEmpty) eventAvatar = _buildImageUrl(logo);
+      }
+    }
+
     return EvenementCard(
-      profileImage: 'assets/images/default_profile.png',
-      username: 'Mon événement',
+      profileImage: eventAvatar.isNotEmpty
+          ? eventAvatar
+          : 'assets/images/default_profile.png',
+      username: eventUsername,
       userType: 'Organisateur',
       eventTitle: title,
       eventImage: eventImage,

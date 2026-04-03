@@ -246,6 +246,7 @@ class ApiClient {
         request.fields.addAll(fields);
       }
 
+      // Single file - no array index
       final multipartFile = await http.MultipartFile.fromPath(
         fileField,
         file.path,
@@ -268,11 +269,88 @@ class ApiClient {
           request.headers['Authorization'] = 'Bearer $token';
           request.headers['Accept'] = 'application/json';
           if (fields != null) request.fields.addAll(fields);
+          // Single file - no array index
           final multipartFile = await http.MultipartFile.fromPath(
             fileField,
             file.path,
           );
           request.files.add(multipartFile);
+          final streamedResponse = await request.send().timeout(
+            ApiConfig.connectTimeout,
+          );
+          final response = await http.Response.fromStream(streamedResponse);
+          return _handleResponse(response);
+        }
+      }
+      rethrow;
+    } on TimeoutException {
+      throw ApiException(
+        statusCode: 0,
+        message: 'Le serveur met trop de temps à répondre.',
+      );
+    } on SocketException {
+      throw ApiException(
+        statusCode: 0,
+        message: 'Impossible de se connecter au serveur.',
+      );
+    } on Exception {
+      throw ApiException(statusCode: 0, message: 'Erreur inattendue.');
+    }
+  }
+
+  Future<Map<String, dynamic>> authenticatedMultipartMultiple(
+    String endpoint, {
+    required List<File> files,
+    required String fileField,
+    String method = 'POST',
+    Map<String, String>? fields,
+  }) async {
+    try {
+      final token = await TokenStorage.getAccessToken();
+      final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+
+      final request = http.MultipartRequest(method, url);
+
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      request.headers['Accept'] = 'application/json';
+
+      if (fields != null) {
+        request.fields.addAll(fields);
+      }
+
+      for (var i = 0; i < files.length; i++) {
+        final multipartFile = await http.MultipartFile.fromPath(
+          '${fileField}[$i]',
+          files[i].path,
+        );
+        request.files.add(multipartFile);
+      }
+
+      final streamedResponse = await request.send().timeout(
+        ApiConfig.connectTimeout,
+      );
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return _handleResponse(response);
+    } on ApiException catch (e) {
+      if (e.statusCode == 401) {
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          final token = await TokenStorage.getAccessToken();
+          final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+          final request = http.MultipartRequest(method, url);
+          request.headers['Authorization'] = 'Bearer $token';
+          request.headers['Accept'] = 'application/json';
+          if (fields != null) request.fields.addAll(fields);
+          for (var i = 0; i < files.length; i++) {
+            final multipartFile = await http.MultipartFile.fromPath(
+              '${fileField}[$i]',
+              files[i].path,
+            );
+            request.files.add(multipartFile);
+          }
           final streamedResponse = await request.send().timeout(
             ApiConfig.connectTimeout,
           );
