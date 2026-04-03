@@ -1085,9 +1085,17 @@ class _ParticulierDashboardScreenState
         })
         .where((url) => url.isNotEmpty)
         .toList();
-    // Check if already favorited from API data
+    // Check if already favorited by current user
     final favoris = bp['bon_plan_favorites'] as List? ?? [];
-    final bool isFavorited = favoris.isNotEmpty;
+    final currentUserId = UserSession().id;
+    final bool isFavorited =
+        currentUserId != null &&
+        favoris.any(
+          (f) =>
+              f is Map &&
+              (f['user_id']?.toString() == currentUserId ||
+                  f['user']?['id']?.toString() == currentUserId),
+        );
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -1771,9 +1779,17 @@ class _ParticulierDashboardScreenState
         training['provider_name']?.toString() ??
         'Organisme';
 
-    // Check initial favorite status
+    // Check if already favorited by current user
     final favoris = training['training_favorites'] as List? ?? [];
-    final bool isFavorited = favoris.isNotEmpty;
+    final currentUserId = UserSession().id;
+    final bool isFavorited =
+        currentUserId != null &&
+        favoris.any(
+          (f) =>
+              f is Map &&
+              (f['user_id']?.toString() == currentUserId ||
+                  f['user']?['id']?.toString() == currentUserId),
+        );
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -1920,8 +1936,17 @@ class _ParticulierDashboardScreenState
       tags.add(formatTranslations[formatType] ?? formatType);
     }
 
+    // Check if already favorited by current user
     final favoris = event['event_favorites'] as List? ?? [];
-    bool isFavorited = favoris.isNotEmpty;
+    final currentUserId = UserSession().id;
+    bool isFavorited =
+        currentUserId != null &&
+        favoris.any(
+          (f) =>
+              f is Map &&
+              (f['user_id']?.toString() == currentUserId ||
+                  f['user']?['id']?.toString() == currentUserId),
+        );
 
     Future<void> _toggleFavorite() async {
       try {
@@ -2044,51 +2069,6 @@ class _ParticulierDashboardScreenState
     final postImage = _extractMediaUrl(demande);
 
     final demandeId = demande['id']?.toString() ?? '';
-
-    final favoris = demande['bon_plan_favorites'] as List? ?? [];
-    bool isFavorited = favoris.isNotEmpty;
-
-    Future<void> _toggleFavorite() async {
-      try {
-        if (isFavorited) {
-          // Remove from favorites
-          await ApiClient().authenticatedDelete(
-            '/bonplans/$demandeId/favorite',
-          );
-        } else {
-          // Add to favorites
-          await ApiClient().authenticatedPost('/bonplans/$demandeId/favorite');
-        }
-
-        setState(() {
-          isFavorited = !isFavorited;
-        });
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                style: TextStyle(color: Colors.white),
-              ),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        debugPrint('Favorite toggle error: $e');
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Erreur lors de la mise à jour des favoris'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
 
     return DemandeCard(
       profileImage: profileImage,
