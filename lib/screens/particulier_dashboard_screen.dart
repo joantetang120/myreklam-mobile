@@ -520,8 +520,8 @@ class _ParticulierDashboardScreenState
   bool _feedHasMore = true;
   String? _feedError;
   int _feedPage = 1;
-  final int _feedLimit = 20;
-  final int _feedPerTypeLimit = 4;
+  final int _feedLimit = 50;
+  final Set<String> _loadedItemIds = {}; // Track loaded items to prevent duplicates
   String? _currentUserId;
 
   // Reaction state per entity: key = "entityType:entityId"
@@ -916,6 +916,7 @@ class _ParticulierDashboardScreenState
     if (reset) {
       _feedPage = 1;
       _feedHasMore = true;
+      _loadedItemIds.clear();
       setState(() {
         _isLoadingFeed = true;
         _feedError = null;
@@ -929,7 +930,7 @@ class _ParticulierDashboardScreenState
 
     try {
       final params =
-          '?page=$_feedPage&limit=$_feedLimit&per_type_limit=$_feedPerTypeLimit';
+          '?page=$_feedPage&limit=$_feedLimit';
       final response = await ApiClient().get('/feed/latest$params');
       final data = response['data'];
       List<Map<String, dynamic>> fetched = [];
@@ -937,18 +938,32 @@ class _ParticulierDashboardScreenState
         fetched = List<Map<String, dynamic>>.from(data['items'] as List);
       }
 
+      // Deduplicate items based on feed_type and id
+      final newItems = <Map<String, dynamic>>[];
+      for (final item in fetched) {
+        final itemId = '${item['feed_type']}_${item['id']}';
+        if (!_loadedItemIds.contains(itemId)) {
+          _loadedItemIds.add(itemId);
+          newItems.add(item);
+        }
+      }
+
       if (mounted) {
         setState(() {
           if (reset) {
-            _feedItems = fetched;
+            _feedItems = newItems;
           } else {
-            _feedItems.addAll(fetched);
+            _feedItems.addAll(newItems);
           }
-          _feedHasMore = fetched.length >= _feedLimit;
+          // Use has_more from backend response if available, otherwise fallback to length check
+          final meta = data is Map<String, dynamic> ? data['meta'] as Map? : null;
+          _feedHasMore = meta != null && meta['has_more'] is bool 
+              ? meta['has_more'] as bool 
+              : newItems.length >= _feedLimit;
           if (_feedHasMore) {
             _feedPage += 1;
           }
-          if (fetched.isEmpty) {
+          if (newItems.isEmpty) {
             _feedHasMore = false;
           }
         });
@@ -2095,9 +2110,10 @@ class _ParticulierDashboardScreenState
         return 'Recherche de formation';
       case 'realestate':
       case 'logement':
-        return 'Recherche de logement';
+        return 'Immobilier';
       case 'service':
-        return 'Recherche de service';
+      case 'servicehelp':
+        return 'Service/Aide';
       case 'product':
       case 'produit':
         return 'Recherche de produit';

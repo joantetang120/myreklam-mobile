@@ -80,9 +80,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
   static const _natureLabels = {
     'emploi': 'Recherche d\'emploi',
     'searchjob': 'Recherche d\'emploi',
-    'service': 'Recherche de service',
-    'logement': 'Recherche de logement',
-    'immobilier': 'Recherche de logement',
+    'service': 'Service/Aide',
+    'servicehelp': 'Service/Aide',
+    'logement': 'Immobilier',
+    'realestate': 'Immobilier',
     'produit': 'Recherche de produit',
     'formation': 'Recherche de formation',
     'collaboration': 'Collaboration',
@@ -93,6 +94,15 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     'jobsearch': 'Recherche d\'emploi',
     'autre': 'Autre demande',
   };
+
+  static const _typeLabels = {
+    'Ticketing': 'Billetterie',
+  };
+
+  String _getTypeLabel(String? type) {
+    if (type == null || type.isEmpty) return '';
+    return _typeLabels[type] ?? type;
+  }
 
   String _getNatureLabel(String? nature) {
     if (nature == null || nature.isEmpty) return 'Demande';
@@ -840,8 +850,44 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     }
   }
 
+  /// Extracts and resolves image URLs from demandeData as fallback
+  List<String> _extractImagesFromDemandeData() {
+    if (widget.images.isNotEmpty) return widget.images;
+    
+    final data = widget.demandeData;
+    if (data == null) return [];
+    
+    final mediaFiles = data['media'] ?? data['media_files'];
+    if (mediaFiles is! List) return [];
+    
+    final List<String> imageUrls = [];
+    final serverBase = ApiConfig.baseUrl.replaceFirst('/api', '');
+    
+    for (final item in mediaFiles) {
+      if (item is Map<String, dynamic>) {
+        final url = item['url']?.toString();
+        if (url != null && url.isNotEmpty) {
+          if (url.startsWith('http')) {
+            imageUrls.add(url);
+          } else if (url.startsWith('/storage/')) {
+            // URL already has /storage/ prefix, just prepend server base
+            imageUrls.add('$serverBase$url');
+          } else if (url.startsWith('/')) {
+            imageUrls.add('$serverBase$url');
+          } else {
+            // Relative path without leading /
+            imageUrls.add('$serverBase/$url');
+          }
+        }
+      }
+    }
+    
+    return imageUrls;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final effectiveImages = _extractImagesFromDemandeData();
     return AppLayout(
       backgroundColor: const Color(0xFFF9F9FB),
       onTabTapped: (index) {
@@ -968,8 +1014,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. Image Carousel - full width
-              if (widget.images.isNotEmpty)
-                ImageCarousel(images: widget.images),
+              if (effectiveImages.isNotEmpty)
+                ImageCarousel(images: effectiveImages),
 
               // 2. Tags + Title + Urgent
               Padding(
@@ -980,7 +1026,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     // Nature tag
                     if (widget.type != null && widget.type!.isNotEmpty)
                       _buildTag(
-                        widget.type!,
+                        _getTypeLabel(widget.type!),
                         Icons.description_outlined,
                         const Color(0xFF3AAE5E),
                       ),
@@ -1077,17 +1123,34 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     ),
                     const SizedBox(height: 16),
                     ..._buildDetailsGrid(),
+                      // Date (only when both start_date and end_date exist)
+                    if (widget.demandeData != null &&
+                        widget.demandeData!['start_date'] != null &&
+                        widget.demandeData!['end_date'] != null) ...[
+                      const SizedBox(height: 12),
+                      _buildDetailItem(
+                        icon: Icons.calendar_today_outlined,
+                        iconColor: const Color(0xFF2196F3),
+                        bgColor: const Color(0xFFE3F2FD),
+                        label: 'Date Souhaitée',
+                        value: 'Du ${formatDate(widget.demandeData!['start_date'])} jusqu\'au ${formatDate(widget.demandeData!['end_date'])}',
+                      ),
+                    ],
                     // Lieu
                     if (_hasLocation()) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 4),
                       _buildDetailItem(
                         icon: Icons.location_on_outlined,
                         iconColor: const Color(0xFF3AAE5E),
                         bgColor: const Color(0xFFE6F7EF),
-                        label: 'Zone de recherche',
+                        label: 'Localisation',
                         value: widget.nationwide
                             ? 'Toute la France'
-                            : (widget.location ?? 'Non spécifié'),
+                            : (widget.location != null && widget.location!.isNotEmpty
+                                ? (widget.searchRadiusKm != null
+                                    ? '${widget.searchRadiusKm}km autour de ${widget.location}'
+                                    : widget.location!)
+                                : 'Non spécifié'),
                       ),
                     ],
                     // Budget
@@ -1103,6 +1166,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                         value: _buildBudgetText(),
                       ),
                     ],
+                    // Date (only when both start_date and end_date exist)
+                    
                     const SizedBox(height: 5),
                   ],
                 ),
@@ -1591,19 +1656,33 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     final budgetMin = data['budget_min'];
     final budgetMax = data['budget_max'];
     
-    String minStr = '-';
-    if (budgetMin != null) {
+    final bool hasMin = budgetMin != null;
+    final bool hasMax = budgetMax != null;
+    
+    // Format min value
+    String? minStr;
+    if (hasMin) {
       final minNum = double.tryParse(budgetMin.toString()) ?? 0;
-      minStr = minNum.round().toString();
+      minStr = '${minNum.round()} €';
     }
     
-    String maxStr = '-';
-    if (budgetMax != null) {
+    // Format max value
+    String? maxStr;
+    if (hasMax) {
       final maxNum = double.tryParse(budgetMax.toString()) ?? 0;
-      maxStr = maxNum.round().toString();
+      maxStr = '${maxNum.round()} €';
     }
     
-    return 'Min: $minStr € - Max: $maxStr €';
+    // Return appropriate format based on which values exist
+    if (hasMin && hasMax) {
+      return 'Min: $minStr - Max: $maxStr';
+    } else if (hasMin) {
+      return 'Min: $minStr';
+    } else if (hasMax) {
+      return 'Max: $maxStr';
+    }
+    
+    return 'Non spécifié';
   }
 
   List<Widget> _buildDetailsGrid() {
@@ -1840,67 +1919,65 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         icon: Icons.home_work_outlined,
         iconBg: const Color(0xFFF5F5F5),
         iconColor: const Color(0xFF616161),
-        title: 'Type de bien souhaiter',
+        title: 'Type de bien souhaité',
         value: props.isNotEmpty ? props.join(', ') : null,
       );
       final shMin = str(data['surface_habitable_min']);
       final shMax = str(data['surface_habitable_max']);
+      String? surfaceHabitableValue;
+      if (shMin != null && shMax != null) {
+        surfaceHabitableValue = 'Min: $shMin m² - Max: $shMax m²';
+      } else if (shMin != null) {
+        surfaceHabitableValue = 'Min: $shMin m²';
+      } else if (shMax != null) {
+        surfaceHabitableValue = 'Max: $shMax m²';
+      }
       addTile(
         icon: Icons.square_foot_outlined,
         iconBg: const Color(0xFFE3F2FD),
         iconColor: const Color(0xFF1E88E5),
         title: 'Surface habitable',
-        value: (shMin != null || shMax != null)
-            ? '${shMin ?? '-'} - ${shMax ?? '-'} m²'
-            : null,
+        value: surfaceHabitableValue,
       );
       final stMin = str(data['surface_terrain_min']);
       final stMax = str(data['surface_terrain_max']);
-      // Only show Terrain if values exist and are not 0
-      bool hasNonZeroTerrain = false;
-      String? terrainValue;
-      
-      if (stMin != null || stMax != null) {
-        final stMinNum = double.tryParse(stMin ?? '0') ?? 0;
-        final stMaxNum = double.tryParse(stMax ?? '0') ?? 0;
-        
-        // Show if at least one value is non-zero
-        if (stMinNum > 0 || stMaxNum > 0) {
-          hasNonZeroTerrain = true;
-          terrainValue = '${stMinNum > 0 ? stMinNum.toString() : '-'} - ${stMaxNum > 0 ? stMaxNum.toString() : '-'} m²';
-        }
+      String terrainValue;
+
+      final stMinNum = double.tryParse(stMin ?? '0') ?? 0;
+      final stMaxNum = double.tryParse(stMax ?? '0') ?? 0;
+
+      if (stMinNum > 0 && stMaxNum > 0) {
+        terrainValue = 'Min: $stMinNum m² - Max: $stMaxNum m²';
+      } else if (stMinNum > 0) {
+        terrainValue = 'Min: $stMinNum m²';
+      } else if (stMaxNum > 0) {
+        terrainValue = 'Max: $stMaxNum m²';
+      } else {
+        terrainValue = 'indifférent';
       }
-      
-      if (hasNonZeroTerrain && terrainValue != null) {
-        addTile(
-          icon: Icons.terrain_outlined,
-          iconBg: const Color(0xFFEDE7F6),
-          iconColor: const Color(0xFF673AB7),
-          title: 'Terrain',
-          value: terrainValue,
-        );
-      }
+
+      addTile(
+        icon: Icons.terrain_outlined,
+        iconBg: const Color(0xFFEDE7F6),
+        iconColor: const Color(0xFF673AB7),
+        title: 'Terrain',
+        value: terrainValue,
+      );
       addTile(
         icon: Icons.meeting_room_outlined,
         iconBg: const Color(0xFFFFF3E0),
         iconColor: const Color(0xFFFF9800),
-        title: 'Pièces',
-        value: str(data['nb_pieces']),
+        title: 'Nombre de Pièces',
+        value: str(data['nb_pieces']) ?? "indifférent",
       );
       addTile(
         icon: Icons.bed_outlined,
         iconBg: const Color(0xFFFFEBEE),
         iconColor: const Color(0xFFE53935),
-        title: 'Chambres',
-        value: str(data['nb_chambres']),
+        title: 'Nombre de Chambres',
+        value: str(data['nb_chambres']) ?? "indifférent",
       );
-      addTile(
-        icon: Icons.weekend_outlined,
-        iconBg: const Color(0xFFF3E5F5),
-        iconColor: const Color(0xFF8E24AA),
-        title: 'Meublé',
-        value: formatBool(data['meuble']),
-      );
+    
     } else if (isEmploi || isStage || isAlternance) {
       // Translation maps
       const educationLabels = {
@@ -2236,6 +2313,26 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
       timeAgo: _timeAgo(d['created_at']?.toString()),
       onTapCTA: () {
         final id = d['id']?.toString();
+        
+        // Extract and resolve image URLs from media_files (same pattern as job_detail)
+        final mediaFiles = d['media'] ?? d['media_files'];
+        final List<String> imageUrls = [];
+        if (mediaFiles is List) {
+          final serverBase = ApiConfig.baseUrl.replaceFirst('/api', '');
+          for (final item in mediaFiles) {
+            if (item is Map<String, dynamic>) {
+              final url = item['url']?.toString();
+              if (url != null && url.isNotEmpty) {
+                if (url.startsWith('http')) {
+                  imageUrls.add(url);
+                } else {
+                  imageUrls.add('$serverBase$url');
+                }
+              }
+            }
+          }
+        }
+        
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -2250,6 +2347,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
               urgent: urgent,
               demandeId: id,
               demandeData: d,
+              images: imageUrls,
               acceptMessages:
                   d['accept_messages'] == true || d['accept_messages'] == 1,
             ),
