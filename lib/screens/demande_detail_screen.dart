@@ -978,13 +978,13 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Nature tag
-                    if (widget.nature != null && widget.nature!.isNotEmpty)
+                    if (widget.type != null && widget.type!.isNotEmpty)
                       _buildTag(
-                        _getNatureLabel(widget.nature),
+                        widget.type!,
                         Icons.description_outlined,
                         const Color(0xFF3AAE5E),
                       ),
-                    if (widget.nature != null && widget.nature!.isNotEmpty)
+                    if (widget.type != null && widget.type!.isNotEmpty)
                       const SizedBox(height: 10),
                     // Urgent badge
                     if (widget.urgent)
@@ -1090,6 +1090,19 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                             : (widget.location ?? 'Non spécifié'),
                       ),
                     ],
+                    // Budget
+                    if (widget.demandeData != null &&
+                        (widget.demandeData!['budget_min'] != null ||
+                            widget.demandeData!['budget_max'] != null)) ...[
+                      const SizedBox(height: 12),
+                      _buildDetailItem(
+                        icon: Icons.account_balance_wallet_outlined,
+                        iconColor: const Color(0xFF2A8143),
+                        bgColor: const Color(0xFFE6F7EF),
+                        label: 'Budget',
+                        value: _buildBudgetText(),
+                      ),
+                    ],
                     const SizedBox(height: 5),
                   ],
                 ),
@@ -1135,8 +1148,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                         const SizedBox(height: 12),
 
                       // Documents button
-                      if ((formatBool(widget.demandeData?['use_candidate_documents'] ?? widget.demandeData?['doc_cand']) == 'Oui') || 
-                          (widget.demandeData?['media_files'] as List? ?? widget.demandeData?['media'] as List? ?? []).isNotEmpty)
+                      if (((formatBool(widget.demandeData?['use_candidate_documents'] ?? widget.demandeData?['doc_cand']) == 'Oui') ||
+                          (widget.demandeData?['media_files'] as List? ?? widget.demandeData?['media'] as List? ?? []).isNotEmpty) &&
+                          !(widget.nature?.toLowerCase().contains('immobilier') ?? false))
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
@@ -1155,8 +1169,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                             ),
                           ),
                         ),
-                      if ((formatBool(widget.demandeData?['use_candidate_documents'] ?? widget.demandeData?['doc_cand']) == 'Oui') || 
-                          (widget.demandeData?['media_files'] as List? ?? widget.demandeData?['media'] as List? ?? []).isNotEmpty)
+                      if (((formatBool(widget.demandeData?['use_candidate_documents'] ?? widget.demandeData?['doc_cand']) == 'Oui') ||
+                          (widget.demandeData?['media_files'] as List? ?? widget.demandeData?['media'] as List? ?? []).isNotEmpty) &&
+                          !(widget.nature?.toLowerCase().contains('immobilier') ?? false))
                         const SizedBox(height: 16),
                     ],
                   ),
@@ -1218,14 +1233,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                               fontFamily: 'Manjari',
                             ),
                           ),
-                          Text(
-                            _getNatureLabel(widget.nature),
-                            style: TextStyle(
-                              fontSize: 13, 
-                              color: Colors.grey[600],
-                              fontFamily: 'Manjari',
-                            ),
-                          ),
+                         
                         ],
                       ),
                     ),
@@ -1578,6 +1586,26 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         (widget.location != null && widget.location!.isNotEmpty);
   }
 
+  String _buildBudgetText() {
+    final data = widget.demandeData ?? const <String, dynamic>{};
+    final budgetMin = data['budget_min'];
+    final budgetMax = data['budget_max'];
+    
+    String minStr = '-';
+    if (budgetMin != null) {
+      final minNum = double.tryParse(budgetMin.toString()) ?? 0;
+      minStr = minNum.round().toString();
+    }
+    
+    String maxStr = '-';
+    if (budgetMax != null) {
+      final maxNum = double.tryParse(budgetMax.toString()) ?? 0;
+      maxStr = maxNum.round().toString();
+    }
+    
+    return 'Min: $minStr € - Max: $maxStr €';
+  }
+
   List<Widget> _buildDetailsGrid() {
     final tiles = _buildDetailTiles();
     if (tiles.isEmpty) return [];
@@ -1807,19 +1835,12 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         );
       }
     } else if (isImmobilier) {
-      addTile(
-        icon: Icons.apartment_outlined,
-        iconBg: const Color(0xFFE6F7EF),
-        iconColor: const Color(0xFF2A8143),
-        title: 'Type demande',
-        value: str(data['real_estate_type']),
-      );
       final props = listStr(data['property_types']);
       addTile(
         icon: Icons.home_work_outlined,
         iconBg: const Color(0xFFF5F5F5),
         iconColor: const Color(0xFF616161),
-        title: 'Type de bien',
+        title: 'Type de bien souhaiter',
         value: props.isNotEmpty ? props.join(', ') : null,
       );
       final shMin = str(data['surface_habitable_min']);
@@ -1828,22 +1849,37 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         icon: Icons.square_foot_outlined,
         iconBg: const Color(0xFFE3F2FD),
         iconColor: const Color(0xFF1E88E5),
-        title: 'Surface hab.',
+        title: 'Surface habitable',
         value: (shMin != null || shMax != null)
             ? '${shMin ?? '-'} - ${shMax ?? '-'} m²'
             : null,
       );
       final stMin = str(data['surface_terrain_min']);
       final stMax = str(data['surface_terrain_max']);
-      addTile(
-        icon: Icons.terrain_outlined,
-        iconBg: const Color(0xFFEDE7F6),
-        iconColor: const Color(0xFF673AB7),
-        title: 'Terrain',
-        value: (stMin != null || stMax != null)
-            ? '${stMin ?? '-'} - ${stMax ?? '-'} m²'
-            : null,
-      );
+      // Only show Terrain if values exist and are not 0
+      bool hasNonZeroTerrain = false;
+      String? terrainValue;
+      
+      if (stMin != null || stMax != null) {
+        final stMinNum = double.tryParse(stMin ?? '0') ?? 0;
+        final stMaxNum = double.tryParse(stMax ?? '0') ?? 0;
+        
+        // Show if at least one value is non-zero
+        if (stMinNum > 0 || stMaxNum > 0) {
+          hasNonZeroTerrain = true;
+          terrainValue = '${stMinNum > 0 ? stMinNum.toString() : '-'} - ${stMaxNum > 0 ? stMaxNum.toString() : '-'} m²';
+        }
+      }
+      
+      if (hasNonZeroTerrain && terrainValue != null) {
+        addTile(
+          icon: Icons.terrain_outlined,
+          iconBg: const Color(0xFFEDE7F6),
+          iconColor: const Color(0xFF673AB7),
+          title: 'Terrain',
+          value: terrainValue,
+        );
+      }
       addTile(
         icon: Icons.meeting_room_outlined,
         iconBg: const Color(0xFFFFF3E0),

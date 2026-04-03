@@ -673,12 +673,44 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 'Organisateur: ${_resolveOwnerName()}',
                 style: TextStyle(fontSize: 13, color: Colors.grey[600]),
               ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              const Text(
+                'Ajouter à mon calendrier',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF333333),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildCalendarOption(
+                icon: Icons.calendar_today,
+                label: 'Google Calendar',
+                color: const Color(0xFF4285F4),
+                onTap: _addToGoogleCalendar,
+              ),
+              const SizedBox(height: 8),
+              _buildCalendarOption(
+                icon: Icons.calendar_month,
+                label: 'Outlook Calendar',
+                color: const Color(0xFF0078D4),
+                onTap: _addToOutlookCalendar,
+              ),
+              const SizedBox(height: 8),
+              _buildCalendarOption(
+                icon: Icons.calendar_today,
+                label: 'Yahoo Calendar',
+                color: const Color(0xFF6001D2),
+                onTap: _addToYahooCalendar,
+              ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Annuler'),
+              child: const Text('Fermer'),
             ),
             ElevatedButton(
               onPressed: _isLoadingParticipation
@@ -703,6 +735,272 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         );
       },
     );
+  }
+
+  Widget _buildCalendarOption({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            Icon(Icons.open_in_new, color: color, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Generate Google Calendar URL
+  String _generateGoogleCalendarUrl() {
+    final startDate = _getEventStartDate();
+    final endDate = _getEventEndDate();
+    
+    if (startDate == null) return '';
+
+    final title = Uri.encodeComponent(widget.eventTitle);
+    final details = Uri.encodeComponent(widget.description);
+    final location = Uri.encodeComponent(_getEventLocation() ?? '');
+    
+    final startStr = _formatDateForGoogleCalendar(startDate, widget.startTime);
+    final endStr = _formatDateForGoogleCalendar(endDate ?? startDate, widget.endTime);
+    
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE'
+        '&text=$title'
+        '&dates=$startStr/$endStr'
+        '&details=$details'
+        '&location=$location'
+        '&sprop=&sprop=name:';
+  }
+
+  /// Generate Outlook Calendar URL
+  String _generateOutlookCalendarUrl() {
+    final startDate = _getEventStartDate();
+    final endDate = _getEventEndDate();
+    
+    if (startDate == null) return '';
+
+    final title = Uri.encodeComponent(widget.eventTitle);
+    final details = Uri.encodeComponent(widget.description);
+    final location = Uri.encodeComponent(_getEventLocation() ?? '');
+    
+    final startStr = _formatDateForOutlook(startDate, widget.startTime);
+    final endStr = _formatDateForOutlook(endDate ?? startDate, widget.endTime);
+    
+    return 'https://outlook.live.com/calendar/0/action/compose?rru=addevent'
+        '&subject=$title'
+        '&startdt=$startStr'
+        '&enddt=$endStr'
+        '&body=$details'
+        '&location=$location';
+  }
+
+  /// Generate Yahoo Calendar URL
+  String _generateYahooCalendarUrl() {
+    final startDate = _getEventStartDate();
+    final endDate = _getEventEndDate();
+    
+    if (startDate == null) return '';
+
+    final title = Uri.encodeComponent(widget.eventTitle);
+    final details = Uri.encodeComponent(widget.description);
+    final location = Uri.encodeComponent(_getEventLocation() ?? '');
+    
+    final startStr = _formatDateForYahoo(startDate, widget.startTime);
+    final endStr = _formatDateForYahoo(endDate ?? startDate, widget.endTime);
+    
+    return 'https://calendar.yahoo.com/?v=60&view=d&type=20'
+        '&title=$title'
+        '&st=$startStr'
+        '&et=$endStr'
+        '&desc=$details'
+        '&in_loc=$location';
+  }
+
+  /// Get event start date as DateTime
+  DateTime? _getEventStartDate() {
+    try {
+      if (widget.startDate != null && widget.startDate!.isNotEmpty) {
+        return DateTime.parse(widget.startDate!);
+      }
+      if (widget.eventDate != null && widget.eventDate!.isNotEmpty) {
+        return DateTime.parse(widget.eventDate!);
+      }
+    } catch (e) {
+      debugPrint('Error parsing event date: $e');
+    }
+    return null;
+  }
+
+  /// Get event end date as DateTime
+  DateTime? _getEventEndDate() {
+    try {
+      if (widget.endDate != null && widget.endDate!.isNotEmpty) {
+        return DateTime.parse(widget.endDate!);
+      }
+      // If no end date, use start date
+      return _getEventStartDate();
+    } catch (e) {
+      debugPrint('Error parsing event end date: $e');
+    }
+    return null;
+  }
+
+  /// Get event location string
+  String? _getEventLocation() {
+    // Try to extract location from eventData or tags
+    final location = widget.eventData?['location'];
+    if (location != null && location.toString().isNotEmpty) {
+      return location.toString();
+    }
+    final coverageArea = widget.coverageArea;
+    if (coverageArea != null && coverageArea.isNotEmpty) {
+      return coverageArea;
+    }
+    return null;
+  }
+
+  /// Format date for Google Calendar (YYYYMMDDTHHmmSSZ)
+  String _formatDateForGoogleCalendar(DateTime date, String? time) {
+    String dateStr = '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
+    
+    if (time != null && time.isNotEmpty) {
+      final parts = time.split(':');
+      if (parts.length >= 2) {
+        dateStr += 'T${parts[0].padLeft(2, '0')}${parts[1].padLeft(2, '0')}00Z';
+      } else {
+        dateStr += 'T000000Z';
+      }
+    } else {
+      dateStr += 'T000000Z';
+    }
+    
+    return dateStr;
+  }
+
+  /// Format date for Outlook (YYYY-MM-DDTHH:MM:SS)
+  String _formatDateForOutlook(DateTime date, String? time) {
+    String dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    
+    if (time != null && time.isNotEmpty) {
+      final parts = time.split(':');
+      if (parts.length >= 2) {
+        dateStr += 'T${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}:00';
+      } else {
+        dateStr += 'T00:00:00';
+      }
+    } else {
+      dateStr += 'T00:00:00';
+    }
+    
+    return dateStr;
+  }
+
+  /// Format date for Yahoo Calendar (YYYYMMDDTHHmmSS)
+  String _formatDateForYahoo(DateTime date, String? time) {
+    String dateStr = '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
+    
+    if (time != null && time.isNotEmpty) {
+      final parts = time.split(':');
+      if (parts.length >= 2) {
+        dateStr += 'T${parts[0].padLeft(2, '0')}${parts[1].padLeft(2, '0')}00';
+      } else {
+        dateStr += 'T000000';
+      }
+    } else {
+      dateStr += 'T000000';
+    }
+    
+    return dateStr;
+  }
+
+  /// Add event to Google Calendar
+  Future<void> _addToGoogleCalendar() async {
+    final url = _generateGoogleCalendarUrl();
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Date de l\'événement non disponible')),
+      );
+      return;
+    }
+
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossible d\'ouvrir Google Calendar')),
+        );
+      }
+    }
+  }
+
+  /// Add event to Outlook Calendar
+  Future<void> _addToOutlookCalendar() async {
+    final url = _generateOutlookCalendarUrl();
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Date de l\'événement non disponible')),
+      );
+      return;
+    }
+
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossible d\'ouvrir Outlook Calendar')),
+        );
+      }
+    }
+  }
+
+  /// Add event to Yahoo Calendar
+  Future<void> _addToYahooCalendar() async {
+    final url = _generateYahooCalendarUrl();
+    if (url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Date de l\'événement non disponible')),
+      );
+      return;
+    }
+
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossible d\'ouvrir Yahoo Calendar')),
+        );
+      }
+    }
   }
 
   Map<String, dynamic>? _effectiveAuthorData() {
