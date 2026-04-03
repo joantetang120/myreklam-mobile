@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
@@ -166,7 +167,15 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    const ParticulierMainScreen(initialIndex: 0),
+              ),
+            );
+          },
         ),
         title: const Text(
           'Mon espace',
@@ -261,7 +270,12 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                     ? DecorationImage(
                                         image: _avatarUrl!.startsWith('http')
                                             ? NetworkImage(_avatarUrl!)
-                                            : NetworkImage(ApiConfig.resolveMediaUrl(_avatarUrl!) ?? ''),
+                                            : NetworkImage(
+                                                ApiConfig.resolveMediaUrl(
+                                                      _avatarUrl!,
+                                                    ) ??
+                                                    '',
+                                              ),
                                         fit: BoxFit.cover,
                                       )
                                     : null,

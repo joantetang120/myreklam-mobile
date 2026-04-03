@@ -108,22 +108,22 @@ class PostContentCard extends StatelessWidget {
               ),
               Row(
                 children: [
-                  IconButton(
-                    onPressed: onLike,
-                    icon: Icon(
-                      Icons.favorite_border,
-                      color: Colors.grey[500],
-                      size: 20,
-                    ),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                  IconButton(
-                    onPressed: onShare,
-                    icon: Icon(Icons.reply, color: Colors.grey[500], size: 20),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
+                  // IconButton(
+                  //   onPressed: onLike,
+                  //   icon: Icon(
+                  //     Icons.favorite_border,
+                  //     color: Colors.grey[500],
+                  //     size: 20,
+                  //   ),
+                  //   padding: EdgeInsets.zero,
+                  //   constraints: const BoxConstraints(),
+                  // ),
+                  // IconButton(
+                  //   onPressed: onShare,
+                  //   icon: Icon(Icons.reply, color: Colors.grey[500], size: 20),
+                  //   padding: EdgeInsets.zero,
+                  //   constraints: const BoxConstraints(),
+                  // ),
                   if (onMorePressed != null) ...[
                     const SizedBox(width: 8),
                     IconButton(
