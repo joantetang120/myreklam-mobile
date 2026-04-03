@@ -1070,6 +1070,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         .toJson();
     final payload = <String, dynamic>{
       'nature': _selectedCategory,
+      'type': _selectedType,
       'function': _selectedFunction,
       'title': _titleController.text.trim(),
       'description': description,
@@ -1133,8 +1134,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         'surface_terrain_max': int.tryParse(
           _surfaceTerrainMaxController.text.trim(),
         ),
-      if (_nbPieces != null) 'nb_pieces': _nbPieces,
-      if (_nbChambres != null) 'nb_chambres': _nbChambres,
+      if (_nbPieces != null && _nbPieces != 'Indifférent') 'nb_pieces': _nbPieces,
+      if (_nbChambres != null && _nbChambres != 'Indifférent') 'nb_chambres': _nbChambres,
       if (_meuble != null) 'meuble': _meuble,
       if (_selectedFinancingTypes.isNotEmpty)
         'financing_types': _selectedFinancingTypes,
@@ -2425,6 +2426,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 {'code': 'chateau', 'label': 'Château'},
                 {'code': 'hotel_particulier', 'label': 'Hôtel particulier'},
                 {'code': 'batiment', 'label': 'Bâtiment'},
+                {'code': 'boutique', 'label': 'Boutique'},
+                {'code': 'immeuble', 'label': 'Immeuble'},
+                {'code': 'peniche', 'label': 'Péniche'},
+                {'code': 'divers', 'label': 'Divers'},
               ],
               selectedValues: _selectedTypeBien,
               onChanged: (code, checked) {
@@ -2436,6 +2441,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   }
                 });
               },
+              scrollable: true,
             ),
             const SizedBox(height: 16),
 
@@ -2685,6 +2691,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 {'code': 'chateau', 'label': 'Château'},
                 {'code': 'hotel_particulier', 'label': 'Hôtel particulier'},
                 {'code': 'batiment', 'label': 'Bâtiment'},
+                {'code': 'boutique', 'label': 'Boutique'},
+                {'code': 'immeuble', 'label': 'Immeuble'},
+                {'code': 'peniche', 'label': 'Péniche'},
+                {'code': 'divers', 'label': 'Divers'},
               ],
               selectedValues: _selectedTypeBien,
               onChanged: (code, checked) {
@@ -2696,6 +2706,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   }
                 });
               },
+              scrollable: true,
             ),
             const SizedBox(height: 16),
 
@@ -2986,6 +2997,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   }
                 });
               },
+              scrollable: true,
             ),
             const SizedBox(height: 16),
 
@@ -4779,19 +4791,43 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       }
       if (_surfaceHabitableMinController.text.trim().isNotEmpty ||
           _surfaceHabitableMaxController.text.trim().isNotEmpty) {
+        final shMin = _surfaceHabitableMinController.text.trim();
+        final shMax = _surfaceHabitableMaxController.text.trim();
+        
+        String surfaceText;
+        if (shMin.isNotEmpty && shMax.isNotEmpty) {
+          surfaceText = 'Min: $shMin m² - Max: $shMax m²';
+        } else if (shMin.isNotEmpty) {
+          surfaceText = 'Min: $shMin m²';
+        } else {
+          surfaceText = 'Max: $shMax m²';
+        }
+        
         rows.add(
           _buildReviewRow(
             'Surface habitable',
-            '${_surfaceHabitableMinController.text.trim().isNotEmpty ? _surfaceHabitableMinController.text.trim() : '?'} - ${_surfaceHabitableMaxController.text.trim().isNotEmpty ? _surfaceHabitableMaxController.text.trim() : '?'} m²',
+            surfaceText,
           ),
         );
       }
       if (_surfaceTerrainMinController.text.trim().isNotEmpty ||
           _surfaceTerrainMaxController.text.trim().isNotEmpty) {
+        final stMin = _surfaceTerrainMinController.text.trim();
+        final stMax = _surfaceTerrainMaxController.text.trim();
+        
+        String terrainText;
+        if (stMin.isNotEmpty && stMax.isNotEmpty) {
+          terrainText = 'Min: $stMin m² - Max: $stMax m²';
+        } else if (stMin.isNotEmpty) {
+          terrainText = 'Min: $stMin m²';
+        } else {
+          terrainText = 'Max: $stMax m²';
+        }
+        
         rows.add(
           _buildReviewRow(
             'Surface terrain',
-            '${_surfaceTerrainMinController.text.trim().isNotEmpty ? _surfaceTerrainMinController.text.trim() : '?'} - ${_surfaceTerrainMaxController.text.trim().isNotEmpty ? _surfaceTerrainMaxController.text.trim() : '?'} m²',
+            terrainText,
           ),
         );
       }
@@ -4914,7 +4950,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           title: 'Étape 3 — Localisation',
           onEdit: () => setState(() => _currentStep = 2),
           rows: [
-            _buildReviewRow('Toute la France', _touteLaFrance ? 'Oui' : 'Non'),
+            if (_touteLaFrance)
+              _buildReviewRow('Toute la France', 'Oui'),
             if (!_touteLaFrance) ...[
               _buildReviewRow(
                 'Ville / Adresse',
@@ -5436,6 +5473,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     required List<Map<String, String>> options,
     required List<String> selectedValues,
     required Function(String, bool) onChanged,
+    bool scrollable = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -5449,25 +5487,58 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             fontFamily: 'Manjari',
           ),
         ),
-        ...options.map(
-          (option) => Theme(
-            data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
-            child: CheckboxListTile(
-              dense: true,
-              activeColor: const Color(0xFF3AAE5E),
-              contentPadding: EdgeInsets.zero,
-              controlAffinity: ListTileControlAffinity.leading,
-              title: Text(
-                option['label']!,
-                style: const TextStyle(fontSize: 15),
+        const SizedBox(height: 8),
+        if (scrollable)
+          Container(
+            height: 300, // Shows ~5 items, scrollable for more
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                children: options.map(
+                  (option) => Theme(
+                    data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
+                    child: CheckboxListTile(
+                      dense: true,
+                      activeColor: const Color(0xFF3AAE5E),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: Text(
+                        option['label']!,
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                      value: selectedValues.contains(option['code']),
+                      onChanged: (checked) {
+                        onChanged(option['code']!, checked ?? false);
+                      },
+                    ),
+                  ),
+                ).toList(),
               ),
-              value: selectedValues.contains(option['code']),
-              onChanged: (checked) {
-                onChanged(option['code']!, checked ?? false);
-              },
+            ),
+          )
+        else
+          ...options.map(
+            (option) => Theme(
+              data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
+              child: CheckboxListTile(
+                dense: true,
+                activeColor: const Color(0xFF3AAE5E),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text(
+                  option['label']!,
+                  style: const TextStyle(fontSize: 15),
+                ),
+                value: selectedValues.contains(option['code']),
+                onChanged: (checked) {
+                  onChanged(option['code']!, checked ?? false);
+                },
+              ),
             ),
           ),
-        ),
       ],
     );
   }

@@ -13,6 +13,9 @@ import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/screens/creer_formation_screen.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/mys_reward_modal.dart';
 
 class TrainingDetailScreen extends StatefulWidget {
   final List<String> images;
@@ -386,6 +389,28 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             backgroundColor: Color(0xFF3AAE5E),
           ),
         );
+        
+        // Award 1 My for subscribing to training and show modal
+        try {
+          final mysResponse = await MysEarningService().awardMys(
+            actionType: 'training_subscription',
+            referenceId: widget.trainingId?.toString(),
+          );
+          if (mysResponse['success'] == true && context.mounted) {
+            final newBalance = mysResponse['earning']?['new_balance'];
+            if (newBalance != null) {
+              UserSession().updateMys(newBalance);
+            }
+            final amount = mysResponse['earning']?['amount'] ?? 1;
+            await MysRewardModal.show(
+              context,
+              amount: amount,
+              actionType: 'subscribe',
+            );
+          }
+        } catch (e) {
+          debugPrint("Error awarding My's for training subscription: $e");
+        }
       } else if (response.statusCode == 422) {
         final data = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1745,6 +1770,22 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   }
                   commentCtrl.clear();
                   FocusScope.of(ctx).unfocus();
+                  
+                  // Award 1 My for posting a comment (silently, no modal)
+                  try {
+                    final mysResponse = await MysEarningService().awardMys(
+                      actionType: 'comment',
+                      referenceId: newComment?['id']?.toString(),
+                    );
+                    if (mysResponse['success'] == true) {
+                      final newBalance = mysResponse['earning']?['new_balance'];
+                      if (newBalance != null) {
+                        UserSession().updateMys(newBalance);
+                      }
+                    }
+                  } catch (e) {
+                    debugPrint("Error awarding My's for comment: $e");
+                  }
                 }
               } catch (e) {
                 debugPrint('Error posting comment: $e');
