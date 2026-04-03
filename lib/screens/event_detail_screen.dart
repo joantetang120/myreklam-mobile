@@ -13,6 +13,9 @@ import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/creer_evenement_screen.dart';
 import 'package:myreklam/screens/public_profile_screen.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/mys_reward_modal.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final List<String> images;
@@ -569,6 +572,51 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             backgroundColor: Color(0xFF3AAE5E),
           ),
         );
+        
+        // Award 1 My for participating to event and show modal
+        try {
+          debugPrint("Awarding My's for event participation: eventId=${widget.eventId}");
+          final mysResponse = await MysEarningService().awardMys(
+            actionType: 'event_participation',
+            referenceId: widget.eventId?.toString(),
+          );
+          debugPrint("My's award response: $mysResponse");
+          if (mysResponse['success'] == true && context.mounted) {
+            final newBalance = mysResponse['earning']?['new_balance'];
+            if (newBalance != null) {
+              UserSession().updateMys(newBalance);
+            }
+            final amount = mysResponse['earning']?['amount'] ?? 1;
+            debugPrint("Showing MysRewardModal with amount: $amount");
+            try {
+              await MysRewardModal.show(
+                context,
+                amount: amount,
+                actionType: 'participate',
+              );
+            } catch (modalError) {
+              debugPrint("MysRewardModal failed, showing SnackBar fallback: $modalError");
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Vous avez gagné $amount My\'s !'),
+                    backgroundColor: const Color(0xFF3AAE5E),
+                  ),
+                );
+              }
+            }
+          } else {
+            debugPrint("My's award failed or returned success=false: $mysResponse");
+            if (context.mounted) {
+              final errorMsg = mysResponse['message'] ?? 'Erreur lors de l\'attribution des My\'s';
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(errorMsg)),
+              );
+            }
+          }
+        } catch (e) {
+          debugPrint("Error awarding My's for event participation: $e");
+        }
       } else if (response.statusCode == 422) {
         final data = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(

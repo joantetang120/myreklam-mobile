@@ -15,6 +15,8 @@ import 'package:myreklam/screens/creer_bon_plan_screen.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/conversation_service.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class ProPostDetailScreen extends StatefulWidget {
   final List<String> images;
@@ -1766,6 +1768,22 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 }
                 commentCtrl.clear();
                 FocusScope.of(ctx).unfocus();
+                
+                // Award 1 My for posting a comment (silently, no modal)
+                try {
+                  final mysResponse = await MysEarningService().awardMys(
+                    actionType: 'comment',
+                    referenceId: newComment?['id']?.toString(),
+                  );
+                  if (mysResponse['success'] == true) {
+                    final newBalance = mysResponse['earning']?['new_balance'];
+                    if (newBalance != null) {
+                      UserSession().updateMys(newBalance);
+                    }
+                  }
+                } catch (e) {
+                  debugPrint("Error awarding My's for comment: $e");
+                }
               } catch (e) {
                 debugPrint('Error posting comment: $e');
                 if (ctx.mounted) {

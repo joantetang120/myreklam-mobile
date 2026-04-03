@@ -95,6 +95,10 @@ class _MysRewardModalState extends State<MysRewardModal>
         return 'Publication d\'une formation';
       case 'job_offer':
         return 'Publication d\'une offre d\'emploi';
+      case 'profile_complete':
+        return 'Profil complété';
+      case 'review':
+        return 'Avis sur un profil entreprise';
       default:
         return 'Action réalisée';
     }

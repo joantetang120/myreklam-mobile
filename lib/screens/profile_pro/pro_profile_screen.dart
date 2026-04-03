@@ -19,12 +19,16 @@ import 'package:myreklam/screens/profile_pro/pro_affiliate_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_subscribe_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_profileEntreprise_screen.dart';
 import 'package:myreklam/screens/login_screen.dart';
+import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/auth_service.dart';
 import 'package:myreklam/services/profile_service.dart';
+import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 
 class ProfileProScreen extends StatefulWidget {
-  const ProfileProScreen({super.key});
+  final String? userId; // null means viewing own profile
+
+  const ProfileProScreen({super.key, this.userId});
 
   @override
   State<ProfileProScreen> createState() => _ProfileProScreenState();
@@ -33,6 +37,7 @@ class ProfileProScreen extends StatefulWidget {
 class _ProfileProScreenState extends State<ProfileProScreen> {
   final _authService = AuthService();
   final _profileService = ProfileService();
+  final _conversationService = ConversationService();
   bool _isLoggingOut = false;
   bool _isLoading = true;
   String? _companyName;
@@ -43,6 +48,10 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
   int _followingCount = 0;
   int _postsCount = 0;
   String? _userId;
+  bool _isFollowing = false;
+  bool _isLoadingFollow = false;
+
+  bool get _isViewingOwnProfile => widget.userId == null || widget.userId == UserSession().id?.toString();
 
   @override
   void initState() {
@@ -52,7 +61,10 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
 
   Future<void> _loadProfile() async {
     try {
-      final response = await _profileService.getProfile();
+      final response = widget.userId == null
+          ? await _profileService.getProfile()
+          : await _profileService.getUserProfile(widget.userId!);
+      
       if (!mounted) return;
 
       setState(() {
@@ -62,6 +74,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
           _followingCount = response['user']['following_count'] ?? 0;
           _postsCount = response['user']['posts_count'] ?? 0;
           _email = response['user']['email'];
+          _isFollowing = response['is_following'] ?? false;
         }
         if (response['profile'] != null) {
           _companyName = response['profile']['company_name'];
@@ -73,6 +86,88 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    if (_userId == null || _isLoadingFollow) return;
+
+    setState(() => _isLoadingFollow = true);
+
+    try {
+      if (_isFollowing) {
+        await _profileService.unfollowUser(_userId!);
+      } else {
+        await _profileService.followUser(_userId!);
+      }
+      setState(() {
+        _isFollowing = !_isFollowing;
+        _isLoadingFollow = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isFollowing ? 'Vous suivez maintenant cet utilisateur' : 'Vous ne suivez plus cet utilisateur'),
+            backgroundColor: const Color(0xFF3AAE5E),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingFollow = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _startConversation() async {
+    if (_userId == null) return;
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final targetId = int.tryParse(_userId!);
+      if (targetId == null) {
+        if (mounted) Navigator.pop(context);
+        return;
+      }
+
+      final conversation = await _conversationService.getOrCreateConversation(targetId);
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      final displayName = _companyName ?? 'Entreprise';
+      final avatar = _avatarUrl ?? 'assets/images/dashboard_particulier/Ellipse 10.png';
+      final avatarUrl = avatar.startsWith('http') 
+          ? avatar 
+          : ApiConfig.resolveMediaUrl(avatar) ?? avatar;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatConversationScreen(
+            conversationId: conversation.id.toString(),
+            name: displayName,
+            avatar: avatarUrl,
+            status: 'En ligne',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Close loading
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Impossible de démarrer la conversation: $e')),
+        );
+      }
     }
   }
 
@@ -277,25 +372,27 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                             Positioned(
                               bottom: 0,
                               right: 0,
-                              child: GestureDetector(
-                                onTap: _pickAndUploadAvatar,
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEF8A40),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.edit,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                ),
-                              ),
+                              child: _isViewingOwnProfile
+                                  ? GestureDetector(
+                                      onTap: _pickAndUploadAvatar,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFEF8A40),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.edit,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
                             ),
                           ],
                         ),
@@ -507,87 +604,140 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                     const SizedBox(height: 10),
                     Divider(color: Colors.grey[200]),
                     const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) {
-                                  return const PublierScreen();
-                                },
-                              ),
-                            ).then((_) => _loadProfile()),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFEF8A40),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  'assets/images/profil_pro/post.png',
-                                  width: 20,
-                                  height: 20,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Créer un post ou annonce',
-                                  style: TextStyle(fontSize: 10),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              Navigator.push(
+                    if (_isViewingOwnProfile) ...[
+                      // Own profile: show create post and view public profile buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const ProPublicViewScreen(),
+                                  builder: (context) {
+                                    return const PublierScreen();
+                                  },
                                 ),
-                              ).then((_) => _loadProfile());
-                            },
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: const Color(
-                                0xFFEF8A40,
-                              ).withOpacity(0.2),
-                              foregroundColor: const Color(0xFFEF8A40),
-                              side: const BorderSide(color: Color(0xFFEF8A40)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                              ).then((_) => _loadProfile()),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFEF8A40),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Image.asset(
+                                    'assets/images/profil_pro/post.png',
+                                    width: 20,
+                                    height: 20,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Créer un post ou annonce',
+                                    style: TextStyle(fontSize: 10),
+                                  ),
+                                ],
                               ),
                             ),
-
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Image.asset(
-                                  'assets/images/profil_pro/eye.png',
-                                  width: 20,
-                                  height: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const ProPublicViewScreen(),
+                                  ),
+                                ).then((_) => _loadProfile());
+                              },
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: const Color(
+                                  0xFFEF8A40,
+                                ).withOpacity(0.2),
+                                foregroundColor: const Color(0xFFEF8A40),
+                                side: const BorderSide(color: Color(0xFFEF8A40)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Voir mon profil public',
-                                  style: TextStyle(fontSize: 11),
-                                ),
-                              ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Image.asset(
+                                    'assets/images/profil_pro/eye.png',
+                                    width: 20,
+                                    height: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Voir mon profil public',
+                                    style: TextStyle(fontSize: 11),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ] else ...[
+                      // Other user's profile: show Message and Suivre buttons
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _startConversation,
+                              icon: const Icon(Icons.message_outlined, size: 18),
+                              label: const Text('Message'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF3AAE5E),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _isLoadingFollow ? null : _toggleFollow,
+                              icon: _isLoadingFollow
+                                  ? SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          Color(0xFF3AAE5E),
+                                        ),
+                                      ),
+                                    )
+                                  : Icon(
+                                      _isFollowing ? Icons.check : Icons.person_add_outlined,
+                                      size: 18,
+                                    ),
+                              label: Text(_isFollowing ? 'Suivi' : 'Suivre'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF3AAE5E),
+                                side: const BorderSide(color: Color(0xFF3AAE5E)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

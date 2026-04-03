@@ -3,6 +3,10 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/profile_service.dart';
+import 'package:myreklam/services/conversation_service.dart';
+import 'package:myreklam/screens/chat_conversation_screen.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/formation_card.dart';
@@ -10,7 +14,9 @@ import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 
 class ProPublicViewScreen extends StatefulWidget {
-  const ProPublicViewScreen({super.key});
+  final String? userId; // null means viewing own profile
+
+  const ProPublicViewScreen({super.key, this.userId});
 
   @override
   State<ProPublicViewScreen> createState() => _ProPublicViewScreenState();
@@ -36,6 +42,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _profileService = ProfileService();
+  final _conversationService = ConversationService();
   final TextEditingController _reviewController = TextEditingController();
 
   String _selectedAnnonceFilter = 'Tout';
@@ -51,20 +58,31 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   List<Map<String, dynamic>> _myPosts = [];
   bool _isLoadingPosts = true;
   String? _postsError;
-  final List<_ReviewEntry> _reviews = [
-    const _ReviewEntry(
-      avatarPath: 'assets/images/dashboard_particulier/Ellipse 10.png',
-      name: 'Bessie Cooper',
-      timeAgo: 'Il y a 2 heures',
-      reviewText:
-          'Excellent service et très professionnel. Je recommande vivement cette entreprise pour la qualité de leurs prestations et leur réactivité.',
-      rating: 5,
-    ),
-  ];
+  
+  // Reviews - now dynamic from backend
+  List<Map<String, dynamic>> _reviews = [];
+  bool _isLoadingReviews = true;
+  String? _reviewsError;
   int _reviewRating = 0;
+  double _averageRating = 0.0;
+  int _totalReviews = 0;
 
   bool _isLoadingProfile = true;
   Map<String, dynamic>? _profileResponse;
+  bool _isFollowing = false;
+  bool _isLoadingFollow = false;
+
+  // Check if viewing own profile by comparing widget.userId with current user's ID
+  bool get _isViewingOwnProfile {
+    final currentUserId = UserSession().id?.toString();
+    final viewingUserId = widget.userId;
+    
+    // If no userId provided, it's own profile
+    if (viewingUserId == null) return true;
+    
+    // If userId matches current user's ID, it's own profile
+    return viewingUserId == currentUserId;
+  }
 
   int get _totalCount =>
       _bonPlans.length +
@@ -651,19 +669,248 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
   Future<void> _loadProfile() async {
     try {
-      final response = await _profileService.getProfile();
+      final response = widget.userId == null
+          ? await _profileService.getProfile()
+          : await _profileService.getUserProfile(widget.userId!);
+      
       if (!mounted) return;
 
       setState(() {
         _profileResponse = response;
+        _isFollowing = response['is_following'] ?? false;
         _isLoadingProfile = false;
       });
 
       _loadAnnonces();
       _loadPosts();
+      _loadReviews();
     } catch (_) {
       if (!mounted) return;
       setState(() => _isLoadingProfile = false);
+    }
+  }
+
+  Future<void> _loadReviews() async {
+    if (!mounted) return;
+    
+    final targetUserId = widget.userId ?? _profileResponse?['user']?['id']?.toString();
+    if (targetUserId == null) {
+      setState(() => _isLoadingReviews = false);
+      return;
+    }
+
+    setState(() {
+      _isLoadingReviews = true;
+      _reviewsError = null;
+    });
+
+    try {
+      final response = await ApiClient().authenticatedGet('/reviews/user/$targetUserId');
+      
+      if (!mounted) return;
+      
+      if (response['success'] == true) {
+        setState(() {
+          _reviews = List<Map<String, dynamic>>.from(response['reviews'] ?? []);
+          _averageRating = (response['average_rating'] ?? 0.0).toDouble();
+          _totalReviews = response['total_reviews'] ?? 0;
+          _isLoadingReviews = false;
+        });
+      } else {
+        setState(() {
+          _reviewsError = response['message'] ?? 'Erreur de chargement';
+          _isLoadingReviews = false;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _reviewsError = 'Erreur de connexion: $e';
+        _isLoadingReviews = false;
+      });
+    }
+  }
+
+  Future<void> _submitReview() async {
+    if (_reviewRating == 0 || _reviewController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Veuillez noter et commenter avant d\'envoyer votre avis.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Check if viewing own profile
+    if (_isViewingOwnProfile) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vous ne pouvez pas donner un avis à votre propre profil.'),
+        ),
+      );
+      return;
+    }
+
+    final targetUserId = widget.userId;
+    if (targetUserId == null) return;
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedPost(
+        '/reviews/user/$targetUserId',
+        body: {
+          'rating': _reviewRating,
+          'comment': _reviewController.text.trim(),
+        },
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      if (response['success'] == true) {
+        // Clear form
+        setState(() {
+          _reviewRating = 0;
+          _reviewController.clear();
+        });
+
+        // Reload reviews
+        await _loadReviews();
+
+        // Update UserSession with new My's balance from response
+        // The backend should return the updated mys count, or we can refresh from profile
+        if (response['new_mys_balance'] != null) {
+          UserSession().updateMys(response['new_mys_balance']);
+        }
+
+        // Show reward modal
+        if (mounted && response['mys_earned'] != null) {
+          await MysRewardModal.show(
+            context,
+            amount: response['mys_earned'],
+            actionType: 'review',
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? 'Erreur lors de l\'envoi de l\'avis'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Close loading
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur de connexion: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    if (_isViewingOwnProfile || _isLoadingFollow) return;
+    
+    final targetId = widget.userId;
+    if (targetId == null) return;
+
+    setState(() => _isLoadingFollow = true);
+
+    try {
+      if (_isFollowing) {
+        await _profileService.unfollowUser(targetId);
+      } else {
+        await _profileService.followUser(targetId);
+      }
+      setState(() {
+        _isFollowing = !_isFollowing;
+        _isLoadingFollow = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isFollowing ? 'Vous suivez maintenant cet utilisateur' : 'Vous ne suivez plus cet utilisateur'),
+            backgroundColor: const Color(0xFF3AAE5E),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingFollow = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _startConversation() async {
+    if (_isViewingOwnProfile) return;
+    
+    final targetIdStr = widget.userId;
+    if (targetIdStr == null) return;
+
+    final targetId = int.tryParse(targetIdStr);
+    if (targetId == null) return;
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final conversation = await _conversationService.getOrCreateConversation(targetId);
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      final profile = _profileResponse?['profile'];
+      final displayName = (profile is Map) 
+          ? (profile['company_name']?.toString() ?? 'Entreprise')
+          : 'Entreprise';
+      
+      String? avatarUrl;
+      if (profile is Map) {
+        avatarUrl = profile['avatar_url']?.toString() ?? profile['logo_url']?.toString();
+      }
+      final resolvedAvatar = avatarUrl != null && avatarUrl.isNotEmpty
+          ? (avatarUrl.startsWith('http') ? avatarUrl : ApiConfig.resolveMediaUrl(avatarUrl))
+          : null;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatConversationScreen(
+            conversationId: conversation.id.toString(),
+            name: displayName,
+            avatar: resolvedAvatar ?? 'assets/images/dashboard_particulier/Ellipse 10.png',
+            status: 'En ligne',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Close loading
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Impossible de démarrer la conversation: $e')),
+        );
+      }
     }
   }
 
@@ -979,16 +1226,16 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             const SizedBox(height: 8),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(
+                              children: [
+                                const Icon(
                                   Icons.star,
                                   color: Color(0xFFFFD700),
                                   size: 16,
                                 ),
-                                SizedBox(width: 4),
+                                const SizedBox(width: 4),
                                 Text(
-                                  '5.0 (0 avis)',
-                                  style: TextStyle(
+                                  '${_averageRating.toStringAsFixed(1)} ($_totalReviews avis)',
+                                  style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -1132,6 +1379,60 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       ),
                     ],
                   ),
+                  // Message and Suivre buttons - only show when viewing other users' profiles
+                  if (!_isViewingOwnProfile)
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: _startConversation,
+                              icon: const Icon(Icons.message_outlined, size: 18),
+                              label: const Text('Message'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF3AAE5E),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _isLoadingFollow ? null : _toggleFollow,
+                              icon: _isLoadingFollow
+                                  ? SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          Color(0xFF3AAE5E),
+                                        ),
+                                      ),
+                                    )
+                                  : Icon(
+                                      _isFollowing ? Icons.check : Icons.person_add_outlined,
+                                      size: 18,
+                                    ),
+                              label: Text(_isFollowing ? 'Suivi' : 'Suivre'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF3AAE5E),
+                                side: const BorderSide(color: Color(0xFF3AAE5E)),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   Container(
                     margin: const EdgeInsets.only(
                       left: 14,
@@ -1185,7 +1486,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         Tab(
                           height: 32,
                           child: Text(
-                            'Avis (${_reviews.length})',
+                            'Avis ($_totalReviews)',
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -1438,148 +1739,159 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   }
 
   Widget _buildAvisTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ..._reviews
-              .map(
-                (review) => Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: _buildReviewCard(
-                    avatarPath: review.avatarPath,
-                    name: review.name,
-                    timeAgo: review.timeAgo,
-                    reviewText: review.reviewText,
-                    rating: review.rating,
-                  ),
+    return RefreshIndicator(
+      onRefresh: _loadReviews,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Reviews list
+            if (_isLoadingReviews)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: CircularProgressIndicator(),
                 ),
               )
-              .toList(),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: List.generate(5, (index) {
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _reviewRating = index + 1;
-                        });
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 4),
-                        child: Icon(
-                          index < _reviewRating
-                              ? Icons.star
-                              : Icons.star_border,
-                          color: Colors.amber,
-                          size: 28,
+            else if (_reviewsError != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Column(
+                  children: [
+                    Text(
+                      _reviewsError!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _loadReviews,
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
+              )
+            else if (_reviews.isNotEmpty)
+              ..._reviews
+                  .map(
+                    (review) => Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: _buildReviewCard(
+                        avatarPath: review['author_avatar'] ?? 'assets/images/dashboard_particulier/Ellipse 10.png',
+                        name: review['author_name'] ?? 'Utilisateur',
+                        timeAgo: review['time_ago'] ?? '',
+                        reviewText: review['comment'] ?? '',
+                        rating: review['rating'] ?? 0,
+                      ),
+                    ),
+                  )
+                  .toList()
+            else
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Text(
+                  'Aucun avis pour le moment.',
+                  style: TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            
+            // Review form - only show when viewing other users' profiles
+            if (!_isViewingOwnProfile)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Donner votre avis',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF333333),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: List.generate(5, (index) {
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _reviewRating = index + 1;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: Icon(
+                              index < _reviewRating
+                                  ? Icons.star
+                                  : Icons.star_border,
+                              color: Colors.amber,
+                              size: 28,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _reviewController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: 'Votre commentaire...',
+                        hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: Color(0xFFFF9800)),
+                        ),
+                        contentPadding: const EdgeInsets.all(12),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _submitReview,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF9800),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Envoyer',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontFamily: 'Manjari',
+                          ),
                         ),
                       ),
-                    );
-                  }),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _reviewController,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText: 'Votre commentaire...',
-                    hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFFFF9800)),
-                    ),
-                    contentPadding: const EdgeInsets.all(12),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _submitReview,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF9800),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Envoyer',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        fontFamily: 'Manjari',
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _submitReview() {
-    if (_reviewRating == 0 || _reviewController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Veuillez noter et commenter avant d\'envoyer votre avis.',
-          ),
+              ),
+          ],
         ),
-      );
-      return;
-    }
-
-    final newReview = _ReviewEntry(
-      avatarPath: 'assets/images/dashboard_particulier/Ellipse 10.png',
-      name: 'Vous',
-      timeAgo: "à l'instant",
-      reviewText: _reviewController.text.trim(),
-      rating: _reviewRating,
-    );
-
-    FocusScope.of(context).unfocus();
-    setState(() {
-      _reviews.insert(0, newReview);
-      _reviewRating = 0;
-      _reviewController.clear();
-    });
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return _ReviewConfirmationDialog(
-          onConfirm: () => Navigator.of(context).pop(),
-          onCancel: () => Navigator.of(context).pop(),
-        );
-      },
+      ),
     );
   }
 
@@ -1590,6 +1902,17 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     required String reviewText,
     required int rating,
   }) {
+    // Resolve avatar URL
+    ImageProvider avatarImage;
+    if (avatarPath.startsWith('http')) {
+      avatarImage = NetworkImage(avatarPath);
+    } else if (avatarPath.startsWith('assets/')) {
+      avatarImage = AssetImage(avatarPath);
+    } else {
+      final resolvedUrl = ApiConfig.resolveMediaUrl(avatarPath);
+      avatarImage = resolvedUrl != null ? NetworkImage(resolvedUrl) : AssetImage('assets/images/dashboard_particulier/Ellipse 10.png');
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1601,7 +1924,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         children: [
           Row(
             children: [
-              CircleAvatar(radius: 20, backgroundImage: AssetImage(avatarPath)),
+              CircleAvatar(radius: 20, backgroundImage: avatarImage),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(

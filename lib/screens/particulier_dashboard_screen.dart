@@ -36,10 +36,12 @@ import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/screens/image_preview_screen.dart';
 import 'package:myreklam/screens/public_profile_screen.dart';
+import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/screens/suggested_users_screen.dart';
 import 'package:myreklam/screens/search_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
 
 class ParticulierDashboardScreen extends StatefulWidget {
   const ParticulierDashboardScreen({super.key});
@@ -176,9 +178,9 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => PublicProfileScreen(
-                                      userId: widget.author.id,
-                                    ),
+                                    builder: (context) => widget.author.accountType.toLowerCase() == 'pro'
+                                        ? ProPublicViewScreen(userId: widget.author.id)
+                                        : PublicProfileScreen(userId: widget.author.id),
                                   ),
                                 );
                               }
@@ -204,10 +206,9 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) =>
-                                              PublicProfileScreen(
-                                                userId: widget.author.id,
-                                              ),
+                                          builder: (context) => widget.author.accountType.toLowerCase() == 'pro'
+                                              ? ProPublicViewScreen(userId: widget.author.id)
+                                              : PublicProfileScreen(userId: widget.author.id),
                                         ),
                                       );
                                     }
@@ -749,9 +750,9 @@ class _ParticulierDashboardScreenState
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => PublicProfileScreen(
-                              userId: user['id'].toString(),
-                            ),
+                            builder: (context) => isPro
+                                ? ProPublicViewScreen(userId: user['id'].toString())
+                                : PublicProfileScreen(userId: user['id'].toString()),
                           ),
                         ).then((_) => _loadSuggestions());
                       },
@@ -1540,11 +1541,13 @@ class _ParticulierDashboardScreenState
           onApply: () => _navigateToJobDetail(job),
           onAvatarTap: () {
             if (user?['id'] != null) {
+              final isProUser = user?['account_type']?.toString().toLowerCase() == 'pro';
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      PublicProfileScreen(userId: user!['id'].toString()),
+                  builder: (context) => isProUser
+                      ? ProPublicViewScreen(userId: user!['id'].toString())
+                      : PublicProfileScreen(userId: user!['id'].toString()),
                 ),
               );
             }
@@ -1781,11 +1784,13 @@ class _ParticulierDashboardScreenState
           onApply: () => _navigateToTrainingDetail(training),
           onAvatarTap: () {
             if (user?['id'] != null) {
+              final isProUser = user?['account_type']?.toString().toLowerCase() == 'pro';
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      PublicProfileScreen(userId: user!['id'].toString()),
+                  builder: (context) => isProUser
+                      ? ProPublicViewScreen(userId: user!['id'].toString())
+                      : PublicProfileScreen(userId: user!['id'].toString()),
                 ),
               );
             }
@@ -1874,11 +1879,13 @@ class _ParticulierDashboardScreenState
       tags: tags.isNotEmpty ? tags : null,
       onAvatarTap: () {
         if (user?['id'] != null) {
+          final isProUser = user?['account_type']?.toString().toLowerCase() == 'pro';
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  PublicProfileScreen(userId: user!['id'].toString()),
+              builder: (context) => isProUser
+                  ? ProPublicViewScreen(userId: user!['id'].toString())
+                  : PublicProfileScreen(userId: user!['id'].toString()),
             ),
           );
         }
@@ -1951,11 +1958,13 @@ class _ParticulierDashboardScreenState
       onTapCTA: () => _navigateToDemandeDetail(demande),
       onAvatarTap: () {
         if (user?['id'] != null) {
+          final isProUser = user?['account_type']?.toString().toLowerCase() == 'pro';
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  PublicProfileScreen(userId: user!['id'].toString()),
+              builder: (context) => isProUser
+                  ? ProPublicViewScreen(userId: user!['id'].toString())
+                  : PublicProfileScreen(userId: user!['id'].toString()),
             ),
           );
         }
@@ -2698,6 +2707,22 @@ class _ParticulierDashboardScreenState
                 }
                 commentCtrl.clear();
                 FocusScope.of(ctx).unfocus();
+                
+                // Award 1 My for posting a comment (silently, no modal)
+                try {
+                  final mysResponse = await MysEarningService().awardMys(
+                    actionType: 'comment',
+                    referenceId: newComment?['id']?.toString(),
+                  );
+                  if (mysResponse['success'] == true) {
+                    final newBalance = mysResponse['earning']?['new_balance'];
+                    if (newBalance != null) {
+                      UserSession().updateMys(newBalance);
+                    }
+                  }
+                } catch (e) {
+                  debugPrint("Error awarding My's for comment: $e");
+                }
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(

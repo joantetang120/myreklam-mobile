@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/profile_service.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/mys_reward_modal.dart';
 
 class MonProfilParticulierScreen extends StatefulWidget {
   const MonProfilParticulierScreen({super.key});
@@ -184,13 +187,48 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         },
       };
 
-      await _profileService.updateProfile(data);
+      final response = await _profileService.updateProfile(data);
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profil mis à jour avec succès')),
       );
       setState(() => _isLoading = false);
+
+      // Check if ALL required fields are filled (except pictures)
+      final allFieldsFilled = _areAllFieldsFilled();
+      
+      if (allFieldsFilled) {
+        // Award My's for completing profile
+        try {
+          final mysResponse = await MysEarningService().awardMys(
+            actionType: 'profile_complete',
+            referenceId: UserSession().id?.toString(),
+          );
+          
+          if (mysResponse['success'] == true && mounted) {
+            // Update UserSession with new balance
+            final newBalance = mysResponse['earning']?['new_balance'];
+            if (newBalance != null) {
+              UserSession().updateMys(newBalance);
+            }
+            
+            // Show reward modal after a short delay
+            Future.microtask(() async {
+              if (mounted) {
+                await MysRewardModal.show(
+                  context,
+                  amount: mysResponse['earning']?['amount'] ?? 2,
+                  actionType: 'profile_complete',
+                );
+              }
+            });
+          }
+        } catch (e) {
+          debugPrint("Error awarding My's for profile completion: $e");
+          // Don't block the user if awarding fails
+        }
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -198,6 +236,38 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         SnackBar(content: Text('Erreur lors de la mise à jour: $e')),
       );
     }
+  }
+
+  /// Check if all required profile fields are filled (except pictures)
+  bool _areAllFieldsFilled() {
+    // Required fields for particulier profile
+    final requiredFields = [
+      _pseudoController.text.trim(),
+      _emailController.text.trim(),
+      _phoneController.text.trim(),
+      _presentationController.text.trim(),
+    ];
+    
+    // Check that all required fields have content
+    for (final field in requiredFields) {
+      if (field.isEmpty) {
+        return false;
+      }
+    }
+    
+    // Check that at least one social link is filled (optional but counts toward completion)
+    final socialLinks = [
+      _facebookController.text.trim(),
+      _instagramController.text.trim(),
+      _linkedinController.text.trim(),
+      _youtubeController.text.trim(),
+      _snapchatController.text.trim(),
+    ];
+    
+    // Profile is considered complete if all required fields + at least one social link
+    final hasSocialLink = socialLinks.any((link) => link.isNotEmpty);
+    
+    return hasSocialLink;
   }
 
   @override
