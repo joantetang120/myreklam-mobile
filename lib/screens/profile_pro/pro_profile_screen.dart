@@ -52,7 +52,8 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
   bool _isFollowing = false;
   bool _isLoadingFollow = false;
 
-  bool get _isViewingOwnProfile => widget.userId == null || widget.userId == UserSession().id?.toString();
+  bool get _isViewingOwnProfile =>
+      widget.userId == null || widget.userId == UserSession().id?.toString();
 
   @override
   void initState() {
@@ -65,7 +66,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
       final response = widget.userId == null
           ? await _profileService.getProfile()
           : await _profileService.getUserProfile(widget.userId!);
-      
+
       if (!mounted) return;
 
       setState(() {
@@ -109,7 +110,11 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isFollowing ? 'Vous suivez maintenant cet utilisateur' : 'Vous ne suivez plus cet utilisateur'),
+            content: Text(
+              _isFollowing
+                  ? 'Vous suivez maintenant cet utilisateur'
+                  : 'Vous ne suivez plus cet utilisateur',
+            ),
             backgroundColor: const Color(0xFF3AAE5E),
           ),
         );
@@ -141,14 +146,17 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
         return;
       }
 
-      final conversation = await _conversationService.getOrCreateConversation(targetId);
+      final conversation = await _conversationService.getOrCreateConversation(
+        targetId,
+      );
       if (!mounted) return;
       Navigator.pop(context); // Close loading
 
       final displayName = _companyName ?? 'Entreprise';
-      final avatar = _avatarUrl ?? 'assets/images/dashboard_particulier/Ellipse 10.png';
-      final avatarUrl = avatar.startsWith('http') 
-          ? avatar 
+      final avatar =
+          _avatarUrl ?? 'assets/images/dashboard_particulier/Ellipse 10.png';
+      final avatarUrl = avatar.startsWith('http')
+          ? avatar
           : ApiConfig.resolveMediaUrl(avatar) ?? avatar;
 
       Navigator.push(
@@ -635,7 +643,9 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFEF8A40),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -675,8 +685,12 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                   0xFFEF8A40,
                                 ).withOpacity(0.2),
                                 foregroundColor: const Color(0xFFEF8A40),
-                                side: const BorderSide(color: Color(0xFFEF8A40)),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                side: const BorderSide(
+                                  color: Color(0xFFEF8A40),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -707,12 +721,17 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: _startConversation,
-                              icon: const Icon(Icons.message_outlined, size: 18),
+                              icon: const Icon(
+                                Icons.message_outlined,
+                                size: 18,
+                              ),
                               label: const Text('Message'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF3AAE5E),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -722,27 +741,36 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: _isLoadingFollow ? null : _toggleFollow,
+                              onPressed: _isLoadingFollow
+                                  ? null
+                                  : _toggleFollow,
                               icon: _isLoadingFollow
                                   ? SizedBox(
                                       width: 18,
                                       height: 18,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          Color(0xFF3AAE5E),
-                                        ),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Color(0xFF3AAE5E),
+                                            ),
                                       ),
                                     )
                                   : Icon(
-                                      _isFollowing ? Icons.check : Icons.person_add_outlined,
+                                      _isFollowing
+                                          ? Icons.check
+                                          : Icons.person_add_outlined,
                                       size: 18,
                                     ),
                               label: Text(_isFollowing ? 'Suivi' : 'Suivre'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: const Color(0xFF3AAE5E),
-                                side: const BorderSide(color: Color(0xFF3AAE5E)),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                side: const BorderSide(
+                                  color: Color(0xFF3AAE5E),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),

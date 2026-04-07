@@ -237,6 +237,13 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     },
   ];
 
+  // Job categories API (for Emploi/Stage forms)
+  bool _isJobCategoriesLoading = false;
+  String? _jobCategoriesLoadError;
+  List<Map<String, String>> _jobSecteursOptions = [];
+  final Map<String, String> _jobSecteursCodeToId = {};
+  final Map<String, List<Map<String, String>>> _jobFonctionsByParentId = {};
+
   // Step 1 - Nature
   String? _selectedCategory;
   String? _selectedType;
@@ -331,6 +338,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   void initState() {
     super.initState();
     _loadDemandeCategories();
+    _loadJobCategories(); // Charger les catégories d'emploi pour les formulaires Emploi/Stage
     if (_isEditMode) {
       _prefillFromInitialData();
     } else {
@@ -957,6 +965,109 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     }
   }
 
+  /// Load job categories (secteurs d'activité) from API for Emploi/Stage forms
+  Future<void> _loadJobCategories() async {
+    setState(() {
+      _isJobCategoriesLoading = true;
+      _jobCategoriesLoadError = null;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(_categoriesApiUrl),
+        headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: const {'Method': 'getByType', 'type': 'offres_emploi'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Status code ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic> || decoded['status'] != 'success') {
+        final message = decoded is Map<String, dynamic>
+            ? decoded['message']?.toString() ??
+                  'Réponse invalide du service des catégories.'
+            : 'Réponse invalide du service des catégories.';
+        throw Exception(message);
+      }
+
+      final data = decoded['data'];
+      if (data is! Map<String, dynamic>) {
+        throw Exception('Structure de données inattendue.');
+      }
+
+      final mainRaw = data['main'];
+      final subsRaw = data['subs'];
+
+      final parsedSecteurs = <Map<String, String>>[];
+      final parsedCodeToId = <String, String>{};
+
+      if (mainRaw is List) {
+        for (final item in mainRaw) {
+          if (item is Map<String, dynamic>) {
+            final id = item['id']?.toString();
+            final code = item['code']?.toString();
+            final label = (item['label'] ?? item['labelEn'])?.toString();
+            if (id != null && code != null && label != null) {
+              parsedSecteurs.add({'id': id, 'code': code, 'label': label});
+              parsedCodeToId[code] = id;
+            }
+          }
+        }
+      }
+
+      final parsedFonctions = <String, List<Map<String, String>>>{};
+      if (subsRaw is Map) {
+        subsRaw.forEach((key, value) {
+          final parentId = key.toString();
+          if (value is List) {
+            final foncList = <Map<String, String>>[];
+            for (final fonc in value) {
+              if (fonc is Map<String, dynamic>) {
+                final foncCode = fonc['code']?.toString();
+                final foncLabel = (fonc['label'] ?? fonc['labelEn'])
+                    ?.toString();
+                if (foncCode != null && foncLabel != null) {
+                  foncList.add({'code': foncCode, 'label': foncLabel});
+                }
+              }
+            }
+            parsedFonctions[parentId] = foncList;
+          }
+        });
+      }
+
+      setState(() {
+        _jobSecteursOptions = parsedSecteurs;
+        _jobSecteursCodeToId
+          ..clear()
+          ..addAll(parsedCodeToId);
+        _jobFonctionsByParentId
+          ..clear()
+          ..addAll(parsedFonctions);
+        _isJobCategoriesLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading job categories: $e');
+      setState(() {
+        _jobCategoriesLoadError =
+            'Impossible de charger les secteurs d\'activité.';
+        _isJobCategoriesLoading = false;
+      });
+    }
+  }
+
+  /// Get fonctions (sub-categories) for a selected secteur d'activité
+  List<Map<String, String>> _getJobFonctionsForSecteur(String? secteurCode) {
+    if (secteurCode == null) return [];
+    final parentId = _jobSecteursCodeToId[secteurCode];
+    if (parentId == null) return [];
+    final fonctions = _jobFonctionsByParentId[parentId];
+    if (fonctions == null) return [];
+    return List<Map<String, String>>.from(fonctions);
+  }
+
   void _onNatureChanged(String? code) {
     setState(() {
       _selectedCategory = code;
@@ -1004,7 +1115,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           final demandeId = _isEditMode
               ? widget.demandeId
               : (demandeData is Map ? demandeData['id']?.toString() : null);
-          if ((_selectedMediaFiles.isNotEmpty || _selectedDocumentFiles.isNotEmpty) && demandeId != null) {
+          if ((_selectedMediaFiles.isNotEmpty ||
+                  _selectedDocumentFiles.isNotEmpty) &&
+              demandeId != null) {
             await _uploadMediaFiles(demandeId);
           }
           await _clearSavedProgress();
@@ -1019,14 +1132,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 actionType: 'demande',
                 referenceId: demandeId,
               );
-              
+
               if (mysResponse['success'] == true && mounted) {
                 // Update UserSession with new balance
                 final newBalance = mysResponse['earning']?['new_balance'];
                 if (newBalance != null) {
                   UserSession().updateMys(newBalance);
                 }
-                
+
                 // Show reward modal AFTER dialog closes - use microtask to avoid conflict
                 Future.microtask(() async {
                   if (mounted) {
@@ -1134,8 +1247,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         'surface_terrain_max': int.tryParse(
           _surfaceTerrainMaxController.text.trim(),
         ),
-      if (_nbPieces != null && _nbPieces != 'Indifférent') 'nb_pieces': _nbPieces,
-      if (_nbChambres != null && _nbChambres != 'Indifférent') 'nb_chambres': _nbChambres,
+      if (_nbPieces != null && _nbPieces != 'Indifférent')
+        'nb_pieces': _nbPieces,
+      if (_nbChambres != null && _nbChambres != 'Indifférent')
+        'nb_chambres': _nbChambres,
       if (_meuble != null) 'meuble': _meuble,
       if (_selectedFinancingTypes.isNotEmpty)
         'financing_types': _selectedFinancingTypes,
@@ -3174,20 +3289,25 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             _buildDropdownFieldWithMap(
               label: 'Secteur d\'activité*',
               value: _selectedSecteurActivite,
-              items: _secteursActivite,
-              onChanged: (val) =>
-                  setState(() => _selectedSecteurActivite = val),
+              items: _jobSecteursOptions.isNotEmpty ? _jobSecteursOptions : [],
+              onChanged: (val) {
+                setState(() {
+                  _selectedSecteurActivite = val;
+                  _selectedFunction =
+                      null; // Reset function when sector changes
+                });
+              },
               hint: _buildRequiredHint('Sélectionner un secteur d\'activité'),
               backgroundColor: const Color(0xFFF9FAFB),
             ),
             const SizedBox(height: 16),
 
-            // Afficher le champ "Quel est le poste recherché ?" seulement si un secteur est sélectionné
+            // Afficher le champ "Fonction recherchée" seulement si un secteur est sélectionné
             if (_selectedSecteurActivite != null) ...[
               _buildDropdownFieldWithMap(
                 label: 'Fonction recherchée*',
                 value: _selectedFunction,
-                items: _allFunction,
+                items: _getJobFonctionsForSecteur(_selectedSecteurActivite),
                 onChanged: (val) => setState(() => _selectedFunction = val),
                 hint: _buildRequiredHint('Sélectionner une fonction'),
                 backgroundColor: const Color(0xFFF9FAFB),
@@ -3632,9 +3752,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             _buildDropdownFieldWithMap(
               label: 'Secteur d\'activité*',
               value: _selectedSecteurActivite,
-              items: _secteursActivite,
-              onChanged: (val) =>
-                  setState(() => _selectedSecteurActivite = val),
+              items: _jobSecteursOptions.isNotEmpty ? _jobSecteursOptions : [],
+              onChanged: (val) {
+                setState(() {
+                  _selectedSecteurActivite = val;
+                  _selectedFunction =
+                      null; // Reset function when sector changes
+                });
+              },
               hint: _buildRequiredHint('Sélectionner un secteur d\'activité'),
               backgroundColor: const Color(0xFFF9FAFB),
             ),
@@ -3645,7 +3770,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               _buildDropdownFieldWithMap(
                 label: 'Fonction recherchée*',
                 value: _selectedFunction,
-                items: _allFunction,
+                items: _getJobFonctionsForSecteur(_selectedSecteurActivite),
                 onChanged: (val) => setState(() => _selectedFunction = val),
                 hint: _buildRequiredHint('Sélectionner une fonction'),
                 backgroundColor: const Color(0xFFF9FAFB),
@@ -4793,7 +4918,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           _surfaceHabitableMaxController.text.trim().isNotEmpty) {
         final shMin = _surfaceHabitableMinController.text.trim();
         final shMax = _surfaceHabitableMaxController.text.trim();
-        
+
         String surfaceText;
         if (shMin.isNotEmpty && shMax.isNotEmpty) {
           surfaceText = 'Min: $shMin m² - Max: $shMax m²';
@@ -4802,19 +4927,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         } else {
           surfaceText = 'Max: $shMax m²';
         }
-        
-        rows.add(
-          _buildReviewRow(
-            'Surface habitable',
-            surfaceText,
-          ),
-        );
+
+        rows.add(_buildReviewRow('Surface habitable', surfaceText));
       }
       if (_surfaceTerrainMinController.text.trim().isNotEmpty ||
           _surfaceTerrainMaxController.text.trim().isNotEmpty) {
         final stMin = _surfaceTerrainMinController.text.trim();
         final stMax = _surfaceTerrainMaxController.text.trim();
-        
+
         String terrainText;
         if (stMin.isNotEmpty && stMax.isNotEmpty) {
           terrainText = 'Min: $stMin m² - Max: $stMax m²';
@@ -4823,13 +4943,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         } else {
           terrainText = 'Max: $stMax m²';
         }
-        
-        rows.add(
-          _buildReviewRow(
-            'Surface terrain',
-            terrainText,
-          ),
-        );
+
+        rows.add(_buildReviewRow('Surface terrain', terrainText));
       }
       if (_nbPieces != null) {
         rows.add(_buildReviewRow('Nombre de pièces', _nbPieces!));
@@ -4950,8 +5065,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           title: 'Étape 3 — Localisation',
           onEdit: () => setState(() => _currentStep = 2),
           rows: [
-            if (_touteLaFrance)
-              _buildReviewRow('Toute la France', 'Oui'),
+            if (_touteLaFrance) _buildReviewRow('Toute la France', 'Oui'),
             if (!_touteLaFrance) ...[
               _buildReviewRow(
                 'Ville / Adresse',
@@ -5497,25 +5611,32 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             ),
             child: SingleChildScrollView(
               child: Column(
-                children: options.map(
-                  (option) => Theme(
-                    data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
-                    child: CheckboxListTile(
-                      dense: true,
-                      activeColor: const Color(0xFF3AAE5E),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      title: Text(
-                        option['label']!,
-                        style: const TextStyle(fontSize: 15),
+                children: options
+                    .map(
+                      (option) => Theme(
+                        data: ThemeData(
+                          visualDensity: const VisualDensity(vertical: -4),
+                        ),
+                        child: CheckboxListTile(
+                          dense: true,
+                          activeColor: const Color(0xFF3AAE5E),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(
+                            option['label']!,
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                          value: selectedValues.contains(option['code']),
+                          onChanged: (checked) {
+                            onChanged(option['code']!, checked ?? false);
+                          },
+                        ),
                       ),
-                      value: selectedValues.contains(option['code']),
-                      onChanged: (checked) {
-                        onChanged(option['code']!, checked ?? false);
-                      },
-                    ),
-                  ),
-                ).toList(),
+                    )
+                    .toList(),
               ),
             ),
           )
