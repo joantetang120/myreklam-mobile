@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/screens/particulier_dashboard_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
@@ -21,10 +22,12 @@ import 'package:myreklam/screens/profile_pro/pro_subscribe_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_profileEntreprise_screen.dart';
 import 'package:myreklam/screens/login_screen.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
+import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/auth_service.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/custom_bottom_bar.dart';
 
 class ProfileProScreen extends StatefulWidget {
   final String? userId; // null means viewing own profile
@@ -48,6 +51,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
   int _followersCount = 0;
   int _followingCount = 0;
   int _postsCount = 0;
+  int _unreadNotifCount = 0;
   String? _userId;
   bool _isFollowing = false;
   bool _isLoadingFollow = false;
@@ -59,6 +63,16 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
   void initState() {
     super.initState();
     _loadProfile();
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final response = await ApiClient().authenticatedGet('/notifications/unread-count');
+      if (mounted && response['success'] == true) {
+        setState(() => _unreadNotifCount = response['unread_count'] ?? 0);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadProfile() async {
@@ -215,7 +229,16 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
             setState(() {
               _avatarUrl = response['avatar_url'];
             });
-            if (mounted) {
+            // Update bottom bar avatar immediately
+            CustomBottomBar.avatarNotifier.value = response['avatar_url'];
+
+            // Show My's reward modal if awarded
+            final mysAwarded = response['mys_awarded'] ?? 0;
+            if (mysAwarded > 0 && mounted) {
+              // Trigger dashboard refresh
+              ParticulierDashboardScreen.refreshMysNotifier.value = true;
+              _showMysRewardModal(mysAwarded, response['new_mys_balance'] ?? 0);
+            } else if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Avatar mis à jour avec succès!'),
@@ -235,6 +258,63 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showMysRewardModal(int mysAwarded, int newBalance) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2E9B5B).withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.star_rounded, color: Color(0xFF2E9B5B), size: 50),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Félicitations ! 🎉',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Vous avez gagné $mysAwarded My\'s en ajoutant votre photo de profil !',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 15, color: Colors.black87),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Nouveau solde : $newBalance My\'s',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2E9B5B)),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2E9B5B),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Super !', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _handleLogout() async {
@@ -317,29 +397,30 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  Positioned(
-                    top: -6,
-                    right: -6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white, width: 1),
-                      ),
-                      child: const Text(
-                        '10',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                  if (_unreadNotifCount > 0)
+                    Positioned(
+                      top: -6,
+                      right: -6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white, width: 1),
+                        ),
+                        child: Text(
+                          '$_unreadNotifCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

@@ -7,6 +7,9 @@ class CustomBottomBar extends StatefulWidget {
   final int currentIndex;
   final Function(int) onTap;
 
+  /// Global notifier to update the avatar from anywhere (e.g. profile screens)
+  static final ValueNotifier<String?> avatarNotifier = ValueNotifier<String?>(null);
+
   const CustomBottomBar({
     super.key,
     required this.currentIndex,
@@ -24,6 +27,20 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
   void initState() {
     super.initState();
     _loadAvatar();
+    CustomBottomBar.avatarNotifier.addListener(_onAvatarChanged);
+  }
+
+  @override
+  void dispose() {
+    CustomBottomBar.avatarNotifier.removeListener(_onAvatarChanged);
+    super.dispose();
+  }
+
+  void _onAvatarChanged() {
+    if (!mounted) return;
+    setState(() {
+      _avatarUrl = CustomBottomBar.avatarNotifier.value;
+    });
   }
 
   Future<void> _loadAvatar() async {
@@ -38,8 +55,11 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
 
   @override
   Widget build(BuildContext context) {
+    // Get bottom system insets for gesture navigation (Samsung, etc.)
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    
     return Container(
-      height: 85,
+      height: 85 + (bottomPadding > 0 ? bottomPadding - 8 : 0),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -52,6 +72,7 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
       ),
       child: SafeArea(
         top: false,
+        minimum: EdgeInsets.only(bottom: bottomPadding > 0 ? 8 : 0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [

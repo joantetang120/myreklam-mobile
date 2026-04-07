@@ -96,6 +96,11 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
           fullscreenDialog: true,
         ),
       );
+    } else if (index == 0 && _currentIndex == 0) {
+      // Refresh dashboard when Accueil is tapped again
+      setState(() {
+        _dashboardRefreshKey++;
+      });
     } else {
       setState(() {
         _currentIndex = index;

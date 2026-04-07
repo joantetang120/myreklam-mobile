@@ -106,6 +106,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   bool _isLoadingFollow = false;
   bool _isSubscribed = false;
   bool _isLoadingSubscription = false;
+  bool _isFavorite = false;
+  bool _isLoadingFavorite = false;
   List<Map<String, dynamic>> _comments = [];
   bool _isLoadingComments = false;
   int _commentsCount = 0;
@@ -119,6 +121,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     super.initState();
     _checkFollowStatus();
     _checkSubscriptionStatus();
+    _checkFavoriteStatus();
     _fetchComments();
     _fetchLikes();
     _fetchSimilarTrainings();
@@ -497,6 +500,96 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         );
       },
     );
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    if (widget.trainingId == null) return;
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) return;
+      
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['data']?['is_favorited'] == true) {
+          setState(() => _isFavorite = true);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking favorite status: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (widget.trainingId == null) return;
+    
+    setState(() => _isLoadingFavorite = true);
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter')),
+        );
+        return;
+      }
+      
+      if (_isFavorite) {
+        // Unfavorite
+        debugPrint('=== REMOVE FAVORITE ===');
+        debugPrint('trainingId: ${widget.trainingId}');
+        final response = await http.delete(
+          Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/favorite'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        debugPrint('Response status: ${response.statusCode}');
+        
+        if (response.statusCode == 200 || response.statusCode == 204) {
+          setState(() => _isFavorite = false);
+          debugPrint('Removed from favorites');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Retiré des favoris')),
+          );
+        }
+      } else {
+        // Favorite
+        debugPrint('=== ADD FAVORITE ===');
+        debugPrint('trainingId: ${widget.trainingId}');
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/favorite'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        debugPrint('Response status: ${response.statusCode}');
+        
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          setState(() => _isFavorite = true);
+          debugPrint('Added to favorites');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ajouté aux favoris')),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      setState(() => _isLoadingFavorite = false);
+    }
   }
 
   String? _resolveAvatarUrl() {
@@ -984,20 +1077,24 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      onPressed: () {
-                        // TODO: Implement save/favorite functionality
-                      },
-                      icon: Icon(
-                        Icons.favorite_outline,
-                        color: Colors.grey[600],
-                        size: 24,
-                      ),
+                      onPressed: _toggleFavorite,
+                      icon: _isLoadingFavorite
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Icon(
+                              _isFavorite ? Icons.favorite : Icons.favorite_outline,
+                              color: _isFavorite ? Colors.red : Colors.grey[600],
+                              size: 24,
+                            ),
                     ),
                     Text(
                       'Favoris',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: _isFavorite ? Colors.red : Colors.grey[600],
                       ),
                     ),
                   ],
