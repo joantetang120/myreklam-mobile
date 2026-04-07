@@ -934,16 +934,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     final demandeId = demande['id']?.toString() ?? '';
 
     // Check if already favorited by current user
-    final favoris = demande['demande_favorites'] as List? ?? [];
-    final currentUserId = UserSession().id;
-    bool isFavorited =
-        currentUserId != null &&
-        favoris.any(
-          (f) =>
-              f is Map &&
-              (f['user_id']?.toString() == currentUserId ||
-                  f['user']?['id']?.toString() == currentUserId),
-        );
+    bool isFavorited = demande['is_favorited'] == true;
+
+    print("isFavorited: ${demande['is_favorited']}");
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -1394,16 +1387,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         'Organisme';
 
     // Check if already favorited by current user
-    final favoris = tr['training_favorites'] as List? ?? [];
-    final currentUserId = UserSession().id;
-    bool isFavorited =
-        currentUserId != null &&
-        favoris.any(
-          (f) =>
-              f is Map &&
-              (f['user_id']?.toString() == currentUserId ||
-                  f['user']?['id']?.toString() == currentUserId),
-        );
+    bool isFavorited = tr['is_favorited'] == true;
 
     bool isLoading = false;
 
@@ -1829,16 +1813,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     final accountType = user?['account_type']?.toString() ?? 'particulier';
 
     // Check if already favorited by current user
-    final favoris = event['event_favorites'] as List? ?? [];
-    final currentUserId = UserSession().id;
-    bool isFavorited =
-        currentUserId != null &&
-        favoris.any(
-          (f) =>
-              f is Map &&
-              (f['user_id']?.toString() == currentUserId ||
-                  f['user']?['id']?.toString() == currentUserId),
-        );
+    bool isFavorited = event['is_favorited'] == true;
 
     // Prepare display values
     final allCategories = <String>[
@@ -2265,16 +2240,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         .where((url) => url.isNotEmpty)
         .toList();
     // Check if already favorited by current user
-    final favoris = bp['bon_plan_favorites'] as List? ?? [];
-    final currentUserId = UserSession().id;
-    bool _isFavorited =
-        currentUserId != null &&
-        favoris.any(
-          (f) =>
-              f is Map &&
-              (f['user_id']?.toString() == currentUserId ||
-                  f['user']?['id']?.toString() == currentUserId),
-        );
+    bool _isFavorited = bp['is_favorited'] == true;
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -2611,9 +2577,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         _buildJobSalaryDisplay(job) ??
         job['salary']?.toString();
 
-    // Check initial favorite status
-    final favoris = job['job_offer_favorites'] as List? ?? [];
-    bool isFavorited = favoris.isNotEmpty;
+    // Check if already favorited by current user
+    bool isFavorited = job['is_favorited'] == true;
 
     final tags = <JobDetailTag>[
       // 1st: Place (location)
