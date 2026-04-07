@@ -9,6 +9,9 @@ class CustomBottomBar extends StatefulWidget {
 
   /// Global notifier to update the avatar from anywhere (e.g. profile screens)
   static final ValueNotifier<String?> avatarNotifier = ValueNotifier<String?>(null);
+  
+  /// Global notifier to trigger avatar reload from backend
+  static final ValueNotifier<bool> refreshAvatarNotifier = ValueNotifier<bool>(false);
 
   const CustomBottomBar({
     super.key,
@@ -28,11 +31,13 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
     super.initState();
     _loadAvatar();
     CustomBottomBar.avatarNotifier.addListener(_onAvatarChanged);
+    CustomBottomBar.refreshAvatarNotifier.addListener(_onRefreshAvatar);
   }
 
   @override
   void dispose() {
     CustomBottomBar.avatarNotifier.removeListener(_onAvatarChanged);
+    CustomBottomBar.refreshAvatarNotifier.removeListener(_onRefreshAvatar);
     super.dispose();
   }
 
@@ -41,6 +46,11 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
     setState(() {
       _avatarUrl = CustomBottomBar.avatarNotifier.value;
     });
+  }
+
+  void _onRefreshAvatar() {
+    if (!mounted) return;
+    _loadAvatar();
   }
 
   Future<void> _loadAvatar() async {

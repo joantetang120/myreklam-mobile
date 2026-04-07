@@ -43,7 +43,7 @@ class UserSession {
     bool? profileCompleted,
     Map<String, dynamic>? subscription,
     String? parrainageCode,
-    int? mys,
+    dynamic mys,
   }) {
     if (id != null) _id = id;
     if (email != null) _email = email;
@@ -52,11 +52,17 @@ class UserSession {
     if (profileCompleted != null) _profileCompleted = profileCompleted;
     _subscription = subscription;
     if (parrainageCode != null) _parrainageCode = parrainageCode;
-    if (mys != null) _mys = mys;
+    if (mys != null) updateMys(mys);
   }
 
-  void updateMys(int mys) {
-    _mys = mys;
+  void updateMys(dynamic mys) {
+    if (mys is String) {
+      _mys = int.tryParse(mys) ?? double.tryParse(mys)?.toInt() ?? 0;
+    } else if (mys is num) {
+      _mys = mys.toInt();
+    } else {
+      _mys = 0;
+    }
   }
 
   void updateParrainageCode(String? code) {

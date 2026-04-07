@@ -112,6 +112,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/onboarding/
+    - assets/images/home_modal/
     - assets/images/auth/
     - assets/images/auth/register/otp/
     - assets/images/lang/
