@@ -25,6 +25,7 @@ import 'package:myreklam/screens/evenements_screen.dart';
 import 'package:myreklam/screens/demandes_screen.dart';
 import 'package:myreklam/screens/categories_screen.dart';
 import 'package:myreklam/screens/add_story_screen.dart';
+import 'package:myreklam/widgets/custom_bottom_bar.dart';
 import 'package:myreklam/models/story_model.dart';
 import 'package:myreklam/screens/my_stories_screen.dart';
 import 'package:myreklam/services/story_store.dart';
@@ -38,6 +39,7 @@ import 'package:myreklam/screens/suggested_users_screen.dart';
 import 'package:myreklam/screens/search_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/widgets/particulier_onboarding_modal.dart';
 
 class ParticulierDashboardScreen extends StatefulWidget {
   const ParticulierDashboardScreen({super.key});
@@ -657,6 +659,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     _loadSuggestions();
     _checkAndShowWelcomeBonus();
 
+    _checkAndShowOnboarding();
+
     // Listen for My's refresh requests
     ParticulierDashboardScreen.refreshMysNotifier.addListener(
       _onRefreshMysRequested,
@@ -698,6 +702,51 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           ),
         );
       }
+    }
+  }
+
+  Future<void> _checkAndShowOnboarding() async {
+    // Wait for user data to be fetched first
+    await _getCurrentUserId();
+
+    if (!mounted) return;
+
+    // Only show for particulier users
+    if (!UserSession().isParticulier) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    final userId = UserSession().id ?? 'unknown';
+    final onboardingKey = 'onboarding_completed_$userId';
+    final alreadyCompleted = prefs.getBool(onboardingKey) ?? false;
+
+    debugPrint('Onboarding check - alreadyCompleted: $alreadyCompleted');
+
+    if (!alreadyCompleted && mounted) {
+      // Get profile data to check if phone is already provided
+      bool needsPhone = true;
+      try {
+        final response = await ApiClient().authenticatedGet('/profile/me');
+        final profile = response['profile'] as Map<String, dynamic>?;
+        final phone = profile?['phone']?.toString();
+        needsPhone = phone == null || phone.isEmpty;
+      } catch (e) {
+        debugPrint('Error fetching profile for onboarding: $e');
+      }
+
+      if (!mounted) return;
+
+      // Show onboarding modal
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => ParticulierOnboardingModal(
+          needsPhone: needsPhone,
+          onComplete: () async {
+            // Mark onboarding as completed
+            await prefs.setBool(onboardingKey, true);
+          },
+        ),
+      );
     }
   }
 
@@ -1009,6 +1058,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       } else {
         _currentUserId = id;
       }
+      
+      // Refresh bottom bar avatar when user data is fetched
+      CustomBottomBar.refreshAvatarNotifier.value = true;
+      
       return id;
     } catch (e) {
       debugPrint('Error fetching current user ID: $e');

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/utils/user_session.dart';
 
 class MysRewardModal extends StatefulWidget {
-  final int amount;
+  final num amount;
   final String actionType;
   final VoidCallback? onClose;
 
@@ -14,7 +14,7 @@ class MysRewardModal extends StatefulWidget {
   });
 
   static Future<void> show(BuildContext context, {
-    required int amount,
+    required num amount,
     required String actionType,
   }) async {
     await showDialog(
@@ -97,6 +97,14 @@ class _MysRewardModalState extends State<MysRewardModal>
         return 'Publication d\'une offre d\'emploi';
       case 'profile_complete':
         return 'Profil complété';
+      case 'profile_picture':
+        return 'Photo de profil ajoutée';
+      case 'social_media':
+        return 'Réseau social ajouté';
+      case 'phone_added':
+        return 'Numéro de téléphone ajouté';
+      case 'onboarding_complete':
+        return 'Onboarding complété';
       case 'review':
         return 'Avis sur un profil entreprise';
       default:
@@ -212,7 +220,7 @@ class _MysRewardModalState extends State<MysRewardModal>
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            '+${widget.amount}',
+                            '+${widget.amount.toStringAsFixed(widget.amount is int || widget.amount == widget.amount.roundToDouble() ? 0 : 1)}',
                             style: const TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
