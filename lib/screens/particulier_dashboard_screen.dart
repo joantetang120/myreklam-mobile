@@ -40,6 +40,7 @@ import 'package:myreklam/screens/search_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/widgets/particulier_onboarding_modal.dart';
+import 'package:myreklam/widgets/pro_onboarding_modal.dart';
 
 class ParticulierDashboardScreen extends StatefulWidget {
   const ParticulierDashboardScreen({super.key});
@@ -711,38 +712,51 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
     if (!mounted) return;
 
-    // Only show for particulier users
-    if (!UserSession().isParticulier) return;
-
     final prefs = await SharedPreferences.getInstance();
     final userId = UserSession().id ?? 'unknown';
     final onboardingKey = 'onboarding_completed_$userId';
     final alreadyCompleted = prefs.getBool(onboardingKey) ?? false;
 
-    debugPrint('Onboarding check - alreadyCompleted: $alreadyCompleted');
+    debugPrint('Onboarding check - alreadyCompleted: $alreadyCompleted, isPro: ${UserSession().isPro}');
 
-    if (!alreadyCompleted && mounted) {
-      // Get profile data to check if phone is already provided
-      bool needsPhone = true;
-      try {
-        final response = await ApiClient().authenticatedGet('/profile/me');
-        final profile = response['profile'] as Map<String, dynamic>?;
-        final phone = profile?['phone']?.toString();
-        needsPhone = phone == null || phone.isEmpty;
-      } catch (e) {
-        debugPrint('Error fetching profile for onboarding: $e');
-      }
+    if (alreadyCompleted || !mounted) return;
 
-      if (!mounted) return;
+    // Get profile data to check if phone is already provided
+    bool needsPhone = true;
+    bool hasExistingPhone = false;
+    try {
+      final response = await ApiClient().authenticatedGet('/profile/me');
+      final profile = response['profile'] as Map<String, dynamic>?;
+      final phone = profile?['phone']?.toString();
+      hasExistingPhone = phone != null && phone.isNotEmpty;
+      needsPhone = !hasExistingPhone;
+    } catch (e) {
+      debugPrint('Error fetching profile for onboarding: $e');
+    }
 
-      // Show onboarding modal
+    if (!mounted) return;
+
+    if (UserSession().isPro) {
+      // Show pro onboarding modal
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => ProOnboardingModal(
+          needsPhone: needsPhone,
+          hasExistingPhone: hasExistingPhone,
+          onComplete: () async {
+            await prefs.setBool(onboardingKey, true);
+          },
+        ),
+      );
+    } else if (UserSession().isParticulier) {
+      // Show particulier onboarding modal
       await showDialog(
         context: context,
         barrierDismissible: false,
         builder: (context) => ParticulierOnboardingModal(
           needsPhone: needsPhone,
           onComplete: () async {
-            // Mark onboarding as completed
             await prefs.setBool(onboardingKey, true);
           },
         ),

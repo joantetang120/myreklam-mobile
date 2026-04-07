@@ -103,6 +103,8 @@ class _MysRewardModalState extends State<MysRewardModal>
         return 'Réseau social ajouté';
       case 'phone_added':
         return 'Numéro de téléphone ajouté';
+      case 'presentation':
+        return 'Présentation ajoutée';
       case 'onboarding_complete':
         return 'Onboarding complété';
       case 'review':

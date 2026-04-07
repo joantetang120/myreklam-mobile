@@ -31,6 +31,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
 
   // Account action expansion
   bool _isAccountActionExpanded = false;
+  bool _isSecurityExpanded = false;
   bool _isDeleting = false;
 
   @override
@@ -181,6 +182,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                 children: [
                   // Sécurité du compte
                   InkWell(
+                    onTap: () => setState(() => _isSecurityExpanded = !_isSecurityExpanded),
                     child: Row(
                       children: [
                         Container(
@@ -220,9 +222,44 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                             ],
                           ),
                         ),
+                        AnimatedRotation(
+                          turns: _isSecurityExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 20,
+                            color: Colors.grey[400],
+                          ),
+                        ),
                       ],
                     ),
                   ),
+                  if (_isSecurityExpanded) ...[
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () => _showChangePasswordDialog(),
+                      icon: const Icon(Icons.lock, size: 18),
+                      label: const Text(
+                        'Changer votre mot de passe',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF8A40),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Divider(height: 1, color: Colors.grey[300]),
                   const SizedBox(height: 16),
@@ -339,56 +376,8 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => _showChangePasswordDialog(),
-                    icon: const Icon(Icons.lock),
-                    label: const Text(
-                      'Changer votre mot de passe',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF8A40),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => _showChangePasswordDialog(),
-                    icon: const Icon(Icons.lock),
-                    label: const Text(
-                      'Changer votre mot de passe',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF8A40),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (_isAccountActionExpanded)
+                  if (_isAccountActionExpanded) ...[
+                    const SizedBox(height: 12),
                     ElevatedButton.icon(
                       onPressed: _isDeleting ? null : _showDeleteAccountDialog,
                       icon: _isDeleting
@@ -400,11 +389,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : Image.asset(
-                              'assets/images/profil_pro/btn-delete.png',
-                              width: 18,
-                              height: 18,
-                            ),
+                          : const Icon(Icons.delete_outline, size: 18),
                       label: Text(
                         _isDeleting ? 'Suppression...' : 'Supprimer mon compte',
                         style: const TextStyle(
@@ -413,7 +398,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF8A40),
+                        backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(
@@ -425,6 +410,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                         ),
                       ),
                     ),
+                  ],
                 ],
               ),
             ),
