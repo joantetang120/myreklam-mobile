@@ -660,27 +660,6 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
                         ],
                       ),
                     ),
-                  // Bio preview if available
-                  if (bio != null && bio.isNotEmpty)
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                      ),
-                      child: Text(
-                        bio,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[700],
-                          height: 1.4,
-                        ),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
                   // TabBar
                   Container(
                     margin: const EdgeInsets.only(

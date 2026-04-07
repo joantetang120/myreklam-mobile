@@ -5,6 +5,7 @@ import 'package:myreklam/screens/login_screen.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class ProSettingsScreen extends StatefulWidget {
   const ProSettingsScreen({super.key});
@@ -264,7 +265,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Email@gmail.com',
+                                UserSession().email ?? 'Non disponible',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -287,7 +288,9 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Professionnel',
+                                UserSession().userType == 'pro'
+                                    ? 'Professionnel'
+                                    : 'Particulier',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
