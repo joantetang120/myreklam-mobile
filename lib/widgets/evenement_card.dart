@@ -131,7 +131,8 @@ class EvenementCard extends StatelessWidget {
                       eventImage.startsWith('assets/')))
                 ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  child: eventImage.startsWith('http://') ||
+                  child:
+                      eventImage.startsWith('http://') ||
                           eventImage.startsWith('https://')
                       ? Image.network(
                           eventImage,

@@ -578,17 +578,20 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       'GamblingBetting': 'Jeux de hasard & paris',
       'SportsEvents': 'Événements Sportifs',
       'AutoMotoBoatPlane': 'Auto / Moto / Bateau / Avion',
-      'TourismHikingGourmetWalk': 'Tourisme / Visite / Randonnée / Marche Gourmande',
+      'TourismHikingGourmetWalk':
+          'Tourisme / Visite / Randonnée / Marche Gourmande',
       'EsportsGamingEvents': 'Événements e-sport / Gaming',
       'WorkshopsInternshipsCourses': 'Ateliers / Stage / Cours',
-      'ConferencesProfessionalTraining': 'Conférences et formations professionnelles',
+      'ConferencesProfessionalTraining':
+          'Conférences et formations professionnelles',
       'Associative': 'Associatifs',
       'AuctionsCharity': 'Enchères / Charité',
       'SolidarityEvents': 'Manifestations solidaires',
       'ChildrenMuseums': 'Enfants / Musées',
       'AnimalEvents': 'Manifestation Animalière',
       'WorkshopsShowsForChildren': 'Ateliers et spectacles pour enfants',
-      'MarketFleaMarketCarBootSale': 'Marché / Bourse / Brocante / Vide Grenier',
+      'MarketFleaMarketCarBootSale':
+          'Marché / Bourse / Brocante / Vide Grenier',
       'TradeFairs': 'Foires commerciales',
       'GamesContestsLottery': 'Jeux / Concours / Loterie',
       'BoardGameTournaments': 'Tournois de jeux de société',
@@ -596,7 +599,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       'CulinaryFestivals': 'Festivals culinaires',
       'CookingWorkshops': 'Ateliers cuisine',
       'MeditationYogaWellnessRetreats': 'Méditation, yoga, retraites bien-être',
-      'ConferencesWorkshopsPersonalDevelopment': 'Conférences et ateliers sur le développement personnel',
+      'ConferencesWorkshopsPersonalDevelopment':
+          'Conférences et ateliers sur le développement personnel',
       'AlternativeHealingTherapies': 'Soins et thérapies alternatives',
       'Hackathons': 'Hackathons',
       'TechConferencesStartups': 'Conférences tech & start-up',
@@ -605,7 +609,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       'BeautyExhibitionsFairs': 'Salons et foires de la beauté',
       'MakeupSkincareWorkshops': 'Ateliers maquillage et soins',
     };
-    
+
     return translations[code] ?? code;
   }
 
@@ -1255,7 +1259,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     // Check if already favorited by current user
     final favoris = bp['bon_plan_favorites'] as List? ?? [];
     final currentUserId = UserSession().id;
-    final bool isFavorited =
+    bool _isFavorited =
         currentUserId != null &&
         favoris.any(
           (f) =>
@@ -1266,7 +1270,6 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
     return StatefulBuilder(
       builder: (context, setState) {
-        bool _isFavorited = isFavorited;
         bool _isLoading = false;
 
         Future<void> _toggleFavorite() async {
@@ -1632,7 +1635,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
     // Check initial favorite status
     final favoris = job['job_offer_favorites'] as List? ?? [];
-    final bool isFavorited = favoris.isNotEmpty;
+    bool isFavorited = favoris.isNotEmpty;
 
     final tags = <JobDetailTag>[
       // 1st: Place (location)
@@ -1663,7 +1666,6 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
     return StatefulBuilder(
       builder: (context, setState) {
-        bool _isFavorited = isFavorited;
         bool _isLoading = false;
 
         Future<void> _toggleFavorite() async {
@@ -1672,7 +1674,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           setState(() => _isLoading = true);
 
           try {
-            if (_isFavorited) {
+            if (isFavorited) {
               // Remove from favorites
               await ApiClient().authenticatedDelete(
                 '/job-offers/$jobId/favorite',
@@ -1685,7 +1687,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             }
 
             setState(() {
-              _isFavorited = !_isFavorited;
+              isFavorited = !isFavorited;
               _isLoading = false;
             });
 
@@ -1693,7 +1695,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -1725,7 +1727,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               : 'Description non disponible.',
           tags: tags,
           timeAgo: _buildTimeAgo(job['created_at']?.toString()),
-          isFavorited: _isFavorited,
+          isFavorited: isFavorited,
           isLoadingFavorite: _isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToJobDetail(job),
@@ -1939,7 +1941,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     // Check if already favorited by current user
     final favoris = training['training_favorites'] as List? ?? [];
     final currentUserId = UserSession().id;
-    final bool isFavorited =
+    bool isFavorited =
         currentUserId != null &&
         favoris.any(
           (f) =>
@@ -1950,16 +1952,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
     return StatefulBuilder(
       builder: (context, setState) {
-        bool _isFavorited = isFavorited;
-        bool _isLoading = false;
+        bool isLoading = false;
 
         Future<void> _toggleFavorite() async {
-          if (_isLoading || trainingId.isEmpty) return;
+          if (isLoading || trainingId.isEmpty) return;
 
-          setState(() => _isLoading = true);
+          setState(() => isLoading = true);
 
           try {
-            if (_isFavorited) {
+            if (isFavorited) {
               // Remove from favorites
               await ApiClient().authenticatedDelete(
                 '/trainings/$trainingId/favorite',
@@ -1972,15 +1973,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             }
 
             setState(() {
-              _isFavorited = !_isFavorited;
-              _isLoading = false;
+              isFavorited = !isFavorited;
+              isLoading = false;
             });
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
                   ),
                   duration: const Duration(seconds: 2),
                   backgroundColor: Colors.green,
@@ -1989,7 +1990,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             }
           } catch (e) {
             debugPrint('Favorite toggle error: $e');
-            setState(() => _isLoading = false);
+            setState(() => isLoading = false);
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -2011,8 +2012,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               : 'Description non disponible.',
           tags: tags,
           timeAgo: _buildTimeAgo(training['created_at']?.toString()),
-          isFavorited: _isFavorited,
-          isLoadingFavorite: _isLoading,
+          isFavorited: isFavorited,
+          isLoadingFavorite: isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToTrainingDetail(training),
           onAvatarTap: () {
@@ -2097,6 +2098,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
     // Check if already favorited by current user
     final favoris = event['event_favorites'] as List? ?? [];
+
     final currentUserId = UserSession().id;
     bool isFavorited =
         currentUserId != null &&
@@ -2232,43 +2234,114 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
     final demandeId = demande['id']?.toString() ?? '';
 
-    return DemandeCard(
-      profileImage: profileImage,
-      username: username,
-      categoryLabel: categoryLabel,
-      categoryColor: _categoryColor(categoryLabel),
-      title: title,
-      description: description.isNotEmpty
-          ? description
-          : 'Description non disponible.',
-      location: location,
-      postImage: postImage,
-      likesCount: _asInt(demande['likes_count']),
-      commentsCount: _asInt(demande['comments_count']),
-      timeAgo: _buildTimeAgo(demande['created_at']?.toString()),
-      onTapCTA: () => _navigateToDemandeDetail(demande),
-      onAvatarTap: () {
-        if (user?['id'] != null) {
-          final isProUser =
-              user?['account_type']?.toString().toLowerCase() == 'pro';
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => isProUser
-                  ? ProPublicViewScreen(userId: user!['id'].toString())
-                  : PublicProfileScreen(userId: user!['id'].toString()),
-            ),
-          );
+    // Check if already favorited by current user
+    final favoris = demande['demande_favorites'] as List? ?? [];
+    final currentUserId = UserSession().id;
+    bool isFavorited =
+        currentUserId != null &&
+        favoris.any(
+          (f) =>
+              f is Map &&
+              (f['user_id']?.toString() == currentUserId ||
+                  f['user']?['id']?.toString() == currentUserId),
+        );
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool isLoadingFavorite = false;
+        bool localIsFavorited = isFavorited;
+
+        Future<void> toggleFavorite() async {
+          if (isLoadingFavorite || demandeId.isEmpty) return;
+
+          setState(() => isLoadingFavorite = true);
+
+          try {
+            if (localIsFavorited) {
+              // Remove from favorites
+              await ApiClient().authenticatedDelete(
+                '/demandes/$demandeId/favorite',
+              );
+            } else {
+              // Add to favorites
+              await ApiClient().authenticatedPost(
+                '/demandes/$demandeId/favorite',
+              );
+            }
+
+            setState(() {
+              localIsFavorited = !localIsFavorited;
+              isLoadingFavorite = false;
+              isFavorited = !isFavorited;
+            });
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            setState(() => isLoadingFavorite = false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Erreur: ${e.toString()}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
         }
+
+        return DemandeCard(
+          profileImage: profileImage,
+          username: username,
+          categoryLabel: categoryLabel,
+          categoryColor: _categoryColor(categoryLabel),
+          title: title,
+          description: description.isNotEmpty
+              ? description
+              : 'Description non disponible.',
+          location: location,
+          postImage: postImage,
+          likesCount: _asInt(demande['likes_count']),
+          commentsCount: _asInt(demande['comments_count']),
+          timeAgo: _buildTimeAgo(demande['created_at']?.toString()),
+          onTapCTA: () => _navigateToDemandeDetail(demande),
+          onAvatarTap: () {
+            if (user?['id'] != null) {
+              final isProUser =
+                  user?['account_type']?.toString().toLowerCase() == 'pro';
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => isProUser
+                      ? ProPublicViewScreen(userId: user!['id'].toString())
+                      : PublicProfileScreen(userId: user!['id'].toString()),
+                ),
+              );
+            }
+          },
+          isFavorited: localIsFavorited,
+          isLoadingFavorite: isLoadingFavorite,
+          onFavoriteToggle: toggleFavorite,
+          reactionBar: demandeId.isNotEmpty
+              ? _buildReactionBar(
+                  'demandes',
+                  demandeId,
+                  acceptedMessages: demande['accept_messages'] == true,
+                  authorData: demande['user'],
+                )
+              : null,
+        );
       },
-      reactionBar: demandeId.isNotEmpty
-          ? _buildReactionBar(
-              'demandes',
-              demandeId,
-              acceptedMessages: demande['accept_messages'] == true,
-              authorData: demande['user'],
-            )
-          : null,
     );
   }
 
