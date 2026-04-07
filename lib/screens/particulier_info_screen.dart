@@ -39,27 +39,26 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => const ParticulierMainScreen(),
-        ),
+        MaterialPageRoute(builder: (context) => const ParticulierMainScreen()),
       );
     } on ApiException catch (e) {
       if (!mounted) return;
-      
+
       // Translate common validation errors to French
       String errorMessage = e.firstError;
-      if (errorMessage.toLowerCase().contains('pseudo') && 
-          (errorMessage.toLowerCase().contains('already') || 
-           errorMessage.toLowerCase().contains('taken') ||
-           errorMessage.toLowerCase().contains('unique'))) {
-        errorMessage = 'Ce pseudo est déjà utilisé. Veuillez en choisir un autre.';
-      } else if (errorMessage.toLowerCase().contains('phone') && 
-                 (errorMessage.toLowerCase().contains('already') || 
-                  errorMessage.toLowerCase().contains('taken') ||
-                  errorMessage.toLowerCase().contains('unique'))) {
+      if (errorMessage.toLowerCase().contains('pseudo') &&
+          (errorMessage.toLowerCase().contains('already') ||
+              errorMessage.toLowerCase().contains('taken') ||
+              errorMessage.toLowerCase().contains('unique'))) {
+        errorMessage =
+            'Ce pseudo est déjà utilisé. Veuillez en choisir un autre.';
+      } else if (errorMessage.toLowerCase().contains('phone') &&
+          (errorMessage.toLowerCase().contains('already') ||
+              errorMessage.toLowerCase().contains('taken') ||
+              errorMessage.toLowerCase().contains('unique'))) {
         errorMessage = 'Ce numéro de téléphone est déjà utilisé.';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
       );
@@ -209,10 +208,11 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                                       return null;
                                     },
                                     decoration: InputDecoration(
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 12,
-                                      ),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
+                                          ),
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
                                         borderSide: BorderSide.none,
@@ -253,7 +253,7 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                                 ),
                                 const SizedBox(height: 20),
                                 const Text(
-                                  'Téléphone',
+                                  'Téléphone (recommande)',
                                   style: TextStyle(
                                     color: Colors.grey,
                                     fontSize: 14,
@@ -298,9 +298,10 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                                           keyboardType: TextInputType.phone,
                                           textInputAction: TextInputAction.done,
                                           validator: (value) {
+                                            // Phone is optional - only validate if not empty
                                             if (value == null ||
                                                 value.isEmpty) {
-                                              return 'Veuillez entrer votre téléphone';
+                                              return null; // Allow empty phone
                                             }
                                             if (!RegExp(
                                               r'^\d{9,10}$',
@@ -316,34 +317,40 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                                                   vertical: 12,
                                                 ),
                                             border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                               borderSide: BorderSide.none,
                                             ),
                                             enabledBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                               borderSide: BorderSide.none,
                                             ),
                                             focusedBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                               borderSide: const BorderSide(
                                                 color: Color(0xFFFF9800),
                                                 width: 2,
                                               ),
                                             ),
                                             errorBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                               borderSide: const BorderSide(
                                                 color: Color(0xFFD32F2F),
                                                 width: 2,
                                               ),
                                             ),
-                                            focusedErrorBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(8),
-                                              borderSide: const BorderSide(
-                                                color: Color(0xFFD32F2F),
-                                                width: 2,
-                                              ),
-                                            ),
+                                            focusedErrorBorder:
+                                                OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  borderSide: const BorderSide(
+                                                    color: Color(0xFFD32F2F),
+                                                    width: 2,
+                                                  ),
+                                                ),
                                             errorStyle: const TextStyle(
                                               fontSize: 12,
                                               height: 1.2,
