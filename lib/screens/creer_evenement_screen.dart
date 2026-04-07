@@ -99,6 +99,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
   DateTime? selectedDate;
+  DateTime? startDate;
+  DateTime? endDate;
 
   bool _acceptMessages = false;
   List<String> _selectedDaysOfWeek = [];
@@ -287,11 +289,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
       // Dates
       final eventDate = data['event_date']?.toString();
-      final startDate = data['start_date']?.toString();
+      final startDateStr = data['start_date']?.toString();
+      final endDateStr = data['end_date']?.toString();
       if (eventDate != null && eventDate.isNotEmpty) {
         try { selectedDate = DateTime.parse(eventDate); } catch (_) {}
-      } else if (startDate != null && startDate.isNotEmpty) {
-        try { selectedDate = DateTime.parse(startDate); } catch (_) {}
+      }
+      if (startDateStr != null && startDateStr.isNotEmpty) {
+        try { startDate = DateTime.parse(startDateStr); } catch (_) {}
+      }
+      if (endDateStr != null && endDateStr.isNotEmpty) {
+        try { endDate = DateTime.parse(endDateStr); } catch (_) {}
       }
 
       // Times
@@ -498,6 +505,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         'site_web': _siteWebController.text,
         'duree': _selectedTimeEvenement,
         'date': selectedDate?.toIso8601String(),
+        'start_date': startDate?.toIso8601String(),
+        'end_date': endDate?.toIso8601String(),
         'start_time_hour': _startTime?.hour,
         'start_time_minute': _startTime?.minute,
         'end_time_hour': _endTime?.hour,
@@ -554,6 +563,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
         if (formData['date'] != null) {
           selectedDate = DateTime.parse(formData['date']);
+        }
+        if (formData['start_date'] != null) {
+          startDate = DateTime.parse(formData['start_date']);
+        }
+        if (formData['end_date'] != null) {
+          endDate = DateTime.parse(formData['end_date']);
         }
         if (formData['start_time_hour'] != null) {
           _startTime = TimeOfDay(hour: formData['start_time_hour'], minute: formData['start_time_minute'] ?? 0);
@@ -756,8 +771,19 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       
       case 3: // Step 4: Dates et horaires
         // Only require date for one_day and multi_day, not for permanent
-        if (_selectedTimeEvenement != 'Permanent' && selectedDate == null) {
+        if (_selectedTimeEvenement == 'Sur une journée' && selectedDate == null) {
           return 'Sélectionnez une date pour l\'événement.';
+        }
+        if (_selectedTimeEvenement == 'Sur plusieurs jours') {
+          if (startDate == null) {
+            return 'Sélectionnez une date de début pour l\'événement.';
+          }
+          if (endDate == null) {
+            return 'Sélectionnez une date de fin pour l\'événement.';
+          }
+          if (endDate!.isBefore(startDate!)) {
+            return 'La date de fin doit être après la date de début.';
+          }
         }
         break;
       
@@ -916,11 +942,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       'event_date': durationType == 'one_day' && selectedDate != null
           ? selectedDate!.toIso8601String().split('T').first
           : null,
-      'start_date': durationType == 'multi_day' && selectedDate != null
-          ? selectedDate!.toIso8601String().split('T').first
+      'start_date': durationType == 'multi_day' && startDate != null
+          ? startDate!.toIso8601String().split('T').first
           : null,
-      'end_date': durationType == 'multi_day' && selectedDate != null
-          ? selectedDate!.toIso8601String().split('T').first
+      'end_date': durationType == 'multi_day' && endDate != null
+          ? endDate!.toIso8601String().split('T').first
           : null,
       'start_time': _startTime != null ? _formatTime(_startTime) : null,
       'end_time': _endTime != null ? _formatTime(_endTime) : null,
@@ -1231,6 +1257,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         await _handleBackButton();
       },
       child: AppLayout(
+      currentIndex: 2,
       backgroundColor: const Color(0xFFF9F9FB),
       onTabTapped: (index) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -2160,16 +2187,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                     children: [
                       _buildDateField(
                         title: "A partir de:",
-                        selectedDate: selectedDate,
+                        selectedDate: startDate,
                         onDateSelected: (date) =>
-                            setState(() => selectedDate = date),
+                            setState(() => startDate = date),
                       ),
                       const SizedBox(height: 14),
                       _buildDateField(
                         title: "Jusqu'à:",
-                        selectedDate: selectedDate,
+                        selectedDate: endDate,
                         onDateSelected: (date) =>
-                            setState(() => selectedDate = date),
+                            setState(() => endDate = date),
                       ),
                       const SizedBox(height: 14),
                     ],
@@ -2406,11 +2433,23 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           onEdit: () => setState(() => _currentStep = 3),
           rows: [
             _buildReviewRow('Durée', _selectedTimeEvenement ?? '-'),
-            if (selectedDate != null)
+            if (_selectedTimeEvenement == 'Sur une journée' && selectedDate != null)
               _buildReviewRow(
                 'Date',
                 '${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}',
               ),
+            if (_selectedTimeEvenement == 'Sur plusieurs jours') ...[
+              if (startDate != null)
+                _buildReviewRow(
+                  'Date de début',
+                  '${startDate!.day.toString().padLeft(2, '0')}/${startDate!.month.toString().padLeft(2, '0')}/${startDate!.year}',
+                ),
+              if (endDate != null)
+                _buildReviewRow(
+                  'Date de fin',
+                  '${endDate!.day.toString().padLeft(2, '0')}/${endDate!.month.toString().padLeft(2, '0')}/${endDate!.year}',
+                ),
+            ],
             _buildReviewRow('Horaire', '${_formatTime(_startTime)} - ${_formatTime(_endTime)}'),
             if ((_selectedTimeEvenement == 'Sur plusieurs jours' || _selectedTimeEvenement == 'Permanent') &&
                 _selectedDaysOfWeek.isNotEmpty)

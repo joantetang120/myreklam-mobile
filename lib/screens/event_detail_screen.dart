@@ -103,11 +103,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   bool _isLoadingFollow = false;
   bool _isParticipating = false;
   bool _isLoadingParticipation = false;
-  
+  bool _isFavorite = false;
+  bool _isLoadingFavorite = false;
   // Comments state
   List<Map<String, dynamic>> _comments = [];
   bool _isLoadingComments = true;
-  
   // Similar events state
   List<Map<String, dynamic>> _similarEvents = [];
   bool _isLoadingSimilar = true;
@@ -117,6 +117,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     super.initState();
     _checkFollowStatus();
     _checkParticipationStatus();
+    _checkFavoriteStatus();
     _fetchComments();
     _fetchSimilarEvents();
   }
@@ -1035,7 +1036,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (user != null) {
       final proProfile = user['pro_profile'] as Map<String, dynamic>?;
       final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
-      debugPrint('DEBUG: pro_profile null: ${proProfile == null}, particulierProfile null: ${particulierProfile == null}');
 
       if (proProfile != null) {
         final companyName = proProfile['company_name']?.toString();
@@ -1202,24 +1202,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ],
             )
           else
-            GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Notifications activées')),
-                );
-              },
-              child: Container(
-                margin: const EdgeInsets.only(right: 14),
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFE6F7EF),
-                  border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
-                ),
-                child: const Icon(Icons.notifications, color: Color(0xFF2A8143), size: 18),
-              ),
-            ),
+            const SizedBox(),
         ],
       ),
       body: SingleChildScrollView(
@@ -1455,16 +1438,34 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
+                // Favoris button
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      onPressed: () {},
-                      icon: Icon(Icons.favorite_outline, color: Colors.grey[600], size: 24),
+                      onPressed: _toggleFavorite,
+                      icon: _isLoadingFavorite
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Icon(
+                              _isFavorite ? Icons.favorite : Icons.favorite_outline,
+                              color: _isFavorite ? Colors.red : Colors.grey[600],
+                              size: 24,
+                            ),
                     ),
-                    Text('Favoris', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    Text(
+                      'Favoris',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _isFavorite ? Colors.red : Colors.grey[600],
+                      ),
+                    ),
                   ],
                 ),
+                // Partager button
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1759,6 +1760,96 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    if (widget.eventData != null && widget.eventData!['is_favorited'] != null) {
+      setState(() {
+        _isFavorite = widget.eventData!['is_favorited'] == true;
+      });
+      return;
+    }
+    
+    if (widget.eventId == null) return;
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) return;
+      
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/events/${widget.eventId}'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final isFavorited = data['data']?['is_favorited'] == true;
+        setState(() {
+          _isFavorite = isFavorited;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error checking favorite status: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (widget.eventId == null) return;
+
+    setState(() => _isLoadingFavorite = true);
+
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter')),
+        );
+        return;
+      }
+
+      if (_isFavorite) {
+        // Remove from favorites
+        final response = await http.delete(
+          Uri.parse('${ApiConfig.baseUrl}/events/${widget.eventId}/favorite'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 204) {
+          setState(() => _isFavorite = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Retiré des favoris')),
+          );
+        }
+      } else {
+        // Add to favorites
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}/events/${widget.eventId}/favorite'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          setState(() => _isFavorite = true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ajouté aux favoris')),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      setState(() => _isLoadingFavorite = false);
+    }
   }
 
   void _showDeleteDialog(BuildContext context) {

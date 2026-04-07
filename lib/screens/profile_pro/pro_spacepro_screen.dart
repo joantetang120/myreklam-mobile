@@ -2106,32 +2106,17 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                     // Row 2: Action buttons (full width)
                                     if (fileUrl != null) ...[
                                       const SizedBox(height: 12),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildActionButton(
-                                              icon: Icons.visibility_outlined,
-                                              color: const Color(0xFF2E9B5B),
-                                              onTap: () => _viewDocument(
-                                                fileUrl,
-                                                fileName,
-                                              ),
-                                              label: 'Voir',
-                                            ),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: _buildActionButton(
+                                          icon: Icons.visibility_outlined,
+                                          color: const Color(0xFF2E9B5B),
+                                          onTap: () => _viewDocument(
+                                            fileUrl,
+                                            fileName,
                                           ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: _buildActionButton(
-                                              icon: Icons.download_outlined,
-                                              color: const Color(0xFFEF8A40),
-                                              onTap: () => _downloadDocument(
-                                                fileUrl,
-                                                fileName,
-                                              ),
-                                              label: 'Télécharger',
-                                            ),
-                                          ),
-                                        ],
+                                          label: 'Voir',
+                                        ),
                                       ),
                                     ],
                                   ],
@@ -2344,6 +2329,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, color: color, size: 18),

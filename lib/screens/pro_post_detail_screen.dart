@@ -83,13 +83,57 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
   bool _isLoadingRelated = false;
   bool _isFollowing = false;
   bool _isLoadingFollow = false;
+  bool _isFavorite = false;
+  bool _isLoadingFavorite = false;
 
   @override
   void initState() {
     super.initState();
+    _checkFavoriteStatus();
     _fetchComments();
     _fetchRelatedBonPlans();
     _checkFollowStatus();
+  }
+
+  void _checkFavoriteStatus() async {
+    debugPrint('=== CHECK FAVORITE STATUS ===');
+    debugPrint('bonPlanData is_favorited: ${widget.bonPlanData?['is_favorited']}');
+    
+    // First set from passed data if available
+    if (widget.bonPlanData != null && widget.bonPlanData!['is_favorited'] != null) {
+      setState(() {
+        _isFavorite = widget.bonPlanData!['is_favorited'] == true;
+      });
+      debugPrint('Set from bonPlanData: $_isFavorite');
+      return;
+    }
+    
+    // Otherwise fetch from API
+    if (widget.bonPlanId == null) return;
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) return;
+      
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/bonplans/${widget.bonPlanId}'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final isFavorited = data['data']?['is_favorited'] == true;
+        setState(() {
+          _isFavorite = isFavorited;
+        });
+        debugPrint('Fetched from API - isFavorited: $isFavorited');
+      }
+    } catch (e) {
+      debugPrint('Error checking favorite status: $e');
+    }
   }
 
   Future<void> _checkFollowStatus() async {
@@ -177,6 +221,77 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       );
     } finally {
       setState(() => _isLoadingFollow = false);
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (widget.bonPlanId == null) return;
+
+    setState(() => _isLoadingFavorite = true);
+    debugPrint('=== TOGGLE FAVORITE ===');
+    debugPrint('bonPlanId: ${widget.bonPlanId}');
+    debugPrint('Current _isFavorite: $_isFavorite');
+
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter')),
+        );
+        return;
+      }
+
+      if (_isFavorite) {
+        // Remove from favorites
+        final url = '${ApiConfig.baseUrl}/bonplans/${widget.bonPlanId}/favorite';
+        debugPrint('DELETE $url');
+        final response = await http.delete(
+          Uri.parse(url),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        debugPrint('Response status: ${response.statusCode}');
+        debugPrint('Response body: ${response.body}');
+
+        if (response.statusCode == 200 || response.statusCode == 204) {
+          setState(() => _isFavorite = false);
+          debugPrint('Removed from favorites - _isFavorite now: $_isFavorite');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Retiré des favoris')),
+          );
+        }
+      } else {
+        // Add to favorites
+        final url = '${ApiConfig.baseUrl}/bonplans/${widget.bonPlanId}/favorite';
+        debugPrint('POST $url');
+        final response = await http.post(
+          Uri.parse(url),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        debugPrint('Response status: ${response.statusCode}');
+        debugPrint('Response body: ${response.body}');
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          setState(() => _isFavorite = true);
+          debugPrint('Added to favorites - _isFavorite now: $_isFavorite');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ajouté aux favoris')),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      setState(() => _isLoadingFavorite = false);
+      debugPrint('Final _isFavorite: $_isFavorite');
     }
   }
 
@@ -630,20 +745,24 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            onPressed: () {
-                              // TODO: Implement save/favorite functionality
-                            },
-                            icon: Icon(
-                              Icons.favorite_outline,
-                              color: Colors.grey[600],
-                              size: 24,
-                            ),
+                            onPressed: _toggleFavorite,
+                            icon: _isLoadingFavorite
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : Icon(
+                                    _isFavorite ? Icons.favorite : Icons.favorite_outline,
+                                    color: _isFavorite ? Colors.red : Colors.grey[600],
+                                    size: 24,
+                                  ),
                           ),
                           Text(
                             'Favoris',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: _isFavorite ? Colors.red : Colors.grey[600],
                             ),
                           ),
                         ],

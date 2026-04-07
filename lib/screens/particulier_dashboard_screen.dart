@@ -42,6 +42,9 @@ import 'package:myreklam/services/mys_earning_service.dart';
 class ParticulierDashboardScreen extends StatefulWidget {
   const ParticulierDashboardScreen({super.key});
 
+  /// Global notifier to refresh My's balance from anywhere (e.g. after avatar upload)
+  static final ValueNotifier<bool> refreshMysNotifier = ValueNotifier<bool>(false);
+
   @override
   State<ParticulierDashboardScreen> createState() =>
       _ParticulierDashboardScreenState();
@@ -505,7 +508,8 @@ class _ReactionData {
 }
 
 class _ParticulierDashboardScreenState
-    extends State<ParticulierDashboardScreen> {
+    extends State<ParticulierDashboardScreen>
+    with WidgetsBindingObserver {
   static const LinearGradient greenGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
@@ -581,12 +585,16 @@ class _ParticulierDashboardScreenState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_onFeedScroll);
     _prefetchCurrentUser();
     _loadUnifiedFeed(reset: true);
     _storyStore.loadFeed();
     _loadSuggestions();
     _checkAndShowWelcomeBonus();
+
+    // Listen for My's refresh requests
+    ParticulierDashboardScreen.refreshMysNotifier.addListener(_onRefreshMysRequested);
   }
 
   Future<void> _checkAndShowWelcomeBonus() async {
@@ -828,27 +836,43 @@ class _ParticulierDashboardScreenState
                           style: TextStyle(
                             fontSize: 11,
                             color: Color(0xFF3AAE5E),
-                            fontWeight: FontWeight.w600,
-                          ),
                         ),
                       ),
                     ),
-                  ],
+                )],
                 ),
               );
             },
           ),
         ),
-        const SizedBox(height: 10),
       ],
     );
   }
 
+  void _onRefreshMysRequested() {
+    if (ParticulierDashboardScreen.refreshMysNotifier.value) {
+      debugPrint('My\'s refresh requested - updating balance');
+      _prefetchCurrentUser(forceRefresh: true);
+      ParticulierDashboardScreen.refreshMysNotifier.value = false;
+    }
+  }
+
   @override
   void dispose() {
+    ParticulierDashboardScreen.refreshMysNotifier.removeListener(_onRefreshMysRequested);
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_onFeedScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App came to foreground
+      debugPrint('App resumed - refreshing user data');
+      _prefetchCurrentUser(forceRefresh: true);
+    }
   }
 
   Future<void> _handleStoryEntryTap() async {
@@ -882,8 +906,8 @@ class _ParticulierDashboardScreenState
     }
   }
 
-  void _prefetchCurrentUser() {
-    _getCurrentUserId();
+  void _prefetchCurrentUser({bool forceRefresh = false}) {
+    _getCurrentUserId(forceRefresh: forceRefresh);
   }
 
   Future<String?> _getCurrentUserId({bool forceRefresh = false}) async {
@@ -2250,21 +2274,45 @@ class _ParticulierDashboardScreenState
 
   String _getNatureLabel(String nature) {
     switch (nature.toLowerCase()) {
+      // Main categories from the new table
       case 'searchjob':
+        return 'Recherche d\'emploi';
+      case 'training':
+        return 'Formation';
+      case 'realestate':
+        return 'Immobilier';
+      case 'servicehelp':
+        return 'Services / Aide';
+      case 'promaterial':
+        return 'Matériel pro';
+      case 'house':
+        return 'Maison';
+      case 'fashion':
+        return 'Mode';
+      case 'vehicle':
+        return 'Véhicules';
+      case 'holiday':
+        return 'Vacances';
+      case 'multimedia':
+        return 'Multimédia';
+      case 'hobbies':
+        return 'Loisirs';
+      case 'animals':
+        return 'Animaux';
+      case 'various':
+        return 'Divers';
+      // Legacy mappings for backward compatibility
       case 'emploi':
         return 'Recherche d\'emploi';
-      case 'internship':
-      case 'stage':
-        return 'Stage';
-      case 'training':
-      case 'formation':
-        return 'Recherche de formation';
-      case 'realestate':
+      case 'service':
+        return 'Services / Aide';
       case 'logement':
         return 'Immobilier';
-      case 'service':
-      case 'servicehelp':
-        return 'Service/Aide';
+      case 'formation':
+        return 'Formation';
+      case 'internship':
+      case 'stage':
+        return 'Recherche de stage';
       case 'product':
       case 'produit':
         return 'Recherche de produit';
