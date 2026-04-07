@@ -6,10 +6,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/screens/particulier_dashboard_screen.dart';
 import 'package:myreklam/screens/my_posts_screen.dart';
 import 'package:myreklam/screens/followers_screen.dart';
 import 'package:myreklam/screens/publier_screen.dart';
-import 'package:myreklam/screens/public_profile_screen.dart';
 import 'package:myreklam/screens/favorite_screen.dart';
 import 'package:myreklam/screens/my_announces_screen.dart';
 import 'package:myreklam/screens/login_screen.dart';
@@ -19,7 +19,10 @@ import 'package:myreklam/screens/espace_candidat_screen.dart';
 import 'package:myreklam/screens/recompenses_screen.dart';
 import 'package:myreklam/screens/parrainage_screen.dart';
 import 'package:myreklam/screens/mon_profil_particulier_screen.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
+import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/auth_service.dart';
+import 'package:myreklam/widgets/custom_bottom_bar.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 
@@ -40,12 +43,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int _followersCount = 0;
   int _followingCount = 0;
   int _postsCount = 0;
+  int _unreadNotifCount = 0;
   String? _userId;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final response = await ApiClient().authenticatedGet('/notifications/unread-count');
+      if (mounted && response['success'] == true) {
+        setState(() => _unreadNotifCount = response['unread_count'] ?? 0);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadProfile() async {
@@ -108,7 +122,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             setState(() {
               _avatarUrl = response['avatar_url'];
             });
-            if (mounted) {
+            // Update bottom bar avatar immediately
+            CustomBottomBar.avatarNotifier.value = response['avatar_url'];
+
+            // Show My's reward modal if awarded
+            final mysAwarded = response['mys_awarded'] ?? 0;
+            if (mysAwarded > 0 && mounted) {
+              // Trigger dashboard refresh
+              ParticulierDashboardScreen.refreshMysNotifier.value = true;
+              _showMysRewardModal(mysAwarded, response['new_mys_balance'] ?? 0);
+            } else if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Avatar mis à jour avec succès!'),
@@ -128,6 +151,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showMysRewardModal(int mysAwarded, int newBalance) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3AAE5E).withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.star_rounded, color: Color(0xFF3AAE5E), size: 50),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Félicitations ! 🎉',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Vous avez gagné $mysAwarded My\'s en ajoutant votre photo de profil !',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 15, color: Colors.black87),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Nouveau solde : $newBalance My\'s',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF3AAE5E)),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF3AAE5E),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Super !', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _handleLogout() async {
@@ -206,29 +286,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  Positioned(
-                    top: -6,
-                    right: -6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white, width: 1),
-                      ),
-                      child: const Text(
-                        '10',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                  if (_unreadNotifCount > 0)
+                    Positioned(
+                      top: -6,
+                      right: -6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white, width: 1),
+                        ),
+                        child: Text(
+                          '$_unreadNotifCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -490,7 +571,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const PublicProfileScreen(),
+                              builder: (context) => const ParticulierPublicViewScreen(),
                             ),
                           ).then((_) => _loadProfile());
                         },
@@ -610,7 +691,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                     ),
                     _buildMenuCard(
-                      icon: 'assets/images/profil_pro/opt-7.png',
+                      icon: 'assets/images/profil_pro/carbon_user.png',
                       backgroundColor: const Color(0xFFE6F7EF),
                       title: 'Espace candidat',
                       description:

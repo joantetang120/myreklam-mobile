@@ -72,20 +72,33 @@ class DemandeDetailScreen extends StatefulWidget {
 class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
   bool _isFollowing = false;
   bool _isLoadingFollow = false;
+  bool _isFavorite = false;
+  bool _isLoadingFavorite = false;
   List<Map<String, dynamic>> _comments = [];
   bool _isLoadingComments = false;
   List<Map<String, dynamic>> _similarDemandes = [];
   bool _isLoadingSimilar = false;
 
   static const _natureLabels = {
-    'emploi': 'Recherche d\'emploi',
     'searchjob': 'Recherche d\'emploi',
-    'service': 'Service/Aide',
-    'servicehelp': 'Service/Aide',
-    'logement': 'Immobilier',
+    'training': 'Formation',
     'realestate': 'Immobilier',
+    'servicehelp': 'Services / Aide',
+    'promaterial': 'Matériel pro',
+    'house': 'Maison',
+    'fashion': 'Mode',
+    'vehicle': 'Véhicules',
+    'holiday': 'Vacances',
+    'multimedia': 'Multimédia',
+    'hobbies': 'Loisirs',
+    'animals': 'Animaux',
+    'various': 'Divers',
+    // Legacy mappings for backward compatibility
+    'emploi': 'Recherche d\'emploi',
+    'service': 'Services / Aide',
+    'logement': 'Immobilier',
     'produit': 'Recherche de produit',
-    'formation': 'Recherche de formation',
+    'formation': 'Formation',
     'collaboration': 'Collaboration',
     'stage': 'Recherche de stage',
     'internship': 'Recherche de stage',
@@ -96,7 +109,79 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
   };
 
   static const _typeLabels = {
+    // Real Estate subcategories
+    'RealEstateInvestment': 'Investissement immobilier',
+    'LookingForRental': 'Cherche location',
+    'LookingForSharedHousing': 'Cherche colocation',
+    'LookingForProfessionalSpace': 'Cherche local professionnel',
+    // Services subcategories
     'Ticketing': 'Billetterie',
+    'ServiceProvision': 'Prestations de services',
+    'Events': 'Événements',
+    'Carpooling': 'Covoiturage',
+    'PrivateLessons': 'Cours particuliers',
+    // Pro Material subcategories
+    'AgriculturalEquipment': 'Matériel agricole',
+    'TransportHandling': 'Transport & Manutention',
+    'ConstructionHeavyWork': 'Construction & Travaux lourds',
+    'ToolsSecondaryWork': 'Outillage & Second œuvre',
+    'IndustrialEquipment': 'Matériel industriel',
+    'CateringHotel': 'Restauration & Hôtellerie',
+    'OfficeSupplies': 'Fournitures de bureau',
+    'ShopsMarkets': 'Commerces & Marchés',
+    'MedicalEquipment': 'Matériel médical',
+    // House subcategories
+    'Furniture': 'Mobilier',
+    'Appliances': 'Électroménager',
+    'Tableware': 'Arts de la table',
+    'Decoration': 'Décoration',
+    'HomeLinen': 'Linge de maison',
+    'DIY': 'Bricolage',
+    'Gardening': 'Jardinage',
+    // Fashion subcategories
+    'Clothing': 'Vêtements',
+    'Shoes': 'Chaussures',
+    'AccessoriesLuggage': 'Accessoires & Bagages',
+    'WatchesJewelry': 'Montres & Bijoux',
+    'BabyGear': 'Équipement bébé',
+    'BabyClothing': 'Vêtements bébé',
+    'LuxuryTrendy': 'Luxe & Tendance',
+    // Vehicle subcategories
+    'Cars': 'Voitures',
+    'Motorcycles': 'Motos',
+    'Caravanning': 'Camping-car',
+    'UtilityVehicles': 'Véhicules utilitaires',
+    'Trucks': 'Poids lourds',
+    'Boating': 'Bateaux',
+    'CarEquipment': 'Équipement voiture',
+    'MotorcycleEquipment': 'Équipement moto',
+    'CaravanningEquipment': 'Équipement camping-car',
+    'BoatingEquipment': 'Équipement bateau',
+    // Holiday subcategories
+    'RentalCottages': 'Location & Gîtes',
+    'AirBnB': 'AirBnB',
+    'GuestRooms': 'Chambres d\'hôtes',
+    'Campings': 'Campings',
+    'TrainTickets': 'Billets de train',
+    'PlaneTickets': 'Billets d\'avion',
+    'Hotels': 'Hôtels',
+    'Stays': 'Séjours',
+    // Multimedia subcategories
+    'ImageSound': 'Image et son',
+    'ConsolesVideoGames': 'Consoles & Jeux vidéo',
+    'Phones': 'Téléphones',
+    'Computing': 'Informatique',
+    'DVDMovies': 'DVD - Film',
+    'CDMusic': 'CD - Musique',
+    'Books': 'Livres',
+    // Hobbies subcategories
+    'Bicycles': 'Vélos',
+    'SportsHobbies': 'Sport & Loisirs',
+    'MusicalInstruments': 'Instruments de musique',
+    'Collections': 'Collections',
+    'GamesToys': 'Jeux & Jouets',
+    'WineGastronomy': 'Vin & Gastronomie',
+    'Others': 'Autres',
   };
 
   String _getTypeLabel(String? type) {
@@ -159,6 +244,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
   void initState() {
     super.initState();
     _checkFollowStatus();
+    _checkFavoriteStatus();
     _fetchComments();
     _fetchSimilarDemandes();
   }
@@ -742,6 +828,88 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     }
   }
 
+  Future<void> _checkFavoriteStatus() async {
+    if (widget.demandeId == null) return;
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) return;
+      
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/demandes/${widget.demandeId}'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['data']?['is_favorited'] == true) {
+          setState(() => _isFavorite = true);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking favorite status: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (widget.demandeId == null) return;
+    
+    setState(() => _isLoadingFavorite = true);
+    
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter')),
+        );
+        return;
+      }
+      
+      if (_isFavorite) {
+        // Unfavorite
+        final response = await http.delete(
+          Uri.parse('${ApiConfig.baseUrl}/demandes/${widget.demandeId}/favorite'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        
+        if (response.statusCode == 200 || response.statusCode == 204) {
+          setState(() => _isFavorite = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Retiré des favoris')),
+          );
+        }
+      } else {
+        // Favorite
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}/demandes/${widget.demandeId}/favorite'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+        
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          setState(() => _isFavorite = true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ajouté aux favoris')),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    } finally {
+      setState(() => _isLoadingFavorite = false);
+    }
+  }
+
   Future<void> _startConversationWithAuthor(
     BuildContext context,
     Map<String, dynamic> authorData,
@@ -1252,10 +1420,26 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        onPressed: () {},
-                        icon: Icon(Icons.favorite_outline, color: Colors.grey[600], size: 24),
+                        onPressed: _toggleFavorite,
+                        icon: _isLoadingFavorite
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(
+                                _isFavorite ? Icons.favorite : Icons.favorite_outline,
+                                color: _isFavorite ? Colors.red : Colors.grey[600],
+                                size: 24,
+                              ),
                       ),
-                      Text('Favoris', style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'Manjari')),
+                      Text(
+                        'Favoris',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _isFavorite ? Colors.red : Colors.grey[600],
+                        ),
+                      ),
                     ],
                   ),
                   Column(

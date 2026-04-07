@@ -1581,6 +1581,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         await _handleBackButton();
       },
       child: AppLayout(
+        currentIndex: 2,
         backgroundColor: const Color(0xFFF9F9FB),
         onTabTapped: (index) {
           Navigator.of(context).pushAndRemoveUntil(
