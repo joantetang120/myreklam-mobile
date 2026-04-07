@@ -68,7 +68,9 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
 
   Future<void> _loadUnreadCount() async {
     try {
-      final response = await ApiClient().authenticatedGet('/notifications/unread-count');
+      final response = await ApiClient().authenticatedGet(
+        '/notifications/unread-count',
+      );
       if (mounted && response['success'] == true) {
         setState(() => _unreadNotifCount = response['unread_count'] ?? 0);
       }
@@ -278,7 +280,11 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                   color: const Color(0xFF2E9B5B).withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.star_rounded, color: Color(0xFF2E9B5B), size: 50),
+                child: const Icon(
+                  Icons.star_rounded,
+                  color: Color(0xFF2E9B5B),
+                  size: 50,
+                ),
               ),
               const SizedBox(height: 16),
               const Text(
@@ -294,7 +300,11 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
               const SizedBox(height: 8),
               Text(
                 'Nouveau solde : $newBalance My\'s',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2E9B5B)),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2E9B5B),
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -305,9 +315,14 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                     backgroundColor: const Color(0xFF2E9B5B),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text('Super !', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  child: const Text(
+                    'Super !',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
             ],
