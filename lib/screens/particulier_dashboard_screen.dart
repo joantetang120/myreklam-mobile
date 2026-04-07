@@ -43,7 +43,9 @@ class ParticulierDashboardScreen extends StatefulWidget {
   const ParticulierDashboardScreen({super.key});
 
   /// Global notifier to refresh My's balance from anywhere (e.g. after avatar upload)
-  static final ValueNotifier<bool> refreshMysNotifier = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> refreshMysNotifier = ValueNotifier<bool>(
+    false,
+  );
 
   @override
   State<ParticulierDashboardScreen> createState() =>
@@ -521,8 +523,7 @@ class _ReactionData {
   _ReactionData({this.likesCount = 0, this.userReaction});
 }
 
-class _ParticulierDashboardScreenState
-    extends State<ParticulierDashboardScreen>
+class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     with WidgetsBindingObserver {
   static const LinearGradient greenGradient = LinearGradient(
     begin: Alignment.topCenter,
@@ -657,7 +658,9 @@ class _ParticulierDashboardScreenState
     _checkAndShowWelcomeBonus();
 
     // Listen for My's refresh requests
-    ParticulierDashboardScreen.refreshMysNotifier.addListener(_onRefreshMysRequested);
+    ParticulierDashboardScreen.refreshMysNotifier.addListener(
+      _onRefreshMysRequested,
+    );
   }
 
   Future<void> _checkAndShowWelcomeBonus() async {
@@ -903,10 +906,11 @@ class _ParticulierDashboardScreenState
                           style: TextStyle(
                             fontSize: 11,
                             color: Color(0xFF3AAE5E),
+                          ),
                         ),
                       ),
                     ),
-                )],
+                  ],
                 ),
               );
             },
@@ -926,7 +930,9 @@ class _ParticulierDashboardScreenState
 
   @override
   void dispose() {
-    ParticulierDashboardScreen.refreshMysNotifier.removeListener(_onRefreshMysRequested);
+    ParticulierDashboardScreen.refreshMysNotifier.removeListener(
+      _onRefreshMysRequested,
+    );
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_onFeedScroll);
     _scrollController.dispose();

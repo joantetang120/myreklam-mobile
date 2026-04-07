@@ -65,9 +65,7 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
         ),
         // Define routes for navigation
-        routes: {
-          '/login': (context) => const LoginScreen(),
-        },
+        routes: {'/login': (context) => const LoginScreen()},
         home: const LoginScreen(),
       ),
     );
