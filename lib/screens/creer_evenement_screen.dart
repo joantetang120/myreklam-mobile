@@ -2362,8 +2362,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           title: 'Étape 1 - Catégorie',
           onEdit: () => setState(() => _currentStep = 0),
           rows: [
-            _buildReviewRow('Catégorie', _selectedCategory ?? '-'),
-            _buildReviewRow('Sous-catégorie', _selectedSubCategory ?? '-'),
+            _buildReviewRow('Catégorie', _getCategoryLabel(_selectedCategory)),
+            _buildReviewRow('Sous-catégorie', _getSubCategoryLabel(_selectedSubCategory)),
             _buildReviewRow('Format', _selectedType ?? '-'),
           ],
         ),
@@ -3216,6 +3216,24 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         ),
       ],
     );
+  }
+
+  String _getCategoryLabel(String? code) {
+    if (code == null) return '-';
+    final category = _categoryOptions.firstWhere(
+      (c) => c['code'] == code,
+      orElse: () => {},
+    );
+    return category.isNotEmpty ? (category['label'] ?? code) : code;
+  }
+
+  String _getSubCategoryLabel(String? code) {
+    if (code == null) return '-';
+    final subCategory = _subCategoryOptions.firstWhere(
+      (s) => s['code'] == code,
+      orElse: () => {},
+    );
+    return subCategory.isNotEmpty ? (subCategory['label'] ?? code) : code;
   }
 
   String _formatSelectedDaysOfWeek() {

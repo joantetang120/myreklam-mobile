@@ -124,93 +124,56 @@ class EvenementCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 15),
-              // Event Image (without badge)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child:
-                    eventImage.startsWith('http://') ||
-                        eventImage.startsWith('https://')
-                    ? Image.network(
-                        eventImage,
-                        width: double.infinity,
-                        height: 200,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            width: double.infinity,
-                            height: 200,
-                            color: Colors.grey[200],
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                value:
-                                    loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                    : null,
+              // Event Image (only if provided)
+              if (eventImage.isNotEmpty &&
+                  (eventImage.startsWith('http://') ||
+                      eventImage.startsWith('https://') ||
+                      eventImage.startsWith('assets/')))
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  child: eventImage.startsWith('http://') ||
+                          eventImage.startsWith('https://')
+                      ? Image.network(
+                          eventImage,
+                          width: double.infinity,
+                          height: 200,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              width: double.infinity,
+                              height: 200,
+                              color: Colors.grey[200],
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value:
+                                      loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: double.infinity,
-                            height: 200,
-                            color: Colors.grey[200],
-                            child: const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.broken_image,
-                                  size: 50,
-                                  color: Colors.grey,
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Image non disponible',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      )
-                    : Image.asset(
-                        eventImage,
-                        width: double.infinity,
-                        height: 200,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: double.infinity,
-                            height: 200,
-                            color: Colors.grey[200],
-                            child: const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.image_not_supported,
-                                  size: 50,
-                                  color: Colors.grey,
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Image par défaut',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-              ),
-              const SizedBox(height: 12),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return const SizedBox.shrink();
+                          },
+                        )
+                      : Image.asset(
+                          eventImage,
+                          width: double.infinity,
+                          height: 200,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                ),
+              if (eventImage.isNotEmpty &&
+                  (eventImage.startsWith('http://') ||
+                      eventImage.startsWith('https://') ||
+                      eventImage.startsWith('assets/')))
+                const SizedBox(height: 12),
               // Tags (sub_category and format_type)
               Builder(
                 builder: (context) {

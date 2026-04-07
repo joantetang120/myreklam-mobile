@@ -112,6 +112,75 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   List<Map<String, dynamic>> _similarEvents = [];
   bool _isLoadingSimilar = true;
 
+  /// Translates English category codes to French labels
+  String _translateCategory(String code) {
+    const Map<String, String> translations = {
+      'ProfessionalNetworking': 'Événements Professionnels & Réseautage',
+      'CultureEntertainment': 'Culture & Divertissement',
+      'SportsLeisure': 'Sport & Loisirs',
+      'EducationTraining': 'Formation / Éducation',
+      'AssociativeCharity': 'Engagement Associatif & Caritatif',
+      'FamilyChildren': 'Famille & Enfance',
+      'MarketsCommercialEvents': 'Marchés & Événements Commerciaux',
+      'GamesContests': 'Jeux & concours',
+      'GastronomyOenology': 'Gastronomie & Œnologie',
+      'WellnessPersonalDevelopment': 'Bien-être & Développement Personnel',
+      'TechnologyInnovation': 'Technologie & Innovation',
+      'FashionBeauty': 'Mode & Beauté',
+      'Others': 'Autres',
+    };
+    
+    return translations[code] ?? code;
+  }
+
+  /// Translates English sub-category codes to French labels
+  String _translateSubCategory(String code) {
+    const Map<String, String> translations = {
+      'AfterworkTeamBuilding': 'Afterwork / Team Building',
+      'ConferenceCongressSeminars': 'Conférence / Congrès / Séminaires',
+      'SeminarOutings': 'Séminaire / Sorties',
+      'TradeShowForumExhibition': 'Salon / Forum / Exposition',
+      'OpenDay': 'Journée Portes Ouvertes',
+      'EntrepreneurialNetworking': 'Réseautage entrepreneurial',
+      'Music': 'Musique',
+      'CreativeHobbies': 'Loisir créatifs',
+      'MoviesSeries': 'Films & Séries',
+      'BooksMagazines': 'Livres & Magazines',
+      'ShowsTickets': 'Spectacles & Billeterie',
+      'GamblingBetting': 'Jeux de hasard & paris',
+      'SportsEvents': 'Événements Sportifs',
+      'AutoMotoBoatPlane': 'Auto / Moto / Bateau / Avion',
+      'TourismHikingGourmetWalk': 'Tourisme / Visite / Randonnée / Marche Gourmande',
+      'EsportsGamingEvents': 'Événements e-sport / Gaming',
+      'WorkshopsInternshipsCourses': 'Ateliers / Stage / Cours',
+      'ConferencesProfessionalTraining': 'Conférences et formations professionnelles',
+      'Associative': 'Associatifs',
+      'AuctionsCharity': 'Enchères / Charité',
+      'SolidarityEvents': 'Manifestations solidaires',
+      'ChildrenMuseums': 'Enfants / Musées',
+      'AnimalEvents': 'Manifestation Animalière',
+      'WorkshopsShowsForChildren': 'Ateliers et spectacles pour enfants',
+      'MarketFleaMarketCarBootSale': 'Marché / Bourse / Brocante / Vide Grenier',
+      'TradeFairs': 'Foires commerciales',
+      'GamesContestsLottery': 'Jeux / Concours / Loterie',
+      'BoardGameTournaments': 'Tournois de jeux de société',
+      'TastingsWineCheeseChocolate': 'Dégustations (vin, fromage, chocolat...)',
+      'CulinaryFestivals': 'Festivals culinaires',
+      'CookingWorkshops': 'Ateliers cuisine',
+      'MeditationYogaWellnessRetreats': 'Méditation, yoga, retraites bien-être',
+      'ConferencesWorkshopsPersonalDevelopment': 'Conférences et ateliers sur le développement personnel',
+      'AlternativeHealingTherapies': 'Soins et thérapies alternatives',
+      'Hackathons': 'Hackathons',
+      'TechConferencesStartups': 'Conférences tech & start-up',
+      'GamingEsportsEvents': 'Événements gaming & e-sport',
+      'FashionShows': 'Défilés de mode',
+      'BeautyExhibitionsFairs': 'Salons et foires de la beauté',
+      'MakeupSkincareWorkshops': 'Ateliers maquillage et soins',
+    };
+    
+    return translations[code] ?? code;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -382,9 +451,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     }
 
     // Tags
+    final subCategoryCode = event['sub_category_code']?.toString();
     final tags = <String>[
-      if (event['sub_category_code']?.toString().isNotEmpty ?? false)
-        event['sub_category_code'].toString(),
+      if (subCategoryCode != null && subCategoryCode.isNotEmpty)
+        _translateSubCategory(subCategoryCode),
       if (event['format_type']?.toString().isNotEmpty ?? false)
         event['format_type'].toString(),
     ];
@@ -1227,7 +1297,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       children: [
                         if (widget.categoryCode != null)
                           _buildTag(
-                            widget.categoryCode!,
+                            _translateCategory(widget.categoryCode!),
                             Icons.category_outlined,
                             const Color(0xFF9C27B0),
                           ),
@@ -1300,7 +1370,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       iconColor: Colors.orange,
                       bgColor: Colors.orange.withOpacity(0.1),
                       label: "Type d'evenements",
-                      value: widget.subCategoryCode!,
+                      value: _translateSubCategory(widget.subCategoryCode!),
                     ),
                   if (widget.subCategoryCode != null && widget.subCategoryCode!.isNotEmpty)
                     const SizedBox(height: 12),

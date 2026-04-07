@@ -559,6 +559,54 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     'demande': 'demandes',
   };
 
+  /// Translates English sub-category codes to French labels
+  String _translateSubCategory(String code) {
+    const Map<String, String> translations = {
+      'AfterworkTeamBuilding': 'Afterwork / Team Building',
+      'ConferenceCongressSeminars': 'Conférence / Congrès / Séminaires',
+      'SeminarOutings': 'Séminaire / Sorties',
+      'TradeShowForumExhibition': 'Salon / Forum / Exposition',
+      'OpenDay': 'Journée Portes Ouvertes',
+      'EntrepreneurialNetworking': 'Réseautage entrepreneurial',
+      'Music': 'Musique',
+      'CreativeHobbies': 'Loisir créatifs',
+      'MoviesSeries': 'Films & Séries',
+      'BooksMagazines': 'Livres & Magazines',
+      'ShowsTickets': 'Spectacles & Billeterie',
+      'GamblingBetting': 'Jeux de hasard & paris',
+      'SportsEvents': 'Événements Sportifs',
+      'AutoMotoBoatPlane': 'Auto / Moto / Bateau / Avion',
+      'TourismHikingGourmetWalk': 'Tourisme / Visite / Randonnée / Marche Gourmande',
+      'EsportsGamingEvents': 'Événements e-sport / Gaming',
+      'WorkshopsInternshipsCourses': 'Ateliers / Stage / Cours',
+      'ConferencesProfessionalTraining': 'Conférences et formations professionnelles',
+      'Associative': 'Associatifs',
+      'AuctionsCharity': 'Enchères / Charité',
+      'SolidarityEvents': 'Manifestations solidaires',
+      'ChildrenMuseums': 'Enfants / Musées',
+      'AnimalEvents': 'Manifestation Animalière',
+      'WorkshopsShowsForChildren': 'Ateliers et spectacles pour enfants',
+      'MarketFleaMarketCarBootSale': 'Marché / Bourse / Brocante / Vide Grenier',
+      'TradeFairs': 'Foires commerciales',
+      'GamesContestsLottery': 'Jeux / Concours / Loterie',
+      'BoardGameTournaments': 'Tournois de jeux de société',
+      'TastingsWineCheeseChocolate': 'Dégustations (vin, fromage, chocolat...)',
+      'CulinaryFestivals': 'Festivals culinaires',
+      'CookingWorkshops': 'Ateliers cuisine',
+      'MeditationYogaWellnessRetreats': 'Méditation, yoga, retraites bien-être',
+      'ConferencesWorkshopsPersonalDevelopment': 'Conférences et ateliers sur le développement personnel',
+      'AlternativeHealingTherapies': 'Soins et thérapies alternatives',
+      'Hackathons': 'Hackathons',
+      'TechConferencesStartups': 'Conférences tech & start-up',
+      'GamingEsportsEvents': 'Événements gaming & e-sport',
+      'FashionShows': 'Défilés de mode',
+      'BeautyExhibitionsFairs': 'Salons et foires de la beauté',
+      'MakeupSkincareWorkshops': 'Ateliers maquillage et soins',
+    };
+    
+    return translations[code] ?? code;
+  }
+
   void _openStory(BuildContext context, StoryUserGroup group) {
     final storyMaps = group.stories.map((s) {
       final resolvedImage = ApiConfig.resolveMediaUrl(s.mediaUrl);
@@ -1233,20 +1281,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 children: [
                   // Image carousel at top
                   if (imageUrls.isNotEmpty)
-                    _buildBonPlanImageCarousel(imageUrls)
-                  else
-                    Container(
-                      height: 120,
-                      width: double.infinity,
-                      color: Colors.grey[100],
-                      child: Center(
-                        child: Icon(
-                          Icons.card_giftcard,
-                          size: 48,
-                          color: Colors.grey[300],
-                        ),
-                      ),
-                    ),
+                    _buildBonPlanImageCarousel(imageUrls),
 
                   // Title
                   Padding(
@@ -1972,8 +2007,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         user?['name']?.toString() ??
         'Organisateur';
     final eventTitle = event['title']?.toString() ?? 'Évènement';
-    final eventImage =
-        _extractMediaUrl(event) ?? 'assets/images/default_event.png';
+    final eventImage = _extractMediaUrl(event) ?? '';
     final categories = <String>[
       if (event['category_label']?.toString().isNotEmpty ?? false)
         event['category_label'].toString(),
@@ -1991,10 +2025,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     // Build tags for display
     final tags = <String>[];
 
-    // Add sub_category_code if available
+    // Add sub_category_code if available (and translate to French)
     final subCategoryCode = event['sub_category_code']?.toString();
     if (subCategoryCode != null && subCategoryCode.isNotEmpty) {
-      tags.add(subCategoryCode);
+      tags.add(_translateSubCategory(subCategoryCode));
     }
 
     // Add format_type if available
@@ -4480,7 +4514,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           ),
         if (subCategoryCode != null && subCategoryCode.isNotEmpty)
           PostTag(
-            title: subCategoryCode,
+            title: _translateSubCategory(subCategoryCode),
             icon: Icons.grid_view_outlined,
             color: Colors.grey,
           ),
