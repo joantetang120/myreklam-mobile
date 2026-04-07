@@ -101,6 +101,9 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
         }
         _isLoading = false;
       });
+      
+      // Refresh bottom bar avatar
+      CustomBottomBar.refreshAvatarNotifier.value = true;
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
