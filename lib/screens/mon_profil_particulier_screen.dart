@@ -145,7 +145,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
           _originalPseudo = profile['pseudo']?.toString() ?? '';
           _pseudoController.text = _originalPseudo ?? '';
           _emailController.text = user != null ? (user['email'] ?? '') : '';
-          _phoneController.text = profile['phone'] ?? '';
+          _phoneController.text = profile['phone']?.toString() ?? '';
           _presentationController.text = profile['bio'] ?? '';
           _showEmailPublic = profile['show_email_public'] == 1 || profile['show_email_public'] == true;
           _showPhonePublic = profile['show_phone_public'] == 1 || profile['show_phone_public'] == true;

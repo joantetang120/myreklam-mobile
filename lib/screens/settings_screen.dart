@@ -7,6 +7,7 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/screens/login_screen.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 // Sub-page for account security settings
 class SecuritySettingsScreen extends StatelessWidget {
@@ -770,6 +771,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       const SizedBox(height: 16),
                       Row(
+                        spacing: 20,
                         children: [
                           Expanded(
                             child: Column(
@@ -783,10 +785,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                const Text(
-                                  'Email@gmail.com',
+                                Text(
+                                  UserSession().email ?? 'Non disponible',
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w500,
                                     color: Color(0xFF2D2D2D),
                                   ),
@@ -806,8 +808,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                const Text(
-                                  'Professionnel',
+                                Text(
+                                  UserSession().userType == 'pro'
+                                      ? 'Professionnel'
+                                      : 'Particulier',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
