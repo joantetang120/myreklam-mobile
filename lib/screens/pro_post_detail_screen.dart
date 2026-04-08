@@ -38,6 +38,7 @@ class ProPostDetailScreen extends StatefulWidget {
   final String deliveryInfo;
   final String? location;
   final String? link;
+  final String? promo_code;
   final bool isOwner;
   final String? bonPlanId;
   final Map<String, dynamic>? bonPlanData;
@@ -65,6 +66,7 @@ class ProPostDetailScreen extends StatefulWidget {
     this.deliveryInfo = 'Non spécifié',
     this.location,
     this.link,
+    this.promo_code,
     this.isOwner = false,
     this.bonPlanId,
     this.bonPlanData,
@@ -97,24 +99,27 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
   void _checkFavoriteStatus() async {
     debugPrint('=== CHECK FAVORITE STATUS ===');
-    debugPrint('bonPlanData is_favorited: ${widget.bonPlanData?['is_favorited']}');
-    
+    debugPrint(
+      'bonPlanData is_favorited: ${widget.bonPlanData?['is_favorited']}',
+    );
+
     // First set from passed data if available
-    if (widget.bonPlanData != null && widget.bonPlanData!['is_favorited'] != null) {
+    if (widget.bonPlanData != null &&
+        widget.bonPlanData!['is_favorited'] != null) {
       setState(() {
         _isFavorite = widget.bonPlanData!['is_favorited'] == true;
       });
       debugPrint('Set from bonPlanData: $_isFavorite');
       return;
     }
-    
+
     // Otherwise fetch from API
     if (widget.bonPlanId == null) return;
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) return;
-      
+
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/bonplans/${widget.bonPlanId}'),
         headers: {
@@ -122,7 +127,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
           'Accept': 'application/json',
         },
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final isFavorited = data['data']?['is_favorited'] == true;
@@ -138,14 +143,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
   Future<void> _checkFollowStatus() async {
     if (widget.isOwner || widget.authorData == null) return;
-    
+
     final authorId = widget.authorData!['id']?.toString();
     if (authorId == null) return;
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) return;
-      
+
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/profile/$authorId'),
         headers: {
@@ -153,7 +158,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
           'Accept': 'application/json',
         },
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['is_following'] == true) {
@@ -167,12 +172,12 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
   Future<void> _toggleFollow() async {
     if (widget.isOwner || widget.authorData == null) return;
-    
+
     final authorId = widget.authorData!['id']?.toString();
     if (authorId == null) return;
-    
+
     setState(() => _isLoadingFollow = true);
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) {
@@ -181,7 +186,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         );
         return;
       }
-      
+
       if (_isFollowing) {
         // Unfollow
         final response = await http.delete(
@@ -191,11 +196,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             'Accept': 'application/json',
           },
         );
-        
+
         if (response.statusCode == 200) {
           setState(() => _isFollowing = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Vous ne suivez plus cet utilisateur')),
+            const SnackBar(
+              content: Text('Vous ne suivez plus cet utilisateur'),
+            ),
           );
         }
       } else {
@@ -207,18 +214,20 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             'Accept': 'application/json',
           },
         );
-        
+
         if (response.statusCode == 200) {
           setState(() => _isFollowing = true);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Vous suivez maintenant cet utilisateur')),
+            const SnackBar(
+              content: Text('Vous suivez maintenant cet utilisateur'),
+            ),
           );
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     } finally {
       setState(() => _isLoadingFollow = false);
     }
@@ -243,7 +252,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
       if (_isFavorite) {
         // Remove from favorites
-        final url = '${ApiConfig.baseUrl}/bonplans/${widget.bonPlanId}/favorite';
+        final url =
+            '${ApiConfig.baseUrl}/bonplans/${widget.bonPlanId}/favorite';
         debugPrint('DELETE $url');
         final response = await http.delete(
           Uri.parse(url),
@@ -258,13 +268,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         if (response.statusCode == 200 || response.statusCode == 204) {
           setState(() => _isFavorite = false);
           debugPrint('Removed from favorites - _isFavorite now: $_isFavorite');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Retiré des favoris')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Retiré des favoris')));
         }
       } else {
         // Add to favorites
-        final url = '${ApiConfig.baseUrl}/bonplans/${widget.bonPlanId}/favorite';
+        final url =
+            '${ApiConfig.baseUrl}/bonplans/${widget.bonPlanId}/favorite';
         debugPrint('POST $url');
         final response = await http.post(
           Uri.parse(url),
@@ -279,16 +290,16 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         if (response.statusCode == 200 || response.statusCode == 201) {
           setState(() => _isFavorite = true);
           debugPrint('Added to favorites - _isFavorite now: $_isFavorite');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ajouté aux favoris')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Ajouté aux favoris')));
         }
       }
     } catch (e) {
       debugPrint('Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     } finally {
       setState(() => _isLoadingFavorite = false);
       debugPrint('Final _isFavorite: $_isFavorite');
@@ -302,13 +313,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
   Future<void> _fetchComments() async {
     if (widget.bonPlanId == null) return;
-    
+
     setState(() => _isLoadingComments = true);
     try {
       final response = await ApiClient().authenticatedGet(
         '/bon-plans/${widget.bonPlanId}/comments?per_page=50',
       );
-      
+
       final data = response['data'];
       if (data != null) {
         List<Map<String, dynamic>> fetched = [];
@@ -337,7 +348,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
       // Fetch latest bon plans excluding current one
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/feed/latest?type=bon_plan&per_type_limit=4'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/feed/latest?type=bon_plan&per_type_limit=4',
+        ),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -353,7 +366,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               .map((item) {
                 dynamic resourceData = item['resource'];
                 Map<String, dynamic> resource;
-                
+
                 // Handle case where resource is a JSON string instead of Map
                 if (resourceData is String) {
                   resource = jsonDecode(resourceData) as Map<String, dynamic>;
@@ -362,7 +375,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 } else {
                   resource = {};
                 }
-                
+
                 // Ensure id is available at top level for filtering
                 resource['id'] = item['id'];
                 return resource;
@@ -459,7 +472,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 ),
                 onSelected: (value) {
                   if (value == 'edit') {
-                    if (widget.bonPlanId != null && widget.bonPlanData != null) {
+                    if (widget.bonPlanId != null &&
+                        widget.bonPlanData != null) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -546,13 +560,18 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               ImageCarousel(images: widget.images, discount: widget.discount),
             ],
             // Expiration banner
-            if (widget.validityType != 'permanent' && widget.validUntil != null && widget.validUntil!.isNotEmpty)
+            if (widget.validityType != 'permanent' &&
+                widget.validUntil != null &&
+                widget.validUntil!.isNotEmpty)
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
                 decoration: BoxDecoration(
-                  color:  Color.fromARGB(136, 231, 28, 28),
+                  color: Color.fromARGB(136, 231, 28, 28),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -592,8 +611,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         if (widget.bonPlanData!['category'] != null)
                           _buildTag(
                             widget.bonPlanData!['category'] is Map
-                                ? widget.bonPlanData!['category']['name']?.toString() ?? ''
-                                : widget.bonPlanData!['category']?.toString() ?? '',
+                                ? widget.bonPlanData!['category']['name']
+                                          ?.toString() ??
+                                      ''
+                                : widget.bonPlanData!['category']?.toString() ??
+                                      '',
                             Icons.local_offer_outlined,
                             const Color(0xFF3AAE5E),
                           ),
@@ -601,13 +623,18 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         if (widget.bonPlanData!['sub_category'] != null)
                           _buildTag(
                             widget.bonPlanData!['sub_category'] is Map
-                                ? widget.bonPlanData!['sub_category']['name']?.toString() ?? ''
-                                : widget.bonPlanData!['sub_category']?.toString() ?? '',
+                                ? widget.bonPlanData!['sub_category']['name']
+                                          ?.toString() ??
+                                      ''
+                                : widget.bonPlanData!['sub_category']
+                                          ?.toString() ??
+                                      '',
                             Icons.subdirectory_arrow_right,
                             Colors.orange,
                           ),
                         // Type tag
-                        if (widget.bonPlanData!['type'] != null && widget.bonPlanData!['type'].toString().isNotEmpty)
+                        if (widget.bonPlanData!['type'] != null &&
+                            widget.bonPlanData!['type'].toString().isNotEmpty)
                           _buildTag(
                             widget.bonPlanData!['type']?.toString() ?? '',
                             Icons.label_outline,
@@ -615,8 +642,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           ),
                       ],
                     ),
-                  if (widget.bonPlanData != null)
-                    const SizedBox(height: 12),
+                  if (widget.bonPlanData != null) const SizedBox(height: 12),
                   // Title - big and bold
                   Text(
                     widget.title,
@@ -643,7 +669,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       ),
                       const SizedBox(width: 8),
                       // Original price crossed out
-                      if (widget.originalPrice != null && widget.originalPrice!.isNotEmpty)
+                      if (widget.originalPrice != null &&
+                          widget.originalPrice!.isNotEmpty)
                         Text(
                           widget.originalPrice!,
                           style: TextStyle(
@@ -654,9 +681,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         ),
                       const Spacer(),
                       // Discount badge
-                      if (widget.discount != null && widget.discount!.isNotEmpty)
+                      if (widget.discount != null &&
+                          widget.discount!.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF2E9B5B),
                             borderRadius: BorderRadius.circular(6),
@@ -670,6 +701,48 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                             ),
                           ),
                         ),
+
+                      // Promo code as tag
+                      if (widget.promo_code != null &&
+                          widget.promo_code.toString().isNotEmpty) ...[
+                        Spacer(),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2E9B5B).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0xFF2E9B5B),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.local_offer_outlined,
+                                  size: 14,
+                                  color: Color(0xFF2E9B5B),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Code promo: ${widget.promo_code}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF2E9B5B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -684,13 +757,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       const SizedBox(width: 4),
                       Text(
                         'Dispo. chez ',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
                       Text(
-                        widget.availability.isNotEmpty && widget.availability != 'Non spécifié'
+                        widget.availability.isNotEmpty &&
+                                widget.availability != 'Non spécifié'
                             ? widget.availability
                             : 'Moto Axxe',
                         style: const TextStyle(
@@ -750,11 +821,17 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 ? const SizedBox(
                                     width: 24,
                                     height: 24,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : Icon(
-                                    _isFavorite ? Icons.favorite : Icons.favorite_outline,
-                                    color: _isFavorite ? Colors.red : Colors.grey[600],
+                                    _isFavorite
+                                        ? Icons.favorite
+                                        : Icons.favorite_outline,
+                                    color: _isFavorite
+                                        ? Colors.red
+                                        : Colors.grey[600],
                                     size: 24,
                                   ),
                           ),
@@ -762,7 +839,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                             'Favoris',
                             style: TextStyle(
                               fontSize: 12,
-                              color: _isFavorite ? Colors.red : Colors.grey[600],
+                              color: _isFavorite
+                                  ? Colors.red
+                                  : Colors.grey[600],
                             ),
                           ),
                         ],
@@ -796,10 +875,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   // Posted time
                   Text(
                     widget.time.isNotEmpty ? widget.time : 'Posté il y a 4 h.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                   ),
                 ],
               ),
@@ -812,7 +888,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 children: [
                   // Avatar
                   GestureDetector(
-                    onTap: widget.authorData != null ? _navigateToUserProfile : null,
+                    onTap: widget.authorData != null
+                        ? _navigateToUserProfile
+                        : null,
                     child: CircleAvatar(
                       radius: 24,
                       backgroundImage: widget.avatar.startsWith('http')
@@ -824,7 +902,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   // Name and user type
                   Expanded(
                     child: GestureDetector(
-                      onTap: widget.authorData != null ? _navigateToUserProfile : null,
+                      onTap: widget.authorData != null
+                          ? _navigateToUserProfile
+                          : null,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -861,7 +941,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                               foregroundColor: _isFollowing
                                   ? Colors.grey[600]
                                   : const Color(0xFF3AAE5E),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
                                 side: BorderSide(
@@ -873,7 +956,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                             ),
                             child: Text(
                               _isFollowing ? 'Suivis' : 'Suivre',
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                 ],
@@ -957,13 +1042,16 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             ),
             const SizedBox(height: 16),
             // Contact button - only if not owner and acceptMessages is true
-            if (!widget.isOwner && widget.acceptMessages && widget.authorData != null)
+            if (!widget.isOwner &&
+                widget.acceptMessages &&
+                widget.authorData != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () => _startConversation(context, widget.authorData!),
+                    onPressed: () =>
+                        _startConversation(context, widget.authorData!),
                     icon: const Icon(Icons.chat_outlined, size: 20),
                     label: const Text('Contacter'),
                     style: ElevatedButton.styleFrom(
@@ -978,7 +1066,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   ),
                 ),
               ),
-            if (!widget.isOwner && widget.acceptMessages && widget.authorData != null)
+            if (!widget.isOwner &&
+                widget.acceptMessages &&
+                widget.authorData != null)
               const SizedBox(height: 16),
             // Localisation - no card
             Padding(
@@ -995,7 +1085,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  if (widget.location != null && widget.location!.isNotEmpty) ...[
+                  if (widget.location != null &&
+                      widget.location!.isNotEmpty) ...[
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.asset(
@@ -1066,10 +1157,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       const Spacer(),
                       Text(
                         '${_comments.length}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       ),
                     ],
                   ),
@@ -1111,7 +1199,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       onPressed: () => _showCommentsSheet(context),
                       icon: const Icon(Icons.chat_outlined, size: 18),
                       label: Text(
-                        _comments.isEmpty ? 'Ajouter un commentaire' : 'Voir tous les commentaires',
+                        _comments.isEmpty
+                            ? 'Ajouter un commentaire'
+                            : 'Voir tous les commentaires',
                       ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF3AAE5E),
@@ -1185,32 +1275,44 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   }
                   return field;
                 }
-                
+
                 final userData = parseField(bonPlan['user']);
                 final user = userData is Map<String, dynamic> ? userData : null;
-                final userName = user?['particulier_profile']?['pseudo'] ??
+                final userName =
+                    user?['particulier_profile']?['pseudo'] ??
                     user?['pro_profile']?['company_name'] ??
                     bonPlan['author']?['name'] ??
                     'Utilisateur';
-                final accountType = user?['account_type']?.toString() ?? user?['type']?.toString() ?? 'particulier';
-                final userType = accountType == 'pro' ? 'Professionnel' : 'Particulier';
-                
+                final accountType =
+                    user?['account_type']?.toString() ??
+                    user?['type']?.toString() ??
+                    'particulier';
+                final userType = accountType == 'pro'
+                    ? 'Professionnel'
+                    : 'Particulier';
+
                 // Resolve avatar URL with proper base URL and storage prefix
-                final rawAvatarUrl = user?['particulier_profile']?['avatar_url'] ??
+                final rawAvatarUrl =
+                    user?['particulier_profile']?['avatar_url'] ??
                     user?['pro_profile']?['avatar_url'];
-                final avatarUrl = ApiConfig.resolveMediaUrl(rawAvatarUrl) ??
+                final avatarUrl =
+                    ApiConfig.resolveMediaUrl(rawAvatarUrl) ??
                     'assets/images/dashboard_particulier/Ellipse 10.png';
-                
+
                 final mediaData = parseField(bonPlan['media']);
                 final media = mediaData is List ? mediaData : <dynamic>[];
-                
+
                 final imageUrl = media.isNotEmpty
-                    ? ApiConfig.resolveMediaUrl(media.first['url']?.toString()) ??
-                      'assets/images/dashboard_particulier/Rectangle 12 (4).png'
+                    ? ApiConfig.resolveMediaUrl(
+                            media.first['url']?.toString(),
+                          ) ??
+                          'assets/images/dashboard_particulier/Rectangle 12 (4).png'
                     : 'assets/images/dashboard_particulier/Rectangle 12 (4).png';
-                
+
                 final categoryData = parseField(bonPlan['category']);
-                final category = categoryData is Map<String, dynamic> ? categoryData : null;
+                final category = categoryData is Map<String, dynamic>
+                    ? categoryData
+                    : null;
                 final categoryName = category?['name'] ?? 'Catégorie';
                 final categoryIcon = category?['icon'] != null
                     ? _getIconFromString(category!['icon']?.toString())
@@ -1222,7 +1324,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   userType: userType,
                   postText: bonPlan['title'] ?? 'Sans titre',
                   postImage: imageUrl,
-                  reductionPercentage: bonPlan['discount_display']?.toString() ?? '',
+                  reductionPercentage:
+                      bonPlan['discount_display']?.toString() ?? '',
                   categoryIcon: categoryIcon,
                   categoryName: categoryName,
                   merchantName: bonPlan['merchant_name'] ?? '',
@@ -1232,7 +1335,16 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ProPostDetailScreen(
-                          images: media.map((m) => ApiConfig.resolveMediaUrl(m['url']?.toString()) ?? '').where((s) => s.isNotEmpty).toList(),
+                          images: media
+                              .map(
+                                (m) =>
+                                    ApiConfig.resolveMediaUrl(
+                                      m['url']?.toString(),
+                                    ) ??
+                                    '',
+                              )
+                              .where((s) => s.isNotEmpty)
+                              .toList(),
                           discount: bonPlan['discount_display']?.toString(),
                           avatar: avatarUrl,
                           name: userName,
@@ -1246,7 +1358,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           isOwner: false,
                           bonPlanId: bonPlan['id']?.toString(),
                           bonPlanData: bonPlan,
-                          acceptMessages: bonPlan['accept_messages'] == true || bonPlan['accept_messages'] == 1,
+                          acceptMessages:
+                              bonPlan['accept_messages'] == true ||
+                              bonPlan['accept_messages'] == 1,
                           authorData: user,
                         ),
                       ),
@@ -1287,8 +1401,18 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         final date = DateTime.parse(widget.validUntil!);
         // Get month name in French
         final months = [
-          'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-          'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+          'janvier',
+          'février',
+          'mars',
+          'avril',
+          'mai',
+          'juin',
+          'juillet',
+          'août',
+          'septembre',
+          'octobre',
+          'novembre',
+          'décembre',
         ];
         final month = months[date.month - 1];
         // Format hour with leading zero
@@ -1455,7 +1579,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
   Widget _buildDescription() {
     // If we have rich text delta, render it with Quill
-    if (widget.descriptionDelta != null && widget.descriptionDelta.toString().isNotEmpty) {
+    if (widget.descriptionDelta != null &&
+        widget.descriptionDelta.toString().isNotEmpty) {
       try {
         List opsList;
 
@@ -1540,7 +1665,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
     // Fallback to plain text
     return Text(
-      widget.description.isNotEmpty ? widget.description : 'Aucune description disponible.',
+      widget.description.isNotEmpty
+          ? widget.description
+          : 'Aucune description disponible.',
       style: TextStyle(fontSize: 13, color: Colors.grey[600], height: 1.5),
     );
   }
@@ -1716,26 +1843,28 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
   Widget _buildCommentItem(Map<String, dynamic> comment) {
     final user = comment['user'] as Map<String, dynamic>?;
-    
+
     // Extract name from nested profiles
     String authorName = 'Utilisateur';
     if (user != null) {
       if (user['particulier_profile'] != null) {
         final profile = user['particulier_profile'] as Map<String, dynamic>;
-        authorName = profile['pseudo']?.toString() ?? 
-                     user['name']?.toString() ?? 
-                     'Utilisateur';
+        authorName =
+            profile['pseudo']?.toString() ??
+            user['name']?.toString() ??
+            'Utilisateur';
       } else if (user['pro_profile'] != null) {
         final profile = user['pro_profile'] as Map<String, dynamic>;
-        authorName = profile['company_name']?.toString() ?? 
-                     profile['first_name']?.toString() ?? 
-                     user['name']?.toString() ?? 
-                     'Utilisateur';
+        authorName =
+            profile['company_name']?.toString() ??
+            profile['first_name']?.toString() ??
+            user['name']?.toString() ??
+            'Utilisateur';
       } else {
         authorName = user['name']?.toString() ?? 'Utilisateur';
       }
     }
-    
+
     // Extract avatar from nested profiles
     String? rawAvatarUrl;
     if (user != null) {
@@ -1751,7 +1880,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       }
     }
     final avatarUrl = ApiConfig.resolveMediaUrl(rawAvatarUrl);
-    
+
     final body = comment['body'] ?? '';
     final createdAt = comment['created_at'];
     String timeAgo = 'Il y a un moment';
@@ -1776,9 +1905,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundImage: avatarUrl != null && avatarUrl.toString().startsWith('http')
+            backgroundImage:
+                avatarUrl != null && avatarUrl.toString().startsWith('http')
                 ? NetworkImage(avatarUrl)
-                : const AssetImage('assets/images/dashboard_particulier/Ellipse 10.png') as ImageProvider,
+                : const AssetImage(
+                        'assets/images/dashboard_particulier/Ellipse 10.png',
+                      )
+                      as ImageProvider,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1798,10 +1931,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     const SizedBox(width: 8),
                     Text(
                       timeAgo,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[400],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[400]),
                     ),
                   ],
                 ),
@@ -1873,7 +2003,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         );
                         replies.add(newComment);
                         parent['replies'] = replies;
-                        parent['replies_count'] = (parent['replies_count'] as int? ?? 0) + 1;
+                        parent['replies_count'] =
+                            (parent['replies_count'] as int? ?? 0) + 1;
                       }
                     } else {
                       // Add new top-level comment
@@ -1887,7 +2018,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 }
                 commentCtrl.clear();
                 FocusScope.of(ctx).unfocus();
-                
+
                 // Award 1 My for posting a comment (silently, no modal)
                 try {
                   final mysResponse = await MysEarningService().awardMys(
@@ -1913,38 +2044,45 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               }
             }
 
-            Widget buildCommentItem(Map<String, dynamic> comment, {bool isReply = false}) {
+            Widget buildCommentItem(
+              Map<String, dynamic> comment, {
+              bool isReply = false,
+            }) {
               final user = comment['user'] as Map<String, dynamic>?;
-              
+
               // Extract name from nested profiles
               String displayName = 'Utilisateur';
               if (user != null) {
                 if (user['particulier_profile'] != null) {
-                  final profile = user['particulier_profile'] as Map<String, dynamic>;
-                  displayName = profile['pseudo']?.toString() ?? 
-                               user['name']?.toString() ?? 
-                               'Utilisateur';
+                  final profile =
+                      user['particulier_profile'] as Map<String, dynamic>;
+                  displayName =
+                      profile['pseudo']?.toString() ??
+                      user['name']?.toString() ??
+                      'Utilisateur';
                 } else if (user['pro_profile'] != null) {
                   final profile = user['pro_profile'] as Map<String, dynamic>;
-                  displayName = profile['company_name']?.toString() ?? 
-                               user['name']?.toString() ?? 
-                               'Utilisateur';
+                  displayName =
+                      profile['company_name']?.toString() ??
+                      user['name']?.toString() ??
+                      'Utilisateur';
                 } else {
                   displayName = user['name']?.toString() ?? 'Utilisateur';
                 }
               }
-              
+
               // Extract avatar
               String? rawAvatarUrl;
               if (user != null) {
                 if (user['particulier_profile'] != null) {
-                  rawAvatarUrl = user['particulier_profile']['avatar_url']?.toString();
+                  rawAvatarUrl = user['particulier_profile']['avatar_url']
+                      ?.toString();
                 } else if (user['pro_profile'] != null) {
                   rawAvatarUrl = user['pro_profile']['avatar_url']?.toString();
                 }
               }
               final avatarUrl = ApiConfig.resolveMediaUrl(rawAvatarUrl);
-              
+
               final body = comment['body'] ?? '';
               final createdAt = comment['created_at'];
               String timeAgo = 'Il y a un moment';
@@ -1978,7 +2116,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           radius: isReply ? 14 : 18,
                           backgroundImage: avatarUrl != null
                               ? NetworkImage(avatarUrl)
-                              : const AssetImage('assets/images/dashboard_particulier/Ellipse 10.png') as ImageProvider,
+                              : const AssetImage(
+                                      'assets/images/dashboard_particulier/Ellipse 10.png',
+                                    )
+                                    as ImageProvider,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -2058,9 +2199,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   children: [
                     // Header
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
-                        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+                        border: Border(
+                          bottom: BorderSide(color: Colors.grey[200]!),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -2084,29 +2230,32 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       child: _isLoadingComments
                           ? const Center(child: CircularProgressIndicator())
                           : _comments.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    'Aucun commentaire\nSoyez le premier à commenter !',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                )
-                              : ListView.builder(
-                                  controller: controller,
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: _comments.length,
-                                  itemBuilder: (context, index) {
-                                    return buildCommentItem(_comments[index]);
-                                  },
+                          ? Center(
+                              child: Text(
+                                'Aucun commentaire\nSoyez le premier à commenter !',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 14,
                                 ),
+                              ),
+                            )
+                          : ListView.builder(
+                              controller: controller,
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _comments.length,
+                              itemBuilder: (context, index) {
+                                return buildCommentItem(_comments[index]);
+                              },
+                            ),
                     ),
                     // Reply indicator
                     if (replyingToId != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         color: Colors.grey[100],
                         child: Row(
                           children: [
@@ -2137,7 +2286,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         bottom: MediaQuery.of(ctx).viewInsets.bottom + 12,
                       ),
                       decoration: BoxDecoration(
-                        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+                        border: Border(
+                          top: BorderSide(color: Colors.grey[200]!),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -2168,7 +2319,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           const SizedBox(width: 8),
                           IconButton(
                             onPressed: submitComment,
-                            icon: const Icon(Icons.send, color: Color(0xFF3AAE5E)),
+                            icon: const Icon(
+                              Icons.send,
+                              color: Color(0xFF3AAE5E),
+                            ),
                             style: IconButton.styleFrom(
                               backgroundColor: const Color(0xFFE6F7EF),
                               shape: const CircleBorder(),
