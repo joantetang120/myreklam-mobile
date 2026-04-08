@@ -54,6 +54,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
   // Step 3 - Lien
   final TextEditingController _linkController = TextEditingController();
+  final TextEditingController _promoCodeController = TextEditingController();
 
   // Step 4 - Prix et détails
   final TextEditingController _siteWebController = TextEditingController();
@@ -98,8 +99,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
   bool get _isEditMode => widget.isEditMode;
   bool get _isFreeType => (_selectedType ?? '').toLowerCase() == 'gratuit';
+  bool get _isPromoCodeType => (_selectedType ?? '') == 'Codes promo';
   bool get _isOnlineOnly =>
-      (_selectedDisponibleLocation ?? '').toLowerCase() == 'en ligne';
+      (_selectedDisponibleLocation ?? '').trim().toLowerCase() == 'en ligne';
 
   @override
   void initState() {
@@ -156,6 +158,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     _titleController.text = data['title']?.toString() ?? '';
     _disponibleChezController.text =
         data['available_at_name']?.toString() ?? '';
+    _promoCodeController.text = data['promo_code']?.toString() ?? '';
     _linkController.text = data['link']?.toString() ?? '';
     _siteWebController.text = data['brand_website']?.toString() ?? '';
     _locationController.text = data['location_search']?.toString() ?? '';
@@ -385,6 +388,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         'validity_type': _validityType,
         'valid_from': _validFrom?.toIso8601String(),
         'valid_until': _validUntil?.toIso8601String(),
+        'promo_code': _promoCodeController.text,
       };
 
       await prefs.setString('bon_plan_draft', jsonEncode(formData));
@@ -419,6 +423,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         _locationController.text = formData['location'] ?? '';
         _conditionsController.text = formData['conditions'] ?? '';
         _validityType = formData['validity_type'] ?? 'permanent';
+        _promoCodeController.text = formData['promo_code'] ?? '';
 
         if (formData['valid_from'] != null) {
           _validFrom = DateTime.parse(formData['valid_from']);
@@ -829,7 +834,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         _categorySubCategories = updatedSubCategories;
         _categories = updatedCategories;
         _types = _toStringList(typesRaw);
+        print("_types: $_types");
         _locationOptions = _toStringList(locationsRaw);
+        print("_locationOptions: $_locationOptions");
         _availableSubCategories = newAvailableSubCategories;
 
         if (!hasValidSelectedCategory) {
@@ -1079,6 +1086,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     _prixFinalController.dispose();
     _locationController.dispose();
     _conditionsController.dispose();
+    _promoCodeController.dispose();
     super.dispose();
   }
 
@@ -1130,6 +1138,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         if (_selectedDisponibleLocation == null) {
           return 'Précisez où est disponible cette offre.';
         }
+        // Validation du code promo pour le type "Codes promo"
+        if (_isPromoCodeType && _promoCodeController.text.trim().isEmpty) {
+          return 'Veuillez entrer le code promo.';
+        }
         break;
 
       case 3: // Step 4: Prix et détails
@@ -1149,6 +1161,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           }
         }
         if (!_isOnlineOnly) {
+          print(
+            'DEBUG STEP4: _isOnlineOnly = $_isOnlineOnly, validating location and pickup...',
+          );
           if (_locationController.text.trim().isEmpty && !_touteFrance) {
             return 'Renseignez une ville ou activez "Toute la France".';
           }
@@ -1157,6 +1172,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               !_moyenRetraitDrive) {
             return 'Sélectionnez au moins un moyen de retrait.';
           }
+        } else {
+          print(
+            'DEBUG STEP4: _isOnlineOnly = $_isOnlineOnly, skipping location/pickup validation',
+          );
         }
         break;
 
@@ -1188,6 +1207,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     if (_selectedDisponibleLocation == null) {
       return 'Précisez où est disponible cette offre.';
     }
+    // Validation du code promo pour le type "Codes promo"
+    if (_isPromoCodeType && _promoCodeController.text.trim().isEmpty) {
+      return 'Veuillez entrer le code promo.';
+    }
     final prixAvant = _parsePrice(_prixAvantReductionController.text);
     final prixFinal = _parsePrice(_prixFinalController.text);
     if (prixAvant != null && prixFinal != null && prixFinal > prixAvant) {
@@ -1206,8 +1229,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         return 'Renseignez une ville ou activez "Toute la France".';
       }
     }
-    if (!_moyenRetraitMagasin && !_moyenRetraitEnLigne && !_moyenRetraitDrive) {
-      return 'Sélectionnez au moins un moyen de retrait.';
+    if (!_isOnlineOnly) {
+      if (!_moyenRetraitMagasin &&
+          !_moyenRetraitEnLigne &&
+          !_moyenRetraitDrive) {
+        return 'Sélectionnez au moins un moyen de retrait.';
+      }
     }
     return null;
   }
@@ -1242,6 +1269,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       'category': _selectedCategory,
       'sub_category': _selectedSubCategory,
       'type': _selectedType,
+      'promo_code': _isPromoCodeType ? _promoCodeController.text.trim() : null,
       'title': title,
       'description': descriptionPlainText,
       'description_delta': descriptionDelta,
@@ -1255,11 +1283,13 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       'location_search': location,
       'nationwide': _touteFrance,
       'show_google_location': _afficherGoogleLocation,
-      'pickup_methods': {
-        'in_store': _moyenRetraitMagasin,
-        'delivery': _moyenRetraitEnLigne,
-        'drive': _moyenRetraitDrive,
-      },
+      'pickup_methods': _isOnlineOnly
+          ? null
+          : {
+              'in_store': _moyenRetraitMagasin,
+              'delivery': _moyenRetraitEnLigne,
+              'drive': _moyenRetraitDrive,
+            },
       'prix_avant_reduction': prixAvant,
       'prix_final': prixFinal,
       'discount_type': _discountMode,
@@ -1319,14 +1349,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             actionType: 'bon_plan',
             referenceId: bonPlanId,
           );
-          
+
           if (mysResponse['success'] == true && mounted) {
             // Update UserSession with new balance
             final newBalance = mysResponse['earning']?['new_balance'];
             if (newBalance != null) {
               UserSession().updateMys(newBalance);
             }
-            
+
             // Show reward modal after dialog is closed
             await MysRewardModal.show(
               context,
@@ -1405,7 +1435,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         ),
       ),
     );
-    
+
     // Pop the creation screen after dialog is closed
     if (mounted) {
       Navigator.pop(context);
@@ -2200,6 +2230,18 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               hint: _buildRequiredHint('Ou est disponible cette offre'),
               backgroundColor: const Color(0xFFF9FAFB),
             ),
+            // Champ code promo visible uniquement pour le type "Codes promo"
+            if (_isPromoCodeType) ...[
+              const SizedBox(height: 12),
+              _buildTextField(
+                label: 'Code promo*',
+                controller: _promoCodeController,
+                fieldKey: 'promo_code',
+                helperText:
+                    'Entrez le code promo à utiliser pour bénéficier de l\'offre. (max 10 caractères)',
+                maxLength: 10,
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 24),
@@ -3123,6 +3165,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     String? helperText,
     bool enabled = true,
     ValueChanged<String>? onChanged,
+    int? maxLength,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3141,6 +3184,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             keyboardType: keyboardType,
             enabled: enabled,
             onChanged: onChanged,
+            maxLength: maxLength,
             onTap: () {
               if (fieldKey != null) {
                 setState(() => _focusedField = fieldKey);
