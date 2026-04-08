@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
+import 'package:myreklam/constants/secteurs_activite.dart';
 
 class ProProfileEntrepriseScreen extends StatefulWidget {
   const ProProfileEntrepriseScreen({super.key});
@@ -59,6 +60,13 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
       final response = await _profileService.getProfile();
       if (!mounted) return;
 
+      // Debug: Log the full profile response
+      print('📋 Profile response: ${response.keys}');
+      if (response['profile'] != null) {
+        print('📋 Profile data: ${response['profile'].keys}');
+        print('📋 secteur_activite value: ${response['profile']['secteur_activite']}');
+      }
+
       if (response['profile'] != null) {
         final profile = response['profile'];
         setState(() {
@@ -75,7 +83,14 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
           _villeController.text = profile['ville'] ?? '';
           _paysController.text = profile['pays'] ?? '';
           _presentationController.text = profile['presentation'] ?? '';
-          _selectedSecteur = profile['secteur_activite'];
+          
+          // Only set secteur if it exists in the new list
+          final savedSecteur = profile['secteur_activite'];
+          if (savedSecteur != null && 
+              savedSecteur.toString().isNotEmpty &&
+              SecteursActivite.all.contains(savedSecteur)) {
+            _selectedSecteur = savedSecteur;
+          }
 
           // Load banner and gallery
           _bannerUrl = profile['banner_url'];
@@ -220,7 +235,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                   icon: Icons.category_outlined,
                   label: 'Secteur d\'activité',
                   value: _selectedSecteur,
-                  items: ['Commerce', 'Services', 'Industrie', 'Tech', 'Autre'],
+                  items: SecteursActivite.all,
                   onChanged: (val) => setState(() => _selectedSecteur = val),
                 ),
               ],
