@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'pro_subscription_screen.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/constants/secteurs_activite.dart';
 
 class ProInfoScreen extends StatefulWidget {
   const ProInfoScreen({super.key});
@@ -36,30 +37,6 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
   bool _isSendingContactRequest = false;
   File? _kbisFile;
   String? _kbisFileName;
-  
-  static const List<String> _secteursActivite = [
-    'Agriculture',
-    'Automobile',
-    'Construction',
-    'Banque, Finance, Assurance',
-    'Distribution de détail',
-    'Éducation',
-    'Emploi, Formation, Recrutement',
-    'Industrie et Environnement',
-    'Information et Communication',
-    'Immobilier',
-    'Services publics et Gouvernement',
-    'Santé',
-    'Services généraux',
-    'Télécommunications et Médias',
-    'Tourisme',
-    'Transport et Logistique',
-    'Hôtellerie',
-    'Mode, Textiles et Produits de luxe',
-    'Sports',
-    'Soins personnels et services',
-    'Autre (à préciser)',
-  ];
 
   @override
   void dispose() {
@@ -603,7 +580,7 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                       ),
                                     ),
                                     hint: const Text('Sélectionnez un secteur'),
-                                    items: _secteursActivite.map((secteur) {
+                                    items: SecteursActivite.all.map((secteur) {
                                       return DropdownMenuItem(
                                         value: secteur,
                                         child: Text(secteur, style: const TextStyle(fontSize: 14)),
