@@ -14,7 +14,7 @@ class UserSession {
   bool _profileCompleted = false;
   Map<String, dynamic>? _subscription;
   String? _parrainageCode;
-  int _mys = 0;
+  double _mys = 0;
 
   String get userType => _userType;
   String? get id => _id;
@@ -26,7 +26,7 @@ class UserSession {
   String? get subscriptionStatus => _subscription?['status'];
   bool get hasActiveSubscription => _subscription != null && _subscription!.isNotEmpty;
   String? get parrainageCode => _parrainageCode;
-  int get mys => _mys;
+  double get mys => _mys;
 
   void setUserType(String type) {
     _userType = type;
@@ -57,11 +57,11 @@ class UserSession {
 
   void updateMys(dynamic mys) {
     if (mys is String) {
-      _mys = int.tryParse(mys) ?? double.tryParse(mys)?.toInt() ?? 0;
+      _mys = double.tryParse(mys) ?? 0.0;
     } else if (mys is num) {
-      _mys = mys.toInt();
+      _mys = mys.toDouble();
     } else {
-      _mys = 0;
+      _mys = 0.0;
     }
   }
 

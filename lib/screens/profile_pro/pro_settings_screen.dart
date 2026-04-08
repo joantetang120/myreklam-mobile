@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/screens/login_screen.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/config/api_config.dart';
@@ -621,8 +622,16 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
       );
 
       if (response.statusCode == 200) {
+        // Clear onboarding flags before deleting
+        final userId = UserSession().id;
+        if (userId != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('onboarding_completed_$userId');
+          await prefs.remove('welcome_bonus_shown_$userId');
+        }
         await TokenStorage.clearTokens();
-        
+        UserSession().clear();
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

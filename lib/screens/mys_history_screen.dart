@@ -3,7 +3,7 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:intl/intl.dart';
 
 class MysHistoryScreen extends StatefulWidget {
-  final int totalMys;
+  final double totalMys;
   
   const MysHistoryScreen({super.key, required this.totalMys});
 
@@ -115,6 +115,10 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
       'job_application' => 'Candidature',
       'referral_particulier' => 'Parrainage particulier',
       'referral_pro' => 'Parrainage entreprise',
+      'registration' => 'Inscription',
+      'profile_picture' => 'Photo de profil',
+      'phone_added' => 'Numéro de téléphone',
+      'social_media' => 'Réseau social',
       _ => actionType,
     };
   }
@@ -136,6 +140,10 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
       'job_application' => Icons.work_outline,
       'referral_particulier' => Icons.group_add,
       'referral_pro' => Icons.business,
+      'registration' => Icons.app_registration,
+      'profile_picture' => Icons.camera_alt,
+      'phone_added' => Icons.phone,
+      'social_media' => Icons.link,
       _ => Icons.star,
     };
   }

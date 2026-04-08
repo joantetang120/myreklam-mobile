@@ -39,23 +39,29 @@ class _FollowersScreenState extends State<FollowersScreen>
   }
 
   Future<void> _loadData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final targetId = widget.userId;
       if (targetId == null) {
         // If no userId, we can't fetch. This shouldn't happen if coming from profile.
-        setState(() => _isLoading = false);
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
         return;
       }
 
       // Fetch name first from public profile if it's not the current user
       final profile = await _profileService.getUserProfile(targetId);
+      if (!mounted) return;
       final user = profile['user'] ?? profile;
       _userName = _extractDisplayName(user);
 
       // Fetch lists
       final followers = await _profileService.getFollowers(targetId);
+      if (!mounted) return;
       final following = await _profileService.getFollowing(targetId);
+      if (!mounted) return;
 
       setState(() {
         _followers = followers;
@@ -67,8 +73,8 @@ class _FollowersScreenState extends State<FollowersScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erreur: $e')),
         );
+        setState(() => _isLoading = false);
       }
-      setState(() => _isLoading = false);
     }
   }
 
