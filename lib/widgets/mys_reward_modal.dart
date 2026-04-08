@@ -246,8 +246,8 @@ class _MysRewardModalState extends State<MysRewardModal>
                     ),
                     const SizedBox(height: 16),
                     // New Balance
-                    ValueListenableBuilder<int>(
-                      valueListenable: ValueNotifier<int>(UserSession().mys),
+                    ValueListenableBuilder<double>(
+                      valueListenable: ValueNotifier<double>(UserSession().mys),
                       builder: (context, balance, child) {
                         return Text(
                           'Nouveau solde: ${UserSession().mys} My\'s',

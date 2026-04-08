@@ -69,6 +69,8 @@ class AuthService {
     } finally {
       await TokenStorage.clearTokens();
       UserSession().clear();
+      // Note: We do NOT clear onboarding flags here
+      // Onboarding modal should only show once for new users
     }
   }
 

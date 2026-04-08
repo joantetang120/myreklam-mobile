@@ -17,7 +17,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
   // Historique state
   List<Map<String, dynamic>> _earnings = [];
   bool _isLoadingEarnings = true;
-  int _currentMys = 0;
+  double _currentMys = 0;
 
   // Level thresholds
   static const int SILVER_MIN = 0;
@@ -27,7 +27,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
   static const int PLATINUM_MIN = 201;
 
   // Calculate current level based on My's count
-  Map<String, dynamic> _calculateLevel(int mys) {
+  Map<String, dynamic> _calculateLevel(double mys) {
     String level;
     Color color;
     int currentMin;
@@ -60,13 +60,13 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
 
     // Calculate progress within current level
     double progress;
-    int remaining;
+    double remaining;
     if (level == 'Platinum') {
       progress = 1.0;
       remaining = 0;
     } else {
-      int levelRange = currentMax - currentMin + 1;
-      int currentProgress = mys - currentMin;
+      double levelRange = (currentMax - currentMin + 1).toDouble();
+      double currentProgress = mys - currentMin;
       progress = currentProgress / levelRange;
       remaining = nextLevelMin - mys;
     }
@@ -96,8 +96,9 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
       if (response['user'] != null) {
         final mys = response['user']['mys'];
         if (mys != null) {
-          setState(() => _currentMys = mys is int ? mys : int.tryParse(mys.toString()) ?? 0);
-          UserSession().updateMys(_currentMys);
+          final mysValue = mys is int ? mys.toDouble() : double.tryParse(mys.toString()) ?? 0.0;
+          setState(() => _currentMys = mysValue);
+          UserSession().updateMys(mysValue);
         }
       }
     } catch (e) {
@@ -157,7 +158,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final int userMys = _currentMys > 0 ? _currentMys : UserSession().mys;
+    final double userMys = _currentMys > 0 ? _currentMys : UserSession().mys;
     final levelInfo = _calculateLevel(userMys);
     return AppLayout(
       currentIndex: 4,
@@ -311,7 +312,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
     );
   }
 
-  Widget _buildBalanceCard(Map<String, dynamic> levelInfo, int userMys) {
+  Widget _buildBalanceCard(Map<String, dynamic> levelInfo, double userMys) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Stack(
@@ -490,7 +491,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
   }
 
   Widget _buildAmbassadorSection(Map<String, dynamic> levelInfo) {
-    final int userMys = UserSession().mys;
+    final double userMys = UserSession().mys;
     final String currentLevel = levelInfo['level'];
     final bool isSilver = currentLevel == 'Silver';
     final bool isGold = currentLevel == 'Gold';
@@ -690,7 +691,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
     final String level = levelInfo['level'];
     final Color color = levelInfo['color'];
     final double progress = levelInfo['progress'];
-    final int remaining = levelInfo['remaining'];
+    final double remaining = levelInfo['remaining'];
     final String nextLevel = levelInfo['nextLevel'];
     final int currentMin = levelInfo['currentMin'];
     final int currentMax = levelInfo['currentMax'];
@@ -788,7 +789,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
     );
   }
 
-  Widget _buildHistoriqueTab(int userMys) {
+  Widget _buildHistoriqueTab(double userMys) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(

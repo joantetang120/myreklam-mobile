@@ -143,19 +143,13 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
           CustomBottomBar.avatarNotifier.value = response['avatar_url'];
         }
 
-        // Award 0.5 My's for profile picture
-        try {
-          final mysResponse = await MysEarningService().awardMys(
-            actionType: 'profile_picture',
-          );
-          if (mysResponse['success'] == true && mounted) {
-            final newBalance = mysResponse['earning']?['new_balance'];
-            if (newBalance != null) {
-              UserSession().updateMys(newBalance);
-            }
+        // Backend already awards My's when uploading avatar
+        // Update balance from response if available
+        if (response['mys_awarded'] != null && response['mys_awarded'] > 0) {
+          final newBalance = response['new_mys_balance'];
+          if (newBalance != null) {
+            UserSession().updateMys(newBalance.toDouble());
           }
-        } catch (e) {
-          debugPrint('Error awarding My\'s for profile picture: $e');
         }
       }
     } catch (e) {

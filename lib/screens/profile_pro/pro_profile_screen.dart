@@ -52,6 +52,8 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
   int _followingCount = 0;
   int _postsCount = 0;
   int _unreadNotifCount = 0;
+  double _averageRating = 0.0;
+  int _totalReviews = 0;
   String? _userId;
   bool _isFollowing = false;
   bool _isLoadingFollow = false;
@@ -93,6 +95,8 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
           _postsCount = response['user']['posts_count'] ?? 0;
           _email = response['user']['email'];
           _isFollowing = response['is_following'] ?? false;
+          _averageRating = (response['user']['average_rating'] ?? 0.0).toDouble();
+          _totalReviews = response['user']['total_reviews'] ?? 0;
         }
         if (response['profile'] != null) {
           _companyName = response['profile']['company_name'];
@@ -646,7 +650,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                 ),
                                 const SizedBox(width: 2),
                                 Text(
-                                  "5.0",
+                                  _averageRating.toStringAsFixed(1),
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w400,
@@ -654,7 +658,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  "(0 avis)",
+                                  "($_totalReviews avis)",
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w400,

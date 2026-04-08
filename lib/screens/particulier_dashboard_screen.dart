@@ -664,7 +664,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     _loadSuggestions();
     _checkAndShowWelcomeBonus();
 
-    _checkAndShowOnboarding();
+    // Small delay to ensure user data is loaded
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) _checkAndShowOnboarding();
+    });
 
     // Listen for My's refresh requests
     ParticulierDashboardScreen.refreshMysNotifier.addListener(
@@ -733,8 +736,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     try {
       final response = await ApiClient().authenticatedGet('/profile/me');
       final profile = response['profile'] as Map<String, dynamic>?;
+      // Check both phone fields (pro step 1 saves to 'telephone', step 2 saves to 'phone')
       final phone = profile?['phone']?.toString();
-      hasExistingPhone = phone != null && phone.isNotEmpty;
+      final telephone = profile?['telephone']?.toString();
+      hasExistingPhone = (phone != null && phone.isNotEmpty) || (telephone != null && telephone.isNotEmpty);
       needsPhone = !hasExistingPhone;
     } catch (e) {
       debugPrint('Error fetching profile for onboarding: $e');

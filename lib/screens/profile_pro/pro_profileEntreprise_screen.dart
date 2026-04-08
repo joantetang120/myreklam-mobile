@@ -288,12 +288,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                   label: 'Ville',
                   controller: _villeController,
                 ),
-                const SizedBox(height: 16),
-                _buildLabeledTextField(
-                  icon: Icons.public_outlined,
-                  label: 'Pays',
-                  controller: _paysController,
-                ),
+                
               ],
             ),
           ),
@@ -302,7 +297,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
           // Section Presentation
           _buildSectionCard(
             icon: Icons.description_outlined,
-            title: 'Presentation',
+            title: 'Presentation (Qui sommes nous ?)',
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(

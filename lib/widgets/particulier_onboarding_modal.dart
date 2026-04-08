@@ -47,6 +47,9 @@ class _ParticulierOnboardingModalState
   bool _isSavingProfile = false;
   bool _hasAwardedSocial = false;
 
+  // Track total My's earned during onboarding
+  double _totalMysEarned = 0;
+
   // Animation controllers
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
@@ -142,19 +145,18 @@ class _ParticulierOnboardingModalState
           CustomBottomBar.avatarNotifier.value = response['avatar_url'];
         }
 
-        // Award 0.5 My's for profile picture
-        try {
-          final mysResponse = await MysEarningService().awardMys(
-            actionType: 'profile_picture',
-          );
-          if (mysResponse['success'] == true && mounted) {
-            final newBalance = mysResponse['earning']?['new_balance'];
+        // Backend already awards My's when uploading avatar
+        // Update balance from response if available
+        final mysAwarded = response['mys_awarded'];
+        if (mysAwarded != null) {
+          final mysValue = mysAwarded is String ? double.tryParse(mysAwarded) : mysAwarded.toDouble();
+          if (mysValue != null && mysValue > 0) {
+            final newBalance = response['new_mys_balance'];
             if (newBalance != null) {
-              UserSession().updateMys(newBalance);
+              final balanceValue = newBalance is String ? double.tryParse(newBalance) ?? 0.0 : newBalance.toDouble();
+              UserSession().updateMys(balanceValue);
             }
           }
-        } catch (e) {
-          debugPrint('Error awarding My\'s for profile picture: $e');
         }
       }
     } catch (e) {
@@ -173,15 +175,36 @@ class _ParticulierOnboardingModalState
       // Prepare profile update data
       final Map<String, dynamic> updateData = {};
 
-      // Add phone if provided
+      // Add phone if provided in modal, OR award My's if already had phone from registration
       if (widget.needsPhone && _phoneController.text.isNotEmpty) {
         updateData['phone'] = _phoneController.text;
 
-        // Award 0.5 My's for phone
+        // Award 0.5 My's for phone entered in modal
         try {
-          await MysEarningService().awardMys(actionType: 'phone_added');
+          final mysResponse = await MysEarningService().awardMys(actionType: 'phone_added');
+          if (mysResponse['success'] == true) {
+            _totalMysEarned += 0.5;
+            final newBalance = mysResponse['earning']?['new_balance'];
+            if (newBalance != null) {
+              UserSession().updateMys(newBalance);
+            }
+          }
         } catch (e) {
           debugPrint('Error awarding My\'s for phone: $e');
+        }
+      } else if (!widget.needsPhone) {
+        // User already had phone from particulier_info_screen, award My's for it
+        try {
+          final mysResponse = await MysEarningService().awardMys(actionType: 'phone_added');
+          if (mysResponse['success'] == true) {
+            _totalMysEarned += 0.5;
+            final newBalance = mysResponse['earning']?['new_balance'];
+            if (newBalance != null) {
+              UserSession().updateMys(newBalance);
+            }
+          }
+        } catch (e) {
+          debugPrint('Error awarding My\'s for existing phone: $e');
         }
       }
 
@@ -193,13 +216,14 @@ class _ParticulierOnboardingModalState
         };
 
         if (!_hasAwardedSocial) {
-          // Award 1 My for social media
+          // Award 0.5 My's for social media
           try {
             final mysResponse = await MysEarningService().awardMys(
               actionType: 'social_media',
             );
             if (mysResponse['success'] == true) {
               _hasAwardedSocial = true;
+              _totalMysEarned += 0.5;
               final newBalance = mysResponse['earning']?['new_balance'];
               if (newBalance != null) {
                 UserSession().updateMys(newBalance);
@@ -216,44 +240,25 @@ class _ParticulierOnboardingModalState
         await ApiClient().authenticatedPut('/profile/me', body: updateData);
       }
 
-      // Award onboarding_complete bonus (2 My's) and show success modal
-      try {
-        final mysResponse = await MysEarningService().awardMys(
-          actionType: 'onboarding_complete',
-        );
-        if (mysResponse['success'] == true && mounted) {
-          final newBalance = mysResponse['earning']?['new_balance'];
-          if (newBalance != null) {
-            UserSession().updateMys(newBalance);
-          }
-
-          // Mark onboarding as completed first
-          widget.onComplete();
-          
-          // Close onboarding modal first
-          Navigator.of(context).pop();
-          
-          // Show reward modal after frame is rendered (avoid dialog conflict)
+      // Mark onboarding as completed
+      widget.onComplete();
+      
+      // Close onboarding modal and show reward modal
+      if (mounted) {
+        Navigator.of(context).pop();
+        
+        // Show reward modal after frame is rendered (avoid dialog conflict)
+        if (_totalMysEarned > 0) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) {
               MysRewardModal.show(
                 context,
-                amount: 2,
+                amount: _totalMysEarned,
                 actionType: 'onboarding_complete',
               );
             }
           });
-          
-          return; // Exit early since we already closed the modal
         }
-      } catch (e) {
-        debugPrint('Error awarding onboarding complete My\'s: $e');
-      }
-      
-      // Default completion - close modal if not already closed
-      if (mounted) {
-        widget.onComplete();
-        Navigator.of(context).pop();
       }
     } catch (e) {
       debugPrint('Error completing onboarding: $e');
