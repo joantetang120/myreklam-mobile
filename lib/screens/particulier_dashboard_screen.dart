@@ -1076,10 +1076,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       } else {
         _currentUserId = id;
       }
-      
+
       // Refresh bottom bar avatar when user data is fetched
       CustomBottomBar.refreshAvatarNotifier.value = true;
-      
+
       return id;
     } catch (e) {
       debugPrint('Error fetching current user ID: $e');
