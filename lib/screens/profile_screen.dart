@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:myreklam/screens/profile_pro/pro_annonces_screen.dart';
+import 'package:myreklam/screens/profile_pro/pro_favoris_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
@@ -55,7 +57,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUnreadCount() async {
     try {
-      final response = await ApiClient().authenticatedGet('/notifications/unread-count');
+      final response = await ApiClient().authenticatedGet(
+        '/notifications/unread-count',
+      );
       if (mounted && response['success'] == true) {
         setState(() => _unreadNotifCount = response['unread_count'] ?? 0);
       }
@@ -80,7 +84,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
         _isLoading = false;
       });
-      
+
       // Refresh bottom bar avatar
       CustomBottomBar.refreshAvatarNotifier.value = true;
     } catch (e) {
@@ -174,7 +178,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: const Color(0xFF3AAE5E).withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.star_rounded, color: Color(0xFF3AAE5E), size: 50),
+                child: const Icon(
+                  Icons.star_rounded,
+                  color: Color(0xFF3AAE5E),
+                  size: 50,
+                ),
               ),
               const SizedBox(height: 16),
               const Text(
@@ -190,7 +198,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 8),
               Text(
                 'Nouveau solde : $newBalance My\'s',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF3AAE5E)),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF3AAE5E),
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -201,9 +213,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     backgroundColor: const Color(0xFF3AAE5E),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: const Text('Super !', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  child: const Text(
+                    'Super !',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
             ],
@@ -574,7 +591,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const ParticulierPublicViewScreen(),
+                              builder: (context) =>
+                                  const ParticulierPublicViewScreen(),
                             ),
                           ).then((_) => _loadProfile());
                         },
@@ -626,9 +644,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const MyAnnouncesScreen(),
+                            builder: (context) => const ProAnnoncesScreen(),
                           ),
-                        );
+                        ).then((_) => _loadProfile());
                       },
                     ),
                     _buildMenuCard(
@@ -651,8 +669,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: 'assets/images/profil_pro/opt-3.png',
                       backgroundColor: const Color(0xFFE6F7EF),
                       title: 'Mes recherches sauvegardées',
-                      description:
-                          'Retrouvez vos critères de recherche',
+                      description: 'Retrouvez vos critères de recherche',
                       color: const Color(0xFF04BC7B).withOpacity(0.15),
                       onTap: () {
                         Navigator.push(
@@ -673,17 +690,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const FavoriteScreen(),
+                            builder: (context) => const ProFavorisScreen(),
                           ),
-                        );
+                        ).then((_) => _loadProfile());
                       },
                     ),
                     _buildMenuCard(
                       icon: 'assets/images/profil_pro/opt-6.png',
                       backgroundColor: const Color(0xFFFFE0B2),
                       title: 'Paramètres du compte',
-                      description:
-                          'Configurez vos préférences et sécurité',
+                      description: 'Configurez vos préférences et sécurité',
                       onTap: () {
                         Navigator.push(
                           context,
@@ -713,8 +729,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: 'assets/images/profil_pro/opt-7.png',
                       backgroundColor: const Color(0xFFE6F7EF),
                       title: 'Récompenses',
-                      description:
-                          'Consultez vos points et avantages fidélité',
+                      description: 'Consultez vos points et avantages fidélité',
                       color: const Color(0xFF04BC7B).withOpacity(0.15),
                       onTap: () {
                         Navigator.push(
@@ -729,8 +744,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: 'assets/images/profil_pro/opt-8.png',
                       backgroundColor: const Color(0xFFFFE0B2),
                       title: 'Parrainage',
-                      description:
-                          'Invitez vos amis et gagnez des récompenses',
+                      description: 'Invitez vos amis et gagnez des récompenses',
                       onTap: () {
                         Navigator.push(
                           context,

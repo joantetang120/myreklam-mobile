@@ -258,6 +258,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
             bonPlanData: data,
             acceptMessages: acceptMessages,
             authorData: user,
+            promo_code: bp['promo_code'],
           ),
         ),
       );
@@ -726,6 +727,47 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                               fontSize: 14,
                               color: Colors.grey[500],
                               decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        ],
+                        // Promo code as tag
+                        if (bp['promo_code'] != null &&
+                            bp['promo_code'].toString().isNotEmpty) ...[
+                          Spacer(),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2E9B5B).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFF2E9B5B),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.local_offer_outlined,
+                                    size: 14,
+                                    color: Color(0xFF2E9B5B),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Code promo: ${bp['promo_code']}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF2E9B5B),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
