@@ -46,7 +46,22 @@ class ProfileService {
     if (ville != null && ville.isNotEmpty) {
       body['ville'] = ville;
     }
-    return await _api.authenticatedPut('/profile/pro/step1', body: body);
+    
+    // Debug: Log the request body
+    print('📤 PUT /profile/pro/step1 body: $body');
+    
+    final response = await _api.authenticatedPut('/profile/pro/step1', body: body);
+    
+    // Debug: Log the response
+    print('📥 PUT /profile/pro/step1 response keys: ${response.keys}');
+    if (response['profile'] != null) {
+      print('📥 Profile fields returned: ${response['profile'].keys}');
+      print('📥 secteur_activite: ${response['profile']['secteur_activite']}');
+      print('📥 code_postal: ${response['profile']['code_postal']}');
+      print('📥 ville: ${response['profile']['ville']}');
+    }
+    
+    return response;
   }
 
   /// PUT /api/profile/pro/step2

@@ -1591,6 +1591,18 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         ? (profile['gallery'] as List<dynamic>? ?? [])
         : <dynamic>[];
 
+    // Get social links
+    final socialLinks = profile is Map
+        ? (profile['social_links'] as Map<String, dynamic>? ?? {})
+        : <String, dynamic>{};
+    final facebookUrl = socialLinks['facebook']?.toString();
+    final instagramUrl = socialLinks['instagram']?.toString();
+    final youtubeUrl = socialLinks['youtube']?.toString();
+    final linkedinUrl = socialLinks['linkedin']?.toString();
+    final tiktokUrl = socialLinks['tiktok']?.toString();
+    final snapchatUrl = socialLinks['snapchat']?.toString();
+    final xUrl = socialLinks['x']?.toString();
+
     // Filter images and videos
     final images = gallery.where((item) {
       final url = item.toString().toLowerCase();
@@ -1622,7 +1634,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Banner Card
+          // Merged Banner + Presentation + Social Links Card
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -1638,22 +1650,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Banner Image
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 15, 18, 0),
-                  child: Text(
-                    'Bannière',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black.withOpacity(0.5),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Divider(color: Colors.grey[200]),
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 0, 10, 30),
+                  padding: const EdgeInsets.fromLTRB(10, 16, 10, 0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: bannerUrl != null && bannerUrl.isNotEmpty
@@ -1663,61 +1662,82 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             height: 150,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: double.infinity,
-                                height: 150,
-                                color: Colors.grey[300],
-                                child: const Icon(Icons.image_not_supported),
-                              );
+                              return const SizedBox.shrink();
                             },
                           )
-                        : Container(
-                            width: double.infinity,
-                            height: 150,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.image_not_supported),
-                          ),
+                        : const SizedBox.shrink(),
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Presentation Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: const Offset(-2, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Présentation',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black.withOpacity(0.5),
+                
+                // Presentation Section
+                if (presentation?.trim().isNotEmpty == true) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
+                    child: Text(
+                      'Présentation',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black.withOpacity(0.5),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  presentation?.trim().isNotEmpty == true ? presentation! : '—',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF666666),
-                    height: 1.5,
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 20),
+                    child: Text(
+                      presentation!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF666666),
+                        height: 1.5,
+                      ),
+                    ),
                   ),
-                ),
+                ],
+                
+                // Social Links Section
+                if (facebookUrl != null || instagramUrl != null || 
+                    youtubeUrl != null || linkedinUrl != null || 
+                    tiktokUrl != null || snapchatUrl != null || xUrl != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                    child: Divider(color: Colors.grey[200]),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+                    child: Text(
+                      'Réseaux sociaux',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black.withOpacity(0.5),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 8, 18, 20),
+                    child: Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        if (facebookUrl != null && facebookUrl.isNotEmpty)
+                          _buildSocialIcon(Icons.facebook, const Color(0xFF1877F2), facebookUrl),
+                        if (instagramUrl != null && instagramUrl.isNotEmpty)
+                          _buildSocialIcon(Icons.camera_alt, const Color(0xFFE1306C), instagramUrl),
+                        if (youtubeUrl != null && youtubeUrl.isNotEmpty)
+                          _buildSocialIcon(Icons.play_circle_filled, const Color(0xFFFF0000), youtubeUrl),
+                        if (linkedinUrl != null && linkedinUrl.isNotEmpty)
+                          _buildSocialIcon(Icons.business, const Color(0xFF0A66C2), linkedinUrl),
+                        if (tiktokUrl != null && tiktokUrl.isNotEmpty)
+                          _buildSocialIcon(Icons.music_note, Colors.black, tiktokUrl),
+                        if (snapchatUrl != null && snapchatUrl.isNotEmpty)
+                          _buildSocialIcon(Icons.screenshot, const Color(0xFFFFFC00), snapchatUrl),
+                        if (xUrl != null && xUrl.isNotEmpty)
+                          _buildSocialIcon(Icons.tag, Colors.black, xUrl),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1817,6 +1837,30 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             ),
           const SizedBox(height: 30),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSocialIcon(IconData icon, Color color, String url) {
+    return GestureDetector(
+      onTap: () async {
+        try {
+          final uri = Uri.parse(url);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        } catch (e) {
+          debugPrint('Could not launch $url: $e');
+        }
+      },
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color, size: 22),
       ),
     );
   }
