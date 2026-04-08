@@ -7,8 +7,12 @@ import 'package:myreklam/screens/demande_detail_screen.dart';
 import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
+import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
+import 'package:myreklam/screens/public_profile_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/categories_icon.dart';
 import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
@@ -22,6 +26,13 @@ class ProFavorisScreen extends StatefulWidget {
 
   @override
   State<ProFavorisScreen> createState() => _ProFavorisScreenState();
+}
+
+class _ReactionData {
+  int likesCount;
+  String? userReaction; // 'like' or null
+
+  _ReactionData({this.likesCount = 0, this.userReaction});
 }
 
 class _ProFavorisScreenState extends State<ProFavorisScreen> {
@@ -635,78 +646,1038 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     return Column(children: items.map(_buildDemandeCard).toList());
   }
 
-  Widget _buildDemandeCard(Map<String, dynamic> d) {
-    final title = d['title']?.toString() ?? '';
-    final description = d['description']?.toString() ?? '';
-    final nature = d['nature']?.toString() ?? '';
-    final type = d['type']?.toString() ?? '';
-    final location = d['location']?.toString() ?? '';
-    final nationwide = d['nationwide'] == true;
-    final createdAt = d['created_at']?.toString();
-    final user = d['user'] is Map<String, dynamic>
-        ? d['user'] as Map<String, dynamic>
-        : null;
-    final mediaFiles = d['media_files'] as List? ?? [];
-    final imageUrl = mediaFiles.isNotEmpty
-        ? _buildImageUrl(mediaFiles.first['url']?.toString() ?? '')
-        : null;
+  String? _buildStorageUrl(String? url) {
+    if (url == null || url.isEmpty) return null;
+    if (url.startsWith('http')) return url;
+    final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+    return '$serverBase/storage/$url';
+  }
 
-    String username = 'Utilisateur';
-    if (user != null) {
-      if (user['particulier_profile'] is Map) {
-        final p = user['particulier_profile'] as Map;
-        username =
-            p['pseudo']?.toString() ??
-            user['email']?.toString().split('@').first ??
-            'Utilisateur';
-      } else if (user['pro_profile'] is Map) {
-        final p = user['pro_profile'] as Map;
-        username =
-            p['company_name']?.toString() ??
-            ((p['first_name']?.toString() != null &&
-                    p['last_name']?.toString() != null)
-                ? '${p['first_name']} ${p['last_name']}'
-                : user['email']?.toString().split('@').first) ??
-            'Utilisateur';
+  String get _defaultAvatar =>
+      'assets/images/dashboard_particulier/Ellipse 10.png';
+
+  String _getNatureLabel(String nature) {
+    const natureLabels = {
+      'emploi': 'Recherche d\'emploi',
+      'service': 'Recherche de service',
+      'logement': 'Recherche de logement',
+      'produit': 'Recherche de produit',
+      'formation': 'Recherche de formation',
+      'collaboration': 'Collaboration',
+      'autre': 'Autre demande',
+    };
+    return natureLabels[nature.toLowerCase()] ?? nature;
+  }
+
+  String? _extractMediaUrl(Map<String, dynamic> resource) {
+    final media = resource['media'] ?? resource['media_files'];
+    if (media is List && media.isNotEmpty) {
+      final first = media.first;
+      if (first is Map<String, dynamic>) {
+        final url = first['url']?.toString();
+        if (url != null && url.isNotEmpty) {
+          if (url.startsWith('http')) return url;
+          return "${ApiConfig.baseUrl.replaceFirst('/api', '')}$url";
+        }
       }
     }
-
-    String profileImage = 'assets/images/default_profile.png';
-    if (user != null) {
-      if (user['particulier_profile'] is Map) {
-        final p = user['particulier_profile'] as Map;
-        final avatarUrl = p['avatar_url']?.toString() ?? '';
-        if (avatarUrl.isNotEmpty) profileImage = avatarUrl;
-      } else if (user['pro_profile'] is Map) {
-        final p = user['pro_profile'] as Map;
-        final avatarUrl =
-            p['avatar_url']?.toString() ?? p['logo_url']?.toString() ?? '';
-        if (avatarUrl.isNotEmpty) profileImage = avatarUrl;
-      }
-      if (profileImage.isNotEmpty && !profileImage.startsWith('assets/')) {
-        profileImage = _buildImageUrl(profileImage);
-      }
+    final cover = resource['cover_url']?.toString();
+    if (cover != null && cover.isNotEmpty) {
+      if (cover.startsWith('http')) return cover;
+      return "${ApiConfig.baseUrl.replaceFirst('/api', '')}$cover";
     }
+    return null;
+  }
 
-    final displayLocation = nationwide
+  Color _categoryColor(String label) {
+    final lower = label.toLowerCase();
+    if (lower.contains('urgent')) return Colors.redAccent;
+    if (lower.contains('emploi')) return const Color(0xFF3AAE5E);
+    if (lower.contains('stage')) return const Color(0xFF2196F3);
+    if (lower.contains('formation')) return const Color(0xFF9C27B0);
+    if (lower.contains('immobilier')) return const Color(0xFFFF5722);
+    if (lower.contains('service')) return const Color(0xFFFF9800);
+    return const Color(0xFF3AAE5E);
+  }
+
+  int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) {
+      return int.tryParse(value) ?? 0;
+    }
+    return 0;
+  }
+
+  String _buildTimeAgo(String? isoDate) {
+    if (isoDate == null) return '';
+    try {
+      final created = DateTime.parse(isoDate).toLocal();
+      final diff = DateTime.now().difference(created);
+      if (diff.inMinutes < 1) return "à l'instant";
+      if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes} min';
+      if (diff.inHours < 24) return 'il y a ${diff.inHours} h';
+      if (diff.inDays < 7) return 'il y a ${diff.inDays} j';
+      final weeks = (diff.inDays / 7).floor();
+      if (weeks < 4) return 'il y a $weeks sem';
+      final months = (diff.inDays / 30).floor();
+      return 'il y a $months mois';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  final Map<String, _ReactionData> _reactions = {};
+
+  String _reactionKey(String apiSlug, String entityId) =>
+      '${apiSlug}_$entityId';
+
+  _ReactionData _getReaction(String apiSlug, String entityId) {
+    final key = _reactionKey(apiSlug, entityId);
+    return _reactions.putIfAbsent(key, () => _ReactionData());
+  }
+
+  Future<void> _toggleReaction(
+    String apiSlug,
+    String entityId,
+    String type,
+  ) async {
+    final data = _getReaction(apiSlug, entityId);
+    final isLiked = data.userReaction == 'like';
+
+    setState(() {
+      if (isLiked) {
+        data.userReaction = null;
+        data.likesCount = (data.likesCount > 0) ? data.likesCount - 1 : 0;
+      } else {
+        data.userReaction = 'like';
+        data.likesCount = data.likesCount + 1;
+      }
+    });
+
+    try {
+      if (isLiked) {
+        await ApiClient().authenticatedDelete('/$apiSlug/$entityId/reactions');
+      } else {
+        await ApiClient().authenticatedPost(
+          '/$apiSlug/$entityId/reactions',
+          body: {'type': type},
+        );
+      }
+    } catch (e) {
+      debugPrint('Reaction toggle error: $e');
+      setState(() {
+        if (isLiked) {
+          data.userReaction = 'like';
+          data.likesCount = data.likesCount + 1;
+        } else {
+          data.userReaction = null;
+          data.likesCount = (data.likesCount > 0) ? data.likesCount - 1 : 0;
+        }
+      });
+    }
+  }
+
+  void _showEntityCommentsSheet(String apiSlug, String entityId) {
+    List<Map<String, dynamic>> comments = [];
+    bool isLoading = true;
+    String? error;
+    final commentCtrl = TextEditingController();
+    int? replyingToId;
+    String? replyingToName;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (ctx, modalSetState) {
+            // Load on first build
+            if (isLoading && comments.isEmpty && error == null) {
+              ApiClient()
+                  .authenticatedGet('/$apiSlug/$entityId/comments?per_page=50')
+                  .then((response) {
+                    final data = response['data'];
+                    List<Map<String, dynamic>> fetched = [];
+                    if (data is Map && data['data'] is List) {
+                      fetched = List<Map<String, dynamic>>.from(
+                        data['data'] as List,
+                      );
+                    } else if (data is List) {
+                      fetched = List<Map<String, dynamic>>.from(data);
+                    }
+                    modalSetState(() {
+                      comments = fetched;
+                      isLoading = false;
+                    });
+                  })
+                  .catchError((e) {
+                    modalSetState(() {
+                      error = e.toString();
+                      isLoading = false;
+                    });
+                  });
+            }
+
+            Future<void> submitComment() async {
+              final text = commentCtrl.text.trim();
+              if (text.isEmpty) return;
+
+              try {
+                Map<String, dynamic> response;
+                if (replyingToId != null) {
+                  response = await ApiClient().authenticatedPost(
+                    '/$apiSlug/$entityId/comments/$replyingToId/reply',
+                    body: {'body': text},
+                  );
+                } else {
+                  response = await ApiClient().authenticatedPost(
+                    '/$apiSlug/$entityId/comments',
+                    body: {'body': text},
+                  );
+                }
+                final newComment = response['data'] as Map<String, dynamic>?;
+                if (newComment != null) {
+                  modalSetState(() {
+                    if (replyingToId != null) {
+                      final parent = comments.firstWhere(
+                        (c) => c['id'] == replyingToId,
+                        orElse: () => <String, dynamic>{},
+                      );
+                      if (parent.isNotEmpty) {
+                        final replies = List<Map<String, dynamic>>.from(
+                          (parent['replies'] as List?) ?? [],
+                        );
+                        replies.add(newComment);
+                        parent['replies'] = replies;
+                        parent['replies_count'] =
+                            (parent['replies_count'] as int? ?? 0) + 1;
+                      }
+                    } else {
+                      comments.insert(0, newComment);
+                    }
+                    replyingToId = null;
+                    replyingToName = null;
+                  });
+                }
+                commentCtrl.clear();
+                FocusScope.of(ctx).unfocus();
+
+                // Award 1 My for posting a comment (silently, no modal)
+                try {
+                  final mysResponse = await MysEarningService().awardMys(
+                    actionType: 'comment',
+                    referenceId: newComment?['id']?.toString(),
+                  );
+                  if (mysResponse['success'] == true) {
+                    final newBalance = mysResponse['earning']?['new_balance'];
+                    if (newBalance != null) {
+                      UserSession().updateMys(newBalance);
+                    }
+                  }
+                } catch (e) {
+                  debugPrint("Error awarding My's for comment: $e");
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+                }
+              }
+            }
+
+            Future<void> toggleCommentReaction(
+              Map<String, dynamic> comment,
+              String type,
+            ) async {
+              final commentId = comment['id'];
+              try {
+                final response = await ApiClient().authenticatedPost(
+                  '/comments/$commentId/reactions',
+                  body: {'type': type},
+                );
+                final respData = response['data'] as Map<String, dynamic>?;
+                if (respData != null) {
+                  modalSetState(() {
+                    comment['likes_count'] = respData['likes_count'];
+                    comment['user_reaction'] = respData['user_reaction'];
+                  });
+                }
+              } catch (e) {
+                debugPrint('Comment reaction error: $e');
+              }
+            }
+
+            Future<void> editComment(Map<String, dynamic> comment) async {
+              final commentId = comment['id'];
+              final currentBody = comment['body']?.toString() ?? '';
+              final editController = TextEditingController(text: currentBody);
+
+              final newText = await showDialog<String>(
+                context: ctx,
+                builder: (context) => AlertDialog(
+                  title: const Text('Modifier le commentaire'),
+                  content: TextField(
+                    controller: editController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Votre commentaire...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () =>
+                          Navigator.pop(context, editController.text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3AAE5E),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Enregistrer',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (newText == null ||
+                  newText.trim().isEmpty ||
+                  newText == currentBody)
+                return;
+
+              try {
+                final response = await ApiClient().authenticatedPut(
+                  '/comments/$commentId',
+                  body: {'body': newText.trim()},
+                );
+                final updatedComment =
+                    response['data'] as Map<String, dynamic>?;
+                if (updatedComment != null) {
+                  modalSetState(() {
+                    comment['body'] = updatedComment['body'];
+                    comment['updated_at'] = updatedComment['updated_at'];
+                  });
+
+                  // Recharger le feed pour actualiser les commentaires
+                  await _loadFavorisBonPlans();
+                  await _loadFavorisDemandes();
+                  await _loadFavorisEvents();
+                  await _loadFavorisJobOffers();
+                  await _loadFavorisTrainings();
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Erreur lors de la modification: ${e.toString()}',
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
+            Future<void> deleteComment(
+              Map<String, dynamic> comment,
+              bool isReply,
+            ) async {
+              final commentId = comment['id'];
+              final confirmed = await showDialog<bool>(
+                context: ctx,
+                builder: (context) => AlertDialog(
+                  title: const Text('Supprimer le commentaire'),
+                  content: const Text(
+                    'Êtes-vous sûr de vouloir supprimer ce commentaire ?',
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Supprimer',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed != true) return;
+
+              try {
+                await ApiClient().authenticatedDelete('/comments/$commentId');
+
+                // Recharger le feed pour actualiser les commentaires
+                await _loadFavorisBonPlans();
+                await _loadFavorisDemandes();
+                await _loadFavorisEvents();
+                await _loadFavorisJobOffers();
+                await _loadFavorisTrainings();
+
+                modalSetState(() {
+                  if (isReply) {
+                    final parentId =
+                        comment['parent_id'] ?? comment['comment_id'];
+                    final parent = comments.firstWhere(
+                      (c) => c['id'] == parentId,
+                      orElse: () => <String, dynamic>{},
+                    );
+                    if (parent.isNotEmpty) {
+                      final replies = List<Map<String, dynamic>>.from(
+                        (parent['replies'] as List?) ?? [],
+                      );
+                      replies.removeWhere((r) => r['id'] == commentId);
+                      parent['replies'] = replies;
+                      parent['replies_count'] = replies.length;
+                    }
+                  } else {
+                    comments.removeWhere((c) => c['id'] == commentId);
+                  }
+                });
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Erreur lors de la suppression: ${e.toString()}',
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
+            Widget buildCommentItem(
+              Map<String, dynamic> comment, {
+              bool isReply = false,
+            }) {
+              final user = comment['user'] as Map<String, dynamic>? ?? {};
+              final userId = user['id']?.toString(); // Convertir en String
+              final email = user['email']?.toString() ?? '';
+              final displayName = (userId != null && userId == _currentUserId)
+                  ? 'Vous'
+                  : (user['display_name']?.toString() ??
+                        user['name']?.toString() ??
+                        email.split('@').first);
+              final body = comment['body']?.toString() ?? '';
+              final createdAt = comment['created_at']?.toString();
+              final likes = _asInt(comment['likes_count']);
+              final userReaction = comment['user_reaction']?.toString();
+              final isOwner = userId != null && userId == _currentUserId;
+              print("UserId: $userId");
+              print("_currentUserId: $_currentUserId");
+              print("isOwner: $isOwner");
+              final replies =
+                  (comment['replies'] as List?)
+                      ?.map((r) => Map<String, dynamic>.from(r as Map))
+                      .toList() ??
+                  [];
+
+              return Padding(
+                padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: isReply ? 14 : 18,
+                          backgroundColor: const Color(0xFFE6F7EF),
+                          child: Text(
+                            displayName.isNotEmpty
+                                ? displayName[0].toUpperCase()
+                                : '?',
+                            style: TextStyle(
+                              fontSize: isReply ? 11 : 13,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF2A8143),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    displayName,
+                                    style: TextStyle(
+                                      fontSize: isReply ? 12 : 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF333333),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _buildTimeAgo(createdAt),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                  if (isOwner) ...[
+                                    const Spacer(),
+                                    GestureDetector(
+                                      onTapDown: (TapDownDetails details) {
+                                        showMenu<String>(
+                                          context: context,
+                                          position: RelativeRect.fromLTRB(
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                          ),
+                                          items: [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit, size: 18),
+                                                  SizedBox(width: 8),
+                                                  Text('Modifier'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.delete,
+                                                    size: 18,
+                                                    color: Colors.redAccent,
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'Supprimer',
+                                                    style: TextStyle(
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ).then((value) {
+                                          if (value == 'edit') {
+                                            editComment(comment);
+                                          } else if (value == 'delete') {
+                                            deleteComment(comment, isReply);
+                                          }
+                                        });
+                                      },
+                                      child: Icon(
+                                        Icons.more_horiz,
+                                        size: 18,
+                                        color: Colors.grey[400],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                body,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF4F4F4F),
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () =>
+                                        toggleCommentReaction(comment, 'like'),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          userReaction == 'like'
+                                              ? Icons.thumb_up_alt
+                                              : Icons.thumb_up_alt_outlined,
+                                          size: 14,
+                                          color: userReaction == 'like'
+                                              ? const Color(0xFF3AAE5E)
+                                              : Colors.grey[400],
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          '$likes',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: userReaction == 'like'
+                                                ? const Color(0xFF3AAE5E)
+                                                : Colors.grey[500],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (!isReply) ...[
+                                    const SizedBox(width: 14),
+                                    GestureDetector(
+                                      onTap: () {
+                                        modalSetState(() {
+                                          replyingToId = comment['id'] as int?;
+                                          replyingToName = displayName;
+                                        });
+                                        FocusScope.of(
+                                          ctx,
+                                        ).requestFocus(FocusNode());
+                                      },
+                                      child: Text(
+                                        'Répondre',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFF2E9B5B),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Nested replies
+                    if (!isReply && replies.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      ...replies.map(
+                        (r) => Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: buildCommentItem(r, isReply: true),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.75,
+                ),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Commentaires',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF2A2A2A),
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(ctx),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.grey,
+                              size: 22,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Divider(height: 1, color: Colors.grey[200]),
+                    // Comment list
+                    Expanded(
+                      child: isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : error != null
+                          ? Center(
+                              child: Text(
+                                'Erreur: $error',
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            )
+                          : comments.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              itemCount: comments.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 16),
+                              itemBuilder: (_, i) =>
+                                  buildCommentItem(comments[i]),
+                            ),
+                    ),
+                    Divider(height: 1, color: Colors.grey[200]),
+                    // Reply indicator
+                    if (replyingToId != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        color: const Color(0xFFF5F5F5),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Répondre à $replyingToName',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () => modalSetState(() {
+                                replyingToId = null;
+                                replyingToName = null;
+                              }),
+                              child: const Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    // Input
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5F5F5),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: TextField(
+                                controller: commentCtrl,
+                                decoration: const InputDecoration(
+                                  isCollapsed: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  border: InputBorder.none,
+                                  hintText: 'Écrire un commentaire...',
+                                  hintStyle: TextStyle(
+                                    color: Color(0xFF9E9E9E),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                textInputAction: TextInputAction.send,
+                                onSubmitted: (_) => submitComment(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: submitComment,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF3AAE5E),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.send,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildReactionBar(
+    String apiSlug,
+    String entityId, {
+    bool? acceptedMessages,
+    Map<String, dynamic>? authorData,
+  }) {
+    final data = _getReaction(apiSlug, entityId);
+    final isLiked = data.userReaction == 'like';
+
+    return Row(
+      children: [
+        // Like
+        GestureDetector(
+          onTap: () => _toggleReaction(apiSlug, entityId, 'like'),
+          child: Row(
+            children: [
+              Icon(
+                isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+                size: 18,
+                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                data.likesCount.toString(),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 18),
+        // Comments
+        GestureDetector(
+          onTap: () => _showEntityCommentsSheet(apiSlug, entityId),
+          child: Row(
+            children: [
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 17,
+                color: Colors.grey[500],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Commenter',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDemandeCard(Map<String, dynamic> demande) {
+    final user = demande['user'] as Map<String, dynamic>?;
+
+    // Extraire le profil particulier
+    final particulierProfile =
+        user?['particulier_profile'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+
+    // Avatar : particulier_profile.avatar_url ou pro_profile.logo_url
+    final avatarUrl =
+        particulierProfile?['avatar_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        proProfile?['logo_url']?.toString();
+    final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
+
+    // Username : particulier_profile.pseudo ou pro_profile.company_name
+    final username =
+        particulierProfile?['pseudo']?.toString() ??
+        proProfile?['company_name']?.toString() ??
+        user?['email']?.toString() ??
+        'Utilisateur';
+
+    final title = demande['title']?.toString() ?? 'Demande';
+    final description = _stripHtml(demande['description']?.toString() ?? '');
+
+    // Nature de la demande (Internship, SearchJob, Training, RealEstate, etc.)
+    final nature = demande['nature']?.toString() ?? 'Demande';
+    final categoryLabel = _getNatureLabel(nature);
+
+    // Location
+    final nationwideRaw = demande['nationwide'];
+    final nationwide =
+        nationwideRaw == true ||
+        nationwideRaw == 1 ||
+        nationwideRaw?.toString() == '1' ||
+        nationwideRaw?.toString().toLowerCase() == 'true';
+    final locationRaw =
+        demande['location']?.toString() ?? demande['city']?.toString() ?? '';
+    final location = nationwide
         ? 'Toute la France'
-        : (location.isNotEmpty ? location : 'Non spécifié');
+        : (locationRaw.isNotEmpty ? locationRaw : 'Non spécifié');
 
-    return DemandeCard(
-      profileImage: profileImage,
-      username: username,
-      categoryLabel: nature,
-      categoryColor: const Color(0xFFEF8A40),
-      title: title,
-      description: description.length > 200
-          ? '${description.substring(0, 200)}...'
-          : description,
-      location: displayLocation,
-      postImage: imageUrl,
-      likesCount: 0,
-      commentsCount: 0,
-      timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
-      onTapCTA: () => _navigateToDemandeDetail(d),
+    // Media
+    final postImage = _extractMediaUrl(demande);
+
+    final demandeId = demande['id']?.toString() ?? '';
+
+    // Check if already favorited by current user
+    bool isFavorited = demande['is_favorited'] == true;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool isLoadingFavorite = false;
+        bool localIsFavorited = isFavorited;
+
+        Future<void> toggleFavorite() async {
+          if (isLoadingFavorite || demandeId.isEmpty) return;
+
+          setState(() => isLoadingFavorite = true);
+
+          try {
+            if (localIsFavorited) {
+              // Remove from favorites
+              await ApiClient().authenticatedDelete(
+                '/demandes/$demandeId/favorite',
+              );
+            } else {
+              // Add to favorites
+              await ApiClient().authenticatedPost(
+                '/demandes/$demandeId/favorite',
+              );
+            }
+
+            setState(() {
+              localIsFavorited = !localIsFavorited;
+              isLoadingFavorite = false;
+              isFavorited = !isFavorited;
+            });
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            setState(() => isLoadingFavorite = false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Erreur: ${e.toString()}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        }
+
+        return DemandeCard(
+          profileImage: profileImage,
+          username: username,
+          categoryLabel: categoryLabel,
+          categoryColor: _categoryColor(categoryLabel),
+          title: title,
+          description: description.isNotEmpty
+              ? description
+              : 'Description non disponible.',
+          location: location,
+          postImage: postImage,
+          likesCount: _asInt(demande['likes_count']),
+          commentsCount: _asInt(demande['comments_count']),
+          timeAgo: _buildTimeAgo(demande['created_at']?.toString()),
+          onTapCTA: () => _navigateToDemandeDetail(demande),
+          onAvatarTap: () {
+            if (user?['id'] != null) {
+              final isProUser =
+                  user?['account_type']?.toString().toLowerCase() == 'pro';
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => isProUser
+                      ? ProPublicViewScreen(userId: user!['id'].toString())
+                      : PublicProfileScreen(userId: user!['id'].toString()),
+                ),
+              );
+            }
+          },
+          isFavorited: localIsFavorited,
+          isLoadingFavorite: isLoadingFavorite,
+          onFavoriteToggle: toggleFavorite,
+          reactionBar: demandeId.isNotEmpty
+              ? _buildReactionBar(
+                  'demandes',
+                  demandeId,
+                  acceptedMessages: demande['accept_messages'] == true,
+                  authorData: demande['user'],
+                )
+              : null,
+        );
+      },
     );
   }
 
@@ -875,85 +1846,223 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
   }
 
   Widget _buildTrainingCard(Map<String, dynamic> tr) {
-    final title = tr['title']?.toString() ?? '';
+    final trainingId = tr['id']?.toString() ?? '';
+    final title = tr['title']?.toString() ?? 'Formation';
     final description = _stripHtml(tr['description']?.toString() ?? '');
-    final createdAt = tr['created_at']?.toString();
-    final price = tr['price'];
-    final durationHours = tr['duration_in_h'];
+    final provider = tr['provider_name']?.toString() ?? 'Organisme';
+    final duration = tr['duration_in_h'];
     final durationUnit = tr['duration_unit']?.toString();
-    final status = tr['status']?.toString() ?? '';
+    final price = tr['price'];
     final category = tr['training_category']?.toString() ?? '';
     final subCategory = tr['training_sub_category']?.toString() ?? '';
     final trainingType = tr['training_type']?.toString() ?? '';
 
-    final companyName = tr['user']['pro_profile'] != null
-        ? tr['user']['pro_profile']['company_name']?.toString()
-        : tr['user']['particulier_profile']['pseudo']?.toString();
+    final addressCity = tr['address_city']?.toString() ?? '';
 
-    final avatar = tr['user']['pro_profile'] != null
-        ? tr['user']['pro_profile']['avatar_url']?.toString()
-        : tr['user']['particulier_profile']['avatar_url']?.toString();
+    // Helper to extract array values
+    String _extractArrayValues(dynamic field) {
+      if (field is List) {
+        return field
+            .map((item) {
+              if (item is Map)
+                return item['value']?.toString() ??
+                    item['name']?.toString() ??
+                    '';
+              return item.toString();
+            })
+            .where((s) => s.isNotEmpty)
+            .join(' · ');
+      }
+      return field?.toString() ?? '';
+    }
+
+    // Translation for training_style
+    String _translateTrainingStyle(String value) {
+      switch (value.trim()) {
+        case 'Remote':
+          return 'En ligne';
+        case 'OnSite':
+          return 'Présentiel';
+        case 'Hybrid':
+          return 'Hybride';
+        default:
+          return value;
+      }
+    }
+
+    // Extract and translate training_style values
+    String trainingStyleText = '';
+    final trainingStyleRaw = tr['training_style'];
+    if (trainingStyleRaw is List) {
+      final translated = trainingStyleRaw
+          .map((item) {
+            final value = item is Map
+                ? (item['value']?.toString() ?? item.toString())
+                : item.toString();
+            return _translateTrainingStyle(value);
+          })
+          .where((s) => s.isNotEmpty)
+          .join(' · ');
+      trainingStyleText = translated;
+    } else if (trainingStyleRaw != null) {
+      trainingStyleText = _translateTrainingStyle(trainingStyleRaw.toString());
+    }
+
+    // Translation for training_public
+    String _translateTrainingPublic(String value) {
+      switch (value.trim()) {
+        case 'AllPublic':
+          return 'Tout public';
+        case 'Employed':
+          return 'Salarié en poste';
+        case 'JobSeeker':
+          return 'Demandeurs d\'emploi';
+        case 'Company':
+          return 'Entreprise';
+        case 'Student':
+          return 'Étudiant';
+        default:
+          return value;
+      }
+    }
+
+    // Extract and translate training_public values
+    String trainingPublicText = '';
+    final trainingPublicRaw = tr['training_public'];
+    if (trainingPublicRaw is List) {
+      final translated = trainingPublicRaw
+          .map((item) {
+            final value = item is Map
+                ? (item['value']?.toString() ?? item.toString())
+                : item.toString();
+            return _translateTrainingPublic(value);
+          })
+          .where((s) => s.isNotEmpty)
+          .join(' · ');
+      trainingPublicText = translated;
+    } else if (trainingPublicRaw != null) {
+      trainingPublicText = _translateTrainingPublic(
+        trainingPublicRaw.toString(),
+      );
+    }
+
+    final certification = _extractArrayValues(tr['certification']);
+
+    // Check if CPF is in training_funding array
+    final trainingFunding = tr['training_funding'];
+    bool hasCpf = false;
+    if (trainingFunding is List) {
+      hasCpf = trainingFunding.any(
+        (funding) =>
+            funding.toString().toUpperCase() == 'CPF' ||
+            (funding is Map &&
+                funding['type']?.toString().toUpperCase() == 'CPF'),
+      );
+    }
 
     final tags = <FormationTag>[
-      if (category.isNotEmpty)
-        FormationTag(icon: Icons.category_outlined, text: category),
-      if (subCategory.isNotEmpty)
-        FormationTag(icon: Icons.subdirectory_arrow_right, text: subCategory),
+      // 1st: Address city (location)
+      if (addressCity.isNotEmpty)
+        FormationTag(icon: Icons.location_on_outlined, text: addressCity),
+      // 2nd: Training public (translated)
+      if (trainingPublicText.isNotEmpty)
+        FormationTag(icon: Icons.people_outline, text: trainingPublicText),
+      // 3rd: Training style (translated)
+      if (trainingStyleText.isNotEmpty)
+        FormationTag(icon: Icons.style_outlined, text: trainingStyleText),
+      // 4th: Certification
+      if (certification.isNotEmpty)
+        FormationTag(icon: Icons.verified_outlined, text: certification),
+      // 5th: CPF eligibility
+      if (hasCpf)
+        FormationTag(
+          icon: Icons.account_balance_wallet_outlined,
+          text: 'Eligible CPF',
+        ),
+      // 6th: Training type
       if (trainingType.isNotEmpty)
         FormationTag(icon: Icons.school_outlined, text: trainingType),
-      if (price != null)
-        FormationTag(
-          icon: Icons.euro,
-          text: '${price.toString()} €',
-          isSpecial: true,
-        ),
-      if (durationHours != null)
+      // 7th: Duration
+      if (duration != null)
         FormationTag(
           icon: Icons.timer_outlined,
-          text:
-              '$durationHours h${durationUnit != null ? ' / $durationUnit' : ''}',
+          text: '$duration h${durationUnit != null ? ' / $durationUnit' : ''}',
         ),
-      if (status.isNotEmpty)
-        FormationTag(icon: Icons.flag_outlined, text: _statusLabel(status)),
+      // 8th: Price (special/green) - LAST
+      if (price != null) ...[
+        () {
+          final publicType = tr['public_type']?.toString() ?? '';
+          String priceText = '$price €';
+          if (publicType == 'personne') {
+            priceText += ' - Par personne';
+          } else if (publicType == 'groupe') {
+            priceText += ' - Par groupe';
+          }
+          return FormationTag(
+            icon: Icons.euro,
+            text: priceText,
+            isSpecial: true,
+          );
+        }(),
+      ],
     ];
 
-    final trId = tr['id']?.toString() ?? '';
+    final user = tr['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile =
+        user?['particulier_profile'] as Map<String, dynamic>?;
 
-    print("Traing: $trId");
+    final avatarUrl =
+        proProfile?['logo_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        particulierProfile?['avatar_url']?.toString() ??
+        user?['avatar']?.toString();
 
-    // Check initial favorite status
-    final bool isFavorited = tr['is_favorited'];
+    final companyLogoUrl =
+        _buildStorageUrl(avatarUrl) ?? 'assets/images/Formation.png';
 
-    bool _isFavorited = isFavorited;
-    bool _isLoading = false;
+    // Extract owner name from profiles
+    final ownerName =
+        proProfile?['company_name']?.toString() ??
+        proProfile?['first_name']?.toString() ??
+        particulierProfile?['pseudo']?.toString() ??
+        particulierProfile?['first_name']?.toString() ??
+        tr['provider_name']?.toString() ??
+        'Organisme';
+
+    // Check if already favorited by current user
+    bool isFavorited = tr['is_favorited'] == true;
+
+    bool isLoading = false;
 
     Future<void> _toggleFavorite() async {
-      if (_isLoading || trId.isEmpty) return;
+      if (isLoading || trainingId.isEmpty) return;
 
-      setState(() => _isLoading = true);
+      setState(() => isLoading = true);
 
       try {
-        if (_isFavorited) {
+        if (isFavorited) {
           // Remove from favorites
-          await ApiClient().authenticatedDelete('/trainings/$trId/favorite');
-          _loadFavorisTrainings();
+          await ApiClient().authenticatedDelete(
+            '/trainings/$trainingId/favorite',
+          );
         } else {
           // Add to favorites
-          await ApiClient().authenticatedPost('/trainings/$trId/favorite');
-          _loadFavorisTrainings();
+          await ApiClient().authenticatedPost(
+            '/trainings/$trainingId/favorite',
+          );
         }
 
         setState(() {
-          _isFavorited = !_isFavorited;
-          _isLoading = false;
+          isFavorited = !isFavorited;
+          isLoading = false;
         });
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                style: TextStyle(color: Colors.white),
+                isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
               ),
               duration: const Duration(seconds: 2),
               backgroundColor: Colors.green,
@@ -962,7 +2071,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         }
       } catch (e) {
         debugPrint('Favorite toggle error: $e');
-        setState(() => _isLoading = false);
+        setState(() => isLoading = false);
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -976,17 +2085,35 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     }
 
     return FormationCard(
-      companyLogo: avatar ?? 'assets/images/Formation.png',
-      companyName: companyName ?? 'Ma formation',
+      companyLogo: companyLogoUrl,
+      companyName: ownerName,
       formationTitle: title,
       description: description.isNotEmpty
           ? description
-          : 'Aucune description fournie.',
+          : 'Description non disponible.',
       tags: tags,
-      timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
-      onApply: () => _navigateToTrainingDetail(tr),
+      timeAgo: _buildTimeAgo(tr['created_at']?.toString()),
       isFavorited: isFavorited,
+      isLoadingFavorite: isLoading,
       onFavoriteToggle: _toggleFavorite,
+      onApply: () => _navigateToTrainingDetail(tr),
+      onAvatarTap: () {
+        if (user?['id'] != null) {
+          final isProUser =
+              user?['account_type']?.toString().toLowerCase() == 'pro';
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => isProUser
+                  ? ProPublicViewScreen(userId: user!['id'].toString())
+                  : PublicProfileScreen(userId: user!['id'].toString()),
+            ),
+          );
+        }
+      },
+      reactionBar: trainingId.isNotEmpty
+          ? _buildReactionBar('trainings', trainingId)
+          : null,
     );
   }
 
@@ -1211,151 +2338,195 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     return Column(children: items.map((ev) => _buildEventCard(ev)).toList());
   }
 
-  Widget _buildEventCard(Map<String, dynamic> ev) {
-    final title = ev['title']?.toString() ?? '';
-    final createdAt = ev['created_at']?.toString();
-    final priceType = ev['price_type']?.toString() ?? 'gratuit';
-    final priceAmount = ev['price_amount'];
-    final coverageArea = ev['coverage_area']?.toString() ?? '';
-    final eventDate = ev['event_date']?.toString();
-    final startDate = ev['start_date']?.toString();
-    final durationType = ev['duration_type']?.toString() ?? '';
-    final categoryCode = ev['category_code']?.toString() ?? '';
-    final subCategoryCode = ev['sub_category_code']?.toString() ?? '';
-    final formatType = ev['format_type']?.toString() ?? '';
-
-    final mediaFiles = ev['media_files'] as List? ?? [];
-    final eventImage = mediaFiles.isNotEmpty
-        ? _buildImageUrl(mediaFiles.first['url']?.toString() ?? '')
-        : 'assets/images/default_event.png';
-
-    String displayDate = '';
-    if (durationType == 'one_day' && eventDate != null) {
-      try {
-        final date = DateTime.parse(eventDate);
-        displayDate = '${date.day}/${date.month}/${date.year}';
-      } catch (_) {
-        displayDate = eventDate;
+  String _formatEventStatus(String? startDateStr, String? endDateStr) {
+    if (startDateStr == null || startDateStr.isEmpty) return 'À venir';
+    try {
+      final start = DateTime.parse(startDateStr);
+      final now = DateTime.now();
+      if (endDateStr != null && endDateStr.isNotEmpty) {
+        final end = DateTime.parse(endDateStr);
+        if (now.isAfter(end)) return 'Terminé';
       }
-    } else if (durationType == 'multi_day' && startDate != null) {
-      try {
-        final date = DateTime.parse(startDate);
-        displayDate = 'À partir du ${date.day}/${date.month}/${date.year}';
-      } catch (_) {
-        displayDate = startDate;
-      }
-    } else if (durationType == 'permanent') {
-      displayDate = 'Permanent';
+      if (now.isAfter(start)) return 'En cours';
+      return 'À venir';
+    } catch (_) {
+      return 'À venir';
     }
+  }
 
-    String displayPrice = 'Gratuit';
-    if (priceType == 'payant' && priceAmount != null) {
-      displayPrice = '$priceAmount €';
+  String _formatEventDate(String? dateStr) {
+    if (dateStr == null) return 'Date à confirmer';
+    try {
+      final date = DateTime.parse(dateStr);
+      final months = [
+        'Janvier',
+        'Février',
+        'Mars',
+        'Avril',
+        'Mai',
+        'Juin',
+        'Juillet',
+        'Août',
+        'Septembre',
+        'Octobre',
+        'Novembre',
+        'Décembre',
+      ];
+      return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
+    } catch (_) {
+      return dateStr;
     }
+  }
 
-    final categories = <String>[
-      if (categoryCode.isNotEmpty) categoryCode,
-      if (subCategoryCode.isNotEmpty) subCategoryCode,
-      if (formatType.isNotEmpty) formatType,
+  Widget _buildEventCard(Map<String, dynamic> event) {
+    final title = event['title']?.toString() ?? '';
+    final description = _stripHtml(event['description']?.toString() ?? '');
+    final location =
+        event['location']?.toString() ?? event['city']?.toString() ?? '';
+    final eventDate =
+        event['event_date']?.toString() ?? event['start_date']?.toString();
+    final endDate =
+        event['end_date']?.toString() ?? event['event_end_date']?.toString();
+    final createdAt = event['created_at']?.toString();
+    final price =
+        event['price']?.toString() ?? event['ticket_price']?.toString();
+    final isPaid = event['is_paid'] == true || event['is_paid'] == 1;
+    final category = event['category']?.toString() ?? '';
+    final subCategory = event['sub_category']?.toString() ?? '';
+    final tags = (event['tags'] as List? ?? [])
+        .map((t) => t?.toString() ?? '')
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final eventId = event['id']?.toString() ?? '';
+
+    // Media
+    final mediaFiles = event['media'] as List? ?? [];
+    final imageUrl = _extractMediaUrl(event);
+
+    // User info
+    final user = event['user'] as Map<String, dynamic>?;
+    final particulierProfile =
+        user?['particulier_profile'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final avatarUrl =
+        particulierProfile?['avatar_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        proProfile?['logo_url']?.toString();
+    final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
+    final username =
+        particulierProfile?['pseudo']?.toString() ??
+        proProfile?['company_name']?.toString() ??
+        user?['email']?.toString() ??
+        'Organisateur';
+    final accountType = user?['account_type']?.toString() ?? 'particulier';
+
+    // Check if already favorited by current user
+    bool isFavorited = event['is_favorited'] == true;
+
+    // Prepare display values
+    final allCategories = <String>[
+      if (category.isNotEmpty) category,
+      if (subCategory.isNotEmpty) subCategory,
+      ...tags.take(2),
     ];
 
-    // Extract user data for event card
-    final eventUser = ev['user'] is Map<String, dynamic>
-        ? ev['user'] as Map<String, dynamic>
-        : null;
-    String eventUsername = 'Mon événement';
-    String eventAvatar = '';
-    if (eventUser != null) {
-      if (eventUser['pro_profile'] is Map) {
-        final p = eventUser['pro_profile'] as Map;
-        final n = p['company_name']?.toString() ?? '';
-        if (n.isNotEmpty) eventUsername = n;
-        final logo =
-            p['avatar_url']?.toString() ?? p['logo_url']?.toString() ?? '';
-        if (logo.isNotEmpty) eventAvatar = _buildImageUrl(logo);
-      } else if (eventUser['particulier_profile'] is Map) {
-        final p = eventUser['particulier_profile'] as Map;
-        final n = p['pseudo']?.toString() ?? '';
-        if (n.isNotEmpty) eventUsername = n;
-        final logo = p['avatar_url']?.toString() ?? '';
-        if (logo.isNotEmpty) eventAvatar = _buildImageUrl(logo);
-      }
-    }
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool isLoadingFavorite = false;
+        bool localIsFavorited = isFavorited;
 
-    final evId = ev['id'];
+        Future<void> toggleFavorite() async {
+          if (isLoadingFavorite || eventId.isEmpty) return;
 
-    final bool isFavorited = ev['is_favorited'];
+          setState(() => isLoadingFavorite = true);
 
-    bool _isFavorited = isFavorited;
-    bool _isLoading = false;
+          try {
+            if (localIsFavorited) {
+              // Remove from favorites
+              await ApiClient().authenticatedDelete(
+                '/events/$eventId/favorite',
+              );
+            } else {
+              // Add to favorites
+              await ApiClient().authenticatedPost('/events/$eventId/favorite');
+            }
 
-    Future<void> _toggleFavorite() async {
-      if (_isLoading || evId.isEmpty) return;
+            setState(() {
+              localIsFavorited = !localIsFavorited;
+              isLoadingFavorite = false;
+              isFavorited = !isFavorited;
+            });
 
-      setState(() => _isLoading = true);
-
-      try {
-        if (_isFavorited) {
-          // Remove from favorites
-          await ApiClient().authenticatedDelete('/events/$evId/favorite');
-          _loadFavorisEvents();
-        } else {
-          // Add to favorites
-          await ApiClient().authenticatedPost('/events/$evId/favorite');
-          _loadFavorisEvents();
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            setState(() => isLoadingFavorite = false);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Erreur: ${e.toString()}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
         }
 
-        setState(() {
-          _isFavorited = !_isFavorited;
-          _isLoading = false;
-        });
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                style: TextStyle(color: Colors.white),
-              ),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        debugPrint('Favorite toggle error: $e');
-        setState(() => _isLoading = false);
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Erreur lors de la mise à jour des favoris'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-
-    return EvenementCard(
-      profileImage: eventAvatar.isNotEmpty
-          ? eventAvatar
-          : 'assets/images/default_profile.png',
-      username: eventUsername,
-      userType: 'Organisateur',
-      eventTitle: title,
-      eventImage: eventImage,
-      badge: null,
-      categories: categories,
-      eventDate: displayDate,
-      location: coverageArea.isNotEmpty ? coverageArea : 'Non spécifié',
-      timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
-      price: displayPrice,
-      likesCount: 0,
-      commentsCount: 0,
-      onTapCTA: () => _navigateToEventDetail(ev),
-      isFavorite: isFavorited,
-      onFavoriteToggle: _toggleFavorite,
+        return EvenementCard(
+          profileImage: profileImage,
+          username: username,
+          userType: accountType == 'pro' ? 'Pro' : 'Particulier',
+          eventTitle: title.isNotEmpty ? title : 'Évènement',
+          eventImage:
+              _buildStorageUrl(imageUrl) ??
+              'assets/images/dashboard_particulier/Rectangle 12 (4).png',
+          badge: _formatEventStatus(eventDate, endDate),
+          categories: allCategories.isNotEmpty ? allCategories : ['Évènement'],
+          eventDate: _formatEventDate(eventDate),
+          location: location.isNotEmpty ? location : 'Lieu à confirmer',
+          timeAgo: _buildTimeAgo(createdAt),
+          price: isPaid && price != null && price.isNotEmpty
+              ? '${price}€'
+              : 'Gratuit',
+          likesCount: _asInt(event['likes_count']),
+          commentsCount: _asInt(event['comments_count']),
+          isFavorite: localIsFavorited,
+          onFavoriteToggle: toggleFavorite,
+          onTapCTA: () => _navigateToEventDetail(event),
+          onAvatarTap: () {
+            if (user?['id'] != null) {
+              final isProUser =
+                  user?['account_type']?.toString().toLowerCase() == 'pro';
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => isProUser
+                      ? ProPublicViewScreen(userId: user!['id'].toString())
+                      : PublicProfileScreen(userId: user!['id'].toString()),
+                ),
+              );
+            }
+          },
+          reactionBar: eventId.isNotEmpty
+              ? _buildReactionBar(
+                  'events',
+                  eventId,
+                  acceptedMessages: event['accept_messages'] == true,
+                  authorData: user,
+                )
+              : null,
+        );
+      },
     );
   }
 
@@ -1498,169 +2669,38 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     }
   }
 
-  Widget _buildBonPlanCard(Map<String, dynamic> bp) {
-    final title = bp['title'] ?? '';
-    final category = bp['category'] ?? '';
-    final subCategory = bp['sub_category'] ?? '';
-    final type = bp['type'] ?? '';
-    final status = bp['status']?.toString() ?? '';
-    final merchantName = bp['available_at_name'] ?? '';
-    final locationType = bp['available_location_type'] ?? '';
-    final createdAt = bp['created_at']?.toString();
-    final mediaFiles = bp['media_files'] as List? ?? [];
-    final imageUrl = mediaFiles.isNotEmpty
-        ? mediaFiles.first['url']?.toString()
-        : null;
-
+  Widget _buildTypeTag(String label, Color color, IconData icon) {
     return Container(
-      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          colors: [color, color.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(16),
+          bottomLeft: Radius.circular(12),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: color.withOpacity(0.3),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Header with status badge
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF333333),
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: _statusColor(status).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: _statusColor(status).withOpacity(0.5),
-                  ),
-                ),
-                child: Text(
-                  _statusLabel(status),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: _statusColor(status),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Description
-          _buildDescription(bp),
-          // Image
-          if (imageUrl != null) ...[
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                _buildImageUrl(imageUrl),
-                width: double.infinity,
-                height: 180,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    height: 180,
-                    color: Colors.grey[100],
-                    child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
-                },
-                errorBuilder: (_, error, ___) {
-                  debugPrint('Image load error: $error');
-                  return Container(
-                    height: 100,
-                    color: Colors.grey[200],
-                    child: const Center(
-                      child: Icon(
-                        Icons.image_not_supported,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          // Category & type tags
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: [
-              if (category.isNotEmpty)
-                _buildTag(category, Icons.local_offer_outlined),
-              if (subCategory.isNotEmpty)
-                _buildTag(subCategory, Icons.subdirectory_arrow_right),
-              if (type.isNotEmpty) _buildTag(type, Icons.label_outline),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Merchant + time
-          Row(
-            children: [
-              if (merchantName.isNotEmpty) ...[
-                Icon(Icons.store_outlined, size: 14, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '$locationType chez $merchantName',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ] else
-                const Spacer(),
-              if (createdAt != null) ...[
-                Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Text(
-                  _timeAgo(createdAt),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(height: 1),
-          const SizedBox(height: 12),
-          // CTA Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _navigateToBonPlanDetail(bp),
-              icon: const Icon(Icons.visibility_outlined, size: 18),
-              label: const Text('VOIR LE BON PLAN'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEF8A40),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                elevation: 0,
-              ),
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -1668,123 +2708,489 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     );
   }
 
-  Widget _buildJobOfferCard(Map<String, dynamic> jo) {
-    final title = jo['title'] ?? '';
-    final contractType = jo['contract_type'] ?? '';
-    final workTime = jo['work_time'] ?? '';
-    final companyRaw = jo['company'];
-    final companyName = companyRaw is Map
-        ? (companyRaw['name'] ?? '')
-        : (companyRaw ?? '').toString();
-    final city = jo['location'];
-    final createdAt = jo['created_at']?.toString();
-    final categoryRaw = jo['category'];
-    final categoryName = categoryRaw is Map
-        ? (categoryRaw['name'] ?? '')
-        : (categoryRaw ?? '').toString();
-    final advantages = jo['advantages'] as List? ?? [];
-    final salaryMin = jo['salary_min'];
-    final salaryMax = jo['salary_max'];
-    final educationLevel = jo['education_level'];
-    final experienceLevel = jo['experience_level'];
+  Widget _buildBonPlanImage(String url) {
+    return Image.network(
+      url,
+      width: double.infinity,
+      height: 220,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          height: 220,
+          color: Colors.grey[100],
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        );
+      },
+      errorBuilder: (_, error, ___) {
+        debugPrint('Image load error: $error');
+        return Container(
+          height: 220,
+          color: Colors.grey[200],
+          child: const Center(
+            child: Icon(
+              Icons.image_not_supported,
+              color: Colors.grey,
+              size: 40,
+            ),
+          ),
+        );
+      },
+    );
+  }
 
-    // Extract description
-    String description = '';
-    final descriptionDelta = jo['description_delta'];
-    if (descriptionDelta != null) {
-      try {
-        List opsList;
-        if (descriptionDelta is List) {
-          opsList = descriptionDelta;
-        } else if (descriptionDelta is Map && descriptionDelta['ops'] is List) {
-          opsList = descriptionDelta['ops'] as List;
-        } else if (descriptionDelta is String && descriptionDelta.isNotEmpty) {
-          final decoded = jsonDecode(descriptionDelta);
-          opsList = decoded is List ? decoded : (decoded['ops'] as List);
-        } else {
-          throw Exception('Unsupported type');
-        }
-        final filteredOps = opsList
-            .where((op) => op is Map && op['insert'] != null)
-            .map((op) => Map<String, dynamic>.from(op as Map))
-            .toList();
-        if (filteredOps.isNotEmpty) {
-          final lastInsert = filteredOps.last['insert'];
-          if (lastInsert is String && !lastInsert.endsWith('\n')) {
-            filteredOps.add({'insert': '\n'});
-          }
-          final doc = quill.Document.fromJson(filteredOps);
-          description = doc.toPlainText().trim();
-          if (description.length > 150) {
-            description = '${description.substring(0, 150)}...';
-          }
-        }
-      } catch (e) {
-        description = jo['description']?.toString() ?? '';
-      }
-    } else {
-      description = jo['description']?.toString() ?? '';
+  Widget _buildBonPlanDescription(Map<String, dynamic> item) {
+    final descriptionPlain = item['description']?.toString() ?? '';
+    return Text(
+      _stripHtml(descriptionPlain),
+      style: const TextStyle(fontSize: 14, color: Color(0xFF666666)),
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _buildBonPlanImageCarousel(List<String> urls) {
+    if (urls.length == 1) {
+      return _buildBonPlanImage(urls.first);
     }
 
-    // Build tags
+    return StatefulBuilder(
+      builder: (context, setState) {
+        final controller = PageController();
+        int currentPage = 0;
+
+        return Column(
+          children: [
+            SizedBox(
+              height: 220,
+              child: PageView.builder(
+                controller: controller,
+                itemCount: urls.length,
+                onPageChanged: (index) => setState(() => currentPage = index),
+                itemBuilder: (context, index) {
+                  return _buildBonPlanImage(urls[index]);
+                },
+              ),
+            ),
+            // Page indicator
+            if (urls.length > 1) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(urls.length, (index) {
+                  return Container(
+                    width: 6,
+                    height: 6,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: index == currentPage
+                          ? const Color(0xFFFF9800)
+                          : Colors.grey[300],
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildBonPlanCard(Map<String, dynamic> bp) {
+    final bpId = bp['id']?.toString() ?? '';
+    final title = bp['title']?.toString() ?? '';
+    final category = bp['category']?.toString() ?? '';
+    final subCategory = bp['sub_category']?.toString() ?? '';
+    final type = bp['type']?.toString() ?? '';
+    final merchantName = bp['available_at_name']?.toString() ?? '';
+    final locationType = bp['available_location_type']?.toString() ?? '';
+    final createdAt = bp['created_at']?.toString();
+    // Support both media_files (from BonPlanController) and media (from FeedController)
+    final mediaFiles = (bp['media_files'] as List? ?? [])
+      ..addAll(bp['media'] as List? ?? []);
+    final imageUrls = mediaFiles
+        .where((m) => m['type'] == 'image' || m['type'] == null)
+        .map((m) {
+          final url = m['url']?.toString() ?? '';
+          if (url.isEmpty) return '';
+          // If URL is already complete (http/https), use it as-is
+          if (url.startsWith('http')) return url;
+          // Otherwise use the storage URL builder
+          return _buildStorageUrl(url) ?? '';
+        })
+        .where((url) => url.isNotEmpty)
+        .toList();
+
+    // Check if already favorited by current user
+    bool _isFavorited = bp['is_favorited'] == true;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool _isLoading = false;
+
+        Future<void> _toggleFavorite() async {
+          if (_isLoading || bpId.isEmpty) return;
+
+          setState(() => _isLoading = true);
+
+          try {
+            if (_isFavorited) {
+              // Remove from favorites
+              await ApiClient().authenticatedDelete('/bonplans/$bpId/favorite');
+            } else {
+              // Add to favorites
+              await ApiClient().authenticatedPost('/bonplans/$bpId/favorite');
+            }
+
+            setState(() {
+              _isFavorited = !_isFavorited;
+              _isLoading = false;
+            });
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            setState(() => _isLoading = false);
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Erreur lors de la mise à jour des favoris'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image carousel at top
+                  if (imageUrls.isNotEmpty)
+                    _buildBonPlanImageCarousel(imageUrls),
+
+                  // Title
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 100, 0),
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF333333),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Description
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: _buildBonPlanDescription(bp),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Price instead of tags
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        Text(
+                          bp['price'] != null &&
+                                  bp['price'].toString().isNotEmpty
+                              ? '${bp['price']}€'
+                              : 'Gratuit',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2E9B5B),
+                          ),
+                        ),
+                        if (bp['original_price'] != null &&
+                            bp['original_price'].toString().isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '${bp['original_price']}€',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Merchant + time
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        if (merchantName.isNotEmpty) ...[
+                          Icon(
+                            Icons.store_outlined,
+                            size: 14,
+                            color: Colors.grey[500],
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '$locationType chez $merchantName',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ] else
+                          const Spacer(),
+                        if (createdAt != null) ...[
+                          Icon(
+                            Icons.access_time,
+                            size: 14,
+                            color: Colors.grey[500],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _buildTimeAgo(createdAt),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Divider(height: 1),
+                  ),
+                  const SizedBox(height: 10),
+                  if (bpId.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildReactionBar(
+                        'bon-plans',
+                        bpId,
+                        acceptedMessages: bp['accept_messages'] == true,
+                        authorData: bp['user'] as Map<String, dynamic>?,
+                      ),
+                    ),
+                  const SizedBox(height: 10),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Divider(height: 1),
+                  ),
+                  const SizedBox(height: 12),
+                  // CTA Button
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _navigateToBonPlanDetail(bp),
+                        icon: const Icon(Icons.visibility_outlined, size: 18),
+                        label: const Text('VOIR LE BON PLAN'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF9800),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // Favorite button at top-left
+              Positioned(
+                top: 12,
+                left: 12,
+                child: GestureDetector(
+                  onTap: _isLoading ? null : _toggleFavorite,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: _isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.grey[600],
+                            ),
+                          )
+                        : Icon(
+                            _isFavorited
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: _isFavorited ? Colors.red : Colors.grey[600],
+                            size: 20,
+                          ),
+                  ),
+                ),
+              ),
+              // Bon Plan tag at top-right
+              Positioned(
+                top: 12,
+                right: 12,
+                child: _buildTypeTag(
+                  'Bon Plan',
+                  const Color(0xFFFF9800),
+                  Icons.local_offer,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String? _buildJobSalaryDisplay(Map<String, dynamic> job) {
+    final min = job['salary_min'];
+    final max = job['salary_max'];
+    final exact = job['salary_exact'];
+    final paymentType = job['salary_payment_type']?.toString(); // brut/net
+    final period = job['salary_period']?.toString(); // horaire/mensuel/annuel
+
+    // Build period label
+    String periodLabel = '';
+    if (period == 'horaire')
+      periodLabel = '/h';
+    else if (period == 'mensuel')
+      periodLabel = '/mois';
+    else if (period == 'annuel')
+      periodLabel = '/an';
+
+    // Build payment label (brut/net)
+    String paymentLabel = paymentType == 'brut'
+        ? ' brut'
+        : (paymentType == 'net' ? ' net' : '');
+
+    // If we have both min and max, show range
+    if (min != null && max != null) {
+      return '${min}€ - ${max}€$periodLabel$paymentLabel';
+    }
+
+    // If we have exact salary
+    if (exact != null) {
+      return '${exact}€$periodLabel$paymentLabel';
+    }
+
+    // If we have only min
+    if (min != null) {
+      return 'À partir de ${min}€$periodLabel$paymentLabel';
+    }
+
+    // If we have only max
+    if (max != null) {
+      return 'Jusqu\'à ${max}€$periodLabel$paymentLabel';
+    }
+
+    // Check for salary_type = selon_profil
+    final salaryType = job['salary_type']?.toString();
+    if (salaryType == 'selon_profil') {
+      return 'Selon profil';
+    }
+
+    return null; // No salary info available
+  }
+
+  Widget _buildJobOfferCard(Map<String, dynamic> job) {
+    final jobId = job['id']?.toString() ?? '';
+    final companyName = job['company_name']?.toString() ?? 'Entreprise';
+    final jobTitle = job['title']?.toString() ?? 'Offre d\'emploi';
+    final description = _stripHtml(job['description']?.toString() ?? '');
+    final location =
+        job['location']?.toString() ??
+        job['city']?.toString() ??
+        'Non spécifié';
+    final contract = job['contract_type']?.toString() ?? '';
+    final experience = job['experience_level']?.toString() ?? '';
+    final salary =
+        job['salary_label']?.toString() ??
+        _buildJobSalaryDisplay(job) ??
+        job['salary']?.toString();
+
+    // Check if already favorited by current user
+    bool isFavorited = job['is_favorited'] == true;
+
     final tags = <JobDetailTag>[
-      if (contractType.isNotEmpty)
-        JobDetailTag(icon: Icons.description_outlined, text: contractType),
-      if (workTime.isNotEmpty)
-        JobDetailTag(icon: Icons.access_time, text: _workTimeLabel(workTime)),
-      if (city.isNotEmpty)
-        JobDetailTag(icon: Icons.location_on_outlined, text: city),
-      if (categoryName.isNotEmpty)
-        JobDetailTag(icon: Icons.category_outlined, text: categoryName),
-      if (educationLevel.isNotEmpty)
-        JobDetailTag(icon: Icons.school_outlined, text: educationLevel),
-      if (experienceLevel.isNotEmpty)
-        JobDetailTag(icon: Icons.trending_up_outlined, text: experienceLevel),
-      if (salaryMin != null || salaryMax != null)
-        JobDetailTag(
-          icon: Icons.euro,
-          text: _formatSalary(salaryMin, salaryMax),
-          isSpecial: true,
-        ),
+      // 1st: Place (location)
+      if (location.isNotEmpty)
+        JobDetailTag(icon: Icons.location_on_outlined, text: location),
+      // 2nd: Contract duration
+      if (contract.isNotEmpty)
+        JobDetailTag(icon: Icons.description_outlined, text: contract),
+      // 3rd: Salary (depending on type)
+      if (salary != null && salary.isNotEmpty)
+        JobDetailTag(icon: Icons.euro, text: salary, isSpecial: true),
     ];
 
-    // Build advantages list
-    final advantagesList = advantages.take(3).map((a) => a.toString()).toList();
+    final user = job['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile =
+        user?['particulier_profile'] as Map<String, dynamic>?;
 
-    final user = jo['user'] is Map<String, dynamic>
-        ? jo['user'] as Map<String, dynamic>
-        : null;
+    final avatarUrl =
+        proProfile?['logo_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        particulierProfile?['avatar_url']?.toString() ??
+        user?['avatar']?.toString();
 
-    String cardCompanyName = companyName.isNotEmpty
-        ? companyName
-        : 'Entreprise';
-    String cardCompanyLogo = '';
+    final companyLogoUrl =
+        _buildStorageUrl(avatarUrl) ??
+        'assets/images/dashboard_particulier/Rectangle 13.png';
 
-    if (user != null) {
-      if (user['pro_profile'] is Map) {
-        final p = user['pro_profile'] as Map;
-        final n = p['company_name']?.toString() ?? '';
-        if (n.isNotEmpty) cardCompanyName = n;
-
-        final logo =
-            p['avatar_url']?.toString() ?? p['logo_url']?.toString() ?? '';
-        if (logo.isNotEmpty) cardCompanyLogo = logo;
-      } else if (user['particulier_profile'] is Map) {
-        final p = user['particulier_profile'] as Map;
-        final n = p['pseudo']?.toString() ?? '';
-        if (n.isNotEmpty) cardCompanyName = n;
-
-        final logo = p['avatar_url']?.toString() ?? '';
-        if (logo.isNotEmpty) cardCompanyLogo = logo;
-      }
-    }
-
-    final jobId = jo['id']?.toString() ?? '';
-
-    // Check initial favorite status
-    final bool isFavorited = jo['is_favorited'];
-
-    bool _isFavorited = isFavorited;
     bool _isLoading = false;
 
     Future<void> _toggleFavorite() async {
@@ -1793,18 +3199,16 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       setState(() => _isLoading = true);
 
       try {
-        if (_isFavorited) {
+        if (isFavorited) {
           // Remove from favorites
           await ApiClient().authenticatedDelete('/job-offers/$jobId/favorite');
-          _loadFavorisJobOffers();
         } else {
           // Add to favorites
           await ApiClient().authenticatedPost('/job-offers/$jobId/favorite');
-          _loadFavorisJobOffers();
         }
 
         setState(() {
-          _isFavorited = !_isFavorited;
+          isFavorited = !isFavorited;
           _isLoading = false;
         });
 
@@ -1812,7 +3216,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
                 style: TextStyle(color: Colors.white),
               ),
               duration: const Duration(seconds: 2),
@@ -1835,17 +3239,40 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       }
     }
 
-    return JobAnnouncementCard(
-      companyLogo: cardCompanyLogo,
-      companyName: cardCompanyName,
-      jobTitle: title,
-      description: description,
-      tags: tags,
-      advantages: advantagesList,
-      timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
-      onApply: () => _navigateToJobOfferDetail(jo),
-      isFavorited: _isFavorited,
-      onFavoriteToggle: _toggleFavorite,
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return JobAnnouncementCard(
+          companyLogo: companyLogoUrl,
+          companyName: companyName,
+          jobTitle: jobTitle,
+          description: description.isNotEmpty
+              ? description
+              : 'Description non disponible.',
+          tags: tags,
+          timeAgo: _buildTimeAgo(job['created_at']?.toString()),
+          isFavorited: isFavorited,
+          isLoadingFavorite: _isLoading,
+          onFavoriteToggle: _toggleFavorite,
+          onApply: () => _navigateToJobOfferDetail(job),
+          onAvatarTap: () {
+            if (user?['id'] != null) {
+              final isProUser =
+                  user?['account_type']?.toString().toLowerCase() == 'pro';
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => isProUser
+                      ? ProPublicViewScreen(userId: user!['id'].toString())
+                      : PublicProfileScreen(userId: user!['id'].toString()),
+                ),
+              );
+            }
+          },
+          reactionBar: jobId.isNotEmpty
+              ? _buildReactionBar('job-offers', jobId)
+              : null,
+        );
+      },
     );
   }
 
