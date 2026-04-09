@@ -71,7 +71,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
         final profile = response['profile'];
         setState(() {
           _nomSocieteController.text = profile['company_name'] ?? '';
-          _telephoneController.text = profile['phone'] ?? '';
+          _telephoneController.text = profile['telephone'] ?? '';
           if (profile['contact_email'] != null &&
               profile['contact_email'].isNotEmpty) {
             _emailController.text = profile['contact_email'];
@@ -1118,7 +1118,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
     try {
       final data = {
         'company_name': _nomSocieteController.text,
-        'phone': _telephoneController.text,
+        'telephone': _telephoneController.text,
         'contact_email': _emailController.text,
         'address': _adresseController.text,
         'code_postal': _codePostalController.text,
