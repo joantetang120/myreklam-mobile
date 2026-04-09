@@ -1522,9 +1522,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             const SizedBox(height: 16),
 
             // Favoris, Partager, Owner section - moved above Contacter button
-            // Action buttons row
+            // Action buttons row (Share button commented out)
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Favoris button
                 Column(
@@ -1553,29 +1553,29 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     ),
                   ],
                 ),
-                // Partager button
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        // TODO: Implement share functionality
-                      },
-                      icon: Icon(
-                        Icons.share_outlined,
-                        color: Colors.grey[600],
-                        size: 24,
-                      ),
-                    ),
-                    Text(
-                      'Partager',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
+                // Commented out: Partager (Share) button
+                // Column(
+                //   mainAxisSize: MainAxisSize.min,
+                //   children: [
+                //     IconButton(
+                //       onPressed: () {
+                //         // TODO: Implement share functionality
+                //       },
+                //       icon: Icon(
+                //         Icons.share_outlined,
+                //         color: Colors.grey[600],
+                //         size: 24,
+                //       ),
+                //     ),
+                //     Text(
+                //       'Partager',
+                //       style: TextStyle(
+                //         fontSize: 12,
+                //         color: Colors.grey[600],
+                //       ),
+                //     ),
+                //   ],
+                // ),
               ],
             ),
             const SizedBox(height: 16),

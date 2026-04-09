@@ -1412,9 +1412,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
               const SizedBox(height: 16),
 
-              // 6. Action row (Favoris, Partager)
+              // 6. Action row (Favoris - Share button commented out)
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1442,16 +1442,17 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       ),
                     ],
                   ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        onPressed: () {},
-                        icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
-                      ),
-                      Text('Partager', style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'Manjari')),
-                    ],
-                  ),
+                  // Commented out: Partager (Share) button
+                  // Column(
+                  //   mainAxisSize: MainAxisSize.min,
+                  //   children: [
+                  //     IconButton(
+                  //       onPressed: () {},
+                  //       icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
+                  //     ),
+                  //     Text('Partager', style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'Manjari')),
+                  //   ],
+                  // ),
                 ],
               ),
               const SizedBox(height: 16),

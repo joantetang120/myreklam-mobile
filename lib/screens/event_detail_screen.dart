@@ -1504,9 +1504,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             if (!widget.isOwner)
               const SizedBox(height: 16),
 
-            // 6. Action buttons row (Favoris, Partager)
+            // 6. Action buttons row (Favoris - Share button commented out)
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Favoris button
                 Column(
@@ -1535,17 +1535,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   ],
                 ),
-                // Partager button
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: () {},
-                      icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
-                    ),
-                    Text('Partager', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                  ],
-                ),
+                // Commented out: Partager (Share) button
+                // Column(
+                //   mainAxisSize: MainAxisSize.min,
+                //   children: [
+                //     IconButton(
+                //       onPressed: () {},
+                //       icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
+                //     ),
+                //     Text('Partager', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                //   ],
+                // ),
               ],
             ),
             const SizedBox(height: 16),

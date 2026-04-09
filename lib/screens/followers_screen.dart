@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/screens/public_profile_screen.dart';
 import 'package:myreklam/services/profile_service.dart';
 
@@ -272,7 +273,7 @@ class _FollowersScreenState extends State<FollowersScreen>
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => _navigateToProfile(userId),
+            onTap: () => _navigateToProfile(userId, user),
             child: CircleAvatar(
               radius: 26,
               backgroundImage: avatar.startsWith('http') 
@@ -284,7 +285,7 @@ class _FollowersScreenState extends State<FollowersScreen>
           const SizedBox(width: 12),
           Expanded(
             child: GestureDetector(
-              onTap: () => _navigateToProfile(userId),
+              onTap: () => _navigateToProfile(userId, user),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -332,12 +333,29 @@ class _FollowersScreenState extends State<FollowersScreen>
     );
   }
 
-  void _navigateToProfile(String userId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PublicProfileScreen(userId: userId),
-      ),
-    );
+  void _navigateToProfile(String userId, Map<String, dynamic> user) {
+    // Check if user is Pro or Particulier
+    final accountType = user['account_type']?.toString().toLowerCase();
+    final isProUser = accountType == 'pro' || 
+                      (user['pro_profile'] != null && 
+                       user['particulier_profile'] == null);
+
+    if (isProUser) {
+      // Navigate to Pro public view
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProPublicViewScreen(userId: userId),
+        ),
+      );
+    } else {
+      // Navigate to Particulier public profile
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PublicProfileScreen(userId: userId),
+        ),
+      );
+    }
   }
 }
