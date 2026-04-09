@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:myreklam/screens/story_editor_screen.dart';
 
@@ -88,10 +89,7 @@ class _AddStoryScreenState extends State<AddStoryScreen>
     try {
       final filterOption = FilterOptionGroup()
         ..addOrderOption(
-          const OrderOption(
-            type: OrderOptionType.createDate,
-            asc: false,
-          ),
+          const OrderOption(type: OrderOptionType.createDate, asc: false),
         );
 
       final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
@@ -138,7 +136,11 @@ class _AddStoryScreenState extends State<AddStoryScreen>
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF616161)),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 18,
+            color: Color(0xFF616161),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -157,7 +159,7 @@ class _AddStoryScreenState extends State<AddStoryScreen>
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStoryModes(),
+          // _buildStoryModes(),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Text(
@@ -175,59 +177,59 @@ class _AddStoryScreenState extends State<AddStoryScreen>
     );
   }
 
-  Widget _buildStoryModes() {
-    final List<_StoryMode> modes = [
-      _StoryMode('Texte', Icons.text_fields_outlined),
-      _StoryMode('Galerie', Icons.photo_library_outlined),
-      _StoryMode('Videos', Icons.video_collection_outlined),
-      _StoryMode('Photos', Icons.camera_alt_outlined),
-    ];
+  // Widget _buildStoryModes() {
+  //   final List<_StoryMode> modes = [
+  //     _StoryMode('Texte', Icons.text_fields_outlined),
+  //     _StoryMode('Galerie', Icons.photo_library_outlined),
+  //     _StoryMode('Videos', Icons.video_collection_outlined),
+  //     _StoryMode('Photos', Icons.camera_alt_outlined),
+  //   ];
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      child: Row(
-        children: modes
-            .map(
-              (mode) => Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: mode.label == 'Galerie'
-                        ? const Color(0xFF2E9B5B).withValues(alpha: 0.08)
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE0E0E0)),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        mode.icon,
-                        size: 22,
-                        color: mode.label == 'Galerie'
-                            ? const Color(0xFF2E9B5B)
-                            : const Color(0xFF616161),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        mode.label,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: mode.label == 'Galerie'
-                              ? const Color(0xFF2E9B5B)
-                              : const Color(0xFF616161),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+  //     child: Row(
+  //       children: modes
+  //           .map(
+  //             (mode) => Expanded(
+  //               child: Container(
+  //                 margin: const EdgeInsets.symmetric(horizontal: 4),
+  //                 padding: const EdgeInsets.symmetric(vertical: 12),
+  //                 decoration: BoxDecoration(
+  //                   color: mode.label == 'Galerie'
+  //                       ? const Color(0xFF2E9B5B).withValues(alpha: 0.08)
+  //                       : Colors.white,
+  //                   borderRadius: BorderRadius.circular(12),
+  //                   border: Border.all(color: const Color(0xFFE0E0E0)),
+  //                 ),
+  //                 child: Column(
+  //                   children: [
+  //                     Icon(
+  //                       mode.icon,
+  //                       size: 22,
+  //                       color: mode.label == 'Galerie'
+  //                           ? const Color(0xFF2E9B5B)
+  //                           : const Color(0xFF616161),
+  //                     ),
+  //                     const SizedBox(height: 6),
+  //                     Text(
+  //                       mode.label,
+  //                       style: TextStyle(
+  //                         fontSize: 13,
+  //                         fontWeight: FontWeight.w600,
+  //                         color: mode.label == 'Galerie'
+  //                             ? const Color(0xFF2E9B5B)
+  //                             : const Color(0xFF616161),
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
+  //             ),
+  //           )
+  //           .toList(),
+  //     ),
+  //   );
+  // }
 
   Widget _buildGallerySection() {
     if (_isLoading) {
@@ -266,27 +268,43 @@ class _AddStoryScreenState extends State<AddStoryScreen>
   }
 
   Widget _buildCameraTile() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.photo_camera_outlined, color: Color(0xFF2E9B5B)),
-          SizedBox(height: 6),
-          Text(
-            'Caméra',
-            style: TextStyle(
-              color: Color(0xFF616161),
-              fontSize: 12,
+    return GestureDetector(
+      onTap: _openCamera,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.photo_camera_outlined, color: Color(0xFF2E9B5B)),
+            SizedBox(height: 6),
+            Text(
+              'Caméra',
+              style: TextStyle(color: Color(0xFF616161), fontSize: 12),
             ),
-          )
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _openCamera() async {
+    final picker = ImagePicker();
+    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+    if (photo != null && mounted) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StoryEditorScreen(cameraFile: photo),
+        ),
+      );
+      if (result != null && mounted) {
+        Navigator.pop(context, result);
+      }
+    }
   }
 }
 
@@ -309,7 +327,11 @@ class _PermissionPrompt extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.photo_library_outlined, size: 48, color: Color(0xFF2E9B5B)),
+          const Icon(
+            Icons.photo_library_outlined,
+            size: 48,
+            color: Color(0xFF2E9B5B),
+          ),
           const SizedBox(height: 16),
           const Text(
             'Autorisez l\'accès à votre galerie pour ajouter une storie.',
@@ -325,14 +347,13 @@ class _PermissionPrompt extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2E9B5B),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
             ),
             child: const Text('Ouvrir les réglages'),
           ),
-          TextButton(
-            onPressed: onRetry,
-            child: const Text('Ressayer'),
-          )
+          TextButton(onPressed: onRetry, child: const Text('Ressayer')),
         ],
       ),
     );
@@ -370,10 +391,7 @@ class _GalleryAssetTile extends StatelessWidget {
             if (data == null) {
               return Container(color: Colors.grey[300]);
             }
-            return Image.memory(
-              data,
-              fit: BoxFit.cover,
-            );
+            return Image.memory(data, fit: BoxFit.cover);
           },
         ),
       ),

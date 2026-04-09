@@ -95,7 +95,8 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
           _postsCount = response['user']['posts_count'] ?? 0;
           _email = response['user']['email'];
           _isFollowing = response['is_following'] ?? false;
-          _averageRating = (response['user']['average_rating'] ?? 0.0).toDouble();
+          _averageRating = (response['user']['average_rating'] ?? 0.0)
+              .toDouble();
           _totalReviews = response['user']['total_reviews'] ?? 0;
         }
         if (response['profile'] != null) {

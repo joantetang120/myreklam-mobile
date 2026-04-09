@@ -634,17 +634,20 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         'time': time,
         'id': s.id,
         'views_count': s.viewsCount,
+        'overlay_text': s.overlayText,
+        'overlay_color': s.overlayColor,
+        'overlay_style': s.overlayStyle,
+        'overlay_x': s.overlayX,
+        'overlay_y': s.overlayY,
       };
     }).toList();
-
-    final avatarUrl = ApiConfig.resolveMediaUrl(group.userAvatar);
 
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => StoryViewerScreen(
           name: group.userName,
-          avatar: avatarUrl ?? _defaultAvatar,
+          avatar: group.userAvatar ?? _defaultAvatar,
           stories: storyMaps,
           isOwnStory: group.isOwn,
           ownerId: group.userId,
@@ -739,7 +742,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       // Check both phone fields (pro step 1 saves to 'telephone', step 2 saves to 'phone')
       final phone = profile?['phone']?.toString();
       final telephone = profile?['telephone']?.toString();
-      hasExistingPhone = (phone != null && phone.isNotEmpty) || (telephone != null && telephone.isNotEmpty);
+      hasExistingPhone =
+          (phone != null && phone.isNotEmpty) ||
+          (telephone != null && telephone.isNotEmpty);
       needsPhone = !hasExistingPhone;
     } catch (e) {
       debugPrint('Error fetching profile for onboarding: $e');
@@ -5388,10 +5393,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                     child: AvatarsStory(
                                       name: group.userName.split(' ').first,
                                       imageName:
-                                          ApiConfig.resolveMediaUrl(
-                                            group.userAvatar,
-                                          ) ??
-                                          _defaultAvatar,
+                                          group.userAvatar ?? _defaultAvatar,
                                       onTap: () => _openStory(context, group),
                                     ),
                                   ),
