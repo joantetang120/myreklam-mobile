@@ -258,6 +258,31 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     }
   }
 
+  void _removeEventFromList(String eventId) {
+    _events.removeWhere((e) => e['id']?.toString() == eventId);
+    if (mounted) setState(() {});
+  }
+
+  void _removeBonPlanFromList(String bpId) {
+    _bonPlans.removeWhere((bp) => bp['id']?.toString() == bpId);
+    if (mounted) setState(() {});
+  }
+
+  void _removeJobOfferFromList(String jobId) {
+    _jobOffers.removeWhere((jo) => jo['id']?.toString() == jobId);
+    if (mounted) setState(() {});
+  }
+
+  void _removeDemandeFromList(String demandeId) {
+    _demandes.removeWhere((d) => d['id']?.toString() == demandeId);
+    if (mounted) setState(() {});
+  }
+
+  void _removeTrainingFromList(String trainingId) {
+    _trainings.removeWhere((tr) => tr['id']?.toString() == trainingId);
+    if (mounted) setState(() {});
+  }
+
   List<Map<String, dynamic>> get _filteredBonPlans {
     if (_searchQuery.isEmpty) return _bonPlans;
     final q = _searchQuery.toLowerCase();
@@ -1663,6 +1688,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               await ApiClient().authenticatedDelete(
                 '/demandes/$demandeId/favorite',
               );
+              
+              // Remove from parent list and refresh the screen
+              _removeDemandeFromList(demandeId);
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost(
@@ -2114,6 +2142,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           await ApiClient().authenticatedDelete(
             '/trainings/$trainingId/favorite',
           );
+          
+          // Remove from parent list and refresh the screen
+          _removeTrainingFromList(trainingId);
         } else {
           // Add to favorites
           await ApiClient().authenticatedPost(
@@ -2517,6 +2548,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               await ApiClient().authenticatedDelete(
                 '/events/$eventId/favorite',
               );
+              
+              // Remove from parent list and refresh the screen
+              _removeEventFromList(eventId);
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost('/events/$eventId/favorite');
@@ -2913,6 +2947,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
             if (_isFavorited) {
               // Remove from favorites
               await ApiClient().authenticatedDelete('/bonplans/$bpId/favorite');
+              
+              // Remove from parent list and refresh the screen
+              _removeBonPlanFromList(bpId);
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost('/bonplans/$bpId/favorite');
@@ -3321,6 +3358,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         if (isFavorited) {
           // Remove from favorites
           await ApiClient().authenticatedDelete('/job-offers/$jobId/favorite');
+          
+          // Remove from parent list and refresh the screen
+          _removeJobOfferFromList(jobId);
         } else {
           // Add to favorites
           await ApiClient().authenticatedPost('/job-offers/$jobId/favorite');
