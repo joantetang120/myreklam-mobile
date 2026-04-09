@@ -44,6 +44,12 @@ class ApiConfig {
     if (trimmed.startsWith('http') || trimmed.startsWith('https'))
       return trimmed;
 
+    // Handle case where URL is nested inside storage/ (e.g., storage/https://...)
+    if (trimmed.contains('http://') || trimmed.contains('https://')) {
+      final httpIndex = trimmed.indexOf('http');
+      return trimmed.substring(httpIndex);
+    }
+
     final host = _apiHost();
     debugPrint('host: $host, trimmed: $trimmed');
     if (trimmed.startsWith('/')) {

@@ -16,7 +16,10 @@ class CategoriesIcon extends StatelessWidget {
     this.icon,
     this.iconAsset,
     this.onTap,
-  })  : assert(icon != null || iconAsset != null, 'Either icon or iconAsset must be provided');
+  }) : assert(
+         icon != null || iconAsset != null,
+         'Either icon or iconAsset must be provided',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -35,14 +38,17 @@ class CategoriesIcon extends StatelessWidget {
                       width: 20,
                       height: 20,
                       errorBuilder: (context, error, stackTrace) {
-                        return Icon(Icons.image_not_supported, color: iconColor, size: 20);
+                        return Icon(
+                          Icons.image_not_supported,
+                          color: iconColor,
+                          size: 20,
+                        );
                       },
                     )
                   : Icon(icon, color: iconColor, size: 20),
             ),
           ),
           Text(title, style: TextStyle(fontSize: 8)),
-          
         ],
       ),
     );

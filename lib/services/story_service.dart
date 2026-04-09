@@ -19,11 +19,16 @@ class StoryService {
     };
   }
 
-  /// Upload a new story (multipart image + optional caption).
+  /// Upload a new story (multipart image + optional caption + optional overlay text).
   Future<StoryModel?> uploadStory({
     required Uint8List imageBytes,
     required String fileName,
     String? caption,
+    String? overlayText,
+    String? overlayColor,
+    int? overlayStyle,
+    double? overlayX,
+    double? overlayY,
   }) async {
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/stories');
@@ -32,17 +37,39 @@ class StoryService {
       final headers = await _authHeaders();
       request.headers.addAll(headers);
 
-      request.files.add(http.MultipartFile.fromBytes(
-        'media',
-        imageBytes,
-        filename: fileName.isNotEmpty ? fileName : 'story_${DateTime.now().millisecondsSinceEpoch}.jpg',
-      ));
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'media',
+          imageBytes,
+          filename: fileName.isNotEmpty
+              ? fileName
+              : 'story_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        ),
+      );
 
       if (caption != null && caption.trim().isNotEmpty) {
         request.fields['caption'] = caption.trim();
       }
 
-      final streamedResponse = await request.send().timeout(ApiConfig.connectTimeout);
+      if (overlayText != null && overlayText.trim().isNotEmpty) {
+        request.fields['overlay_text'] = overlayText.trim();
+        if (overlayColor != null) {
+          request.fields['overlay_color'] = overlayColor;
+        }
+        if (overlayStyle != null) {
+          request.fields['overlay_style'] = overlayStyle.toString();
+        }
+        if (overlayX != null) {
+          request.fields['overlay_x'] = overlayX.toString();
+        }
+        if (overlayY != null) {
+          request.fields['overlay_y'] = overlayY.toString();
+        }
+      }
+
+      final streamedResponse = await request.send().timeout(
+        ApiConfig.connectTimeout,
+      );
       final response = await http.Response.fromStream(streamedResponse);
 
       debugPrint('Story upload status: ${response.statusCode}');
@@ -65,10 +92,9 @@ class StoryService {
   Future<List<StoryUserGroup>> getFeed() async {
     try {
       final headers = await _authHeaders();
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/stories/feed'),
-        headers: headers,
-      ).timeout(ApiConfig.connectTimeout);
+      final response = await http
+          .get(Uri.parse('${ApiConfig.baseUrl}/stories/feed'), headers: headers)
+          .timeout(ApiConfig.connectTimeout);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -89,10 +115,9 @@ class StoryService {
   Future<List<StoryModel>> getMyStories() async {
     try {
       final headers = await _authHeaders();
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/stories/mine'),
-        headers: headers,
-      ).timeout(ApiConfig.connectTimeout);
+      final response = await http
+          .get(Uri.parse('${ApiConfig.baseUrl}/stories/mine'), headers: headers)
+          .timeout(ApiConfig.connectTimeout);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -114,10 +139,12 @@ class StoryService {
     try {
       final headers = await _authHeaders();
       headers['Content-Type'] = 'application/json';
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/stories/$storyId/view'),
-        headers: headers,
-      ).timeout(ApiConfig.connectTimeout);
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/stories/$storyId/view'),
+            headers: headers,
+          )
+          .timeout(ApiConfig.connectTimeout);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -134,10 +161,12 @@ class StoryService {
   Future<List<StoryViewer>> getViewers(int storyId) async {
     try {
       final headers = await _authHeaders();
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/stories/$storyId/viewers'),
-        headers: headers,
-      ).timeout(ApiConfig.connectTimeout);
+      final response = await http
+          .get(
+            Uri.parse('${ApiConfig.baseUrl}/stories/$storyId/viewers'),
+            headers: headers,
+          )
+          .timeout(ApiConfig.connectTimeout);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -158,10 +187,12 @@ class StoryService {
   Future<bool> deleteStory(int storyId) async {
     try {
       final headers = await _authHeaders();
-      final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}/stories/$storyId'),
-        headers: headers,
-      ).timeout(ApiConfig.connectTimeout);
+      final response = await http
+          .delete(
+            Uri.parse('${ApiConfig.baseUrl}/stories/$storyId'),
+            headers: headers,
+          )
+          .timeout(ApiConfig.connectTimeout);
 
       return response.statusCode >= 200 && response.statusCode < 300;
     } catch (e) {

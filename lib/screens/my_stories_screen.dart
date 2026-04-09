@@ -84,9 +84,9 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
           _stories.removeAt(index);
         });
         _storyStore.removeStory(story.id!);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Story supprimée')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Story supprimée')));
       }
     }
   }
@@ -146,6 +146,11 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
                   'time': _getTimeAgo(s.timestamp),
                   'id': s.id,
                   'views_count': s.viewsCount,
+                  'overlay_text': s.overlayText,
+                  'overlay_color': s.overlayColor,
+                  'overlay_style': s.overlayStyle,
+                  'overlay_x': s.overlayX,
+                  'overlay_y': s.overlayY,
                 };
               }).toList(),
               initialIndex: index,
@@ -163,10 +168,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
               height: 48,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFF3AAE5E),
-                  width: 2,
-                ),
+                border: Border.all(color: const Color(0xFF3AAE5E), width: 2),
               ),
               child: ClipOval(
                 child: story.mediaUrl != null
@@ -200,10 +202,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
                   const SizedBox(height: 2),
                   Text(
                     _getTimeAgo(story.timestamp),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                 ],
               ),
