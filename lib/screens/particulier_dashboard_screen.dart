@@ -1657,7 +1657,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     // Check if already favorited by current user
     final favoris = bp['bon_plan_favorites'] as List? ?? [];
     final currentUserId = UserSession().id;
-    bool _isFavorited =
+    final bool initialIsFavorited =
         currentUserId != null &&
         favoris.any(
           (f) =>
@@ -1666,26 +1666,47 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   f['user']?['id']?.toString() == currentUserId),
         );
 
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
+
     return StatefulBuilder(
       builder: (context, setState) {
         bool _isLoading = false;
 
         Future<void> _toggleFavorite() async {
-          if (_isLoading || bpId.isEmpty) return;
+          if (_isLoading) return;
 
+          // Toggle immediately for responsive UI
+          isFavoritedNotifier.value = !isFavoritedNotifier.value;
           setState(() => _isLoading = true);
 
           try {
-            if (_isFavorited) {
+            if (!isFavoritedNotifier.value) {
               // Remove from favorites
               await ApiClient().authenticatedDelete('/bonplans/$bpId/favorite');
+              // Update underlying data to persist state across rebuilds
+              if (bp['bon_plan_favorites'] is List) {
+                (bp['bon_plan_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost('/bonplans/$bpId/favorite');
+              // Update underlying data to persist state across rebuilds
+              if (bp['bon_plan_favorites'] is! List) {
+                bp['bon_plan_favorites'] = [];
+              }
+              (bp['bon_plan_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
             }
 
             setState(() {
-              _isFavorited = !_isFavorited;
               _isLoading = false;
             });
 
@@ -1693,7 +1714,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value ? 'Ajouté aux favoris' : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -1703,7 +1724,11 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             }
           } catch (e) {
             debugPrint('Favorite toggle error: $e');
-            setState(() => _isLoading = false);
+            // Revert on error
+            isFavoritedNotifier.value = !isFavoritedNotifier.value;
+            setState(() {
+              _isLoading = false;
+            });
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1950,10 +1975,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             ),
                           )
                         : Icon(
-                            _isFavorited
+                            isFavoritedNotifier.value
                                 ? Icons.favorite
                                 : Icons.favorite_border,
-                            color: _isFavorited ? Colors.red : Colors.grey[600],
+                            color: isFavoritedNotifier.value ? Colors.red : Colors.grey[600],
                             size: 20,
                           ),
                   ),
@@ -2074,7 +2099,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
     // Check initial favorite status
     final favoris = job['job_offer_favorites'] as List? ?? [];
-    bool isFavorited = favoris.isNotEmpty;
+    final bool initialIsFavorited = favoris.isNotEmpty;
+
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
 
     final tags = <JobDetailTag>[
       // 1st: Place (location)
@@ -2110,23 +2138,41 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         Future<void> _toggleFavorite() async {
           if (_isLoading || jobId.isEmpty) return;
 
+          // Toggle immediately for responsive UI
+          isFavoritedNotifier.value = !isFavoritedNotifier.value;
           setState(() => _isLoading = true);
 
           try {
-            if (isFavorited) {
+            if (!isFavoritedNotifier.value) {
               // Remove from favorites
               await ApiClient().authenticatedDelete(
                 '/job-offers/$jobId/favorite',
               );
+              // Update underlying data to persist state across rebuilds
+              if (job['job_offer_favorites'] is List) {
+                (job['job_offer_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == UserSession().id ||
+                          f['user']?['id']?.toString() == UserSession().id),
+                );
+              }
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost(
                 '/job-offers/$jobId/favorite',
               );
+              // Update underlying data to persist state across rebuilds
+              if (job['job_offer_favorites'] is! List) {
+                job['job_offer_favorites'] = [];
+              }
+              (job['job_offer_favorites'] as List).add({
+                'user_id': UserSession().id,
+                'user': {'id': UserSession().id},
+              });
             }
 
             setState(() {
-              isFavorited = !isFavorited;
               _isLoading = false;
             });
 
@@ -2134,7 +2180,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value ? 'Ajouté aux favoris' : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -2144,12 +2190,13 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             }
           } catch (e) {
             debugPrint('Favorite toggle error: $e');
+            // Revert on error
+            isFavoritedNotifier.value = !isFavoritedNotifier.value;
             setState(() => _isLoading = false);
-
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Erreur lors de la mise à jour des favoris'),
+                SnackBar(
+                  content: Text('Erreur: $e'),
                   backgroundColor: Colors.red,
                 ),
               );
@@ -2166,7 +2213,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               : 'Description non disponible.',
           tags: tags,
           timeAgo: _buildTimeAgo(job['created_at']?.toString()),
-          isFavorited: isFavorited,
+          isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: _isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToJobDetail(job),
@@ -2380,7 +2427,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     // Check if already favorited by current user
     final favoris = training['training_favorites'] as List? ?? [];
     final currentUserId = UserSession().id;
-    bool isFavorited =
+    final bool initialIsFavorited =
         currentUserId != null &&
         favoris.any(
           (f) =>
@@ -2389,6 +2436,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   f['user']?['id']?.toString() == currentUserId),
         );
 
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
+
     return StatefulBuilder(
       builder: (context, setState) {
         bool isLoading = false;
@@ -2396,23 +2446,41 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         Future<void> _toggleFavorite() async {
           if (isLoading || trainingId.isEmpty) return;
 
+          // Toggle immediately for responsive UI
+          isFavoritedNotifier.value = !isFavoritedNotifier.value;
           setState(() => isLoading = true);
 
           try {
-            if (isFavorited) {
+            if (!isFavoritedNotifier.value) {
               // Remove from favorites
               await ApiClient().authenticatedDelete(
                 '/trainings/$trainingId/favorite',
               );
+              // Update the underlying data to persist state across rebuilds
+              if (training['training_favorites'] is List) {
+                (training['training_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost(
                 '/trainings/$trainingId/favorite',
               );
+              // Update the underlying data to persist state across rebuilds
+              if (training['training_favorites'] is! List) {
+                training['training_favorites'] = [];
+              }
+              (training['training_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
             }
 
             setState(() {
-              isFavorited = !isFavorited;
               isLoading = false;
             });
 
@@ -2420,7 +2488,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value ? 'Ajouté aux favoris' : 'Retiré des favoris',
                   ),
                   duration: const Duration(seconds: 2),
                   backgroundColor: Colors.green,
@@ -2451,7 +2519,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               : 'Description non disponible.',
           tags: tags,
           timeAgo: _buildTimeAgo(training['created_at']?.toString()),
-          isFavorited: isFavorited,
+          isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToTrainingDetail(training),
@@ -2539,7 +2607,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     final favoris = event['event_favorites'] as List? ?? [];
 
     final currentUserId = UserSession().id;
-    bool isFavorited =
+    final bool initialIsFavorited =
         currentUserId != null &&
         favoris.any(
           (f) =>
@@ -2548,25 +2616,59 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   f['user']?['id']?.toString() == currentUserId),
         );
 
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
+
     Future<void> _toggleFavorite() async {
+      // Toggle immediately for responsive UI
+      final newValue = !isFavoritedNotifier.value;
+      isFavoritedNotifier.value = newValue;
+      
+      // Update underlying data immediately for persistence across rebuilds
+      if (newValue) {
+        // Add to favorites
+        if (event['event_favorites'] is! List) {
+          event['event_favorites'] = [];
+        }
+        // Check if already exists to avoid duplicates
+        final alreadyExists = (event['event_favorites'] as List).any(
+          (f) =>
+              f is Map &&
+              (f['user_id']?.toString() == currentUserId ||
+                  f['user']?['id']?.toString() == currentUserId),
+        );
+        if (!alreadyExists) {
+          (event['event_favorites'] as List).add({
+            'user_id': currentUserId,
+            'user': {'id': currentUserId},
+          });
+        }
+      } else {
+        // Remove from favorites
+        if (event['event_favorites'] is List) {
+          (event['event_favorites'] as List).removeWhere(
+            (f) =>
+                f is Map &&
+                (f['user_id']?.toString() == currentUserId ||
+                    f['user']?['id']?.toString() == currentUserId),
+          );
+        }
+      }
+
       try {
-        if (isFavorited) {
-          // Remove from favorites
+        if (!newValue) {
+          // Remove from favorites (API call)
           await ApiClient().authenticatedDelete('/events/$eventId/favorite');
         } else {
-          // Add to favorites
+          // Add to favorites (API call)
           await ApiClient().authenticatedPost('/events/$eventId/favorite');
         }
-
-        setState(() {
-          isFavorited = !isFavorited;
-        });
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                newValue ? 'Ajouté aux favoris' : 'Retiré des favoris',
                 style: TextStyle(color: Colors.white),
               ),
               duration: const Duration(seconds: 2),
@@ -2577,10 +2679,35 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       } catch (e) {
         debugPrint('Favorite toggle error: $e');
 
+        // Revert on error
+        isFavoritedNotifier.value = !newValue;
+        
+        // Revert underlying data
+        if (!newValue) {
+          // Was removing, so add back
+          if (event['event_favorites'] is! List) {
+            event['event_favorites'] = [];
+          }
+          (event['event_favorites'] as List).add({
+            'user_id': currentUserId,
+            'user': {'id': currentUserId},
+          });
+        } else {
+          // Was adding, so remove
+          if (event['event_favorites'] is List) {
+            (event['event_favorites'] as List).removeWhere(
+              (f) =>
+                  f is Map &&
+                  (f['user_id']?.toString() == currentUserId ||
+                      f['user']?['id']?.toString() == currentUserId),
+            );
+          }
+        }
+
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Erreur lors de la mise à jour des favoris'),
+            SnackBar(
+              content: Text('Erreur: $e'),
               backgroundColor: Colors.red,
             ),
           );
@@ -2621,7 +2748,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       reactionBar: eventId.isNotEmpty
           ? _buildReactionBar('events', eventId)
           : null,
-      isFavorite: isFavorited,
+      isFavoriteNotifier: isFavoritedNotifier,
       onFavoriteToggle: _toggleFavorite,
     );
   }
@@ -2676,7 +2803,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     // Check if already favorited by current user
     final favoris = demande['demande_favorites'] as List? ?? [];
     final currentUserId = UserSession().id;
-    bool isFavorited =
+    final bool initialIsFavorited =
         currentUserId != null &&
         favoris.any(
           (f) =>
@@ -2685,40 +2812,59 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   f['user']?['id']?.toString() == currentUserId),
         );
 
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
+
     return StatefulBuilder(
       builder: (context, setState) {
         bool isLoadingFavorite = false;
-        bool localIsFavorited = isFavorited;
 
         Future<void> toggleFavorite() async {
           if (isLoadingFavorite || demandeId.isEmpty) return;
 
+          // Toggle immediately for responsive UI
+          isFavoritedNotifier.value = !isFavoritedNotifier.value;
           setState(() => isLoadingFavorite = true);
 
           try {
-            if (localIsFavorited) {
+            if (!isFavoritedNotifier.value) {
               // Remove from favorites
               await ApiClient().authenticatedDelete(
                 '/demandes/$demandeId/favorite',
               );
+              // Update underlying data to persist state across rebuilds
+              if (demande['demande_favorites'] is List) {
+                (demande['demande_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost(
                 '/demandes/$demandeId/favorite',
               );
+              // Update underlying data to persist state across rebuilds
+              if (demande['demande_favorites'] is! List) {
+                demande['demande_favorites'] = [];
+              }
+              (demande['demande_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
             }
 
             setState(() {
-              localIsFavorited = !localIsFavorited;
               isLoadingFavorite = false;
-              isFavorited = !isFavorited;
             });
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value ? 'Ajouté aux favoris' : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -2727,6 +2873,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               );
             }
           } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            // Revert on error
+            isFavoritedNotifier.value = !isFavoritedNotifier.value;
             setState(() => isLoadingFavorite = false);
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -2768,7 +2917,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               );
             }
           },
-          isFavorited: localIsFavorited,
+          isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
           reactionBar: demandeId.isNotEmpty
