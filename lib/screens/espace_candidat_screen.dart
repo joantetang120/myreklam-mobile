@@ -155,23 +155,111 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     }
   }
 
-  Future<void> _requestStoragePermission() async {
-    if (Platform.isAndroid) {
-      final status = await Permission.storage.request();
-      if (status.isDenied || status.isPermanentlyDenied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Permission de stockage nécessaire pour sélectionner des fichiers')),
-          );
-        }
-        throw Exception('Storage permission denied');
-      }
+  Future<bool> _requestStoragePermission() async {
+    if (!Platform.isAndroid) return true;
+
+    // Try to request storage permission (permission_handler handles Android version differences)
+    // On Android 13+, this will use READ_MEDIA_IMAGES/READ_MEDIA_VIDEO
+    // On Android 12 and below, this uses READ_EXTERNAL_STORAGE
+    PermissionStatus status = await Permission.storage.status;
+    
+    if (status.isDenied) {
+      status = await Permission.storage.request();
     }
+
+    // Handle permission results
+    if (status.isPermanentlyDenied) {
+      if (mounted) {
+        _showPermissionSettingsDialog();
+      }
+      return false;
+    }
+
+    if (status.isDenied) {
+      if (mounted) {
+        _showPermissionRationaleDialog();
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  void _showPermissionRationaleDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permission requise'),
+        content: const Text(
+          'Pour sélectionner des fichiers, l\'application a besoin d\'accéder à votre stockage. Cette permission est nécessaire pour uploader votre CV, lettre de motivation ou portfolio.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _requestStoragePermission();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3AAE5E),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Accorder la permission'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPermissionSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permission bloquée'),
+        content: const Text(
+          'La permission de stockage a été refusée définitivement. Pour sélectionner des fichiers, veuillez accorder la permission dans les paramètres de l\'application.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3AAE5E),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Ouvrir les paramètres'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _pickAndUploadDocument(String type) async {
     try {
-      await _requestStoragePermission();
+      // Request permission with proper handling
+      final hasPermission = await _requestStoragePermission();
+      if (!hasPermission) {
+        // User denied permission - show explanation
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Permission de stockage nécessaire pour sélectionner des fichiers'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
 
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,

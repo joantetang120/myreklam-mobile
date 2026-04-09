@@ -14,9 +14,10 @@ import 'package:myreklam/widgets/post_content_card.dart';
 // Helper class for reaction data
 class _ReactionData {
   int likesCount;
+  int commentsCount;
   String? userReaction;
 
-  _ReactionData({this.likesCount = 0, this.userReaction});
+  _ReactionData({this.likesCount = 0, this.commentsCount = 0, this.userReaction});
 }
 
 class EvenementsScreen extends StatefulWidget {
@@ -838,12 +839,15 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
             }
           },
           reactionBar: eventId.isNotEmpty
-              ? _buildReactionBar(
-                  'events',
-                  eventId,
-                  acceptedMessages: event['accept_messages'] == true,
-                  authorData: user,
-                )
+              ? () {
+                  _seedReactionFromResource('events', eventId, event);
+                  return _buildReactionBar(
+                    'events',
+                    eventId,
+                    acceptedMessages: event['accept_messages'] == true,
+                    authorData: user,
+                  );
+                }()
               : null,
         );
       },
@@ -861,6 +865,39 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
   _ReactionData _getReaction(String apiSlug, String entityId) {
     final key = _reactionKey(apiSlug, entityId);
     return _reactions.putIfAbsent(key, () => _ReactionData());
+  }
+
+  void _seedReactionFromResource(
+    String apiSlug,
+    String entityId,
+    Map<String, dynamic> resource,
+  ) {
+    final key = _reactionKey(apiSlug, entityId);
+    // Always update from resource data to ensure fresh counts
+    _reactions[key] = _ReactionData(
+      likesCount: _asInt(resource['likes_count']),
+      commentsCount: _asInt(resource['comments_count']),
+      userReaction: resource['user_reaction']?.toString(),
+    );
+  }
+
+  Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
+    try {
+      final response = await ApiClient().authenticatedGet('/$apiSlug/$entityId');
+      final data = response['data'] as Map<String, dynamic>?;
+      if (data != null && mounted) {
+        setState(() {
+          final key = _reactionKey(apiSlug, entityId);
+          _reactions[key] = _ReactionData(
+            likesCount: _asInt(data['likes_count']),
+            commentsCount: _asInt(data['comments_count']),
+            userReaction: data['user_reaction']?.toString(),
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint('Error refreshing reaction: $e');
+    }
   }
 
   Future<void> _toggleReaction(
@@ -897,6 +934,8 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
           data.userReaction = respData['user_reaction']?.toString();
         });
       }
+      // Also refresh to ensure counts are accurate
+      await _refreshReactionFromApi(apiSlug, entityId);
     } catch (e) {
       debugPrint('Reaction error: $e');
       if (mounted) {
@@ -1024,11 +1063,10 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
               ),
               const SizedBox(width: 4),
               Text(
-                'Commenter',
+                reaction.commentsCount.toString(),
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
