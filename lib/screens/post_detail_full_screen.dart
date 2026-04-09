@@ -1,5 +1,187 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:video_player/video_player.dart';
+
+bool _isVideoUrl(String url) {
+  final videoExtensions = ['.mp4', '.mov', '.avi', '.quicktime', '.x-msvideo'];
+  final lowerUrl = url.toLowerCase();
+  return videoExtensions.any((ext) => lowerUrl.contains(ext));
+}
+
+class _InlineVideoPlayer extends StatefulWidget {
+  final String url;
+
+  const _InlineVideoPlayer({required this.url});
+
+  @override
+  State<_InlineVideoPlayer> createState() => _InlineVideoPlayerState();
+}
+
+class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
+  VideoPlayerController? _controller;
+  bool _initError = false;
+  bool _isMuted = true;
+  Timer? _positionTimer;
+  Duration _position = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      _controller = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+      await _controller!.initialize();
+      await _controller!.setLooping(true);
+      await _controller!.setVolume(_isMuted ? 0.0 : 1.0);
+      await _controller!.play();
+      _startPositionTimer();
+    } catch (_) {
+      if (mounted) setState(() => _initError = true);
+    }
+  }
+
+  void _startPositionTimer() {
+    _positionTimer?.cancel();
+    _positionTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final c = _controller;
+      if (!mounted || c == null || !c.value.isInitialized) return;
+      final newPos = c.value.position;
+      if (newPos.inSeconds != _position.inSeconds) {
+        setState(() {
+          _position = newPos;
+        });
+      }
+    });
+  }
+
+  String _formatDuration(Duration d) {
+    final totalSeconds = d.inSeconds;
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Duration _remaining(Duration duration, Duration position) {
+    if (duration == Duration.zero) return Duration.zero;
+    final remainingMs = duration.inMilliseconds - position.inMilliseconds;
+    if (remainingMs <= 0) return Duration.zero;
+    return Duration(milliseconds: remainingMs);
+  }
+
+  Future<void> _toggleMute() async {
+    final c = _controller;
+    if (c == null || !c.value.isInitialized) return;
+    final newMuted = !_isMuted;
+    await c.setVolume(newMuted ? 0.0 : 1.0);
+    if (mounted) {
+      setState(() {
+        _isMuted = newMuted;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _positionTimer?.cancel();
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Constrain video height to avoid taking too much screen space
+    const maxVideoHeight = 400.0;
+
+    if (_initError) {
+      return ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: maxVideoHeight),
+        child: Container(
+          color: Colors.black,
+          alignment: Alignment.center,
+          child: const Icon(
+            Icons.play_circle_outline,
+            color: Colors.white,
+            size: 48,
+          ),
+        ),
+      );
+    }
+
+    final c = _controller;
+    if (c == null || !c.value.isInitialized) {
+      return ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: maxVideoHeight),
+        child: Container(
+          color: Colors.black,
+          alignment: Alignment.center,
+          child: const CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+    }
+
+    final duration = c.value.duration;
+    final remaining = _remaining(duration, _position);
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: maxVideoHeight),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          AspectRatio(
+            aspectRatio: c.value.aspectRatio == 0
+                ? 16 / 9
+                : c.value.aspectRatio,
+            child: VideoPlayer(c),
+          ),
+          // Duration countdown (top-right)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.45),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                _formatDuration(remaining),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          // Mute toggle (top-left)
+          Positioned(
+            top: 8,
+            left: 8,
+            child: GestureDetector(
+              onTap: _toggleMute,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.45),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  _isMuted ? Icons.volume_off : Icons.volume_up,
+                  size: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class PostDetailFullScreen extends StatelessWidget {
   final Map<String, dynamic> author;
@@ -80,7 +262,10 @@ class PostDetailFullScreen extends StatelessWidget {
             // Content
             if (content.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
                 child: Text(
                   content,
                   style: const TextStyle(
@@ -94,26 +279,30 @@ class PostDetailFullScreen extends StatelessWidget {
             // Media
             if (mediaUrls.isNotEmpty)
               Column(
-                children: mediaUrls.map((url) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Image.network(
-                    url,
-                    width: double.infinity,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                )).toList(),
+                children: mediaUrls
+                    .map(
+                      (url) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: _isVideoUrl(url)
+                            ? _InlineVideoPlayer(url: url)
+                            : Image.network(
+                                url,
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) =>
+                                    const SizedBox.shrink(),
+                              ),
+                      ),
+                    )
+                    .toList(),
               ),
 
             const SizedBox(height: 12),
             const Divider(height: 1, indent: 16, endIndent: 16),
-            
+
             // Reaction Bar
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: reactionBar,
-            ),
-            
+            Padding(padding: const EdgeInsets.all(16.0), child: reactionBar),
+
             const SizedBox(height: 40),
           ],
         ),
@@ -123,7 +312,9 @@ class PostDetailFullScreen extends StatelessWidget {
 
   ImageProvider _getAvatarProvider(String? avatar) {
     if (avatar == null || avatar.isEmpty) {
-      return const AssetImage('assets/images/dashboard_particulier/Ellipse 10.png');
+      return const AssetImage(
+        'assets/images/dashboard_particulier/Ellipse 10.png',
+      );
     }
     if (avatar.startsWith('http')) {
       return NetworkImage(avatar);
@@ -131,6 +322,7 @@ class PostDetailFullScreen extends StatelessWidget {
     if (avatar.startsWith('assets/')) {
       return AssetImage(avatar);
     }
-    return NetworkImage(ApiConfig.resolveMediaUrl(avatar) ?? '') as ImageProvider;
+    return NetworkImage(ApiConfig.resolveMediaUrl(avatar) ?? '')
+        as ImageProvider;
   }
 }

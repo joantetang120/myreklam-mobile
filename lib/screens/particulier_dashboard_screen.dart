@@ -41,6 +41,414 @@ import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/widgets/particulier_onboarding_modal.dart';
 import 'package:myreklam/widgets/pro_onboarding_modal.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+import 'dart:typed_data';
+import 'package:video_player/video_player.dart';
+import 'dart:async';
+
+/// Helper function to check if a URL is a video
+bool _isVideoUrl(String url) {
+  final videoExtensions = ['.mp4', '.mov', '.avi', '.quicktime', '.x-msvideo'];
+  final lowerUrl = url.toLowerCase();
+  return videoExtensions.any((ext) => lowerUrl.contains(ext));
+}
+
+/// Widget that displays video thumbnail using video_thumbnail package
+class _VideoThumbnailWidget extends StatefulWidget {
+  final String videoUrl;
+  final double? height;
+  final BoxFit fit;
+
+  const _VideoThumbnailWidget({
+    required this.videoUrl,
+    this.height,
+    this.fit = BoxFit.cover,
+  });
+
+  @override
+  State<_VideoThumbnailWidget> createState() => _VideoThumbnailWidgetState();
+}
+
+class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
+  Uint8List? _thumbnailData;
+  bool _isLoading = true;
+  bool _hasError = false;
+  bool _showPreview = true;
+  VideoPlayerController? _previewController;
+  bool _isMuted = true;
+  Timer? _positionTimer;
+  Duration _position = Duration.zero;
+
+  Widget _wrapWithConstraints(Widget child) {
+    if (widget.height != null) {
+      return SizedBox(
+        height: widget.height,
+        width: double.infinity,
+        child: child,
+      );
+    }
+    return AspectRatio(aspectRatio: 16 / 9, child: child);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _startPreviewThenGenerateThumbnail();
+  }
+
+  @override
+  void dispose() {
+    _positionTimer?.cancel();
+    _previewController?.dispose();
+    super.dispose();
+  }
+
+  void _startPositionTimer() {
+    _positionTimer?.cancel();
+    _positionTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final c = _previewController;
+      if (!mounted || c == null || !c.value.isInitialized) return;
+      final newPos = c.value.position;
+      if (newPos.inSeconds != _position.inSeconds) {
+        setState(() {
+          _position = newPos;
+        });
+      }
+    });
+  }
+
+  Future<void> _startPreviewThenGenerateThumbnail() async {
+    // Autoplay preview in loop (muted by default).
+    // If preview init fails (network/codec), fallback to thumbnail.
+    final trimmedUrl = widget.videoUrl.trim();
+    if (trimmedUrl.isEmpty ||
+        (!trimmedUrl.toLowerCase().startsWith('http://') &&
+            !trimmedUrl.toLowerCase().startsWith('https://'))) {
+      setState(() {
+        _hasError = true;
+        _isLoading = false;
+        _showPreview = false;
+      });
+      return;
+    }
+
+    // Start generating thumbnail in background.
+    _generateThumbnail();
+
+    // Start preview.
+    try {
+      _previewController = VideoPlayerController.networkUrl(
+        Uri.parse(trimmedUrl),
+      );
+      await _previewController!.initialize();
+      await _previewController!.setLooping(true);
+      await _previewController!.setVolume(_isMuted ? 0.0 : 1.0);
+      await _previewController!.play();
+
+      _position = Duration.zero;
+      _startPositionTimer();
+
+      if (mounted) {
+        setState(() {
+          _showPreview = true;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      // Ignore preview errors and fall back to thumbnail/fallback.
+      if (mounted) {
+        setState(() {
+          _showPreview = false;
+        });
+      }
+    }
+  }
+
+  String _formatDuration(Duration d) {
+    final totalSeconds = d.inSeconds;
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Duration _remaining(Duration duration, Duration position) {
+    if (duration == Duration.zero) return Duration.zero;
+    final remainingMs = duration.inMilliseconds - position.inMilliseconds;
+    if (remainingMs <= 0) return Duration.zero;
+    return Duration(milliseconds: remainingMs);
+  }
+
+  Future<void> _toggleMute() async {
+    final c = _previewController;
+    if (c == null || !c.value.isInitialized) return;
+    final newMuted = !_isMuted;
+    await c.setVolume(newMuted ? 0.0 : 1.0);
+    if (mounted) {
+      setState(() {
+        _isMuted = newMuted;
+      });
+    }
+  }
+
+  Future<void> _generateThumbnail() async {
+    try {
+      debugPrint(
+        '[_VideoThumbnailWidget] Generating thumbnail for: ${widget.videoUrl}',
+      );
+
+      // Check if URL is valid
+      final trimmedUrl = widget.videoUrl.trim();
+      if (trimmedUrl.isEmpty ||
+          (!trimmedUrl.toLowerCase().startsWith('http://') &&
+              !trimmedUrl.toLowerCase().startsWith('https://'))) {
+        debugPrint('[_VideoThumbnailWidget] Invalid URL: "${widget.videoUrl}"');
+        debugPrint('[_VideoThumbnailWidget] Trimmed URL: "$trimmedUrl"');
+        debugPrint(
+          '[_VideoThumbnailWidget] Starts with http: ${trimmedUrl.toLowerCase().startsWith('http://')}',
+        );
+        debugPrint(
+          '[_VideoThumbnailWidget] Starts with https: ${trimmedUrl.toLowerCase().startsWith('https://')}',
+        );
+        setState(() {
+          _hasError = true;
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Generate thumbnail at ~10% of video duration or 5 seconds
+      final thumbnail = await VideoThumbnail.thumbnailData(
+        video: widget.videoUrl,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 500,
+        quality: 80,
+        timeMs: 5000, // 5 seconds
+      );
+
+      if (thumbnail == null) {
+        debugPrint(
+          '[_VideoThumbnailWidget] Thumbnail generation returned null',
+        );
+        setState(() {
+          _hasError = true;
+          _isLoading = false;
+        });
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _thumbnailData = thumbnail;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[_VideoThumbnailWidget] Error generating thumbnail: $e');
+      // Silently fail to fallback - video thumbnails may not work for remote URLs
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasError) {
+      return _buildFallback();
+    }
+
+    if (_showPreview &&
+        _previewController != null &&
+        _previewController!.value.isInitialized) {
+      final duration = _previewController!.value.duration;
+      final remaining = _remaining(duration, _position);
+      return _wrapWithConstraints(
+        Stack(
+          fit: StackFit.expand,
+          children: [
+            FittedBox(
+              fit: widget.fit,
+              clipBehavior: Clip.hardEdge,
+              child: SizedBox(
+                width: _previewController!.value.size.width,
+                height: _previewController!.value.size.height,
+                child: VideoPlayer(_previewController!),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.45),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _formatDuration(remaining),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              left: 8,
+              child: GestureDetector(
+                onTap: _toggleMute,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.45),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    _isMuted ? Icons.volume_off : Icons.volume_up,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_isLoading) {
+      return _wrapWithConstraints(
+        Container(
+          color: Colors.grey[300],
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+      );
+    }
+
+    return _wrapWithConstraints(
+      Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.memory(
+            _thumbnailData!,
+            fit: widget.fit,
+            width: double.infinity,
+            errorBuilder: (_, __, ___) => _buildFallback(),
+          ),
+          // Play icon overlay
+          Center(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.4),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.play_circle_outline,
+                size: 40,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFallback() {
+    return _wrapWithConstraints(
+      Container(
+        color: Colors.grey[300],
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.play_circle_outline,
+                size: 40,
+                color: Colors.grey[700],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Widget to display media item (image or video thumbnail)
+class _MediaItemWidget extends StatelessWidget {
+  final String url;
+  final VoidCallback onTap;
+  final double? height;
+
+  const _MediaItemWidget({required this.url, required this.onTap, this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    final isVideo = _isVideoUrl(url);
+    return GestureDetector(
+      onTap: onTap,
+      child: isVideo
+          ? _VideoThumbnailWidget(videoUrl: url, height: height)
+          : Image.network(
+              url,
+              fit: BoxFit.cover,
+              height: height,
+              width: double.infinity,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+    );
+  }
+}
+
+/// Widget for carousel media items (smaller play icon)
+class _CarouselMediaItemWidget extends StatelessWidget {
+  final String url;
+  final double? height;
+
+  const _CarouselMediaItemWidget({required this.url, this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    final isVideo = _isVideoUrl(url);
+    if (isVideo) {
+      return Stack(
+        alignment: Alignment.center,
+        fit: height == null ? StackFit.expand : StackFit.loose,
+        children: [
+          _VideoThumbnailWidget(videoUrl: url, height: height),
+          // Smaller play icon overlay for carousel
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.play_circle_outline,
+              size: 24,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      );
+    }
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      height: height,
+      width: double.infinity,
+      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+    );
+  }
+}
 
 class ParticulierDashboardScreen extends StatefulWidget {
   const ParticulierDashboardScreen({super.key});
@@ -326,18 +734,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
     if (urls.isEmpty) return const SizedBox.shrink();
 
     if (urls.length == 1) {
-      return GestureDetector(
+      return _MediaItemWidget(
+        url: urls[0],
         onTap: () => _openImagePreview(context, urls, 0),
-        child: Image.network(
-          urls[0],
-          width: double.infinity,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-        ),
       );
     }
 
-    // Multiple images - show grid
+    // Multiple images/videos - show grid
     return SizedBox(height: 300, child: _buildMediaGrid(urls));
   }
 
@@ -359,26 +762,18 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
       return Row(
         children: [
           Expanded(
-            child: GestureDetector(
+            child: _MediaItemWidget(
+              url: urls[0],
               onTap: () => _openImagePreview(context, urls, 0),
-              child: Image.network(
-                urls[0],
-                fit: BoxFit.cover,
-                height: 300,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
+              height: 300,
             ),
           ),
           const SizedBox(width: 2),
           Expanded(
-            child: GestureDetector(
+            child: _MediaItemWidget(
+              url: urls[1],
               onTap: () => _openImagePreview(context, urls, 1),
-              child: Image.network(
-                urls[1],
-                fit: BoxFit.cover,
-                height: 300,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
+              height: 300,
             ),
           ),
         ],
@@ -390,14 +785,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
         children: [
           Expanded(
             flex: 2,
-            child: GestureDetector(
+            child: _MediaItemWidget(
+              url: urls[0],
               onTap: () => _openImagePreview(context, urls, 0),
-              child: Image.network(
-                urls[0],
-                fit: BoxFit.cover,
-                height: 300,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
+              height: 300,
             ),
           ),
           const SizedBox(width: 2),
@@ -405,26 +796,16 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
             child: Column(
               children: [
                 Expanded(
-                  child: GestureDetector(
+                  child: _MediaItemWidget(
+                    url: urls[1],
                     onTap: () => _openImagePreview(context, urls, 1),
-                    child: Image.network(
-                      urls[1],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    ),
                   ),
                 ),
                 const SizedBox(height: 2),
                 Expanded(
-                  child: GestureDetector(
+                  child: _MediaItemWidget(
+                    url: urls[2],
                     onTap: () => _openImagePreview(context, urls, 2),
-                    child: Image.network(
-                      urls[2],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    ),
                   ),
                 ),
               ],
@@ -434,7 +815,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
       );
     }
 
-    // 4+ images: 2x2 grid with overflow counter
+    // 4+ images/videos: 2x2 grid with overflow counter
     final int remaining = urls.length - 4;
     return Column(
       children: [
@@ -442,26 +823,16 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
           child: Row(
             children: [
               Expanded(
-                child: GestureDetector(
+                child: _MediaItemWidget(
+                  url: urls[0],
                   onTap: () => _openImagePreview(context, urls, 0),
-                  child: Image.network(
-                    urls[0],
-                    fit: BoxFit.cover,
-                    height: double.infinity,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
                 ),
               ),
               const SizedBox(width: 2),
               Expanded(
-                child: GestureDetector(
+                child: _MediaItemWidget(
+                  url: urls[1],
                   onTap: () => _openImagePreview(context, urls, 1),
-                  child: Image.network(
-                    urls[1],
-                    fit: BoxFit.cover,
-                    height: double.infinity,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
                 ),
               ),
             ],
@@ -472,14 +843,9 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
           child: Row(
             children: [
               Expanded(
-                child: GestureDetector(
+                child: _MediaItemWidget(
+                  url: urls[2],
                   onTap: () => _openImagePreview(context, urls, 2),
-                  child: Image.network(
-                    urls[2],
-                    fit: BoxFit.cover,
-                    height: double.infinity,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
                 ),
               ),
               const SizedBox(width: 2),
@@ -489,11 +855,14 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(
-                        urls[3],
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                      ),
+                      _isVideoUrl(urls[3])
+                          ? _VideoThumbnailWidget(videoUrl: urls[3])
+                          : Image.network(
+                              urls[3],
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox.shrink(),
+                            ),
                       if (remaining > 0)
                         Container(
                           color: Colors.black54,
@@ -1178,6 +1547,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         });
       }
     }
+
+    _storyStore.loadFeed();
   }
 
   void _onFeedScroll() {
@@ -2662,13 +3033,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   Widget _buildCarouselMediaGrid(List<String> urls) {
     if (urls.isEmpty) return const SizedBox.shrink();
     if (urls.length == 1) {
-      return Image.network(
-        urls[0],
-        width: double.infinity,
-        height: 100,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-      );
+      return _CarouselMediaItemWidget(url: urls[0], height: 100);
     }
     if (urls.length == 2) {
       return SizedBox(
@@ -2676,21 +3041,11 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         child: Row(
           children: [
             Expanded(
-              child: Image.network(
-                urls[0],
-                fit: BoxFit.cover,
-                height: 100,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
+              child: _CarouselMediaItemWidget(url: urls[0], height: 100),
             ),
             const SizedBox(width: 2),
             Expanded(
-              child: Image.network(
-                urls[1],
-                fit: BoxFit.cover,
-                height: 100,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
+              child: _CarouselMediaItemWidget(url: urls[1], height: 100),
             ),
           ],
         ),
@@ -2703,34 +3058,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           children: [
             Expanded(
               flex: 2,
-              child: Image.network(
-                urls[0],
-                fit: BoxFit.cover,
-                height: 100,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
+              child: _CarouselMediaItemWidget(url: urls[0], height: 100),
             ),
             const SizedBox(width: 2),
             Expanded(
               child: Column(
                 children: [
-                  Expanded(
-                    child: Image.network(
-                      urls[1],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    ),
-                  ),
+                  Expanded(child: _CarouselMediaItemWidget(url: urls[1])),
                   const SizedBox(height: 2),
-                  Expanded(
-                    child: Image.network(
-                      urls[2],
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    ),
-                  ),
+                  Expanded(child: _CarouselMediaItemWidget(url: urls[2])),
                 ],
               ),
             ),
@@ -2738,7 +3074,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         ),
       );
     }
-    // 4+ images: 2x2 grid with overflow counter
+    // 4+ images/videos: 2x2 grid with overflow counter
     final int remaining = urls.length - 4;
     return SizedBox(
       height: 100,
@@ -2747,23 +3083,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           Expanded(
             child: Row(
               children: [
-                Expanded(
-                  child: Image.network(
-                    urls[0],
-                    fit: BoxFit.cover,
-                    height: double.infinity,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                ),
+                Expanded(child: _CarouselMediaItemWidget(url: urls[0])),
                 const SizedBox(width: 2),
-                Expanded(
-                  child: Image.network(
-                    urls[1],
-                    fit: BoxFit.cover,
-                    height: double.infinity,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                ),
+                Expanded(child: _CarouselMediaItemWidget(url: urls[1])),
               ],
             ),
           ),
@@ -2771,24 +3093,20 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           Expanded(
             child: Row(
               children: [
-                Expanded(
-                  child: Image.network(
-                    urls[2],
-                    fit: BoxFit.cover,
-                    height: double.infinity,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
-                ),
+                Expanded(child: _CarouselMediaItemWidget(url: urls[2])),
                 const SizedBox(width: 2),
                 Expanded(
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(
-                        urls[3],
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                      ),
+                      _isVideoUrl(urls[3])
+                          ? _VideoThumbnailWidget(videoUrl: urls[3])
+                          : Image.network(
+                              urls[3],
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox.shrink(),
+                            ),
                       if (remaining > 0)
                         Container(
                           color: Colors.black54,

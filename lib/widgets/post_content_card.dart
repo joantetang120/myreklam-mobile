@@ -1,4 +1,6 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 class PostTag {
   final String title;
@@ -36,6 +38,35 @@ class PostContentCard extends StatelessWidget {
     if (imageUrls != null && imageUrls!.isNotEmpty) return imageUrls!;
     if (imageUrl != null && imageUrl!.isNotEmpty) return [imageUrl!];
     return [];
+  }
+
+  bool _isVideoUrl(String url) {
+    final videoExtensions = [
+      '.mp4',
+      '.mov',
+      '.avi',
+      '.quicktime',
+      '.x-msvideo',
+    ];
+    final lowerUrl = url.toLowerCase();
+    return videoExtensions.any((ext) => lowerUrl.contains(ext));
+  }
+
+  Widget _buildMediaItem(
+    String url, {
+    double? height,
+    BoxFit fit = BoxFit.cover,
+  }) {
+    if (_isVideoUrl(url)) {
+      return _VideoThumbnailWidget(videoUrl: url, height: height, fit: fit);
+    }
+    return Image.network(
+      url,
+      fit: fit,
+      height: height,
+      width: double.infinity,
+      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+    );
   }
 
   @override
@@ -150,13 +181,7 @@ class PostContentCard extends StatelessWidget {
     if (urls.length == 1) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.network(
-          urls[0],
-          width: double.infinity,
-          height: 180,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-        ),
+        child: _buildMediaItem(urls[0], height: 180),
       );
     }
     if (urls.length == 2) {
@@ -166,23 +191,9 @@ class PostContentCard extends StatelessWidget {
           height: 160,
           child: Row(
             children: [
-              Expanded(
-                child: Image.network(
-                  urls[0],
-                  fit: BoxFit.cover,
-                  height: 160,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
+              Expanded(child: _buildMediaItem(urls[0], height: 160)),
               const SizedBox(width: 3),
-              Expanded(
-                child: Image.network(
-                  urls[1],
-                  fit: BoxFit.cover,
-                  height: 160,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
+              Expanded(child: _buildMediaItem(urls[1], height: 160)),
             ],
           ),
         ),
@@ -195,36 +206,14 @@ class PostContentCard extends StatelessWidget {
           height: 180,
           child: Row(
             children: [
-              Expanded(
-                flex: 2,
-                child: Image.network(
-                  urls[0],
-                  fit: BoxFit.cover,
-                  height: 180,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                ),
-              ),
+              Expanded(flex: 2, child: _buildMediaItem(urls[0], height: 180)),
               const SizedBox(width: 3),
               Expanded(
                 child: Column(
                   children: [
-                    Expanded(
-                      child: Image.network(
-                        urls[1],
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                      ),
-                    ),
+                    Expanded(child: _buildMediaItem(urls[1])),
                     const SizedBox(height: 3),
-                    Expanded(
-                      child: Image.network(
-                        urls[2],
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                      ),
-                    ),
+                    Expanded(child: _buildMediaItem(urls[2])),
                   ],
                 ),
               ),
@@ -244,23 +233,9 @@ class PostContentCard extends StatelessWidget {
             Expanded(
               child: Row(
                 children: [
-                  Expanded(
-                    child: Image.network(
-                      urls[0],
-                      fit: BoxFit.cover,
-                      height: double.infinity,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    ),
-                  ),
+                  Expanded(child: _buildMediaItem(urls[0])),
                   const SizedBox(width: 3),
-                  Expanded(
-                    child: Image.network(
-                      urls[1],
-                      fit: BoxFit.cover,
-                      height: double.infinity,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    ),
-                  ),
+                  Expanded(child: _buildMediaItem(urls[1])),
                 ],
               ),
             ),
@@ -268,24 +243,13 @@ class PostContentCard extends StatelessWidget {
             Expanded(
               child: Row(
                 children: [
-                  Expanded(
-                    child: Image.network(
-                      urls[2],
-                      fit: BoxFit.cover,
-                      height: double.infinity,
-                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                    ),
-                  ),
+                  Expanded(child: _buildMediaItem(urls[2])),
                   const SizedBox(width: 3),
                   Expanded(
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.network(
-                          urls[3],
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                        ),
+                        _buildMediaItem(urls[3]),
                         if (remaining > 0)
                           Container(
                             color: Colors.black54,
@@ -331,6 +295,118 @@ class PostContentCard extends StatelessWidget {
               color: tag.color,
               fontSize: 8,
               fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Simple video thumbnail widget with fallback
+class _VideoThumbnailWidget extends StatefulWidget {
+  final String videoUrl;
+  final double? height;
+  final BoxFit fit;
+
+  const _VideoThumbnailWidget({
+    required this.videoUrl,
+    this.height,
+    this.fit = BoxFit.cover,
+  });
+
+  @override
+  State<_VideoThumbnailWidget> createState() => _VideoThumbnailWidgetState();
+}
+
+class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
+  Uint8List? _thumbnailData;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _generateThumbnail();
+  }
+
+  Future<void> _generateThumbnail() async {
+    try {
+      final thumbnail = await VideoThumbnail.thumbnailData(
+        video: widget.videoUrl,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 500,
+        quality: 80,
+        timeMs: 5000,
+      );
+      if (mounted) {
+        setState(() {
+          _thumbnailData = thumbnail;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: widget.height,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (_thumbnailData != null)
+            Image.memory(
+              _thumbnailData!,
+              fit: widget.fit,
+              width: double.infinity,
+            )
+          else
+            Container(
+              color: Colors.black87,
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          // Play icon overlay
+          Center(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.4),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.play_circle_outline,
+                size: 40,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          // VIDEO badge
+          Positioned(
+            top: 4,
+            left: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'VIDEO',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],
