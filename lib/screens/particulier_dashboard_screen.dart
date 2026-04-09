@@ -1718,7 +1718,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavoritedNotifier.value ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -1982,7 +1984,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             isFavoritedNotifier.value
                                 ? Icons.favorite
                                 : Icons.favorite_border,
-                            color: isFavoritedNotifier.value ? Colors.red : Colors.grey[600],
+                            color: isFavoritedNotifier.value
+                                ? Colors.red
+                                : Colors.grey[600],
                             size: 20,
                           ),
                   ),
@@ -2184,7 +2188,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavoritedNotifier.value ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -2492,7 +2498,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavoritedNotifier.value ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
                   ),
                   duration: const Duration(seconds: 2),
                   backgroundColor: Colors.green,
@@ -2627,7 +2635,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       // Toggle immediately for responsive UI
       final newValue = !isFavoritedNotifier.value;
       isFavoritedNotifier.value = newValue;
-      
+
       // Update underlying data immediately for persistence across rebuilds
       if (newValue) {
         // Add to favorites
@@ -2685,7 +2693,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
         // Revert on error
         isFavoritedNotifier.value = !newValue;
-        
+
         // Revert underlying data
         if (!newValue) {
           // Was removing, so add back
@@ -2710,10 +2718,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erreur: $e'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
           );
         }
       }
@@ -2868,7 +2873,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavoritedNotifier.value ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
