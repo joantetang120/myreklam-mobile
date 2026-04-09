@@ -18,11 +18,7 @@ class PublicProfileScreen extends StatefulWidget {
   final String? userId;
   final Map<String, dynamic>? initialData;
 
-  const PublicProfileScreen({
-    super.key,
-    this.userId,
-    this.initialData,
-  });
+  const PublicProfileScreen({super.key, this.userId, this.initialData});
 
   @override
   State<PublicProfileScreen> createState() => _PublicProfileScreenState();
@@ -33,13 +29,17 @@ class _ReactionData {
   int commentsCount;
   String? userReaction;
 
-  _ReactionData({this.likesCount = 0, this.commentsCount = 0, this.userReaction});
+  _ReactionData({
+    this.likesCount = 0,
+    this.commentsCount = 0,
+    this.userReaction,
+  });
 }
 
 class _PublicProfileScreenState extends State<PublicProfileScreen> {
   final _profileService = ProfileService();
   final _conversationService = ConversationService();
-  
+
   bool _isLoading = true;
   Map<String, dynamic>? _userData;
   String _selectedTab = 'Présentation';
@@ -70,8 +70,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Future<void> _loadUserProfile() async {
     setState(() => _isLoading = true);
     try {
-      final String? targetId = widget.userId ?? widget.initialData?['id']?.toString();
-      
+      final String? targetId =
+          widget.userId ?? widget.initialData?['id']?.toString();
+
       if (targetId == null) {
         // Fallback to current user if no ID provided
         final response = await _profileService.getProfile();
@@ -113,9 +114,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       setState(() => _isFollowing = !_isFollowing);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
       }
     }
   }
@@ -123,7 +124,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Future<void> _startConversation() async {
     final targetIdStr = _userData?['id']?.toString();
     final targetId = int.tryParse(targetIdStr ?? '');
-    
+
     if (targetId == null) return;
 
     // Show loading
@@ -134,7 +135,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     );
 
     try {
-      final conversation = await _conversationService.getOrCreateConversation(targetId);
+      final conversation = await _conversationService.getOrCreateConversation(
+        targetId,
+      );
       if (!mounted) return;
       Navigator.pop(context); // Close loading
 
@@ -162,34 +165,79 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     }
   }
 
+  void _showReportConfirmation() {
+    final displayName = _extractDisplayName(_userData);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Signaler le compte'),
+        content: Text('Voulez-vous vraiment signaler $displayName ?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implement report API call
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Signalement envoyé'),
+                  backgroundColor: Color(0xFF3AAE5E),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Signaler',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   String _extractDisplayName(Map<String, dynamic>? data) {
     if (data == null) return 'Utilisateur';
     final pro = data['pro_profile'] as Map?;
     final part = data['particulier_profile'] as Map?;
-    
+
     if (part != null) return part['pseudo']?.toString() ?? 'Utilisateur';
-    if (pro != null) return pro['company_name']?.toString() ?? '${pro['first_name'] ?? ''} ${pro['last_name'] ?? ''}'.trim();
-    
+    if (pro != null)
+      return pro['company_name']?.toString() ??
+          '${pro['first_name'] ?? ''} ${pro['last_name'] ?? ''}'.trim();
+
     return data['name']?.toString() ?? 'Utilisateur';
   }
 
   String _extractAvatar(Map<String, dynamic>? data) {
-    if (data == null) return 'assets/images/dashboard_particulier/Ellipse 10.png';
-    
+    if (data == null)
+      return 'assets/images/dashboard_particulier/Ellipse 10.png';
+
     final pro = data['pro_profile'] as Map?;
     final part = data['particulier_profile'] as Map?;
-    
-    String? url = part?['avatar_url']?.toString() ?? 
-                 pro?['logo_url']?.toString() ?? 
-                 pro?['avatar_url']?.toString() ?? 
-                 data['avatar']?.toString();
+
+    String? url =
+        part?['avatar_url']?.toString() ??
+        pro?['logo_url']?.toString() ??
+        pro?['avatar_url']?.toString() ??
+        data['avatar']?.toString();
 
     if (url != null && url.isNotEmpty) {
       if (url.startsWith('http')) return url;
       final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
       return '$serverBase/storage/$url';
     }
-    
+
     return 'assets/images/dashboard_particulier/Ellipse 10.png';
   }
 
@@ -201,7 +249,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
     final displayName = _extractDisplayName(_userData);
     final avatar = _extractAvatar(_userData);
-    final accountType = _userData?['pro_profile'] != null ? 'Professionnel' : 'Particulier';
+    final accountType = _userData?['pro_profile'] != null
+        ? 'Professionnel'
+        : 'Particulier';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -214,9 +264,43 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         ),
         title: Text(
           displayName,
-          style: const TextStyle(color: Color(0xFF616161), fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            color: Color(0xFF616161),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
+        actions: (widget.userId == null && widget.initialData?['id'] == null)
+            ? null
+            : [
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: Color(0xFF616161)),
+                  onSelected: (value) {
+                    if (value == 'report') {
+                      _showReportConfirmation();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'report',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.report_outlined,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Signaler le compte',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -231,13 +315,19 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF2E9B5B), width: 1),
+                    border: Border.all(
+                      color: const Color(0xFF2E9B5B),
+                      width: 1,
+                    ),
                   ),
                   child: Column(
                     children: [
                       Text(
                         displayName,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -245,7 +335,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                         style: TextStyle(color: Colors.grey[600], fontSize: 13),
                       ),
                       const SizedBox(height: 12),
-                      
+
                       // Stats Row: Posts, Followers, Following
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -254,9 +344,18 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                             children: [
                               Text(
                                 (_userData?['posts_count'] ?? 0).toString(),
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
                               ),
-                              const Text('Posts', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                              const Text(
+                                'Posts',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(width: 30),
@@ -278,10 +377,20 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                             child: Column(
                               children: [
                                 Text(
-                                  (_userData?['followers_count'] ?? 0).toString(),
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  (_userData?['followers_count'] ?? 0)
+                                      .toString(),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                                const Text('Followers', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                const Text(
+                                  'Followers',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -304,17 +413,27 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                             child: Column(
                               children: [
                                 Text(
-                                  (_userData?['following_count'] ?? 0).toString(),
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  (_userData?['following_count'] ?? 0)
+                                      .toString(),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
-                                const Text('Suivi(s)', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                const Text(
+                                  'Suivi(s)',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Action Buttons
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -322,27 +441,45 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: _startConversation,
-                              icon: const Icon(Icons.message_outlined, size: 18),
+                              icon: const Icon(
+                                Icons.message_outlined,
+                                size: 18,
+                              ),
                               label: const Text('Message'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF3AAE5E),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(width:12),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: OutlinedButton.icon(
                               onPressed: _toggleFollow,
-                              icon: Icon(_isFollowing ? Icons.check : Icons.person_add_outlined, size: 18),
+                              icon: Icon(
+                                _isFollowing
+                                    ? Icons.check
+                                    : Icons.person_add_outlined,
+                                size: 18,
+                              ),
                               label: Text(_isFollowing ? 'Suivi' : 'Suivre'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: const Color(0xFF3AAE5E),
-                                side: const BorderSide(color: Color(0xFF3AAE5E)),
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                side: const BorderSide(
+                                  color: Color(0xFF3AAE5E),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                             ),
                           ),
@@ -351,7 +488,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     ],
                   ),
                 ),
-                
+
                 // Avatar
                 Positioned(
                   top: 0,
@@ -360,15 +497,21 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.all(3),
-                      decoration: const BoxDecoration(color: Color(0xFF2E9B5B), shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF2E9B5B),
+                        shape: BoxShape.circle,
+                      ),
                       child: CircleAvatar(
                         radius: 45,
                         backgroundColor: Colors.white,
-                        backgroundImage: avatar.startsWith('http') 
-                          ? NetworkImage(avatar) as ImageProvider 
-                          : avatar.startsWith('assets/')
-                              ? AssetImage(avatar)
-                              : NetworkImage(ApiConfig.resolveMediaUrl(avatar) ?? '') as ImageProvider,
+                        backgroundImage: avatar.startsWith('http')
+                            ? NetworkImage(avatar) as ImageProvider
+                            : avatar.startsWith('assets/')
+                            ? AssetImage(avatar)
+                            : NetworkImage(
+                                    ApiConfig.resolveMediaUrl(avatar) ?? '',
+                                  )
+                                  as ImageProvider,
                       ),
                     ),
                   ),
@@ -379,7 +522,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
             // Tabs
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Row(
                 children: [
                   _buildTabButton('Présentation'),
@@ -388,12 +534,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Tab Content
             _buildTabContent(),
-            
+
             const SizedBox(height: 40),
           ],
         ),
@@ -437,11 +583,17 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           width: double.infinity,
           margin: const EdgeInsets.symmetric(horizontal: 16),
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Présentation', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Text(
+                'Présentation',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
               const SizedBox(height: 12),
               Text(
                 _userData?['bio'] ?? 'Aucune présentation disponible.',
@@ -480,9 +632,18 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   runSpacing: 8,
                   children: [
                     _buildFilterChip('Tout', _selectedAnnonceFilter == 'Tout'),
-                    _buildFilterChip('Bons plans', _selectedAnnonceFilter == 'Bons plans'),
-                    _buildFilterChip('Événements', _selectedAnnonceFilter == 'Événements'),
-                    _buildFilterChip('Demandes', _selectedAnnonceFilter == 'Demandes'),
+                    _buildFilterChip(
+                      'Bons plans',
+                      _selectedAnnonceFilter == 'Bons plans',
+                    ),
+                    _buildFilterChip(
+                      'Événements',
+                      _selectedAnnonceFilter == 'Événements',
+                    ),
+                    _buildFilterChip(
+                      'Demandes',
+                      _selectedAnnonceFilter == 'Demandes',
+                    ),
                   ],
                 ),
               ],
@@ -500,7 +661,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 if (_events.isNotEmpty) _buildEventsList(),
                 if (_demandes.isNotEmpty) _buildDemandesList(),
                 if (_bonPlans.isEmpty && _events.isEmpty && _demandes.isEmpty)
-                  const Text('Aucune annonce', style: TextStyle(color: Color(0xFF666666))),
+                  const Text(
+                    'Aucune annonce',
+                    style: TextStyle(color: Color(0xFF666666)),
+                  ),
               ],
             )
           else if (_selectedAnnonceFilter == 'Bons plans')
@@ -641,10 +805,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         ApiClient().authenticatedGet('/demandes'),
       ]);
 
-      List<Map<String, dynamic>> filterByUser(List<Map<String, dynamic>> items) {
+      List<Map<String, dynamic>> filterByUser(
+        List<Map<String, dynamic>> items,
+      ) {
         if (targetUserId == null || targetUserId.isEmpty) return items;
         return items.where((m) {
-          final userId = m['user_id']?.toString() ?? m['user']?['id']?.toString();
+          final userId =
+              m['user_id']?.toString() ?? m['user']?['id']?.toString();
           return userId == targetUserId;
         }).toList();
       }
@@ -687,9 +854,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         });
         return;
       }
-      final response = await ApiClient().authenticatedGet('/users/$targetUserId/posts');
+      final response = await ApiClient().authenticatedGet(
+        '/users/$targetUserId/posts',
+      );
       final data = response is Map ? response['data'] : null;
-      final posts = data is List ? List<Map<String, dynamic>>.from(data) : <Map<String, dynamic>>[];
+      final posts = data is List
+          ? List<Map<String, dynamic>>.from(data)
+          : <Map<String, dynamic>>[];
       if (!mounted) return;
       setState(() {
         _myPosts = posts;
@@ -718,7 +889,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Widget _buildBonPlansList() {
     final items = _bonPlans;
     if (items.isEmpty) {
-      return const Text('Aucune annonce', style: TextStyle(color: Color(0xFF666666)));
+      return const Text(
+        'Aucune annonce',
+        style: TextStyle(color: Color(0xFF666666)),
+      );
     }
     return Column(children: items.map((bp) => _buildBonPlanCard(bp)).toList());
   }
@@ -726,7 +900,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Widget _buildEventsList() {
     final items = _events;
     if (items.isEmpty) {
-      return const Text('Aucune annonce', style: TextStyle(color: Color(0xFF666666)));
+      return const Text(
+        'Aucune annonce',
+        style: TextStyle(color: Color(0xFF666666)),
+      );
     }
     return Column(children: items.map((ev) => _buildEventCard(ev)).toList());
   }
@@ -734,7 +911,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Widget _buildDemandesList() {
     final items = _demandes;
     if (items.isEmpty) {
-      return const Text('Aucune annonce', style: TextStyle(color: Color(0xFF666666)));
+      return const Text(
+        'Aucune annonce',
+        style: TextStyle(color: Color(0xFF666666)),
+      );
     }
     return Column(children: items.map((d) => _buildDemandeCard(d)).toList());
   }
@@ -758,7 +938,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         children: [
           if (imageUrl != null)
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
               child: Image.network(
                 imageUrl,
                 height: 180,
@@ -778,7 +960,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               children: [
                 if (category.isNotEmpty)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF3AAE5E).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
@@ -795,7 +980,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 const SizedBox(height: 8),
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -808,11 +996,18 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 if (discount != null && discount.isNotEmpty)
                   Row(
                     children: [
-                      Icon(Icons.local_offer, color: Colors.orange[700], size: 18),
+                      Icon(
+                        Icons.local_offer,
+                        color: Colors.orange[700],
+                        size: 18,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'Réduction: $discount',
-                        style: TextStyle(color: Colors.orange[700], fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: Colors.orange[700],
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -825,10 +1020,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       style: TextStyle(color: Colors.grey[500], fontSize: 12),
                     ),
                     if (bpId.isNotEmpty) ...[
-                      Builder(builder: (context) {
-                        _seedReactionFromResource('bon-plans', bpId, bp);
-                        return _buildReactionBar('bon-plans', bpId);
-                      }),
+                      Builder(
+                        builder: (context) {
+                          _seedReactionFromResource('bon-plans', bpId, bp);
+                          return _buildReactionBar('bon-plans', bpId);
+                        },
+                      ),
                     ],
                   ],
                 ),
@@ -844,10 +1041,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     final eventId = event['id']?.toString() ?? '';
     final title = event['title']?.toString() ?? '';
     final description = _stripHtml(event['description']?.toString() ?? '');
-    final location = event['location']?.toString() ?? event['city']?.toString() ?? '';
-    final eventDate = event['event_date']?.toString() ?? event['start_date']?.toString();
+    final location =
+        event['location']?.toString() ?? event['city']?.toString() ?? '';
+    final eventDate =
+        event['event_date']?.toString() ?? event['start_date']?.toString();
     final createdAt = event['created_at']?.toString();
-    final price = event['price']?.toString() ?? event['ticket_price']?.toString();
+    final price =
+        event['price']?.toString() ?? event['ticket_price']?.toString();
     final isPaid = event['is_paid'] == true || event['is_paid'] == 1;
     final imageUrl = _extractMediaUrl(event);
 
@@ -859,7 +1059,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         children: [
           if (imageUrl != null)
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
               child: Image.network(
                 imageUrl,
                 height: 180,
@@ -883,25 +1085,38 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     const SizedBox(width: 4),
                     Text(
                       isPaid && price != null ? '${price}€' : 'Gratuit',
-                      style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: Colors.blue[700],
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 if (location.isNotEmpty)
                   Row(
                     children: [
-                      Icon(Icons.location_on, color: Colors.grey[600], size: 16),
+                      Icon(
+                        Icons.location_on,
+                        color: Colors.grey[600],
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           location,
-                          style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 13,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -923,14 +1138,16 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       style: TextStyle(color: Colors.grey[500], fontSize: 12),
                     ),
                     if (eventId.isNotEmpty) ...[
-                      Builder(builder: (context) {
-                        _seedReactionFromResource('events', eventId, event);
-                        return _buildReactionBar(
-                          'events',
-                          eventId,
-                          acceptedMessages: event['accept_messages'] == true,
-                        );
-                      }),
+                      Builder(
+                        builder: (context) {
+                          _seedReactionFromResource('events', eventId, event);
+                          return _buildReactionBar(
+                            'events',
+                            eventId,
+                            acceptedMessages: event['accept_messages'] == true,
+                          );
+                        },
+                      ),
                     ],
                   ],
                 ),
@@ -948,7 +1165,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     final description = _stripHtml(demande['description']?.toString() ?? '');
     final nature = demande['nature']?.toString() ?? 'Demande';
     final createdAt = demande['created_at']?.toString();
-    final location = demande['location']?.toString() ?? demande['city']?.toString() ?? '';
+    final location =
+        demande['location']?.toString() ?? demande['city']?.toString() ?? '';
     final postImage = _extractMediaUrl(demande);
 
     final categoryLabel = _getNatureLabel(nature);
@@ -961,7 +1179,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         children: [
           if (postImage != null)
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
               child: Image.network(
                 postImage,
                 height: 180,
@@ -980,7 +1200,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _categoryColor(nature).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(4),
@@ -997,7 +1220,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 const SizedBox(height: 8),
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -1010,7 +1236,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 if (location.isNotEmpty)
                   Row(
                     children: [
-                      Icon(Icons.location_on, color: Colors.grey[600], size: 16),
+                      Icon(
+                        Icons.location_on,
+                        color: Colors.grey[600],
+                        size: 16,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         location,
@@ -1027,14 +1257,21 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       style: TextStyle(color: Colors.grey[500], fontSize: 12),
                     ),
                     if (demandeId.isNotEmpty) ...[
-                      Builder(builder: (context) {
-                        _seedReactionFromResource('demandes', demandeId, demande);
-                        return _buildReactionBar(
-                          'demandes',
-                          demandeId,
-                          acceptedMessages: demande['accept_messages'] == true,
-                        );
-                      }),
+                      Builder(
+                        builder: (context) {
+                          _seedReactionFromResource(
+                            'demandes',
+                            demandeId,
+                            demande,
+                          );
+                          return _buildReactionBar(
+                            'demandes',
+                            demandeId,
+                            acceptedMessages:
+                                demande['accept_messages'] == true,
+                          );
+                        },
+                      ),
                     ],
                   ],
                 ),
@@ -1048,7 +1285,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
   // ==================== REACTIONS ====================
 
-  String _reactionKey(String apiSlug, String entityId) => '${apiSlug}_$entityId';
+  String _reactionKey(String apiSlug, String entityId) =>
+      '${apiSlug}_$entityId';
 
   _ReactionData _getReaction(String apiSlug, String entityId) {
     final key = _reactionKey(apiSlug, entityId);
@@ -1071,7 +1309,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
     try {
-      final response = await ApiClient().authenticatedGet('/$apiSlug/$entityId');
+      final response = await ApiClient().authenticatedGet(
+        '/$apiSlug/$entityId',
+      );
       final data = response['data'] as Map<String, dynamic>?;
       if (data != null && mounted) {
         setState(() {
@@ -1088,7 +1328,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     }
   }
 
-  Future<void> _toggleReaction(String apiSlug, String entityId, String type) async {
+  Future<void> _toggleReaction(
+    String apiSlug,
+    String entityId,
+    String type,
+  ) async {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
 
@@ -1103,7 +1347,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     });
 
     try {
-      await ApiClient().authenticatedPost('/$apiSlug/$entityId/reactions', body: {'type': type});
+      await ApiClient().authenticatedPost(
+        '/$apiSlug/$entityId/reactions',
+        body: {'type': type},
+      );
       // Refresh to ensure counts are accurate
       await _refreshReactionFromApi(apiSlug, entityId);
     } catch (e) {
@@ -1156,7 +1403,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           onTap: () {},
           child: Row(
             children: [
-              Icon(Icons.chat_bubble_outline, size: 17, color: Colors.grey[500]),
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 17,
+                color: Colors.grey[500],
+              ),
               const SizedBox(width: 4),
               Text(
                 data.commentsCount.toString(),
@@ -1172,7 +1423,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   // ==================== HELPERS ====================
 
   String _stripHtml(String html) {
-    return html.replaceAll(RegExp(r'<[^>]*>'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+    return html
+        .replaceAll(RegExp(r'<[^>]*>'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   String? _extractMediaUrl(Map<String, dynamic> resource) {
