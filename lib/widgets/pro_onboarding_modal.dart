@@ -430,23 +430,23 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
           const Text(
             'Ajoutez votre logo',
             style: TextStyle(
-              fontSize: 22,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Color(0xFFFF8C42),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             'Une photo ou un logo augmente la confiance et rend votre profil plus attractif.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 12,
               color: Colors.grey[600],
             ),
           ),
           const SizedBox(height: 24),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: const Color(0xFFE6F7EF),
               borderRadius: BorderRadius.circular(20),
@@ -457,25 +457,25 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                 const Icon(
                   Icons.stars,
                   color: Color(0xFF3AAE5E),
-                  size: 18,
+                  size: 16,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Text(
                   'Gagnez 1 My\'s',
                   style: TextStyle(
                     color: const Color(0xFF3AAE5E),
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: 12,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           GestureDetector(
             onTap: _pickImage,
             child: Container(
-              width: double.infinity,
+              width: 140,
               height: 140,
               decoration: BoxDecoration(
                 border: Border.all(
@@ -483,11 +483,11 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                   style: BorderStyle.solid,
                   width: 2,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                shape: BoxShape.circle,
               ),
               child: _selectedImage != null
                   ? ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(70),
                       child: Image.file(
                         _selectedImage!,
                         fit: BoxFit.cover,
@@ -498,22 +498,22 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                       children: [
                         Icon(
                           Icons.cloud_upload_outlined,
-                          size: 40,
+                          size: 32,
                           color: Colors.grey[400],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Text(
-                          'Cliquez pour ajouter votre photo',
+                          'Cliquez pour ajouter',
                           style: TextStyle(
                             color: Colors.grey[600],
-                            fontSize: 14,
+                            fontSize: 12,
                           ),
                         ),
                       ],
                     ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           _buildDotsIndicator(),
         ],
       ),
@@ -562,12 +562,30 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
 
           // Phone input (if needed and not already present)
           if (widget.needsPhone && !widget.hasExistingPhone) ...[
-            Text(
-              'Ajoutez votre numéro (+0.5 My)',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE6F7EF),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.stars,
+                    color: Color(0xFF3AAE5E),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Ajoutez votre numéro (+0.5 My)',
+                    style: TextStyle(
+                      color: const Color(0xFF3AAE5E),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 8),
@@ -608,7 +626,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                     style: TextStyle(
                       color: const Color(0xFF3AAE5E),
                       fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                      fontSize: 10,
                     ),
                   ),
                 ],
@@ -620,12 +638,30 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Ajoutez un réseau social (+0.5 My)',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[700],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE6F7EF),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.stars,
+                      color: Color(0xFF3AAE5E),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Ajoutez un réseau social (+0.5 My)',
+                      style: TextStyle(
+                        color: const Color(0xFF3AAE5E),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 8),

@@ -30,9 +30,10 @@ class ProFavorisScreen extends StatefulWidget {
 
 class _ReactionData {
   int likesCount;
+  int commentsCount;
   String? userReaction; // 'like' or null
 
-  _ReactionData({this.likesCount = 0, this.userReaction});
+  _ReactionData({this.likesCount = 0, this.commentsCount = 0, this.userReaction});
 }
 
 class _ProFavorisScreenState extends State<ProFavorisScreen> {
@@ -736,6 +737,39 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     return _reactions.putIfAbsent(key, () => _ReactionData());
   }
 
+  void _seedReactionFromResource(
+    String apiSlug,
+    String entityId,
+    Map<String, dynamic> resource,
+  ) {
+    final key = _reactionKey(apiSlug, entityId);
+    // Always update from resource data to ensure fresh counts
+    _reactions[key] = _ReactionData(
+      likesCount: _asInt(resource['likes_count']),
+      commentsCount: _asInt(resource['comments_count']),
+      userReaction: resource['user_reaction']?.toString(),
+    );
+  }
+
+  Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
+    try {
+      final response = await ApiClient().authenticatedGet('/$apiSlug/$entityId');
+      final data = response['data'] as Map<String, dynamic>?;
+      if (data != null && mounted) {
+        setState(() {
+          final key = _reactionKey(apiSlug, entityId);
+          _reactions[key] = _ReactionData(
+            likesCount: _asInt(data['likes_count']),
+            commentsCount: _asInt(data['comments_count']),
+            userReaction: data['user_reaction']?.toString(),
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint('Error refreshing reaction: $e');
+    }
+  }
+
   Future<void> _toggleReaction(
     String apiSlug,
     String entityId,
@@ -763,6 +797,8 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           body: {'type': type},
         );
       }
+      // Refresh to ensure counts are accurate
+      await _refreshReactionFromApi(apiSlug, entityId);
     } catch (e) {
       debugPrint('Reaction toggle error: $e');
       setState(() {
@@ -859,9 +895,17 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                     replyingToId = null;
                     replyingToName = null;
                   });
+                  // Update local comments count
+                  setState(() {
+                    final data = _getReaction(apiSlug, entityId);
+                    data.commentsCount++;
+                  });
                 }
                 commentCtrl.clear();
                 FocusScope.of(ctx).unfocus();
+
+                // Refresh reaction counts from API to ensure accuracy
+                await _refreshReactionFromApi(apiSlug, entityId);
 
                 // Award 1 My for posting a comment (silently, no modal)
                 try {
@@ -1039,6 +1083,15 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               try {
                 await ApiClient().authenticatedDelete('/comments/$commentId');
 
+                // Refresh reaction counts from API to ensure accuracy
+                if (!isReply) {
+                  setState(() {
+                    final data = _getReaction(apiSlug, entityId);
+                    if (data.commentsCount > 0) data.commentsCount--;
+                  });
+                }
+                await _refreshReactionFromApi(apiSlug, entityId);
+
                 // Recharger le feed pour actualiser les commentaires
                 await _loadFavorisBonPlans();
                 await _loadFavorisDemandes();
@@ -1105,6 +1158,13 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
                       .toList() ??
                   [];
+              // Get avatar URL from user data - check nested profiles
+              final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
+              final proProfile = user['pro_profile'] as Map<String, dynamic>?;
+              final avatarUrl = particulierProfile?['avatar_url']?.toString()
+                  ?? proProfile?['avatar_url']?.toString()
+                  ?? proProfile?['logo_url']?.toString()
+                  ?? user['avatar_url']?.toString();
 
               return Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
@@ -1117,16 +1177,21 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                         CircleAvatar(
                           radius: isReply ? 14 : 18,
                           backgroundColor: const Color(0xFFE6F7EF),
-                          child: Text(
-                            displayName.isNotEmpty
-                                ? displayName[0].toUpperCase()
-                                : '?',
-                            style: TextStyle(
-                              fontSize: isReply ? 11 : 13,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF2A8143),
-                            ),
-                          ),
+                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                              ? NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? avatarUrl)
+                              : null,
+                          child: avatarUrl == null || avatarUrl.isEmpty
+                              ? Text(
+                                  displayName.isNotEmpty
+                                      ? displayName[0].toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                    fontSize: isReply ? 11 : 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF2A8143),
+                                  ),
+                                )
+                              : null,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -1522,7 +1587,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               ),
               const SizedBox(width: 4),
               Text(
-                'Commenter',
+                data.commentsCount.toString(),
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ],
@@ -1669,12 +1734,15 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
           reactionBar: demandeId.isNotEmpty
-              ? _buildReactionBar(
-                  'demandes',
-                  demandeId,
-                  acceptedMessages: demande['accept_messages'] == true,
-                  authorData: demande['user'],
-                )
+              ? () {
+                  _seedReactionFromResource('demandes', demandeId, demande);
+                  return _buildReactionBar(
+                    'demandes',
+                    demandeId,
+                    acceptedMessages: demande['accept_messages'] == true,
+                    authorData: demande['user'],
+                  );
+                }()
               : null,
         );
       },
@@ -2112,7 +2180,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         }
       },
       reactionBar: trainingId.isNotEmpty
-          ? _buildReactionBar('trainings', trainingId)
+          ? () {
+              _seedReactionFromResource('trainings', trainingId, tr);
+              return _buildReactionBar('trainings', trainingId);
+            }()
           : null,
     );
   }
@@ -2518,12 +2589,15 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
             }
           },
           reactionBar: eventId.isNotEmpty
-              ? _buildReactionBar(
-                  'events',
-                  eventId,
-                  acceptedMessages: event['accept_messages'] == true,
-                  authorData: user,
-                )
+              ? () {
+                  _seedReactionFromResource('events', eventId, event);
+                  return _buildReactionBar(
+                    'events',
+                    eventId,
+                    acceptedMessages: event['accept_messages'] == true,
+                    authorData: user,
+                  );
+                }()
               : null,
         );
       },
@@ -3042,16 +3116,20 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                     child: Divider(height: 1),
                   ),
                   const SizedBox(height: 10),
-                  if (bpId.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildReactionBar(
-                        'bon-plans',
-                        bpId,
-                        acceptedMessages: bp['accept_messages'] == true,
-                        authorData: bp['user'] as Map<String, dynamic>?,
-                      ),
-                    ),
+                  if (bpId.isNotEmpty) ...[
+                    Builder(builder: (context) {
+                      _seedReactionFromResource('bon-plans', bpId, bp);
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _buildReactionBar(
+                          'bon-plans',
+                          bpId,
+                          acceptedMessages: bp['accept_messages'] == true,
+                          authorData: bp['user'] as Map<String, dynamic>?,
+                        ),
+                      );
+                    }),
+                  ],
                   const SizedBox(height: 10),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
@@ -3310,7 +3388,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
             }
           },
           reactionBar: jobId.isNotEmpty
-              ? _buildReactionBar('job-offers', jobId)
+              ? () {
+                  _seedReactionFromResource('job-offers', jobId, job);
+                  return _buildReactionBar('job-offers', jobId);
+                }()
               : null,
         );
       },
