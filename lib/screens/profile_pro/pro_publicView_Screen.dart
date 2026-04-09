@@ -35,7 +35,11 @@ class _ReactionData {
   int commentsCount;
   String? userReaction; // 'like' or null
 
-  _ReactionData({this.likesCount = 0, this.commentsCount = 0, this.userReaction});
+  _ReactionData({
+    this.likesCount = 0,
+    this.commentsCount = 0,
+    this.userReaction,
+  });
 }
 
 class _ReviewEntry {
@@ -684,12 +688,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       .toList() ??
                   [];
               // Get avatar URL from user data - check nested profiles
-              final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
+              final particulierProfile =
+                  user['particulier_profile'] as Map<String, dynamic>?;
               final proProfile = user['pro_profile'] as Map<String, dynamic>?;
-              final avatarUrl = particulierProfile?['avatar_url']?.toString()
-                  ?? proProfile?['avatar_url']?.toString()
-                  ?? proProfile?['logo_url']?.toString()
-                  ?? user['avatar_url']?.toString();
+              final avatarUrl =
+                  particulierProfile?['avatar_url']?.toString() ??
+                  proProfile?['avatar_url']?.toString() ??
+                  proProfile?['logo_url']?.toString() ??
+                  user['avatar_url']?.toString();
 
               return Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
@@ -702,8 +708,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         CircleAvatar(
                           radius: isReply ? 14 : 18,
                           backgroundColor: const Color(0xFFE6F7EF),
-                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? avatarUrl)
+                          backgroundImage:
+                              avatarUrl != null && avatarUrl.isNotEmpty
+                              ? NetworkImage(
+                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
+                                      avatarUrl,
+                                )
                               : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
                               ? Text(
@@ -1092,7 +1102,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
     try {
-      final response = await ApiClient().authenticatedGet('/$apiSlug/$entityId');
+      final response = await ApiClient().authenticatedGet(
+        '/$apiSlug/$entityId',
+      );
       final data = response['data'] as Map<String, dynamic>?;
       if (data != null && mounted) {
         setState(() {
@@ -1617,18 +1629,20 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   ),
                   const SizedBox(height: 10),
                   if (bpId.isNotEmpty) ...[
-                    Builder(builder: (context) {
-                      _seedReactionFromResource('bon-plans', bpId, bp);
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildReactionBar(
-                          'bon-plans',
-                          bpId,
-                          acceptedMessages: bp['accept_messages'] == true,
-                          authorData: bp['user'] as Map<String, dynamic>?,
-                        ),
-                      );
-                    }),
+                    Builder(
+                      builder: (context) {
+                        _seedReactionFromResource('bon-plans', bpId, bp);
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _buildReactionBar(
+                            'bon-plans',
+                            bpId,
+                            acceptedMessages: bp['accept_messages'] == true,
+                            authorData: bp['user'] as Map<String, dynamic>?,
+                          ),
+                        );
+                      },
+                    ),
                   ],
                   const SizedBox(height: 10),
                   const Padding(
@@ -3571,6 +3585,50 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     }
   }
 
+  void _showReportConfirmation() {
+    final profile = _profileResponse?['profile'];
+    final displayName = (profile is Map)
+        ? (profile['company_name']?.toString() ?? 'ce compte')
+        : 'ce compte';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Signaler le compte'),
+        content: Text('Voulez-vous vraiment signaler $displayName ?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Implement report API call
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Signalement envoyé'),
+                  backgroundColor: Color(0xFF3AAE5E),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Signaler',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _loadPosts({bool showLoader = true}) async {
     if (!mounted) return;
     if (showLoader) {
@@ -3819,6 +3877,37 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           ),
         ),
         centerTitle: true,
+        actions: _isViewingOwnProfile
+            ? null
+            : [
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: Colors.black),
+                  onSelected: (value) {
+                    if (value == 'report') {
+                      _showReportConfirmation();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'report',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.report_outlined,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Signaler le compte',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
       ),
       body: _isLoadingProfile
           ? const Center(child: CircularProgressIndicator())

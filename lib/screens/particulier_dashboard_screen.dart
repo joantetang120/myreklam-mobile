@@ -893,7 +893,11 @@ class _ReactionData {
   int commentsCount;
   String? userReaction; // 'like' or null
 
-  _ReactionData({this.likesCount = 0, this.commentsCount = 0, this.userReaction});
+  _ReactionData({
+    this.likesCount = 0,
+    this.commentsCount = 0,
+    this.userReaction,
+  });
 }
 
 class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
@@ -3382,7 +3386,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
     try {
-      final response = await ApiClient().authenticatedGet('/$apiSlug/$entityId');
+      final response = await ApiClient().authenticatedGet(
+        '/$apiSlug/$entityId',
+      );
       final data = response['data'] as Map<String, dynamic>?;
       if (data != null && mounted) {
         setState(() {
@@ -3924,12 +3930,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       .toList() ??
                   [];
               // Get avatar URL from user data - check nested profiles
-              final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
+              final particulierProfile =
+                  user['particulier_profile'] as Map<String, dynamic>?;
               final proProfile = user['pro_profile'] as Map<String, dynamic>?;
-              final avatarUrl = particulierProfile?['avatar_url']?.toString()
-                  ?? proProfile?['avatar_url']?.toString()
-                  ?? proProfile?['logo_url']?.toString()
-                  ?? user['avatar_url']?.toString();
+              final avatarUrl =
+                  particulierProfile?['avatar_url']?.toString() ??
+                  proProfile?['avatar_url']?.toString() ??
+                  proProfile?['logo_url']?.toString() ??
+                  user['avatar_url']?.toString();
 
               return Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
@@ -3942,8 +3950,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                         CircleAvatar(
                           radius: isReply ? 14 : 18,
                           backgroundColor: const Color(0xFFE6F7EF),
-                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? avatarUrl)
+                          backgroundImage:
+                              avatarUrl != null && avatarUrl.isNotEmpty
+                              ? NetworkImage(
+                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
+                                      avatarUrl,
+                                )
                               : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
                               ? Text(

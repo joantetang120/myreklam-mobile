@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/create_post_screen.dart';
@@ -306,12 +307,26 @@ class _ProPostScreenState extends State<ProPostScreen> {
     );
   }
 
+  List<String> _extractPostMediaUrls(Map<String, dynamic> post) {
+    final media = post['media_files'] as List? ?? post['media'] as List? ?? [];
+    if (media.isEmpty) return [];
+    return media
+        .whereType<Map<String, dynamic>>()
+        .map((m) {
+          final url = m['url']?.toString() ?? '';
+          return _buildStorageUrl(url);
+        })
+        .whereNotNull()
+        .where((url) => url.isNotEmpty)
+        .toList();
+  }
+
   Widget _buildPostCard(Map<String, dynamic> rawPost) {
     final user = rawPost['user'] as Map<String, dynamic>?;
     final userType = user?['account_type']?.toString() ?? 'Professionnel';
     final postText = rawPost['content']?.toString() ?? '';
     final createdAt = rawPost['created_at']?.toString();
-    final imageUrl = _extractPostImageUrl(rawPost);
+    final mediaUrls = _extractPostMediaUrls(rawPost);
 
     final tags = <PostTag>[
       PostTag(
@@ -327,7 +342,7 @@ class _ProPostScreenState extends State<ProPostScreen> {
       tags: tags,
       title: postText.isNotEmpty ? postText : 'Post sans contenu',
       time: _buildTimeAgo(createdAt),
-      imageUrl: imageUrl,
+      imageUrls: mediaUrls,
       onLike: () {},
       onShare: () {},
       onMorePressed: () => _showPostMenu(rawPost),
