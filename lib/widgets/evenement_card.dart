@@ -20,6 +20,7 @@ class EvenementCard extends StatelessWidget {
 
   final List<String>? tags;
 
+  final ValueNotifier<bool>? isFavoriteNotifier;
   final bool isFavorite;
   final VoidCallback? onFavoriteToggle;
 
@@ -42,6 +43,7 @@ class EvenementCard extends StatelessWidget {
     this.reactionBar,
     this.onAvatarTap,
     this.tags,
+    this.isFavoriteNotifier,
     this.isFavorite = false,
     this.onFavoriteToggle,
   });
@@ -411,11 +413,22 @@ class EvenementCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      size: 18,
-                      color: isFavorite ? Colors.red : Colors.grey[600],
-                    ),
+                    child: isFavoriteNotifier != null
+                        ? ValueListenableBuilder<bool>(
+                            valueListenable: isFavoriteNotifier!,
+                            builder: (context, isFav, child) {
+                              return Icon(
+                                isFav ? Icons.favorite : Icons.favorite_border,
+                                size: 18,
+                                color: isFav ? Colors.red : Colors.grey[600],
+                              );
+                            },
+                          )
+                        : Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                            size: 18,
+                            color: isFavorite ? Colors.red : Colors.grey[600],
+                          ),
                   ),
                 ),
                 const SizedBox(width: 8),
