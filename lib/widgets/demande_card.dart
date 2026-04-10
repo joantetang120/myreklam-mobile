@@ -19,6 +19,7 @@ class DemandeCard extends StatelessWidget {
   final bool isFavorited;
   final bool isLoadingFavorite;
   final VoidCallback? onFavoriteToggle;
+  final String? accountType;
 
   const DemandeCard({
     super.key,
@@ -39,6 +40,7 @@ class DemandeCard extends StatelessWidget {
     this.isFavorited = false,
     this.isLoadingFavorite = false,
     this.onFavoriteToggle,
+    this.accountType,
   });
 
   @override
@@ -77,14 +79,43 @@ class DemandeCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      username,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          username,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF616161),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (accountType == 'pro') ...[
+                          const SizedBox(height: 2),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE6F7EF),
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(
+                                color: const Color(0xFF3AAE5E).withOpacity(0.2),
+                              ),
+                            ),
+                            child: const Text(
+                              'PRO',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Color(0xFF3AAE5E),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                   // Favorite icon

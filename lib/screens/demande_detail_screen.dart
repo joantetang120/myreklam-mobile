@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:icons_launcher/cli_commands.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/creer_demande_screen.dart';
 import 'package:myreklam/services/api_client.dart';
@@ -39,6 +40,7 @@ class DemandeDetailScreen extends StatefulWidget {
   final String? demandeId;
   final Map<String, dynamic>? demandeData;
   final bool returnToListingOnEdit;
+  final String userType;
 
   const DemandeDetailScreen({
     super.key,
@@ -63,6 +65,7 @@ class DemandeDetailScreen extends StatefulWidget {
     this.demandeId,
     this.demandeData,
     this.returnToListingOnEdit = false,
+    this.userType = 'Particulier',
   });
 
   @override
@@ -101,9 +104,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     'formation': 'Formation',
     'collaboration': 'Collaboration',
     'stage': 'Recherche de stage',
-    'internship': 'Recherche de stage',
-    'alternance': 'Recherche d\'alternance',
-    'alternance_search': 'Recherche d\'alternance',
+    'internship': 'Recherche de stage / alternance',
     'jobsearch': 'Recherche d\'emploi',
     'autre': 'Autre demande',
   };
@@ -200,12 +201,14 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     if (user is! Map) return widget.username;
     // particulier pseudo
     if (user['particulier_profile'] is Map) {
-      final pseudo = (user['particulier_profile'] as Map)['pseudo']?.toString() ?? '';
+      final pseudo =
+          (user['particulier_profile'] as Map)['pseudo']?.toString() ?? '';
       if (pseudo.isNotEmpty) return pseudo;
     }
     // pro company name
     if (user['pro_profile'] is Map) {
-      final company = (user['pro_profile'] as Map)['company_name']?.toString() ?? '';
+      final company =
+          (user['pro_profile'] as Map)['company_name']?.toString() ?? '';
       if (company.isNotEmpty) return company;
     }
     // generic name / email
@@ -214,6 +217,14 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     final email = user['email']?.toString() ?? '';
     if (email.contains('@')) return email.split('@').first;
     return widget.username;
+  }
+
+  String _resolveUserType() {
+    final user = _effectiveAuthorData();
+    final accountType = user?['account_type']?.toString();
+    if (accountType == 'pro') return 'Pro';
+    if (accountType == 'particulier') return 'Particulier';
+    return widget.userType;
   }
 
   /// Resolves avatar URL from demandeData['user'], falling back to widget.avatar.
@@ -307,14 +318,20 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
           int score = 0;
           final rNature = (resource['nature'] ?? '').toString().toLowerCase();
           if (rNature == nature) score += 3;
-          final rLocation = (resource['location'] ?? '').toString().toLowerCase();
+          final rLocation = (resource['location'] ?? '')
+              .toString()
+              .toLowerCase();
           final myLocation = (widget.location ?? '').toLowerCase();
-          if (myLocation.isNotEmpty && rLocation.contains(myLocation)) score += 1;
+          if (myLocation.isNotEmpty && rLocation.contains(myLocation))
+            score += 1;
 
           scored.add({'resource': resource, 'score': score});
         }
         scored.sort((a, b) => (b['score'] as int).compareTo(a['score'] as int));
-        final top = scored.take(5).map((e) => e['resource'] as Map<String, dynamic>).toList();
+        final top = scored
+            .take(5)
+            .map((e) => e['resource'] as Map<String, dynamic>)
+            .toList();
 
         if (!mounted) return;
         setState(() => _similarDemandes = top);
@@ -390,7 +407,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
                 commentCtrl.clear();
                 FocusScope.of(ctx).unfocus();
-                
+
                 // Award 1 My for posting a comment (silently, no modal)
                 try {
                   final mysResponse = await MysEarningService().awardMys(
@@ -476,7 +493,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                   replyingToName = null;
                                 });
                               },
-                              child: const Text('Annuler', style: TextStyle(fontFamily: 'Manjari')),
+                              child: const Text(
+                                'Annuler',
+                                style: TextStyle(fontFamily: 'Manjari'),
+                              ),
                             ),
                           ],
                         ),
@@ -830,11 +850,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
   Future<void> _checkFavoriteStatus() async {
     if (widget.demandeId == null) return;
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) return;
-      
+
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/demandes/${widget.demandeId}'),
         headers: {
@@ -842,7 +862,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
           'Accept': 'application/json',
         },
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['data']?['is_favorited'] == true) {
@@ -856,9 +876,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
   Future<void> _toggleFavorite() async {
     if (widget.demandeId == null) return;
-    
+
     setState(() => _isLoadingFavorite = true);
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) {
@@ -867,44 +887,48 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         );
         return;
       }
-      
+
       if (_isFavorite) {
         // Unfavorite
         final response = await http.delete(
-          Uri.parse('${ApiConfig.baseUrl}/demandes/${widget.demandeId}/favorite'),
+          Uri.parse(
+            '${ApiConfig.baseUrl}/demandes/${widget.demandeId}/favorite',
+          ),
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
           },
         );
-        
+
         if (response.statusCode == 200 || response.statusCode == 204) {
           setState(() => _isFavorite = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Retiré des favoris')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Retiré des favoris')));
         }
       } else {
         // Favorite
         final response = await http.post(
-          Uri.parse('${ApiConfig.baseUrl}/demandes/${widget.demandeId}/favorite'),
+          Uri.parse(
+            '${ApiConfig.baseUrl}/demandes/${widget.demandeId}/favorite',
+          ),
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
           },
         );
-        
+
         if (response.statusCode == 200 || response.statusCode == 201) {
           setState(() => _isFavorite = true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ajouté aux favoris')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Ajouté aux favoris')));
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     } finally {
       setState(() => _isLoadingFavorite = false);
     }
@@ -1021,16 +1045,16 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
   /// Extracts and resolves image URLs from demandeData as fallback
   List<String> _extractImagesFromDemandeData() {
     if (widget.images.isNotEmpty) return widget.images;
-    
+
     final data = widget.demandeData;
     if (data == null) return [];
-    
+
     final mediaFiles = data['media'] ?? data['media_files'];
     if (mediaFiles is! List) return [];
-    
+
     final List<String> imageUrls = [];
     final serverBase = ApiConfig.baseUrl.replaceFirst('/api', '');
-    
+
     for (final item in mediaFiles) {
       if (item is Map<String, dynamic>) {
         final url = item['url']?.toString();
@@ -1049,7 +1073,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         }
       }
     }
-    
+
     return imageUrls;
   }
 
@@ -1079,7 +1103,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Détail de la demande',
+          'Détails de la demande',
           style: TextStyle(
             color: Color(0xFF616161),
             fontFamily: 'Manjari',
@@ -1178,485 +1202,581 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         ],
       ),
       body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Image Carousel - full width
-              if (effectiveImages.isNotEmpty)
-                ImageCarousel(images: effectiveImages),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Image Carousel - full width
+            if (effectiveImages.isNotEmpty)
+              ImageCarousel(images: effectiveImages),
 
-              // 2. Tags + Title + Urgent
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Nature tag
-                    if (widget.type != null && widget.type!.isNotEmpty)
-                      _buildTag(
-                        _getTypeLabel(widget.type!),
-                        Icons.description_outlined,
-                        const Color(0xFF3AAE5E),
-                      ),
-                    if (widget.type != null && widget.type!.isNotEmpty)
-                      const SizedBox(height: 10),
-                    // Urgent badge
-                    if (widget.urgent)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 16),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Demande urgente',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.red[700],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    // Title
-                    Text(
-                      widget.demandeTitle,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
-                        fontFamily: 'Manjari',
-                        height: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
-
-              // 3. Description
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Description',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
-                        fontFamily: 'Manjari',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      widget.description.isNotEmpty
-                          ? widget.description
-                          : 'Aucune description fournie.',
-                      style: TextStyle(
-                        fontSize: 14, 
-                        color: Colors.grey[600], 
-                        height: 1.6,
-                        fontFamily: 'Manjari',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // 4. Informations section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Informations',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
-                        fontFamily: 'Manjari',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ..._buildDetailsGrid(),
-                      // Date (only when both start_date and end_date exist)
-                    if (widget.demandeData != null &&
-                        widget.demandeData!['start_date'] != null &&
-                        widget.demandeData!['end_date'] != null) ...[
-                      const SizedBox(height: 12),
-                      _buildDetailItem(
-                        icon: Icons.calendar_today_outlined,
-                        iconColor: const Color(0xFF2196F3),
-                        bgColor: const Color(0xFFE3F2FD),
-                        label: 'Date Souhaitée',
-                        value: 'Du ${formatDate(widget.demandeData!['start_date'])} jusqu\'au ${formatDate(widget.demandeData!['end_date'])}',
-                      ),
-                    ],
-                    // Lieu
-                    if (_hasLocation()) ...[
-                      const SizedBox(height: 4),
-                      _buildDetailItem(
-                        icon: Icons.location_on_outlined,
-                        iconColor: const Color(0xFF3AAE5E),
-                        bgColor: const Color(0xFFE6F7EF),
-                        label: 'Localisation',
-                        value: widget.nationwide
-                            ? 'Toute la France'
-                            : (widget.location != null && widget.location!.isNotEmpty
-                                ? (widget.searchRadiusKm != null
-                                    ? '${widget.searchRadiusKm}km autour de ${widget.location}'
-                                    : widget.location!)
-                                : 'Non spécifié'),
-                      ),
-                    ],
-                    // Budget
-                    if (widget.demandeData != null &&
-                        (widget.demandeData!['budget_min'] != null ||
-                            widget.demandeData!['budget_max'] != null)) ...[
-                      const SizedBox(height: 12),
-                      _buildDetailItem(
-                        icon: Icons.account_balance_wallet_outlined,
-                        iconColor: const Color(0xFF2A8143),
-                        bgColor: const Color(0xFFE6F7EF),
-                        label: 'Budget',
-                        value: _buildBudgetText(),
-                      ),
-                    ],
-                    // Date (only when both start_date and end_date exist)
-                    
-                    const SizedBox(height: 5),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // 5. CTA buttons
-              if (!widget.isOwner)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: [
-                      // Reply button
-                      if (widget.acceptMessages)
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              final author = widget.demandeData?['user'];
-                              if (author is Map<String, dynamic>) {
-                                _startConversationWithAuthor(context, author);
-                                return;
-                              }
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Impossible de démarrer la conversation'),
-                                  backgroundColor: Colors.redAccent,
-                                ),
-                              );
-                            },
-                            icon: const Icon(Icons.reply_outlined, size: 20),
-                            label: const Text('Répondre à la demande'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFF9800),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              elevation: 0,
-                            ),
-                          ),
-                        ),
-                      if (widget.acceptMessages)
-                        const SizedBox(height: 12),
-
-                      // Documents button
-                      if (((formatBool(widget.demandeData?['use_candidate_documents'] ?? widget.demandeData?['doc_cand']) == 'Oui') ||
-                          (widget.demandeData?['media_files'] as List? ?? widget.demandeData?['media'] as List? ?? []).isNotEmpty) &&
-                          !(widget.nature?.toLowerCase().contains('immobilier') ?? false))
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Ouverture des documents...')),
-                              );
-                            },
-                            icon: const Icon(Icons.description_outlined, size: 20),
-                            label: const Text('Voir les documents'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF3AAE5E),
-                              side: const BorderSide(color: Color(0xFF3AAE5E)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
-                      if (((formatBool(widget.demandeData?['use_candidate_documents'] ?? widget.demandeData?['doc_cand']) == 'Oui') ||
-                          (widget.demandeData?['media_files'] as List? ?? widget.demandeData?['media'] as List? ?? []).isNotEmpty) &&
-                          !(widget.nature?.toLowerCase().contains('immobilier') ?? false))
-                        const SizedBox(height: 16),
-                    ],
-                  ),
-                ),
-
-              const SizedBox(height: 16),
-
-              // 6. Action row (Favoris - Share button commented out)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            // 2. Tags + Title + Urgent
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        onPressed: _toggleFavorite,
-                        icon: _isLoadingFavorite
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Icon(
-                                _isFavorite ? Icons.favorite : Icons.favorite_outline,
-                                color: _isFavorite ? Colors.red : Colors.grey[600],
-                                size: 24,
-                              ),
+                  // Nature tag
+                  if (widget.type != null && widget.type!.isNotEmpty)
+                    _buildTag(
+                      _getTypeLabel(widget.type!),
+                      Icons.description_outlined,
+                      const Color(0xFF3AAE5E),
+                    ),
+                  if (widget.type != null && widget.type!.isNotEmpty)
+                    const SizedBox(height: 10),
+                  // Urgent badge
+                  if (widget.urgent)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
                       ),
-                      Text(
-                        'Favoris',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _isFavorite ? Colors.red : Colors.grey[600],
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.red.withValues(alpha: 0.3),
                         ),
                       ),
-                    ],
-                  ),
-                  // Commented out: Partager (Share) button
-                  // Column(
-                  //   mainAxisSize: MainAxisSize.min,
-                  //   children: [
-                  //     IconButton(
-                  //       onPressed: () {},
-                  //       icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
-                  //     ),
-                  //     Text('Partager', style: TextStyle(fontSize: 12, color: Colors.grey[600], fontFamily: 'Manjari')),
-                  //   ],
-                  // ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // 7. Owner section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundImage: _resolveOwnerAvatar().startsWith('http')
-                          ? NetworkImage(_resolveOwnerAvatar()) as ImageProvider
-                          : const AssetImage('assets/images/dashboard_particulier/Ellipse 12.png'),
-                      backgroundColor: Colors.grey[200],
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.red,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
                           Text(
-                            _resolveOwnerName(),
-                            style: const TextStyle(
-                              fontSize: 16,
+                            'Demande urgente',
+                            style: TextStyle(
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A1A),
-                              fontFamily: 'Manjari',
+                              color: Colors.red[700],
                             ),
                           ),
-                         
                         ],
                       ),
                     ),
-                    if (!widget.isOwner)
-                      _isLoadingFollow
-                          ? const SizedBox(
-                              width: 24, height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : OutlinedButton(
-                              onPressed: _toggleFollow,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: _isFollowing ? Colors.grey : const Color(0xFF3AAE5E),
-                                side: BorderSide(
-                                  color: _isFollowing ? Colors.grey : const Color(0xFF3AAE5E),
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              ),
-                              child: Text(
-                                _isFollowing ? 'Suivi' : 'Suivre',
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                            ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // 8. Posted time (at bottom, like on events detail)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  widget.timeAgo.isNotEmpty ? widget.timeAgo : 'Posté récemment',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[500],
-                    fontFamily: 'Manjari',
+                  // Title
+                  Text(
+                    widget.demandeTitle,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                      fontFamily: 'Manjari',
+                      height: 1.3,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                ],
               ),
-              const SizedBox(height: 16),
+            ),
 
-              // 9. Comments section
+            // 3. Description
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Description',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                      fontFamily: 'Manjari',
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.description.isNotEmpty
+                        ? widget.description
+                        : 'Aucune description fournie.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      height: 1.6,
+                      fontFamily: 'Manjari',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 4. Informations section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Informations',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                      fontFamily: 'Manjari',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ..._buildDetailsGrid(),
+                  // Date (only when both start_date and end_date exist)
+                  if (widget.demandeData != null &&
+                      widget.demandeData!['start_date'] != null &&
+                      widget.demandeData!['end_date'] != null) ...[
+                    const SizedBox(height: 12),
+                    _buildDetailItem(
+                      icon: Icons.calendar_today_outlined,
+                      iconColor: const Color(0xFF2196F3),
+                      bgColor: const Color(0xFFE3F2FD),
+                      label: 'Date Souhaitée',
+                      value:
+                          'Du ${formatDate(widget.demandeData!['start_date'])} jusqu\'au ${formatDate(widget.demandeData!['end_date'])}',
+                    ),
+                  ],
+                  // Lieu
+                  if (_hasLocation()) ...[
+                    const SizedBox(height: 4),
+                    _buildDetailItem(
+                      icon: Icons.location_on_outlined,
+                      iconColor: const Color(0xFF3AAE5E),
+                      bgColor: const Color(0xFFE6F7EF),
+                      label: 'Localisation',
+                      value: widget.nationwide
+                          ? 'Toute la France'
+                          : (widget.location != null &&
+                                    widget.location!.isNotEmpty
+                                ? (widget.searchRadiusKm != null
+                                      ? '${widget.searchRadiusKm}km autour de ${widget.location}'
+                                      : widget.location!)
+                                : 'Non spécifié'),
+                    ),
+                  ],
+                  // Budget
+                  if (widget.demandeData != null &&
+                      (widget.demandeData!['budget_min'] != null ||
+                          widget.demandeData!['budget_max'] != null)) ...[
+                    const SizedBox(height: 12),
+                    _buildDetailItem(
+                      icon: Icons.account_balance_wallet_outlined,
+                      iconColor: const Color(0xFF2A8143),
+                      bgColor: const Color(0xFFE6F7EF),
+                      label: 'Budget',
+                      value: _buildBudgetText(),
+                    ),
+                  ],
+
+                  // Date (only when both start_date and end_date exist)
+                  const SizedBox(height: 5),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 5. CTA buttons
+            if (!widget.isOwner)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    // Reply button
+                    if (widget.acceptMessages)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            final author = widget.demandeData?['user'];
+                            if (author is Map<String, dynamic>) {
+                              _startConversationWithAuthor(context, author);
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Impossible de démarrer la conversation',
+                                ),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.reply_outlined, size: 20),
+                          label: const Text('Répondre à la demande'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFF9800),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                    if (widget.acceptMessages) const SizedBox(height: 12),
+
+                    // Documents button
+                    if (((formatBool(
+                                  widget.demandeData?['use_candidate_documents'] ??
+                                      widget.demandeData?['doc_cand'],
+                                ) ==
+                                'Oui') ||
+                            (widget.demandeData?['media_files'] as List? ??
+                                    widget.demandeData?['media'] as List? ??
+                                    [])
+                                .isNotEmpty) &&
+                        !(widget.nature?.toLowerCase().contains('immobilier') ??
+                            false))
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Ouverture des documents...'),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.description_outlined,
+                            size: 20,
+                          ),
+                          label: const Text('Voir les documents'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF3AAE5E),
+                            side: const BorderSide(color: Color(0xFF3AAE5E)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (((formatBool(
+                                  widget.demandeData?['use_candidate_documents'] ??
+                                      widget.demandeData?['doc_cand'],
+                                ) ==
+                                'Oui') ||
+                            (widget.demandeData?['media_files'] as List? ??
+                                    widget.demandeData?['media'] as List? ??
+                                    [])
+                                .isNotEmpty) &&
+                        !(widget.nature?.toLowerCase().contains('immobilier') ??
+                            false))
+                      const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: 16),
+
+            // 6. Action row (Favoris - Share button commented out)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: _toggleFavorite,
+                      icon: _isLoadingFavorite
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Icon(
+                              _isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_outline,
+                              color: _isFavorite
+                                  ? Colors.red
+                                  : Colors.grey[600],
+                              size: 24,
+                            ),
+                    ),
+                    Text(
+                      'Favoris',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _isFavorite ? Colors.red : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+                // Commented out: Partager (Share) button
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () {},
+                      icon: Icon(
+                        Icons.share_outlined,
+                        color: Colors.grey[600],
+                        size: 24,
+                      ),
+                    ),
+                    Text(
+                      'Partager',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontFamily: 'Manjari',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // 7. Owner section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundImage: _resolveOwnerAvatar().startsWith('http')
+                        ? NetworkImage(_resolveOwnerAvatar()) as ImageProvider
+                        : const AssetImage(
+                            'assets/images/dashboard_particulier/Ellipse 12.png',
+                          ),
+                    backgroundColor: Colors.grey[200],
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.comment_outlined, color: Color(0xFF616161), size: 20),
-                        const SizedBox(width: 8),
                         Text(
-                          'Commentaires',
+                          _resolveOwnerName(),
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1A1A1A),
                             fontFamily: 'Manjari',
                           ),
                         ),
-                        const Spacer(),
-                        Text(
-                          '${_comments.length}',
-                          style: TextStyle(
-                            fontSize: 14, 
-                            color: Colors.grey[500],
-                            fontFamily: 'Manjari',
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE6F7EF),
+                            borderRadius: BorderRadius.circular(5),
+                            border: Border.all(
+                              color: const Color(0xFF3AAE5E).withOpacity(0.2),
+                            ),
+                          ),
+                          child: Text(
+                            _resolveUserType(),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF3AAE5E),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    if (_isLoadingComments)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 20),
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    else if (_comments.isEmpty)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: Text(
-                            'Aucun commentaire. Soyez le premier !',
-                            style: TextStyle(
-                              fontSize: 14, 
-                              color: Colors.grey[500], 
-                              fontStyle: FontStyle.italic,
-                              fontFamily: 'Manjari',
+                  ),
+                  if (!widget.isOwner)
+                    _isLoadingFollow
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : OutlinedButton(
+                            onPressed: _toggleFollow,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: _isFollowing
+                                  ? Colors.grey
+                                  : const Color(0xFF3AAE5E),
+                              side: BorderSide(
+                                color: _isFollowing
+                                    ? Colors.grey
+                                    : const Color(0xFF3AAE5E),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                            ),
+                            child: Text(
+                              _isFollowing ? 'Suivi' : 'Suivre',
+                              style: const TextStyle(fontSize: 13),
                             ),
                           ),
-                        ),
-                      )
-                    else
-                      Column(
-                        children: _comments.take(2)
-                            .map((c) => _buildCommentItem(c, onReply: null))
-                            .toList(),
-                      ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () => _showCommentsSheet(context),
-                        icon: const Icon(Icons.chat_outlined, size: 18),
-                        label: Text(_comments.isEmpty ? 'Ajouter un commentaire' : 'Voir tous les commentaires'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF3AAE5E),
-                          side: const BorderSide(color: Color(0xFF3AAE5E)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-              const SizedBox(height: 32),
+            ),
+            const SizedBox(height: 8),
 
-              // 10. Demandes similaires
-              const Center(
-                child: Text(
-                  'Demandes similaires',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF616161),
-                    fontFamily: 'Manjari',
-                  ),
-                  textAlign: TextAlign.center,
+            // 8. Posted time (at bottom, like on events detail)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                widget.timeAgo.isNotEmpty ? widget.timeAgo : 'Posté récemment',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[500],
+                  fontFamily: 'Manjari',
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Container(height: 1, color: Colors.grey[300]),
-              ),
-              if (_isLoadingSimilar)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                )
-              else if (_similarDemandes.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                  child: Center(
-                    child: Text(
-                      'Aucune demande similaire trouvée.',
-                      style: TextStyle(
-                        fontSize: 13, 
-                        color: Colors.grey[500],
-                        fontFamily: 'Manjari',
+            ),
+            const SizedBox(height: 16),
+
+            // 9. Comments section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.comment_outlined,
+                        color: Color(0xFF616161),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Commentaires',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
+                          fontFamily: 'Manjari',
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${_comments.length}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[500],
+                          fontFamily: 'Manjari',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (_isLoadingComments)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  else if (_comments.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Text(
+                          'Aucun commentaire. Soyez le premier !',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                            fontStyle: FontStyle.italic,
+                            fontFamily: 'Manjari',
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Column(
+                      children: _comments
+                          .take(2)
+                          .map((c) => _buildCommentItem(c, onReply: null))
+                          .toList(),
+                    ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showCommentsSheet(context),
+                      icon: const Icon(Icons.chat_outlined, size: 18),
+                      label: Text(
+                        _comments.isEmpty
+                            ? 'Ajouter un commentaire'
+                            : 'Voir tous les commentaires',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF3AAE5E),
+                        side: const BorderSide(color: Color(0xFF3AAE5E)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: _similarDemandes
-                        .map((d) => _buildSimilarDemandeCard(d))
-                        .toList(),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // 10. Demandes similaires
+            const Center(
+              child: Text(
+                'Demandes similaires',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF616161),
+                  fontFamily: 'Manjari',
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Container(height: 1, color: Colors.grey[300]),
+            ),
+            if (_isLoadingSimilar)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              )
+            else if (_similarDemandes.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 24,
+                  horizontal: 16,
+                ),
+                child: Center(
+                  child: Text(
+                    'Aucune demande similaire trouvée.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[500],
+                      fontFamily: 'Manjari',
+                    ),
                   ),
                 ),
-              const SizedBox(height: 30),
-            ],
-          ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  children: _similarDemandes
+                      .map((d) => _buildSimilarDemandeCard(d))
+                      .toList(),
+                ),
+              ),
+            const SizedBox(height: 30),
+          ],
         ),
-      );
+      ),
+    );
   }
 
   void _showDeleteDialog(BuildContext context) {
@@ -1749,7 +1869,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Text('Supprimer', style: TextStyle(fontFamily: 'Manjari')),
+                    : const Text(
+                        'Supprimer',
+                        style: TextStyle(fontFamily: 'Manjari'),
+                      ),
               ),
             ],
           ),
@@ -1809,7 +1932,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 13, 
+                  fontSize: 13,
                   color: Colors.grey[600],
                   fontFamily: 'Manjari',
                 ),
@@ -1840,24 +1963,24 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     final data = widget.demandeData ?? const <String, dynamic>{};
     final budgetMin = data['budget_min'];
     final budgetMax = data['budget_max'];
-    
+
     final bool hasMin = budgetMin != null;
     final bool hasMax = budgetMax != null;
-    
+
     // Format min value
     String? minStr;
     if (hasMin) {
       final minNum = double.tryParse(budgetMin.toString()) ?? 0;
       minStr = '${minNum.round()} €';
     }
-    
+
     // Format max value
     String? maxStr;
     if (hasMax) {
       final maxNum = double.tryParse(budgetMax.toString()) ?? 0;
       maxStr = '${maxNum.round()} €';
     }
-    
+
     // Return appropriate format based on which values exist
     if (hasMin && hasMax) {
       return 'Min: $minStr - Max: $maxStr';
@@ -1866,7 +1989,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     } else if (hasMax) {
       return 'Max: $maxStr';
     }
-    
+
     return 'Non spécifié';
   }
 
@@ -1874,7 +1997,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     final tiles = _buildDetailTiles();
     if (tiles.isEmpty) return [];
     return tiles
-        .map((t) => Padding(padding: const EdgeInsets.only(bottom: 12), child: t))
+        .map(
+          (t) => Padding(padding: const EdgeInsets.only(bottom: 12), child: t),
+        )
         .toList();
   }
 
@@ -1917,10 +2042,16 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     final data = widget.demandeData ?? const <String, dynamic>{};
 
     final n = (widget.nature ?? '').toString().trim().toLowerCase();
-    final isFormation = n.contains('formation') || n.contains('training') || n.contains('searchtraining');
+    final isFormation =
+        n.contains('formation') ||
+        n.contains('training') ||
+        n.contains('searchtraining');
     final isImmobilier = n.contains('immobilier') || n.contains('realestate');
     final isStage = n.contains('stage') || n.contains('internship');
-    final isEmploi = n.contains("emploi") || n.contains("searchjob") || n.contains("jobsearch");
+    final isEmploi =
+        n.contains("emploi") ||
+        n.contains("searchjob") ||
+        n.contains("jobsearch");
     final isAlternance = n.contains('alternance');
 
     final tiles = <Widget>[];
@@ -1965,31 +2096,46 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         'senior': 'Sénior (+10 ans)',
       };
 
-      final fCategory = data['training_category'] ?? data['category'] ?? data['category_label'] ?? data['training']?['category'] ?? data['details']?['category'];
-      addTile(
-        icon: Icons.school_outlined,
-        iconBg: const Color(0xFFEDE7F6),
-        iconColor: const Color(0xFF673AB7),
-        title: 'Catégorie de formation souhaité',
-        value: str(fCategory),
-      );
+      // final fCategory =
+      //     data['training_category'] ??
+      //     data['category'] ??
+      //     data['category_label'] ??
+      //     data['training']?['category'] ??
+      //     data['details']?['category'];
+      // addTile(
+      //   icon: Icons.school_outlined,
+      //   iconBg: const Color(0xFFEDE7F6),
+      //   iconColor: const Color(0xFF673AB7),
+      //   title: 'Catégorie de formation souhaité',
+      //   value: str(fCategory)?.replaceAll('_', ' ').capitalize(),
+      // );
 
-      final fType = data['training_type'] ?? data['type'] ?? data['type_label'] ?? data['training']?['type'] ?? data['details']?['type'];
-      addTile(
-        icon: Icons.auto_stories_outlined,
-        iconBg: const Color(0xFFE3F2FD),
-        iconColor: const Color(0xFF1E88E5),
-        title: 'Type de formation souhaité',
-        value: str(fType),
-      );
-
-      final fSector = data['training_sector'] ?? data['sector'] ?? data['sector_label'] ?? data['training']?['sector'] ?? data['details']?['sector'];
+      final fSector =
+          data['training_sector'] ??
+          data['sector'] ??
+          data['sector_label'] ??
+          data['training']?['sector'] ??
+          data['details']?['sector'];
       addTile(
         icon: Icons.hub_outlined,
         iconBg: const Color(0xFFE6F7EF),
         iconColor: const Color(0xFF2A8143),
         title: 'Secteur de formation',
         value: str(fSector),
+      );
+
+      final fType =
+          data['training_type'] ??
+          data['type'] ??
+          data['type_label'] ??
+          data['training']?['type'] ??
+          data['details']?['type'];
+      addTile(
+        icon: Icons.auto_stories_outlined,
+        iconBg: const Color(0xFFE3F2FD),
+        iconColor: const Color(0xFF1E88E5),
+        title: 'Type de formation souhaité',
+        value: 'Formation ${str(fType)?.capitalize()}',
       );
 
       const teachingLabels = {
@@ -2011,10 +2157,15 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         'cpf': 'CPF',
       };
 
-      final tRaw = data['teaching_types'] ?? data['teaching'] ?? data['teaching_type'] ?? data['training']?['teaching_types'] ?? data['details']?['teaching_types'];
-      final teaching = listStr(tRaw)
-          .map((c) => teachingLabels[c] ?? c)
-          .toList();
+      final tRaw =
+          data['teaching_types'] ??
+          data['teaching'] ??
+          data['teaching_type'] ??
+          data['training']?['teaching_types'] ??
+          data['details']?['teaching_types'];
+      final teaching = listStr(
+        tRaw,
+      ).map((c) => teachingLabels[c] ?? c).toList();
       addTile(
         icon: Icons.cast_for_education_outlined,
         iconBg: const Color(0xFFFFF3E0),
@@ -2023,10 +2174,15 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         value: teaching.isNotEmpty ? teaching.join(', ') : null,
       );
 
-      final fRaw = data['financing_types'] ?? data['financing'] ?? data['financing_type'] ?? data['training']?['financing_types'] ?? data['details']?['financing_types'];
-      final financing = listStr(fRaw)
-          .map((c) => financingLabels[c] ?? c)
-          .toList();
+      final fRaw =
+          data['financing_types'] ??
+          data['financing'] ??
+          data['financing_type'] ??
+          data['training']?['financing_types'] ??
+          data['details']?['financing_types'];
+      final financing = listStr(
+        fRaw,
+      ).map((c) => financingLabels[c] ?? c).toList();
       addTile(
         icon: Icons.payments_outlined,
         iconBg: const Color(0xFFFFEBEE),
@@ -2035,7 +2191,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         value: financing.isNotEmpty ? financing.join(', ') : null,
       );
 
-      final immediate = formatBool(data['dans_immediat'] ?? data['immediate_availability']);
+      final immediate = formatBool(
+        data['dans_immediat'] ?? data['immediate_availability'],
+      );
       if (immediate == 'Oui') {
         addTile(
           icon: Icons.flash_on_outlined,
@@ -2045,26 +2203,47 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
           value: 'Immédiate',
         );
       } else {
-        final start = formatDate(data['start_date'] ?? data['start'] ?? data['training']?['start_date']);
-        final end = formatDate(data['end_date'] ?? data['end'] ?? data['training']?['end_date']);
+        final start = formatDate(
+          data['start_date'] ??
+              data['start'] ??
+              data['training']?['start_date'],
+        );
+        final end = formatDate(
+          data['end_date'] ?? data['end'] ?? data['training']?['end_date'],
+        );
         addTile(
           icon: Icons.event_available_outlined,
           iconBg: const Color(0xFFE6F7EF),
           iconColor: const Color(0xFF2A8143),
           title: 'Dates de formation souhaitées',
           value: start != null
-            ? (end != null ? 'Du $start au $end' : 'À partir du $start')
-            : null,
+              ? (end != null ? 'Du $start au $end' : 'À partir du $start')
+              : null,
         );
       }
 
-      final roleStr = str(data['user_type']) ?? str(data['user_role']) ?? str(data['user']?['role']) ?? '';
+      final roleStr =
+          str(data['user_type']) ??
+          str(data['user_role']) ??
+          str(data['user']?['role']) ??
+          '';
       final isProUser = roleStr.contains('pro') || roleStr.contains('business');
-      final hasProData = str(data['nb_personnes']) != null || str(data['nb_groupes']) != null;
-      
+      final hasProData =
+          (str(data['nb_personnes']) != null ||
+              str(data['nb_personnes']) != null) ||
+          (str(data['nb_groupes']) != null || str(data['nb_groupes']) == null);
+
       if (isProUser || hasProData) {
-        final nbP = str(data['nb_personnes'] ?? data['training']?['nb_personnes'] ?? data['details']?['nb_personnes']);
-        final nbG = str(data['nb_groupes'] ?? data['training']?['nb_groupes'] ?? data['details']?['nb_groupes']);
+        final nbP = str(
+          data['nb_personnes'] ??
+              data['training']?['nb_personnes'] ??
+              data['details']?['nb_personnes'],
+        );
+        final nbG = str(
+          data['nb_groupes'] ??
+              data['training']?['nb_groupes'] ??
+              data['details']?['nb_groupes'],
+        );
         String? targetValue;
         if (nbP != null && nbG != null) {
           targetValue = '$nbP personne(s) / $nbG groupe(s)';
@@ -2072,6 +2251,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
           targetValue = '$nbP personne(s)';
         } else if (nbG != null) {
           targetValue = '$nbG groupe(s)';
+        } else {
+          targetValue = 'À définir';
         }
         addTile(
           icon: Icons.people_outline,
@@ -2080,8 +2261,12 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
           title: 'Public à former',
           value: targetValue,
         );
-      } else {
-        final edRaw = data['education_level'] ?? data['level_education'] ?? data['training']?['education_level'] ?? data['details']?['education_level'];
+      } else if (UserSession().isParticulier) {
+        final edRaw =
+            data['education_level'] ??
+            data['level_education'] ??
+            data['training']?['education_level'] ??
+            data['details']?['education_level'];
         addTile(
           icon: Icons.school_outlined,
           iconBg: Colors.orange.withValues(alpha: 0.1),
@@ -2089,7 +2274,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
           title: 'Niveau d\'étude',
           value: educationLabels[str(edRaw)] ?? str(edRaw) ?? 'À définir',
         );
-        final exRaw = data['experience_level'] ?? data['level_experience'] ?? data['training']?['experience_level'] ?? data['details']?['experience_level'];
+        final exRaw =
+            data['experience_level'] ??
+            data['level_experience'] ??
+            data['training']?['experience_level'] ??
+            data['details']?['experience_level'];
         addTile(
           icon: Icons.work_history_outlined,
           iconBg: const Color(0xFFE6F7EF),
@@ -2162,7 +2351,6 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         title: 'Nombre de Chambres',
         value: str(data['nb_chambres']) ?? "indifférent",
       );
-    
     } else if (isEmploi || isStage || isAlternance) {
       // Translation maps
       const educationLabels = {
@@ -2290,7 +2478,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         title: 'Fonction recherchée',
         value: functionLabels[functionKey] ?? functionKey,
       );
-      final contracts = listStr(data['contract_types']).map((c) => contractLabels[c] ?? c).toList();
+      final contracts = listStr(
+        data['contract_types'],
+      ).map((c) => contractLabels[c] ?? c).toList();
       addTile(
         icon: Icons.assignment_outlined,
         iconBg: const Color(0xFFE6F7EF),
@@ -2304,7 +2494,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         iconBg: const Color(0xFFFFF3E0),
         iconColor: const Color(0xFFFF9800),
         title: 'Temps de travail souhaité',
-        value: workTypeKey != null ? (workTypeLabels[workTypeKey] ?? workTypeKey) : null,
+        value: workTypeKey != null
+            ? (workTypeLabels[workTypeKey] ?? workTypeKey)
+            : null,
       );
 
       addTile(
@@ -2312,7 +2504,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         iconBg: Colors.orange.withValues(alpha: 0.1),
         iconColor: Colors.orange,
         title: 'Niveau d\'étude',
-        value: educationLabels[str(data['education_level'])] ?? str(data['education_level']),
+        value:
+            educationLabels[str(data['education_level'])] ??
+            str(data['education_level']),
       );
 
       addTile(
@@ -2320,7 +2514,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         iconBg: const Color(0xFFE6F7EF),
         iconColor: const Color(0xFF3AAE5E),
         title: 'Niveau d\'expérience',
-        value: experienceLabels[str(data['experience_level'])] ?? str(data['experience_level']),
+        value:
+            experienceLabels[str(data['experience_level'])] ??
+            str(data['experience_level']),
       );
 
       addTile(
@@ -2363,21 +2559,34 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
       final sMin = str(data['salary_min']);
       final sMax = str(data['salary_max']);
       final netOrBrut = str(data['salary_net_or_brut']);
-      final indice = str(data['salary_indice_temporel'] ?? data['salary_period'] ?? data['period']);
+      final indice = str(
+        data['salary_indice_temporel'] ??
+            data['salary_period'] ??
+            data['period'],
+      );
 
       String? salaryText() {
         final hasMinMax =
             (sMin != null && sMin.isNotEmpty) ||
             (sMax != null && sMax.isNotEmpty);
-            
+
         String suffix = '';
-        if (indice == 'annees' || indice == 'annee' || indice == 'an' || indice == 'annuel') {
+        if (indice == 'annees' ||
+            indice == 'annee' ||
+            indice == 'an' ||
+            indice == 'annuel') {
           suffix = ' / An';
-        } else if (indice == 'mois' || indice == 'mensuel' || indice == 'mensualite') {
+        } else if (indice == 'mois' ||
+            indice == 'mensuel' ||
+            indice == 'mensualite') {
           suffix = ' / Mois';
-        } else if (indice == 'heures' || indice == 'heure' || indice == 'horaire') {
+        } else if (indice == 'heures' ||
+            indice == 'heure' ||
+            indice == 'horaire') {
           suffix = ' / Heure';
-        } else if (indice == 'jours' || indice == 'jour' || indice == 'journalier') {
+        } else if (indice == 'jours' ||
+            indice == 'jour' ||
+            indice == 'journalier') {
           suffix = ' / Jour';
         }
 
@@ -2432,7 +2641,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     final nature = d['nature']?.toString() ?? '';
     final urgent = d['urgent'] == true || d['urgent'] == 1;
     final nationwide = d['nationwide'] == true;
-    final locationRaw = d['location']?.toString() ?? d['city']?.toString() ?? '';
+    final locationRaw =
+        d['location']?.toString() ?? d['city']?.toString() ?? '';
     final location = nationwide
         ? 'Toute la France'
         : (locationRaw.isNotEmpty ? locationRaw : 'Non spécifié');
@@ -2442,7 +2652,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         : null;
 
     // Resolve username same way as demandes_screen
-    String username = user?['name']?.toString() ??
+    String username =
+        user?['name']?.toString() ??
         user?['email']?.toString().split('@').first ??
         'Utilisateur';
     if (user != null) {
@@ -2498,7 +2709,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
       timeAgo: _timeAgo(d['created_at']?.toString()),
       onTapCTA: () {
         final id = d['id']?.toString();
-        
+
         // Extract and resolve image URLs from media_files (same pattern as job_detail)
         final mediaFiles = d['media'] ?? d['media_files'];
         final List<String> imageUrls = [];
@@ -2517,7 +2728,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
             }
           }
         }
-        
+
         Navigator.push(
           context,
           MaterialPageRoute(

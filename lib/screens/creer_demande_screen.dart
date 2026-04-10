@@ -299,7 +299,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   final TextEditingController _salaryMinController = TextEditingController();
   final TextEditingController _salaryMaxController = TextEditingController();
   String? _salaryNetOrBrut = 'brut'; // 'net' ou 'brut'
-  String? _salaryIndiceTemporel = 'annees'; // 'annees' ou 'heures'
+  String? _salaryIndiceTemporel = 'annees'; // 'annees' ou 'heures' ou 'mois'
   String? _niveauEtudes;
   String? _niveauExperience;
   bool _accepteTeletravaill = false;
@@ -923,10 +923,24 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   }
 
   // Obtenir les secteurs de formation selon la catégorie sélectionnée
-  List<Map<String, String>> _getFormationSectors(String? categoryCode) {
-    if (categoryCode == null) return [];
+  List<Map<String, String>> _getFormationSectors(String? categoryValue) {
+    if (categoryValue == null) return [];
 
-    switch (categoryCode) {
+    // Si c'est déjà un code connu, l'utiliser directement
+    String codeToUse = categoryValue;
+
+    // Sinon, chercher le code correspondant au label
+    if (!categoryValue.startsWith('formation_')) {
+      final match = _formationCategories.firstWhere(
+        (cat) => cat['label'] == categoryValue,
+        orElse: () => {},
+      );
+      if (match.isNotEmpty) {
+        codeToUse = match['code']!;
+      }
+    }
+
+    switch (codeToUse) {
       case 'formation_langues':
         return [
           {'code': 'anglais', 'label': 'Anglais professionnel'},
@@ -2137,14 +2151,21 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               label: 'Catégorie de la formation recherchée*',
               value: _selectedFormationCategory,
               items: _formationCategories,
-              onChanged: (val) => setState(() {
-                _selectedFormationCategory = val;
-                _selectedFormationSector = null; // Réinitialiser le secteur
-              }),
+              onChanged: (val) => {
+                print("_formationCategories: $_formationCategories"),
+                print(
+                  "_selectedFormationCategory: $_selectedFormationCategory",
+                ),
+                setState(() {
+                  _selectedFormationCategory = val;
+                  _selectedFormationSector = null; // Réinitialiser le secteur
+                }),
+              },
               hint: _buildRequiredHint(
                 'Sélectionner une catégorie de formation',
               ),
               backgroundColor: const Color(0xFFF9FAFB),
+              useLabelAsValue: true,
             ),
             const SizedBox(height: 12),
             // Afficher le champ Secteur si la catégorie a des secteurs
@@ -2155,8 +2176,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 label: 'Secteur de formation recherché*',
                 value: _selectedFormationSector,
                 items: _getFormationSectors(_selectedFormationCategory),
-                onChanged: (val) =>
-                    setState(() => _selectedFormationSector = val),
+                onChanged: (val) => {
+                  setState(() => _selectedFormationSector = val),
+                },
                 hint: _buildRequiredHint('Sélectionner un secteur'),
                 backgroundColor: const Color(0xFFF9FAFB),
               ),
@@ -3585,9 +3607,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       label: 'Indice temporel',
                       value: _salaryIndiceTemporel,
                       items: [
-                        {'code': 'annees', 'label': 'Années'},
-                        {'code': 'mois', 'label': 'Mois'},
                         {'code': 'heures', 'label': 'Heures'},
+                        {'code': 'jours', 'label': 'Jours'},
+                        {'code': 'semaines', 'label': 'Semaines'},
+                        {'code': 'mois', 'label': 'Mois'},
+                        {'code': 'annees', 'label': 'Années'},
                       ],
                       onChanged: (val) =>
                           setState(() => _salaryIndiceTemporel = val),
@@ -3775,6 +3799,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 onChanged: (val) => setState(() => _selectedFunction = val),
                 hint: _buildRequiredHint('Sélectionner une fonction'),
                 backgroundColor: const Color(0xFFF9FAFB),
+                useLabelAsValue: true,
               ),
               const SizedBox(height: 16),
             ],
@@ -3863,6 +3888,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               onChanged: (val) => setState(() => _niveauEtudes = val),
               hint: const Text('Sélectionner'),
               backgroundColor: Colors.white,
+              useLabelAsValue: true,
             ),
             const SizedBox(height: 16),
 
@@ -4039,8 +4065,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       label: 'Indice temporel',
                       value: _salaryIndiceTemporel,
                       items: [
-                        {'code': 'annees', 'label': 'Années'},
                         {'code': 'heures', 'label': 'Heures'},
+                        {'code': 'jours', 'label': 'Jours'},
+                        {'code': 'semaines', 'label': 'Semaines'},
+                        {'code': 'mois', 'label': 'Mois'},
+                        {'code': 'annees', 'label': 'Années'},
                       ],
                       onChanged: (val) =>
                           setState(() => _salaryIndiceTemporel = val),
@@ -4751,13 +4780,15 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       rows.add(
         _buildReviewRow(
           'Secteur d\'activité',
-          _getLabelFromCode(_secteursActivite, _selectedSecteurActivite),
+          // _getLabelFromCode(_secteursActivite, _selectedSecteurActivite),
+          _selectedSecteurActivite!,
         ),
       );
       rows.add(
         _buildReviewRow(
           'Fonction recherchée',
-          _getLabelFromCode(_allFunction, _selectedFunction),
+          // _getLabelFromCode(_allFunction, _selectedFunction),
+          _selectedFunction!,
         ),
       );
       if (_tempsPartielPlein != null) {
@@ -4787,7 +4818,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           }
           if (_salaryIndiceTemporel != null) {
             salaryRange +=
-                ' / ${_salaryIndiceTemporel == 'annees' ? 'Années' : 'Heures'}';
+                ' / ${_salaryIndiceTemporel != null ? '$_salaryIndiceTemporel' : 'Années'}';
           }
           rows.add(_buildReviewRow('Tranche salariale', salaryRange));
         } else {
@@ -5303,6 +5334,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     required ValueChanged<String?> onChanged,
     Widget? hint,
     Color? backgroundColor,
+    bool useLabelAsValue = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -5331,7 +5363,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               items: items
                   .map(
                     (item) => DropdownMenuItem(
-                      value: item['code'],
+                      value: useLabelAsValue ? item['label'] : item['code'],
                       child: Text(item['label'] ?? ''),
                     ),
                   )

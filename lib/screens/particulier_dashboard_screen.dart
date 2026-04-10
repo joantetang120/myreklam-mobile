@@ -1,7 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart' as quill;
-import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
@@ -1718,7 +1715,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavoritedNotifier.value ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -1794,18 +1793,30 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        Text(
-                          bp['price'] != null &&
-                                  bp['price'].toString().isNotEmpty
-                              ? '${bp['price']}€'
-                              : 'Gratuit',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2E9B5B),
-                          ),
-                        ),
-                        if (bp['original_price'] != null &&
+                        bp['original_price'] != null && bp['price'] == null
+                            ? Text(
+                                '${bp['original_price']}€',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E9B5B),
+                                ),
+                              )
+                            : (type == 'Infos pouvoir d\'achat'
+                                  ? SizedBox.shrink()
+                                  : Text(
+                                      bp['price'] != null &&
+                                              bp['price'].toString().isNotEmpty
+                                          ? '${bp['price']}€'
+                                          : 'Gratuit',
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF2E9B5B),
+                                      ),
+                                    )),
+                        if (bp['price'] != null &&
+                            bp['original_price'] != null &&
                             bp['original_price'].toString().isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Text(
@@ -1816,17 +1827,40 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                               decoration: TextDecoration.lineThrough,
                             ),
                           ),
+                          // Discount badge
+                          if (bp['price'] != null &&
+                              bp['price'].toString().isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF5722),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '-${_calculateDiscount(bp['original_price'], bp['price'])}%',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                         // Promo code as tag
                         if (bp['promo_code'] != null &&
                             bp['promo_code'].toString().isNotEmpty) ...[
                           Spacer(),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.only(left: 16),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
+                                horizontal: 8,
+                                vertical: 4,
                               ),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF2E9B5B).withOpacity(0.1),
@@ -1848,7 +1882,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                   Text(
                                     'Code promo: ${bp['promo_code']}',
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF2E9B5B),
                                     ),
@@ -1982,7 +2016,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             isFavoritedNotifier.value
                                 ? Icons.favorite
                                 : Icons.favorite_border,
-                            color: isFavoritedNotifier.value ? Colors.red : Colors.grey[600],
+                            color: isFavoritedNotifier.value
+                                ? Colors.red
+                                : Colors.grey[600],
                             size: 20,
                           ),
                   ),
@@ -2184,7 +2220,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavoritedNotifier.value ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -2492,7 +2530,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavoritedNotifier.value ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
                   ),
                   duration: const Duration(seconds: 2),
                   backgroundColor: Colors.green,
@@ -2579,7 +2619,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       if (event['sub_category_label']?.toString().isNotEmpty ?? false)
         event['sub_category_label'].toString(),
     ];
-    final price = _formatPrice(event['price_amount'] ?? event['price_label']);
+    final price = _formatPrice(event);
     final coverageArea =
         event['coverage_area']?.toString() ??
         event['location']?.toString() ??
@@ -2627,7 +2667,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       // Toggle immediately for responsive UI
       final newValue = !isFavoritedNotifier.value;
       isFavoritedNotifier.value = newValue;
-      
+
       // Update underlying data immediately for persistence across rebuilds
       if (newValue) {
         // Add to favorites
@@ -2685,7 +2725,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
         // Revert on error
         isFavoritedNotifier.value = !newValue;
-        
+
         // Revert underlying data
         if (!newValue) {
           // Was removing, so add back
@@ -2710,10 +2750,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erreur: $e'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
           );
         }
       }
@@ -2868,7 +2905,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavoritedNotifier.value ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -2896,6 +2935,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           profileImage: profileImage,
           username: username,
           categoryLabel: categoryLabel,
+          accountType: proProfile != null && proProfile!.isNotEmpty
+              ? 'pro'
+              : 'particulier',
           categoryColor: _categoryColor(categoryLabel),
           title: title,
           description: description.isNotEmpty
@@ -2956,12 +2998,46 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     );
   }
 
-  String _formatPrice(dynamic value) {
-    if (value == null) return 'Gratuit';
-    final text = value.toString();
-    if (text.isEmpty) return 'Gratuit';
-    if (text.contains('€')) return text;
-    return '$text €';
+  String _formatPrice(Map<String, dynamic> event) {
+    final priceType = event['price_type']?.toString();
+
+    // If price_type is gratuit or null, return "Gratuit"
+    if (priceType == null || priceType == 'gratuit') {
+      return 'Gratuit';
+    }
+
+    // If price_type is payant, check pricing_mode
+    if (priceType == 'payant') {
+      final pricingMode = event['pricing_mode']?.toString();
+
+      // If pricing_mode is categories, get first price from price_categories
+      if (pricingMode == 'categories') {
+        final priceCategories = event['price_categories'] as List?;
+        if (priceCategories != null && priceCategories.isNotEmpty) {
+          final firstCategory = priceCategories[0] as Map<String, dynamic>?;
+          if (firstCategory != null) {
+            final price = firstCategory['price']?.toString();
+            if (price != null && price.isNotEmpty) {
+              return 'À partir de $price €';
+            }
+          }
+        }
+        return 'Payant';
+      }
+
+      // If pricing_mode is unique, get price_amount
+      if (pricingMode == 'unique') {
+        final priceAmount = event['price_amount']?.toString();
+        if (priceAmount != null && priceAmount.isNotEmpty) {
+          return '$priceAmount €';
+        }
+        return 'Payant';
+      }
+
+      return 'Payant';
+    }
+
+    return 'Gratuit';
   }
 
   String? _buildJobSalaryDisplay(Map<String, dynamic> job) {
@@ -3018,6 +3094,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     final durationType = event['duration_type']?.toString();
     final eventDate = event['event_date']?.toString();
     final startDate = event['start_date']?.toString();
+    final endDate = event['end_date']?.toString();
 
     String formatDate(String? iso) {
       if (iso == null) return '';
@@ -3044,12 +3121,26 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     }
 
     if (durationType == 'permanent') return 'Permanent';
+
+    // Handle multi_day with start/end dates like bon plan validity
     if (durationType == 'multi_day') {
-      final formatted = formatDate(startDate);
-      return formatted.isNotEmpty
-          ? 'À partir du $formatted'
-          : 'À partir de bientôt';
+      final hasStart = startDate != null && startDate.isNotEmpty;
+      final hasEnd = endDate != null && endDate.isNotEmpty;
+
+      if (hasStart && hasEnd) {
+        final formattedStart = formatDate(startDate);
+        final formattedEnd = formatDate(endDate);
+        return 'Du $formattedStart Au $formattedEnd';
+      } else if (hasStart) {
+        final formatted = formatDate(startDate);
+        return 'À partir du $formatted';
+      } else if (hasEnd) {
+        final formatted = formatDate(endDate);
+        return 'Jusqu\'au $formatted';
+      }
+      return 'À partir de bientôt';
     }
+
     final formatted = formatDate(eventDate);
     return formatted.isNotEmpty ? formatted : 'Date annoncée prochainement';
   }
@@ -3094,7 +3185,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         return 'Formation';
       case 'internship':
       case 'stage':
-        return 'Recherche de stage';
+        return 'Recherche de stage / alternance';
       case 'product':
       case 'produit':
         return 'Recherche de produit';
@@ -3127,6 +3218,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   String _stripHtml(String text) {
     final exp = RegExp(r'<[^>]*>', multiLine: true, caseSensitive: false);
     return text.replaceAll(exp, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  int _calculateDiscount(dynamic originalPrice, dynamic finalPrice) {
+    final original = double.tryParse(originalPrice.toString()) ?? 0;
+    final finalP = double.tryParse(finalPrice.toString()) ?? 0;
+    if (original <= 0 || finalP <= 0 || finalP >= original) return 0;
+    final discount = ((original - finalP) / original * 100).round();
+    return discount;
   }
 
   String? _extractMediaUrl(Map<String, dynamic> resource) {
@@ -3514,6 +3613,143 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     }
   }
 
+  Widget _buildAuthorInfo(Map<String, dynamic> authorData) {
+    // Extract profile data based on account type
+    final accountType = authorData['account_type']?.toString();
+    final proProfile = authorData['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile =
+        authorData['particulier_profile'] as Map<String, dynamic>?;
+
+    // Get the appropriate profile
+    final profile = accountType == 'pro' ? proProfile : particulierProfile;
+
+    // Extract name from profile or fallback to direct fields
+    final name =
+        profile?['company_name']?.toString() ??
+        '${profile?['first_name']?.toString() ?? ''} ${profile?['last_name']?.toString() ?? ''}'
+            .trim();
+
+    // Extract avatar from profile or fallback to direct fields
+    final avatarUrl =
+        profile?['avatar_url']?.toString() ?? profile?['avatar']?.toString();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.grey[300],
+            image: avatarUrl != null && avatarUrl.isNotEmpty
+                ? DecorationImage(
+                    image: NetworkImage(avatarUrl),
+                    fit: BoxFit.cover,
+                  )
+                : null,
+          ),
+          child: avatarUrl == null || avatarUrl.isEmpty
+              ? Icon(Icons.person, size: 16, color: Colors.grey[600])
+              : null,
+        ),
+        const SizedBox(width: 8),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              name.isNotEmpty ? name : 'Utilisateur',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (accountType == 'pro')
+              Container(
+                margin: const EdgeInsets.only(top: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3AAE5E),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'PRO',
+                  style: TextStyle(
+                    fontSize: 7,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _shareBonPlan(String bonPlanId) {
+    // Share functionality for bon plans
+    final String shareUrl =
+        '${ApiConfig.baseUrl.replaceAll('/api', '')}/bon-plans/$bonPlanId';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Partager ce bon plan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
+                title: const Text('Copier le lien'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lien copié dans le presse-papiers'),
+                      backgroundColor: Color(0xFF3AAE5E),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
+                title: const Text('Partager via...'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement native share
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildReactionBar(
     String apiSlug,
     String entityId, {
@@ -3523,6 +3759,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
     final isPost = apiSlug == 'posts';
+    final isBonPlan = apiSlug == 'bon-plans';
 
     return Row(
       children: [
@@ -3583,6 +3820,17 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ],
             ),
           ),
+        ],
+        // Share icon
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: () => _shareBonPlan(entityId),
+          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
+        ),
+        // For bon plans: show author avatar and name on the left
+        if (isBonPlan && authorData != null) ...[
+          const Spacer(),
+          _buildAuthorInfo(authorData),
         ],
       ],
     );
@@ -4702,13 +4950,20 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       final validityType = data['validity_type']?.toString() ?? 'permanent';
       final validFrom = data['valid_from']?.toString();
       final validUntil = data['valid_until']?.toString();
-      final link = data['link']?.toString();
+      final link = data['brand_website']?.toString();
       final pickupMethods = data['pickup_methods'] as Map<String, dynamic>?;
       final deliveryInfo = _buildDeliveryInfo(pickupMethods);
       final location = data['location_search']?.toString();
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
       final reductionLabel = data['reduction_label']?.toString();
+      // Extract price fields from API response (French field names)
+      final price = data['prix_final']?.toString();
+      final originalPrice = data['prix_avant_reduction']?.toString();
+      final shippingOption = data['shipping_option']?.toString();
+      final shippingCost = data['shipping_cost']?.toString();
+      final availableLocationType = data['available_location_type']?.toString();
+      final conditions = data['conditions']?.toString();
 
       final tags = <PostTag>[
         if (category.isNotEmpty)
@@ -4761,6 +5016,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             acceptMessages: acceptMessages,
             authorData: user,
             promo_code: bp['promo_code'],
+            price: price,
+            originalPrice: originalPrice,
+            shippingOption: shippingOption,
+            shippingCost: shippingCost,
+            availableLocationType: availableLocationType,
+            conditions: conditions,
           ),
         ),
       );
@@ -5348,11 +5609,13 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       final profileImage =
           _buildStorageUrl(user?['avatar']?.toString()) ?? _defaultAvatar;
       final userName = user?['name']?.toString() ?? 'Utilisateur';
+      final userType = user?['account_type']?.toString() ?? 'particulier';
 
       final title = data['title']?.toString() ?? '';
       final description = data['description']?.toString() ?? '';
       final nature = data['nature']?.toString();
-      final type = data['type']?.toString();
+      // For formations, use training_category or training_type
+      final type = data['training_category']?.toString();
       final urgent = data['urgent'] == true;
       final budgetMax = data['budget_max']?.toString();
       final location = data['location']?.toString();
@@ -5428,6 +5691,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             isOwner: isOwner,
             demandeId: demandeId,
             demandeData: data,
+            userType: userType,
           ),
         ),
       );
@@ -5489,94 +5753,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Widget _buildBonPlanDescription(Map<String, dynamic> item) {
-    final descriptionDelta = item['description_delta'];
-    final descriptionPlain = item['description'] ?? '';
+    final descriptionPlain = item['description']?.toString() ?? '';
+    final cleanText = _stripHtml(descriptionPlain);
 
-    if (descriptionDelta != null) {
-      try {
-        List opsList;
-
-        if (descriptionDelta is List) {
-          opsList = descriptionDelta;
-        } else if (descriptionDelta is Map && descriptionDelta['ops'] is List) {
-          opsList = descriptionDelta['ops'] as List;
-        } else if (descriptionDelta is String && descriptionDelta.isNotEmpty) {
-          String jsonString = descriptionDelta;
-          jsonString = jsonString.replaceAllMapped(
-            RegExp(r'(\{|,)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:'),
-            (match) => '${match.group(1)}"${match.group(2)}":',
-          );
-          jsonString = jsonString.replaceAllMapped(
-            RegExp(r':\s*([a-zA-Z_][a-zA-Z0-9_\s]*?)(\s*[,\}\]])'),
-            (match) {
-              final value = match.group(1)!.trim();
-              if (value == 'true' || value == 'false' || value == 'null') {
-                return ': $value${match.group(2)}';
-              }
-              return ': "$value"${match.group(2)}';
-            },
-          );
-          dynamic rawData = jsonDecode(jsonString);
-          if (rawData is String) rawData = jsonDecode(rawData);
-          if (rawData is List) {
-            opsList = rawData;
-          } else if (rawData is Map && rawData['ops'] is List) {
-            opsList = rawData['ops'] as List;
-          } else {
-            throw Exception('Unknown delta format: ${rawData.runtimeType}');
-          }
-        } else {
-          throw Exception('Unsupported type: ${descriptionDelta.runtimeType}');
-        }
-
-        final filteredOps = opsList
-            .where((op) => op is Map && op['insert'] != null)
-            .map((op) => Map<String, dynamic>.from(op as Map))
-            .toList();
-
-        if (filteredOps.isEmpty) throw Exception('No valid ops');
-
-        final lastInsert = filteredOps.last['insert'];
-        if (lastInsert is String && !lastInsert.endsWith('\n')) {
-          filteredOps.add({'insert': '\n'});
-        }
-
-        final doc = quill.Document.fromJson(filteredOps);
-        final controller = quill.QuillController(
-          document: doc,
-          selection: const TextSelection.collapsed(offset: 0),
-        );
-
-        return SizedBox(
-          height: 60,
-          child: quill.QuillEditor.basic(
-            controller: controller,
-            config: quill.QuillEditorConfig(
-              padding: EdgeInsets.zero,
-              onLaunchUrl: (url) async {
-                final uri = Uri.parse(url);
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                }
-              },
-            ),
-          ),
-        );
-      } catch (e) {
-        debugPrint('Error rendering rich text: $e');
-      }
+    if (cleanText.isEmpty) {
+      return const SizedBox.shrink();
     }
 
-    return Text(
-      _stripHtml(descriptionPlain.toString()),
-      style: const TextStyle(
-        fontSize: 13,
-        color: Color(0xFF666666),
-        height: 1.5,
-      ),
-      maxLines: 3,
-      overflow: TextOverflow.ellipsis,
-    );
+    return _ExpandableDescription(text: cleanText);
   }
 
   Widget _buildBonPlanTag(String text, IconData icon) {
@@ -6080,6 +6264,78 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Expandable description widget with "voir plus" functionality
+  Widget _ExpandableDescription({required String text}) {
+    return _ExpandableDescriptionStateful(text: text);
+  }
+}
+
+class _ExpandableDescriptionStateful extends StatefulWidget {
+  final String text;
+
+  const _ExpandableDescriptionStateful({required this.text});
+
+  @override
+  State<_ExpandableDescriptionStateful> createState() =>
+      _ExpandableDescriptionStatefulState();
+}
+
+class _ExpandableDescriptionStatefulState
+    extends State<_ExpandableDescriptionStateful> {
+  bool isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = widget.text;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isExpanded = !isExpanded;
+        });
+      },
+      child: AnimatedCrossFade(
+        firstChild: RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: text.length > 100
+                    ? '${text.substring(0, 100)}... '
+                    : text,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF666666),
+                  height: 1.4,
+                ),
+              ),
+              if (text.length > 100)
+                const TextSpan(
+                  text: 'voir plus',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF3AAE5E),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        secondChild: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Color(0xFF666666),
+            height: 1.4,
+          ),
+        ),
+        crossFadeState: isExpanded
+            ? CrossFadeState.showSecond
+            : CrossFadeState.showFirst,
+        duration: const Duration(milliseconds: 200),
       ),
     );
   }

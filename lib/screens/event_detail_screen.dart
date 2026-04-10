@@ -129,7 +129,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       'FashionBeauty': 'Mode & Beauté',
       'Others': 'Autres',
     };
-    
+
     return translations[code] ?? code;
   }
 
@@ -150,17 +150,20 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       'GamblingBetting': 'Jeux de hasard & paris',
       'SportsEvents': 'Événements Sportifs',
       'AutoMotoBoatPlane': 'Auto / Moto / Bateau / Avion',
-      'TourismHikingGourmetWalk': 'Tourisme / Visite / Randonnée / Marche Gourmande',
+      'TourismHikingGourmetWalk':
+          'Tourisme / Visite / Randonnée / Marche Gourmande',
       'EsportsGamingEvents': 'Événements e-sport / Gaming',
       'WorkshopsInternshipsCourses': 'Ateliers / Stage / Cours',
-      'ConferencesProfessionalTraining': 'Conférences et formations professionnelles',
+      'ConferencesProfessionalTraining':
+          'Conférences et formations professionnelles',
       'Associative': 'Associatifs',
       'AuctionsCharity': 'Enchères / Charité',
       'SolidarityEvents': 'Manifestations solidaires',
       'ChildrenMuseums': 'Enfants / Musées',
       'AnimalEvents': 'Manifestation Animalière',
       'WorkshopsShowsForChildren': 'Ateliers et spectacles pour enfants',
-      'MarketFleaMarketCarBootSale': 'Marché / Bourse / Brocante / Vide Grenier',
+      'MarketFleaMarketCarBootSale':
+          'Marché / Bourse / Brocante / Vide Grenier',
       'TradeFairs': 'Foires commerciales',
       'GamesContestsLottery': 'Jeux / Concours / Loterie',
       'BoardGameTournaments': 'Tournois de jeux de société',
@@ -168,7 +171,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       'CulinaryFestivals': 'Festivals culinaires',
       'CookingWorkshops': 'Ateliers cuisine',
       'MeditationYogaWellnessRetreats': 'Méditation, yoga, retraites bien-être',
-      'ConferencesWorkshopsPersonalDevelopment': 'Conférences et ateliers sur le développement personnel',
+      'ConferencesWorkshopsPersonalDevelopment':
+          'Conférences et ateliers sur le développement personnel',
       'AlternativeHealingTherapies': 'Soins et thérapies alternatives',
       'Hackathons': 'Hackathons',
       'TechConferencesStartups': 'Conférences tech & start-up',
@@ -177,7 +181,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       'BeautyExhibitionsFairs': 'Salons et foires de la beauté',
       'MakeupSkincareWorkshops': 'Ateliers maquillage et soins',
     };
-    
+
     return translations[code] ?? code;
   }
 
@@ -198,7 +202,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     }
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/events/${widget.eventId}/comments?per_page=50'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/events/${widget.eventId}/comments?per_page=50',
+        ),
         headers: {'Accept': 'application/json'},
       );
       if (response.statusCode == 200) {
@@ -236,7 +242,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
       // Fetch a larger pool to apply similarity scoring
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/feed/latest?type=event&per_type_limit=30'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/feed/latest?type=event&per_type_limit=30',
+        ),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -249,22 +257,25 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           final items = data['data']['items'] as List? ?? [];
 
           // Extract resource data from each feed item
-          final candidates = items.map((item) {
-            dynamic resourceData = item['resource'];
-            Map<String, dynamic> resource;
-            if (resourceData is String) {
-              resource = jsonDecode(resourceData) as Map<String, dynamic>;
-            } else if (resourceData is Map) {
-              resource = Map<String, dynamic>.from(resourceData);
-            } else {
-              resource = {};
-            }
-            resource['id'] = item['id'];
-            if (resource['user'] == null && item['user'] != null) {
-              resource['user'] = item['user'];
-            }
-            return resource;
-          }).where((e) => e['id']?.toString() != widget.eventId).toList();
+          final candidates = items
+              .map((item) {
+                dynamic resourceData = item['resource'];
+                Map<String, dynamic> resource;
+                if (resourceData is String) {
+                  resource = jsonDecode(resourceData) as Map<String, dynamic>;
+                } else if (resourceData is Map) {
+                  resource = Map<String, dynamic>.from(resourceData);
+                } else {
+                  resource = {};
+                }
+                resource['id'] = item['id'];
+                if (resource['user'] == null && item['user'] != null) {
+                  resource['user'] = item['user'];
+                }
+                return resource;
+              })
+              .where((e) => e['id']?.toString() != widget.eventId)
+              .toList();
 
           // Scoring: rank by similarity criteria
           final scored = candidates.map((e) {
@@ -291,8 +302,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               score += 1;
             }
             return MapEntry(score, e);
-          }).toList()
-            ..sort((a, b) => b.key.compareTo(a.key));
+          }).toList()..sort((a, b) => b.key.compareTo(a.key));
 
           // Keep top 5 with at least some criteria matching, fallback to top 5 recent
           var result = scored
@@ -373,7 +383,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     // Extract user data
     final user = event['user'] as Map<String, dynamic>?;
     final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
-    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
+    final particulierProfile =
+        user?['particulier_profile'] as Map<String, dynamic>?;
 
     final avatarUrl =
         proProfile?['logo_url']?.toString() ??
@@ -383,17 +394,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
     final profileImage = avatarUrl?.isNotEmpty == true
         ? (avatarUrl!.startsWith('http')
-            ? avatarUrl
-            : '${ApiConfig.baseUrl.replaceAll('/api', '')}/storage/$avatarUrl')
+              ? avatarUrl
+              : '${ApiConfig.baseUrl.replaceAll('/api', '')}/storage/$avatarUrl')
         : 'assets/images/dashboard_particulier/Ellipse 12.png';
 
     // Extract owner name from profiles
-    final ownerName = proProfile?['company_name']?.toString() ??
-                      proProfile?['first_name']?.toString() ??
-                      particulierProfile?['pseudo']?.toString() ??
-                      particulierProfile?['first_name']?.toString() ??
-                      user?['name']?.toString() ??
-                      'Organisateur';
+    final ownerName =
+        proProfile?['company_name']?.toString() ??
+        proProfile?['first_name']?.toString() ??
+        particulierProfile?['pseudo']?.toString() ??
+        particulierProfile?['first_name']?.toString() ??
+        user?['name']?.toString() ??
+        'Organisateur';
 
     final eventTitle = event['title']?.toString() ?? 'Évènement';
 
@@ -436,13 +448,26 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
     // Date
     String eventDate = '';
-    final rawDate = event['event_date']?.toString() ?? event['start_date']?.toString() ?? '';
+    final rawDate =
+        event['event_date']?.toString() ??
+        event['start_date']?.toString() ??
+        '';
     if (rawDate.isNotEmpty) {
       try {
         final d = DateTime.parse(rawDate);
         const months = [
-          'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-          'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+          'janvier',
+          'février',
+          'mars',
+          'avril',
+          'mai',
+          'juin',
+          'juillet',
+          'août',
+          'septembre',
+          'octobre',
+          'novembre',
+          'décembre',
         ];
         eventDate = '${d.day} ${months[d.month - 1]} ${d.year}';
       } catch (_) {
@@ -519,7 +544,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       if (token == null) return;
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/profile/$authorId'),
-        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -557,30 +585,40 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       if (_isFollowing) {
         final response = await http.delete(
           Uri.parse('${ApiConfig.baseUrl}/profile/$authorId/unfollow'),
-          headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
         );
         if (response.statusCode == 200) {
           setState(() => _isFollowing = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Vous ne suivez plus cet utilisateur')),
+            const SnackBar(
+              content: Text('Vous ne suivez plus cet utilisateur'),
+            ),
           );
         }
       } else {
         final response = await http.post(
           Uri.parse('${ApiConfig.baseUrl}/profile/$authorId/follow'),
-          headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
         );
         if (response.statusCode == 200) {
           setState(() => _isFollowing = true);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Vous suivez maintenant cet utilisateur')),
+            const SnackBar(
+              content: Text('Vous suivez maintenant cet utilisateur'),
+            ),
           );
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     } finally {
       setState(() => _isLoadingFollow = false);
     }
@@ -594,7 +632,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/events/${widget.eventId}/participation'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/events/${widget.eventId}/participation',
+        ),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -643,10 +683,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             backgroundColor: Color(0xFF3AAE5E),
           ),
         );
-        
+
         // Award 1 My for participating to event and show modal
         try {
-          debugPrint("Awarding My's for event participation: eventId=${widget.eventId}");
+          debugPrint(
+            "Awarding My's for event participation: eventId=${widget.eventId}",
+          );
           final mysResponse = await MysEarningService().awardMys(
             actionType: 'event_participation',
             referenceId: widget.eventId?.toString(),
@@ -666,7 +708,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 actionType: 'participate',
               );
             } catch (modalError) {
-              debugPrint("MysRewardModal failed, showing SnackBar fallback: $modalError");
+              debugPrint(
+                "MysRewardModal failed, showing SnackBar fallback: $modalError",
+              );
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -677,12 +721,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               }
             }
           } else {
-            debugPrint("My's award failed or returned success=false: $mysResponse");
+            debugPrint(
+              "My's award failed or returned success=false: $mysResponse",
+            );
             if (context.mounted) {
-              final errorMsg = mysResponse['message'] ?? 'Erreur lors de l\'attribution des My\'s';
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(errorMsg)),
-              );
+              final errorMsg =
+                  mysResponse['message'] ??
+                  'Erreur lors de l\'attribution des My\'s';
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(errorMsg)));
             }
           }
         } catch (e) {
@@ -691,15 +739,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       } else if (response.statusCode == 422) {
         final data = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'Vous participez déjà à cet événement')),
+          SnackBar(
+            content: Text(
+              data['message'] ?? 'Vous participez déjà à cet événement',
+            ),
+          ),
         );
       } else {
         throw Exception('Erreur ${response.statusCode}');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     } finally {
       setState(() => _isLoadingParticipation = false);
     }
@@ -708,7 +760,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   void _showParticipationDialog() {
     if (widget.eventId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible de participer à cet événement')),
+        const SnackBar(
+          content: Text('Impossible de participer à cet événement'),
+        ),
       );
       return;
     }
@@ -717,7 +771,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             'Confirmer la participation',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -798,7 +854,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   ? const SizedBox(
                       height: 18,
                       width: 18,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
                     )
                   : const Text('Confirmer'),
             ),
@@ -849,16 +908,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   String _generateGoogleCalendarUrl() {
     final startDate = _getEventStartDate();
     final endDate = _getEventEndDate();
-    
+
     if (startDate == null) return '';
 
     final title = Uri.encodeComponent(widget.eventTitle);
     final details = Uri.encodeComponent(widget.description);
     final location = Uri.encodeComponent(_getEventLocation() ?? '');
-    
+
     final startStr = _formatDateForGoogleCalendar(startDate, widget.startTime);
-    final endStr = _formatDateForGoogleCalendar(endDate ?? startDate, widget.endTime);
-    
+    final endStr = _formatDateForGoogleCalendar(
+      endDate ?? startDate,
+      widget.endTime,
+    );
+
     return 'https://calendar.google.com/calendar/render?action=TEMPLATE'
         '&text=$title'
         '&dates=$startStr/$endStr'
@@ -871,16 +933,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   String _generateOutlookCalendarUrl() {
     final startDate = _getEventStartDate();
     final endDate = _getEventEndDate();
-    
+
     if (startDate == null) return '';
 
     final title = Uri.encodeComponent(widget.eventTitle);
     final details = Uri.encodeComponent(widget.description);
     final location = Uri.encodeComponent(_getEventLocation() ?? '');
-    
+
     final startStr = _formatDateForOutlook(startDate, widget.startTime);
     final endStr = _formatDateForOutlook(endDate ?? startDate, widget.endTime);
-    
+
     return 'https://outlook.live.com/calendar/0/action/compose?rru=addevent'
         '&subject=$title'
         '&startdt=$startStr'
@@ -893,16 +955,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   String _generateYahooCalendarUrl() {
     final startDate = _getEventStartDate();
     final endDate = _getEventEndDate();
-    
+
     if (startDate == null) return '';
 
     final title = Uri.encodeComponent(widget.eventTitle);
     final details = Uri.encodeComponent(widget.description);
     final location = Uri.encodeComponent(_getEventLocation() ?? '');
-    
+
     final startStr = _formatDateForYahoo(startDate, widget.startTime);
     final endStr = _formatDateForYahoo(endDate ?? startDate, widget.endTime);
-    
+
     return 'https://calendar.yahoo.com/?v=60&view=d&type=20'
         '&title=$title'
         '&st=$startStr'
@@ -956,8 +1018,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   /// Format date for Google Calendar (YYYYMMDDTHHmmSSZ)
   String _formatDateForGoogleCalendar(DateTime date, String? time) {
-    String dateStr = '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
-    
+    String dateStr =
+        '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
+
     if (time != null && time.isNotEmpty) {
       final parts = time.split(':');
       if (parts.length >= 2) {
@@ -968,32 +1031,35 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     } else {
       dateStr += 'T000000Z';
     }
-    
+
     return dateStr;
   }
 
   /// Format date for Outlook (YYYY-MM-DDTHH:MM:SS)
   String _formatDateForOutlook(DateTime date, String? time) {
-    String dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-    
+    String dateStr =
+        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
     if (time != null && time.isNotEmpty) {
       final parts = time.split(':');
       if (parts.length >= 2) {
-        dateStr += 'T${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}:00';
+        dateStr +=
+            'T${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}:00';
       } else {
         dateStr += 'T00:00:00';
       }
     } else {
       dateStr += 'T00:00:00';
     }
-    
+
     return dateStr;
   }
 
   /// Format date for Yahoo Calendar (YYYYMMDDTHHmmSS)
   String _formatDateForYahoo(DateTime date, String? time) {
-    String dateStr = '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
-    
+    String dateStr =
+        '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
+
     if (time != null && time.isNotEmpty) {
       final parts = time.split(':');
       if (parts.length >= 2) {
@@ -1004,7 +1070,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     } else {
       dateStr += 'T000000';
     }
-    
+
     return dateStr;
   }
 
@@ -1046,7 +1112,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Impossible d\'ouvrir Outlook Calendar')),
+          const SnackBar(
+            content: Text('Impossible d\'ouvrir Outlook Calendar'),
+          ),
         );
       }
     }
@@ -1105,7 +1173,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     debugPrint('DEBUG: _resolveOwnerName user=null: ${user == null}');
     if (user != null) {
       final proProfile = user['pro_profile'] as Map<String, dynamic>?;
-      final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
+      final particulierProfile =
+          user['particulier_profile'] as Map<String, dynamic>?;
 
       if (proProfile != null) {
         final companyName = proProfile['company_name']?.toString();
@@ -1148,9 +1217,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     debugPrint('DEBUG: _resolveAvatarUrl user=null: ${user == null}');
     if (user != null) {
       String? rawUrl;
-      final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
+      final particulierProfile =
+          user['particulier_profile'] as Map<String, dynamic>?;
       final proProfile = user['pro_profile'] as Map<String, dynamic>?;
-      debugPrint('DEBUG: avatar sources - logo_url: ${proProfile?['logo_url']}, avatar_url: ${proProfile?['avatar_url']}, particulier: ${particulierProfile?['avatar_url']}, user.avatar: ${user['avatar']}');
+      debugPrint(
+        'DEBUG: avatar sources - logo_url: ${proProfile?['logo_url']}, avatar_url: ${proProfile?['avatar_url']}, particulier: ${particulierProfile?['avatar_url']}, user.avatar: ${user['avatar']}',
+      );
 
       rawUrl =
           proProfile?['logo_url']?.toString() ??
@@ -1183,10 +1255,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
           ),
         ),
       ],
@@ -1229,9 +1298,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         actions: [
           if (widget.isOwner)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Color(0xFF616161), size: 24),
+              icon: const Icon(
+                Icons.more_vert,
+                color: Color(0xFF616161),
+                size: 24,
+              ),
               offset: const Offset(0, 45),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               onSelected: (value) {
                 if (value == 'edit') {
                   Navigator.push(
@@ -1240,7 +1315,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       builder: (_) => CreerEvenementScreen(
                         eventId: widget.eventId,
                         initialData: widget.eventData,
-                        shouldReturnToListingOnSuccess: widget.returnToListingOnEdit,
+                        shouldReturnToListingOnSuccess:
+                            widget.returnToListingOnEdit,
                       ),
                     ),
                   );
@@ -1253,7 +1329,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   value: 'edit',
                   child: Row(
                     children: [
-                      Icon(Icons.edit_outlined, size: 20, color: Color(0xFF616161)),
+                      Icon(
+                        Icons.edit_outlined,
+                        size: 20,
+                        color: Color(0xFF616161),
+                      ),
                       SizedBox(width: 12),
                       Text('Modifier'),
                     ],
@@ -1280,8 +1360,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Image Carousel - full width
-            if (widget.images.isNotEmpty)
-              ImageCarousel(images: widget.images),
+            if (widget.images.isNotEmpty) ImageCarousel(images: widget.images),
 
             // 2. Main content section - no card, edge to edge
             Padding(
@@ -1364,7 +1443,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   ),
                   const SizedBox(height: 16),
                   // Sous-catégorie
-                  if (widget.subCategoryCode != null && widget.subCategoryCode!.isNotEmpty)
+                  if (widget.subCategoryCode != null &&
+                      widget.subCategoryCode!.isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.subdirectory_arrow_right,
                       iconColor: Colors.orange,
@@ -1372,7 +1452,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       label: "Type d'evenements",
                       value: _translateSubCategory(widget.subCategoryCode!),
                     ),
-                  if (widget.subCategoryCode != null && widget.subCategoryCode!.isNotEmpty)
+                  if (widget.subCategoryCode != null &&
+                      widget.subCategoryCode!.isNotEmpty)
                     const SizedBox(height: 12),
                   // Date
                   if (_hasDateInfo())
@@ -1383,8 +1464,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       label: 'Date',
                       value: _buildDateDisplay(),
                     ),
-                  if (_hasDateInfo())
-                    const SizedBox(height: 12),
+                  if (_hasDateInfo()) const SizedBox(height: 12),
                   // Horaires
                   if (widget.startTime != null && widget.startTime!.isNotEmpty)
                     _buildDetailItem(
@@ -1406,7 +1486,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   ),
                   const SizedBox(height: 12),
                   // Lieu
-                  if (widget.coverageArea != null && widget.coverageArea!.isNotEmpty)
+                  if (widget.coverageArea != null &&
+                      widget.coverageArea!.isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.location_on_outlined,
                       iconColor: const Color(0xFF3AAE5E),
@@ -1414,18 +1495,25 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       label: 'Lieu',
                       value: widget.coverageArea!,
                     ),
-                  if (widget.coverageArea != null && widget.coverageArea!.isNotEmpty)
+                  if (widget.coverageArea != null &&
+                      widget.coverageArea!.isNotEmpty)
                     const SizedBox(height: 12),
                   // Réservation
-                  if (widget.reservationMode != null && widget.reservationMode!.isNotEmpty)
+                  if (widget.reservationMode != null &&
+                      widget.reservationMode!.isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.confirmation_num_outlined,
                       iconColor: Colors.purple,
                       bgColor: Colors.purple.withValues(alpha: 0.1),
                       label: 'Réservation',
-                      value: widget.reservationMode!,
+                      value: widget.reservationMode == 'achat_billet'
+                          ? 'Achat de billet obligatoire'
+                          : (widget.reservationMode == 'inscription'
+                                ? 'Inscription requise'
+                                : 'sans_inscription'),
                     ),
-                  if (widget.reservationMode != null && widget.reservationMode!.isNotEmpty)
+                  if (widget.reservationMode != null &&
+                      widget.reservationMode!.isNotEmpty)
                     const SizedBox(height: 12),
                   // Prix - même logique que la liste (défaut: Gratuit)
                   _buildPriceSection(),
@@ -1446,7 +1534,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     onPressed: () async {
                       final uri = Uri.parse(widget.websiteUrl!);
                       if (await canLaunchUrl(uri)) {
-                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
                       }
                     },
                     icon: const Icon(Icons.open_in_new, size: 18),
@@ -1477,7 +1568,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         ? null
                         : () => _showParticipationDialog(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _isParticipating ? Colors.grey : const Color(0xFF3AAE5E),
+                      backgroundColor: _isParticipating
+                          ? Colors.grey
+                          : const Color(0xFF3AAE5E),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
@@ -1489,20 +1582,26 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         ? const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.check_circle, color: Colors.white, size: 18),
+                              Icon(
+                                Icons.check_circle,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                               SizedBox(width: 6),
                               Text('Inscrit', style: TextStyle(fontSize: 14)),
                             ],
                           )
                         : const Text(
                             'Je participe',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                   ),
                 ),
               ),
-            if (!widget.isOwner)
-              const SizedBox(height: 16),
+            if (!widget.isOwner) const SizedBox(height: 16),
 
             // 6. Action buttons row (Favoris - Share button commented out)
             Row(
@@ -1521,8 +1620,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : Icon(
-                              _isFavorite ? Icons.favorite : Icons.favorite_outline,
-                              color: _isFavorite ? Colors.red : Colors.grey[600],
+                              _isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_outline,
+                              color: _isFavorite
+                                  ? Colors.red
+                                  : Colors.grey[600],
                               size: 24,
                             ),
                     ),
@@ -1556,18 +1659,27 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               child: Row(
                 children: [
                   GestureDetector(
-                    onTap: widget.authorData != null ? () => _navigateToUserProfile(context) : null,
+                    onTap: widget.authorData != null
+                        ? () => _navigateToUserProfile(context)
+                        : null,
                     child: CircleAvatar(
                       radius: 24,
-                      backgroundImage: (_resolveAvatarUrl() ?? '').startsWith('http')
+                      backgroundImage:
+                          (_resolveAvatarUrl() ?? '').startsWith('http')
                           ? NetworkImage(_resolveAvatarUrl()!)
-                          : AssetImage(_resolveAvatarUrl() ?? 'assets/images/Evenement.png') as ImageProvider,
+                          : AssetImage(
+                                  _resolveAvatarUrl() ??
+                                      'assets/images/Evenement.png',
+                                )
+                                as ImageProvider,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: GestureDetector(
-                      onTap: widget.authorData != null ? () => _navigateToUserProfile(context) : null,
+                      onTap: widget.authorData != null
+                          ? () => _navigateToUserProfile(context)
+                          : null,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1603,7 +1715,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               foregroundColor: _isFollowing
                                   ? Colors.grey[600]
                                   : const Color(0xFF3AAE5E),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
                                 side: BorderSide(
@@ -1615,7 +1730,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             ),
                             child: Text(
                               _isFollowing ? 'Suivis' : 'Suivre',
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                 ],
@@ -1628,10 +1745,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 widget.timeAgo.isNotEmpty ? widget.timeAgo : 'Posté récemment',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
               ),
             ),
             const SizedBox(height: 16),
@@ -1716,10 +1830,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       const Spacer(),
                       Text(
                         '${_comments.length}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       ),
                     ],
                   ),
@@ -1791,10 +1902,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Container(
-                height: 1,
-                color: Colors.grey[300],
-              ),
+              child: Container(height: 1, color: Colors.grey[300]),
             ),
             const SizedBox(height: 16),
             if (_isLoadingSimilar)
@@ -1808,7 +1916,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
-                  children: _similarEvents.map((event) => _buildSimilarEventCard(event)).toList(),
+                  children: _similarEvents
+                      .map((event) => _buildSimilarEventCard(event))
+                      .toList(),
                 ),
               )
             else
@@ -1839,13 +1949,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       });
       return;
     }
-    
+
     if (widget.eventId == null) return;
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) return;
-      
+
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/events/${widget.eventId}'),
         headers: {
@@ -1853,7 +1963,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           'Accept': 'application/json',
         },
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final isFavorited = data['data']?['is_favorited'] == true;
@@ -1892,9 +2002,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
         if (response.statusCode == 200 || response.statusCode == 204) {
           setState(() => _isFavorite = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Retiré des favoris')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Retiré des favoris')));
         }
       } else {
         // Add to favorites
@@ -1908,15 +2018,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
         if (response.statusCode == 200 || response.statusCode == 201) {
           setState(() => _isFavorite = true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ajouté aux favoris')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Ajouté aux favoris')));
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     } finally {
       setState(() => _isLoadingFavorite = false);
     }
@@ -1936,7 +2046,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         bool isDeleting = false;
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Text(
               'Supprimer l\'événement',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -1946,7 +2058,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: isDeleting ? null : () => Navigator.pop(dialogContext),
+                onPressed: isDeleting
+                    ? null
+                    : () => Navigator.pop(dialogContext),
                 child: const Text('Annuler'),
               ),
               ElevatedButton(
@@ -1958,13 +2072,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           final token = await TokenStorage.getAccessToken();
                           if (token == null) throw Exception('Session expirée');
                           final response = await http.delete(
-                            Uri.parse('${ApiConfig.baseUrl}/events/${widget.eventId}'),
+                            Uri.parse(
+                              '${ApiConfig.baseUrl}/events/${widget.eventId}',
+                            ),
                             headers: {
                               'Authorization': 'Bearer $token',
                               'Accept': 'application/json',
                             },
                           );
-                          if (response.statusCode >= 200 && response.statusCode < 300) {
+                          if (response.statusCode >= 200 &&
+                              response.statusCode < 300) {
                             Navigator.pop(dialogContext);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -1980,7 +2097,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           setDialogState(() => isDeleting = false);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Erreur: ${e.toString().replaceFirst("Exception: ", "")}'),
+                              content: Text(
+                                'Erreur: ${e.toString().replaceFirst("Exception: ", "")}',
+                              ),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -1994,7 +2113,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ? const SizedBox(
                         height: 18,
                         width: 18,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
                     : const Text('Supprimer'),
               ),
@@ -2010,16 +2132,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (widget.description.isNotEmpty) {
       return Text(
         widget.description,
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.grey[600],
-          height: 1.5,
-        ),
+        style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
       );
     }
 
     // Fallback to descriptionDelta if description is empty
-    if (widget.descriptionDelta != null && widget.descriptionDelta.toString().isNotEmpty) {
+    if (widget.descriptionDelta != null &&
+        widget.descriptionDelta.toString().isNotEmpty) {
       try {
         dynamic rawData;
         if (widget.descriptionDelta is List) {
@@ -2091,11 +2210,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
     return Text(
       widget.description,
-      style: TextStyle(
-        fontSize: 14,
-        color: Colors.grey[600],
-        height: 1.5,
-      ),
+      style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
     );
   }
 
@@ -2126,7 +2241,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   bool _hasDateInfo() {
-    return widget.eventDate != null || widget.startDate != null || widget.endDate != null ||
+    return widget.eventDate != null ||
+        widget.startDate != null ||
+        widget.endDate != null ||
         widget.durationType == 'permanent';
   }
 
@@ -2136,7 +2253,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       return _formatDate(widget.eventDate!);
     }
     if (widget.durationType == 'multi_day') {
-      final start = widget.startDate != null ? _formatDate(widget.startDate!) : '';
+      final start = widget.startDate != null
+          ? _formatDate(widget.startDate!)
+          : '';
       final end = widget.endDate != null ? _formatDate(widget.endDate!) : '';
       if (start.isNotEmpty && end.isNotEmpty) {
         return 'Du $start au $end';
@@ -2145,7 +2264,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       if (end.isNotEmpty) return "Jusqu'au $end";
     }
     if (widget.eventDate != null) return _formatDate(widget.eventDate!);
-    if (widget.startDate != null) return 'À partir du ${_formatDate(widget.startDate!)}';
+    if (widget.startDate != null)
+      return 'À partir du ${_formatDate(widget.startDate!)}';
     return 'Date non spécifiée';
   }
 
@@ -2180,24 +2300,28 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     final user = comment['user'] as Map<String, dynamic>?;
     final body = comment['body']?.toString() ?? '';
     final createdAt = comment['created_at']?.toString() ?? '';
-    
+
     String displayName = 'Utilisateur';
     if (user != null) {
       if (user['particulier_profile'] != null) {
         final profile = user['particulier_profile'] as Map<String, dynamic>;
-        displayName = profile['pseudo']?.toString() ?? 
-                     user['name']?.toString() ?? 
-                     'Utilisateur';
+        displayName =
+            profile['pseudo']?.toString() ??
+            user['name']?.toString() ??
+            'Utilisateur';
       } else if (user['pro_profile'] != null) {
         final profile = user['pro_profile'] as Map<String, dynamic>;
-        displayName = profile['company_name']?.toString() ?? 
-                     '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'.trim();
-        if (displayName.isEmpty) displayName = user['name']?.toString() ?? 'Utilisateur';
+        displayName =
+            profile['company_name']?.toString() ??
+            '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'
+                .trim();
+        if (displayName.isEmpty)
+          displayName = user['name']?.toString() ?? 'Utilisateur';
       } else {
         displayName = user['name']?.toString() ?? 'Utilisateur';
       }
     }
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -2230,20 +2354,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 const SizedBox(height: 2),
                 Text(
                   body,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[700],
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                 ),
                 if (createdAt.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       createdAt,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                     ),
                   ),
               ],
@@ -2258,8 +2376,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     try {
       final date = DateTime.parse(dateStr);
       const months = [
-        'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-        'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+        'janvier',
+        'février',
+        'mars',
+        'avril',
+        'mai',
+        'juin',
+        'juillet',
+        'août',
+        'septembre',
+        'octobre',
+        'novembre',
+        'décembre',
       ];
       return '${date.day} ${months[date.month - 1]} ${date.year}';
     } catch (_) {
@@ -2277,10 +2405,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   String _reservationLabel(String? mode) {
     switch (mode) {
-      case 'sans_inscription': return 'Sans inscription';
-      case 'inscription': return 'Inscription requise';
-      case 'achat_billet': return 'Achat de billet obligatoire';
-      default: return mode ?? '';
+      case 'sans_inscription':
+        return 'Sans inscription';
+      case 'inscription':
+        return 'Inscription requise';
+      case 'achat_billet':
+        return 'Achat de billet obligatoire';
+      default:
+        return mode ?? '';
     }
   }
 
@@ -2372,14 +2504,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           iconColor: const Color(0xFFFF9800),
           bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
           label: 'Prix',
-          value: amount.isNotEmpty ? '$amount €' : 'Gratuit',
+          value: amount.isNotEmpty ? '$amount €' : 'Payant',
         );
       }
 
       // Categories price
       if (pricingMode == 'categories') {
         final validCategories = widget.priceCategories
-            .where((c) => (c['tarif']?.toString() ?? '').isNotEmpty)
+            .where(
+              (c) =>
+                  (c['price']?.toString() ?? '').isNotEmpty ||
+                  (c['tarif']?.toString() ?? '').isNotEmpty,
+            )
             .toList();
         if (validCategories.isEmpty) {
           return _buildDetailItem(
@@ -2387,7 +2523,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             iconColor: const Color(0xFFFF9800),
             bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
             label: 'Prix',
-            value: 'Gratuit',
+            value: 'Payant',
           );
         }
         return Row(
@@ -2416,12 +2552,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   ),
                   const SizedBox(height: 4),
                   ...validCategories.map((category) {
-                    final name = category['name']?.toString() ?? '';
-                    final tarif = category['tarif']?.toString() ?? '';
+                    final name = category['name']?.toString() ?? 'Catégorie';
+                    final price =
+                        category['price']?.toString() ??
+                        category['tarif']?.toString() ??
+                        '';
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 2),
                       child: Text(
-                        '$name: $tarif €',
+                        '$name: $price €',
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -2436,14 +2575,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           ],
         );
       }
-      
-      // payant but unknown pricingMode → Gratuit
+
+      // payant but unknown pricingMode → Payant
       return _buildDetailItem(
         icon: Icons.euro,
         iconColor: const Color(0xFFFF9800),
         bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
         label: 'Prix',
-        value: 'Gratuit',
+        value: 'Payant',
       );
     }
 
