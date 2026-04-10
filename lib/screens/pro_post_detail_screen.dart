@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'dart:convert';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/widgets/image_carousel.dart';
-import 'package:myreklam/widgets/pro_post_card.dart';
-import 'package:myreklam/widgets/user_detail_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -17,6 +16,18 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
+
+class _ReactionData {
+  int likesCount;
+  int commentsCount;
+  String? userReaction; // 'like' or null
+
+  _ReactionData({
+    this.likesCount = 0,
+    this.commentsCount = 0,
+    this.userReaction,
+  });
+}
 
 class ProPostDetailScreen extends StatefulWidget {
   final List<String> images;
@@ -44,6 +55,10 @@ class ProPostDetailScreen extends StatefulWidget {
   final Map<String, dynamic>? bonPlanData;
   final bool acceptMessages;
   final Map<String, dynamic>? authorData;
+  final String? shippingOption;
+  final String? shippingCost;
+  final String? availableLocationType;
+  final String? conditions;
 
   const ProPostDetailScreen({
     super.key,
@@ -72,6 +87,10 @@ class ProPostDetailScreen extends StatefulWidget {
     this.bonPlanData,
     this.acceptMessages = false,
     this.authorData,
+    this.shippingOption,
+    this.shippingCost,
+    this.availableLocationType,
+    this.conditions,
   });
 
   @override
@@ -87,6 +106,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
   bool _isLoadingFollow = false;
   bool _isFavorite = false;
   bool _isLoadingFavorite = false;
+  String? _currentUserId;
 
   @override
   void initState() {
@@ -403,6 +423,1304 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     );
   }
 
+  Widget _buildTypeTag(String label, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [color, color.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(16),
+          bottomLeft: Radius.circular(12),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String? _buildStorageUrl(String? url) {
+    if (url == null || url.isEmpty) return null;
+    if (url.startsWith('http')) return url;
+    final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+    return '$serverBase/storage/$url';
+  }
+
+  String _stripHtml(String html) {
+    return html.replaceAll(RegExp(r'<[^>]*>'), '');
+  }
+
+  Widget _buildBonPlanImageCarousel(List<String> urls) {
+    if (urls.length == 1) {
+      return _buildBonPlanImage(urls.first);
+    }
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        final controller = PageController();
+        int currentPage = 0;
+
+        return Column(
+          children: [
+            SizedBox(
+              height: 220,
+              child: PageView.builder(
+                controller: controller,
+                itemCount: urls.length,
+                onPageChanged: (index) => setState(() => currentPage = index),
+                itemBuilder: (context, index) {
+                  return _buildBonPlanImage(urls[index]);
+                },
+              ),
+            ),
+            // Page indicator
+            if (urls.length > 1) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(urls.length, (index) {
+                  return Container(
+                    width: 6,
+                    height: 6,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: index == currentPage
+                          ? const Color(0xFFFF9800)
+                          : Colors.grey[300],
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildBonPlanImage(String url) {
+    return Image.network(
+      url,
+      width: double.infinity,
+      height: 220,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          height: 220,
+          color: Colors.grey[100],
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        );
+      },
+      errorBuilder: (_, error, ___) {
+        debugPrint('Image load error: $error');
+        return Container(
+          height: 220,
+          color: Colors.grey[200],
+          child: const Center(
+            child: Icon(
+              Icons.image_not_supported,
+              color: Colors.grey,
+              size: 40,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBonPlanDescription(Map<String, dynamic> item) {
+    final descriptionPlain = item['description']?.toString() ?? '';
+    return Text(
+      _stripHtml(descriptionPlain),
+      style: const TextStyle(fontSize: 14, color: Color(0xFF666666)),
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  final Map<String, _ReactionData> _reactions = {};
+
+  String _reactionKey(String apiSlug, String entityId) =>
+      '${apiSlug}_$entityId';
+
+  int _asInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? 0;
+    if (value is double) return value.toInt();
+    return 0;
+  }
+
+  _ReactionData _getReaction(String apiSlug, String entityId) {
+    final key = _reactionKey(apiSlug, entityId);
+    return _reactions.putIfAbsent(key, () => _ReactionData());
+  }
+
+  void _seedReactionFromResource(
+    String apiSlug,
+    String entityId,
+    Map<String, dynamic> resource,
+  ) {
+    final key = _reactionKey(apiSlug, entityId);
+    // Always update from resource data to ensure fresh counts
+    _reactions[key] = _ReactionData(
+      likesCount: _asInt(resource['likes_count']),
+      commentsCount: _asInt(resource['comments_count']),
+      userReaction: resource['user_reaction']?.toString(),
+    );
+  }
+
+  String _buildTimeAgo(String? isoDate) {
+    if (isoDate == null) return '';
+    try {
+      final created = DateTime.parse(isoDate).toLocal();
+      final diff = DateTime.now().difference(created);
+      if (diff.inMinutes < 1) return "à l'instant";
+      if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes} min';
+      if (diff.inHours < 24) return 'il y a ${diff.inHours} h';
+      if (diff.inDays < 7) return 'il y a ${diff.inDays} j';
+      final weeks = (diff.inDays / 7).floor();
+      if (weeks < 4) return 'il y a $weeks sem';
+      final months = (diff.inDays / 30).floor();
+      return 'il y a $months mois';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
+    try {
+      final response = await ApiClient().authenticatedGet(
+        '/$apiSlug/$entityId',
+      );
+      final data = response['data'] as Map<String, dynamic>?;
+      if (data != null && mounted) {
+        setState(() {
+          final key = _reactionKey(apiSlug, entityId);
+          _reactions[key] = _ReactionData(
+            likesCount: _asInt(data['likes_count']),
+            commentsCount: _asInt(data['comments_count']),
+            userReaction: data['user_reaction']?.toString(),
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint('Error refreshing reaction: $e');
+    }
+  }
+
+  Future<void> _toggleReaction(
+    String apiSlug,
+    String entityId,
+    String type,
+  ) async {
+    final data = _getReaction(apiSlug, entityId);
+    final isLiked = data.userReaction == 'like';
+
+    setState(() {
+      if (isLiked) {
+        data.userReaction = null;
+        data.likesCount = (data.likesCount > 0) ? data.likesCount - 1 : 0;
+      } else {
+        data.userReaction = 'like';
+        data.likesCount = data.likesCount + 1;
+      }
+    });
+
+    try {
+      if (isLiked) {
+        await ApiClient().authenticatedDelete('/$apiSlug/$entityId/reactions');
+      } else {
+        await ApiClient().authenticatedPost(
+          '/$apiSlug/$entityId/reactions',
+          body: {'type': type},
+        );
+      }
+      // Refresh to ensure counts are accurate
+      await _refreshReactionFromApi(apiSlug, entityId);
+    } catch (e) {
+      debugPrint('Reaction toggle error: $e');
+      setState(() {
+        if (isLiked) {
+          data.userReaction = 'like';
+          data.likesCount = data.likesCount + 1;
+        } else {
+          data.userReaction = null;
+          data.likesCount = (data.likesCount > 0) ? data.likesCount - 1 : 0;
+        }
+      });
+    }
+  }
+
+  void _showEntityCommentsSheet(String apiSlug, String entityId) {
+    List<Map<String, dynamic>> comments = [];
+    bool isLoading = true;
+    String? error;
+    final commentCtrl = TextEditingController();
+    int? replyingToId;
+    String? replyingToName;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (ctx, modalSetState) {
+            // Load on first build
+            if (isLoading && comments.isEmpty && error == null) {
+              ApiClient()
+                  .authenticatedGet('/$apiSlug/$entityId/comments?per_page=50')
+                  .then((response) {
+                    final data = response['data'];
+                    List<Map<String, dynamic>> fetched = [];
+                    if (data is Map && data['data'] is List) {
+                      fetched = List<Map<String, dynamic>>.from(
+                        data['data'] as List,
+                      );
+                    } else if (data is List) {
+                      fetched = List<Map<String, dynamic>>.from(data);
+                    }
+                    modalSetState(() {
+                      comments = fetched;
+                      isLoading = false;
+                    });
+                  })
+                  .catchError((e) {
+                    modalSetState(() {
+                      error = e.toString();
+                      isLoading = false;
+                    });
+                  });
+            }
+
+            Future<void> submitComment() async {
+              final text = commentCtrl.text.trim();
+              if (text.isEmpty) return;
+
+              try {
+                Map<String, dynamic> response;
+                if (replyingToId != null) {
+                  response = await ApiClient().authenticatedPost(
+                    '/$apiSlug/$entityId/comments/$replyingToId/reply',
+                    body: {'body': text},
+                  );
+                } else {
+                  response = await ApiClient().authenticatedPost(
+                    '/$apiSlug/$entityId/comments',
+                    body: {'body': text},
+                  );
+                }
+                final newComment = response['data'] as Map<String, dynamic>?;
+                if (newComment != null) {
+                  modalSetState(() {
+                    if (replyingToId != null) {
+                      final parent = comments.firstWhere(
+                        (c) => c['id'] == replyingToId,
+                        orElse: () => <String, dynamic>{},
+                      );
+                      if (parent.isNotEmpty) {
+                        final replies = List<Map<String, dynamic>>.from(
+                          (parent['replies'] as List?) ?? [],
+                        );
+                        replies.add(newComment);
+                        parent['replies'] = replies;
+                        parent['replies_count'] =
+                            (parent['replies_count'] as int? ?? 0) + 1;
+                      }
+                    } else {
+                      comments.insert(0, newComment);
+                    }
+                    replyingToId = null;
+                    replyingToName = null;
+                  });
+                  // Update local comments count in feed
+                  setState(() {
+                    final data = _getReaction(apiSlug, entityId);
+                    data.commentsCount++;
+                  });
+                }
+                commentCtrl.clear();
+                FocusScope.of(ctx).unfocus();
+
+                // Refresh reaction counts from API to ensure accuracy
+                await _refreshReactionFromApi(apiSlug, entityId);
+
+                // Award 1 My for posting a comment (silently, no modal)
+                try {
+                  final mysResponse = await MysEarningService().awardMys(
+                    actionType: 'comment',
+                    referenceId: newComment?['id']?.toString(),
+                  );
+                  if (mysResponse['success'] == true) {
+                    final newBalance = mysResponse['earning']?['new_balance'];
+                    if (newBalance != null) {
+                      UserSession().updateMys(newBalance);
+                    }
+                  }
+                } catch (e) {
+                  debugPrint("Error awarding My's for comment: $e");
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+                }
+              }
+            }
+
+            Future<void> toggleCommentReaction(
+              Map<String, dynamic> comment,
+              String type,
+            ) async {
+              final commentId = comment['id'];
+              try {
+                final response = await ApiClient().authenticatedPost(
+                  '/comments/$commentId/reactions',
+                  body: {'type': type},
+                );
+                final respData = response['data'] as Map<String, dynamic>?;
+                if (respData != null) {
+                  modalSetState(() {
+                    comment['likes_count'] = respData['likes_count'];
+                    comment['user_reaction'] = respData['user_reaction'];
+                  });
+                }
+              } catch (e) {
+                debugPrint('Comment reaction error: $e');
+              }
+            }
+
+            Future<void> editComment(Map<String, dynamic> comment) async {
+              final commentId = comment['id'];
+              final currentBody = comment['body']?.toString() ?? '';
+              final editController = TextEditingController(text: currentBody);
+
+              final newText = await showDialog<String>(
+                context: ctx,
+                builder: (context) => AlertDialog(
+                  title: const Text('Modifier le commentaire'),
+                  content: TextField(
+                    controller: editController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Votre commentaire...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () =>
+                          Navigator.pop(context, editController.text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3AAE5E),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Enregistrer',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (newText == null ||
+                  newText.trim().isEmpty ||
+                  newText == currentBody)
+                return;
+
+              try {
+                final response = await ApiClient().authenticatedPut(
+                  '/comments/$commentId',
+                  body: {'body': newText.trim()},
+                );
+                final updatedComment =
+                    response['data'] as Map<String, dynamic>?;
+                if (updatedComment != null) {
+                  modalSetState(() {
+                    comment['body'] = updatedComment['body'];
+                    comment['updated_at'] = updatedComment['updated_at'];
+                  });
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Erreur lors de la modification: ${e.toString()}',
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
+            Future<void> deleteComment(
+              Map<String, dynamic> comment,
+              bool isReply,
+            ) async {
+              final commentId = comment['id'];
+              final confirmed = await showDialog<bool>(
+                context: ctx,
+                builder: (context) => AlertDialog(
+                  title: const Text('Supprimer le commentaire'),
+                  content: const Text(
+                    'Êtes-vous sûr de vouloir supprimer ce commentaire ?',
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Supprimer',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed != true) return;
+
+              try {
+                await ApiClient().authenticatedDelete('/comments/$commentId');
+
+                // Update local comments count in feed
+                if (!isReply) {
+                  setState(() {
+                    final data = _getReaction(apiSlug, entityId);
+                    if (data.commentsCount > 0) data.commentsCount--;
+                  });
+                }
+
+                // Refresh reaction counts from API to ensure accuracy
+                await _refreshReactionFromApi(apiSlug, entityId);
+
+                modalSetState(() {
+                  if (isReply) {
+                    final parentId =
+                        comment['parent_id'] ?? comment['comment_id'];
+                    final parent = comments.firstWhere(
+                      (c) => c['id'] == parentId,
+                      orElse: () => <String, dynamic>{},
+                    );
+                    if (parent.isNotEmpty) {
+                      final replies = List<Map<String, dynamic>>.from(
+                        (parent['replies'] as List?) ?? [],
+                      );
+                      replies.removeWhere((r) => r['id'] == commentId);
+                      parent['replies'] = replies;
+                      parent['replies_count'] = replies.length;
+                    }
+                  } else {
+                    comments.removeWhere((c) => c['id'] == commentId);
+                  }
+                });
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Erreur lors de la suppression: ${e.toString()}',
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
+            Widget buildCommentItem(
+              Map<String, dynamic> comment, {
+              bool isReply = false,
+            }) {
+              final user = comment['user'] as Map<String, dynamic>? ?? {};
+              final userId = user['id']?.toString();
+              final email = user['email']?.toString() ?? '';
+              final displayName = (userId != null && userId == _currentUserId)
+                  ? 'Vous'
+                  : (user['display_name']?.toString() ??
+                        user['name']?.toString() ??
+                        email.split('@').first);
+              final body = comment['body']?.toString() ?? '';
+              final createdAt = comment['created_at']?.toString();
+              final likes = _asInt(comment['likes_count']);
+              final userReaction = comment['user_reaction']?.toString();
+              final isOwner = userId != null && userId == _currentUserId;
+              final replies =
+                  (comment['replies'] as List?)
+                      ?.map((r) => Map<String, dynamic>.from(r as Map))
+                      .toList() ??
+                  [];
+              // Get avatar URL from user data - check nested profiles
+              final particulierProfile =
+                  user['particulier_profile'] as Map<String, dynamic>?;
+              final proProfile = user['pro_profile'] as Map<String, dynamic>?;
+              final avatarUrl =
+                  particulierProfile?['avatar_url']?.toString() ??
+                  proProfile?['avatar_url']?.toString() ??
+                  proProfile?['logo_url']?.toString() ??
+                  user['avatar_url']?.toString();
+
+              return Padding(
+                padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: isReply ? 14 : 18,
+                          backgroundColor: const Color(0xFFE6F7EF),
+                          backgroundImage:
+                              avatarUrl != null && avatarUrl.isNotEmpty
+                              ? NetworkImage(
+                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
+                                      avatarUrl,
+                                )
+                              : null,
+                          child: avatarUrl == null || avatarUrl.isEmpty
+                              ? Text(
+                                  displayName.isNotEmpty
+                                      ? displayName[0].toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                    fontSize: isReply ? 11 : 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF2A8143),
+                                  ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    displayName,
+                                    style: TextStyle(
+                                      fontSize: isReply ? 12 : 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF333333),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _buildTimeAgo(createdAt),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                  if (isOwner) ...[
+                                    const Spacer(),
+                                    GestureDetector(
+                                      onTapDown: (TapDownDetails details) {
+                                        showMenu<String>(
+                                          context: context,
+                                          position: RelativeRect.fromLTRB(
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                          ),
+                                          items: [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit, size: 18),
+                                                  SizedBox(width: 8),
+                                                  Text('Modifier'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.delete,
+                                                    size: 18,
+                                                    color: Colors.redAccent,
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'Supprimer',
+                                                    style: TextStyle(
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ).then((value) {
+                                          if (value == 'edit') {
+                                            editComment(comment);
+                                          } else if (value == 'delete') {
+                                            deleteComment(comment, isReply);
+                                          }
+                                        });
+                                      },
+                                      child: Icon(
+                                        Icons.more_horiz,
+                                        size: 18,
+                                        color: Colors.grey[400],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                body,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF4F4F4F),
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () =>
+                                        toggleCommentReaction(comment, 'like'),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          userReaction == 'like'
+                                              ? Icons.thumb_up_alt
+                                              : Icons.thumb_up_alt_outlined,
+                                          size: 14,
+                                          color: userReaction == 'like'
+                                              ? const Color(0xFF3AAE5E)
+                                              : Colors.grey[400],
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          '$likes',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: userReaction == 'like'
+                                                ? const Color(0xFF3AAE5E)
+                                                : Colors.grey[500],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (!isReply) ...[
+                                    const SizedBox(width: 14),
+                                    GestureDetector(
+                                      onTap: () {
+                                        modalSetState(() {
+                                          replyingToId = comment['id'] as int?;
+                                          replyingToName = displayName;
+                                        });
+                                        FocusScope.of(
+                                          ctx,
+                                        ).requestFocus(FocusNode());
+                                      },
+                                      child: Text(
+                                        'Répondre',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFF2E9B5B),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Nested replies
+                    if (!isReply && replies.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      ...replies.map(
+                        (r) => Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: buildCommentItem(r, isReply: true),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.75,
+                ),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Commentaires',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF2A2A2A),
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(ctx),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.grey,
+                              size: 22,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Divider(height: 1, color: Colors.grey[200]),
+                    // Comment list
+                    Expanded(
+                      child: isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : error != null
+                          ? Center(
+                              child: Text(
+                                'Erreur: $error',
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            )
+                          : comments.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              itemCount: comments.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 16),
+                              itemBuilder: (_, i) =>
+                                  buildCommentItem(comments[i]),
+                            ),
+                    ),
+                    Divider(height: 1, color: Colors.grey[200]),
+                    // Reply indicator
+                    if (replyingToId != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        color: const Color(0xFFF5F5F5),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Répondre à $replyingToName',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () => modalSetState(() {
+                                replyingToId = null;
+                                replyingToName = null;
+                              }),
+                              child: const Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    // Input
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5F5F5),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: TextField(
+                                controller: commentCtrl,
+                                decoration: const InputDecoration(
+                                  isCollapsed: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  border: InputBorder.none,
+                                  hintText: 'Écrire un commentaire...',
+                                  hintStyle: TextStyle(
+                                    color: Color(0xFF9E9E9E),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                textInputAction: TextInputAction.send,
+                                onSubmitted: (_) => submitComment(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: submitComment,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF3AAE5E),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.send,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _repostPost(String postId) async {
+    try {
+      await ApiClient().authenticatedPost('/posts/$postId/repost', body: {});
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Publication republiée avec succès'),
+            backgroundColor: Color(0xFF3AAE5E),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Repost error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la republication: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildReactionBar(
+    String apiSlug,
+    String entityId, {
+    bool? acceptedMessages,
+    Map<String, dynamic>? authorData,
+  }) {
+    final data = _getReaction(apiSlug, entityId);
+    final isLiked = data.userReaction == 'like';
+    final isPost = apiSlug == 'posts';
+
+    return Row(
+      children: [
+        // Like
+        GestureDetector(
+          onTap: () => _toggleReaction(apiSlug, entityId, 'like'),
+          child: Row(
+            children: [
+              Icon(
+                isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+                size: 18,
+                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                data.likesCount.toString(),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 18),
+        // Comments
+        GestureDetector(
+          onTap: () => _showEntityCommentsSheet(apiSlug, entityId),
+          child: Row(
+            children: [
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 17,
+                color: Colors.grey[500],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                data.commentsCount.toString(),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+        if (isPost) ...[
+          const SizedBox(width: 10),
+          // Repost
+          GestureDetector(
+            onTap: () => _repostPost(entityId),
+            child: Row(
+              children: [
+                Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Text(
+                  'Republier',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<String?> _getCurrentUserId({bool forceRefresh = false}) async {
+    if (!forceRefresh && _currentUserId != null) {
+      return _currentUserId;
+    }
+    try {
+      final response = await ApiClient().authenticatedGet('/profile/me');
+      final data = response['user'] as Map<String, dynamic>?;
+      final id = data?['id']?.toString();
+
+      // Sync mys and parrainage_code to UserSession
+      if (data != null) {
+        final mys = data['mys'];
+        final parrainageCode = data['parrainage_code'];
+        if (mys != null) {
+          UserSession().updateMys(mys);
+        }
+        if (parrainageCode != null) {
+          UserSession().updateParrainageCode(parrainageCode);
+        }
+      }
+
+      if (mounted) {
+        setState(() => _currentUserId = id);
+      } else {
+        _currentUserId = id;
+      }
+      return id;
+    } catch (e) {
+      debugPrint('Error fetching current user ID: $e');
+      return _currentUserId;
+    }
+  }
+
+  static const _defaultAvatar =
+      'assets/images/dashboard_particulier/Ellipse 10.png';
+
+  String _buildDeliveryInfo(Map<String, dynamic>? pickupMethods) {
+    if (pickupMethods == null) return 'Non spécifié';
+    final inStore = pickupMethods['in_store'] == true;
+    final delivery = pickupMethods['delivery'] == true;
+    if (inStore && delivery) return 'En magasin et livraison';
+    if (inStore) return 'En magasin uniquement';
+    if (delivery) return 'Livraison disponible';
+    return 'Non spécifié';
+  }
+
+  String _buildShippingCostDisplay() {
+    // If shipping option is explicitly set to 'free', show "Gratuit"
+    if (widget.shippingOption == 'free') {
+      return 'Gratuit';
+    }
+    // If shipping option is 'paid' and we have a cost
+    if (widget.shippingOption == 'paid') {
+      if (widget.shippingCost != null && widget.shippingCost!.isNotEmpty) {
+        return 'Frais de port à ${widget.shippingCost} €';
+      }
+      return 'Frais de port';
+    }
+    // Fallback to delivery info for non-online offers
+    return widget.deliveryInfo;
+  }
+
+  List<String> _extractImages(List? mediaFiles) {
+    if (mediaFiles == null || mediaFiles.isEmpty) {
+      return ['assets/images/details_bon_plans/Rectangle 35.png'];
+    }
+    final images = mediaFiles
+        .where((m) => m is Map && m['url'] != null)
+        .map((m) => _buildStorageUrl(m['url']?.toString()) ?? '')
+        .where((url) => url.isNotEmpty)
+        .toList();
+
+    // Ensure we always have at least one image
+    if (images.isEmpty) {
+      return ['assets/images/details_bon_plans/Rectangle 35.png'];
+    }
+    return images;
+  }
+
+  Future<void> _navigateToBonPlanDetail(Map<String, dynamic> bp) async {
+    final bonPlanId = bp['id']?.toString();
+    if (bonPlanId == null || bonPlanId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir ce bon plan')),
+      );
+      return;
+    }
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedGet(
+        '/bonplans/$bonPlanId',
+      );
+      if (!mounted) return;
+      Navigator.pop(context); // dismiss loading
+
+      final data = response['data'] as Map<String, dynamic>? ?? response;
+      final user = data['user'] as Map<String, dynamic>?;
+      // Use the enhanced user data with proper display name and avatar
+      final profileImage =
+          user?['avatar_url']?.toString() ??
+          _buildStorageUrl(user?['avatar']?.toString()) ??
+          _defaultAvatar;
+      // Use display_name which contains company_name for pro or pseudo for particulier
+      final username =
+          user?['display_name']?.toString() ??
+          user?['name']?.toString() ??
+          'Utilisateur';
+      final userType = user?['account_type']?.toString() ?? 'Particulier';
+      final title = data['title']?.toString() ?? 'Bon plan';
+
+      // Check if current user is the owner by comparing user_id from feed data
+      final bonPlanUserId =
+          bp['user_id']?.toString() ?? data['user_id']?.toString();
+      final currentUserId = await _getCurrentUserId();
+      final isOwner =
+          bonPlanUserId != null &&
+          currentUserId != null &&
+          bonPlanUserId == currentUserId;
+      final description = _stripHtml(data['description']?.toString() ?? '');
+      final descriptionDelta = data['description_delta'];
+      final category = data['category']?.toString() ?? '';
+      final subCategory = data['sub_category']?.toString() ?? '';
+      final type = data['type']?.toString() ?? '';
+      final availableAt =
+          data['available_at_name']?.toString() ?? 'Non spécifié';
+      final validityType = data['validity_type']?.toString() ?? 'permanent';
+      final validFrom = data['valid_from']?.toString();
+      final validUntil = data['valid_until']?.toString();
+      final link = data['link']?.toString();
+      final pickupMethods = data['pickup_methods'] as Map<String, dynamic>?;
+      final deliveryInfo = _buildDeliveryInfo(pickupMethods);
+      final shippingOption = data['shipping_option']?.toString();
+      final shippingCost = data['shipping_cost']?.toString();
+      final availableLocationType = data['available_location_type']?.toString();
+      final conditions = data['conditions']?.toString();
+      final location = data['location_search']?.toString();
+      final mediaFiles = data['media_files'] as List?;
+      final images = _extractImages(mediaFiles);
+      final reductionLabel = data['reduction_label']?.toString();
+
+      final tags = <PostTag>[
+        if (category.isNotEmpty)
+          PostTag(
+            title: category,
+            icon: Icons.local_offer_outlined,
+            color: Colors.orange,
+          ),
+        if (subCategory.isNotEmpty)
+          PostTag(
+            title: subCategory,
+            icon: Icons.grid_view_outlined,
+            color: Colors.grey,
+          ),
+        if (type.isNotEmpty)
+          PostTag(
+            title: type,
+            icon: Icons.check_circle_outline,
+            color: Colors.green,
+          ),
+      ];
+
+      if (!mounted) return;
+      final acceptMessages = data['accept_messages'] == true;
+
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProPostDetailScreen(
+            images: images,
+            discount: reductionLabel,
+            avatar: profileImage,
+            name: username,
+            userType: userType,
+            title: title,
+            description: description,
+            descriptionDelta: descriptionDelta,
+            tags: tags,
+            time: _buildTimeAgo(data['created_at']?.toString()),
+            availability: availableAt,
+            validityType: validityType,
+            validFrom: validFrom,
+            validUntil: validUntil,
+            deliveryInfo: deliveryInfo,
+            shippingOption: shippingOption,
+            shippingCost: shippingCost,
+            availableLocationType: availableLocationType,
+            conditions: conditions,
+            location: location,
+            link: link,
+            isOwner: isOwner,
+            bonPlanId: bonPlanId,
+            bonPlanData: data,
+            acceptMessages: acceptMessages,
+            authorData: user,
+            promo_code: bp['promo_code'],
+          ),
+        ),
+      );
+      if (result == 'deleted' && mounted) return;
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // dismiss loading
+      debugPrint('Error fetching bon plan detail: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur lors du chargement: $e')));
+    }
+  }
+
+  int _calculateDiscount(dynamic originalPrice, dynamic finalPrice) {
+    final original = double.tryParse(originalPrice.toString()) ?? 0;
+    final finalP = double.tryParse(finalPrice.toString()) ?? 0;
+    if (original <= 0 || finalP <= 0 || finalP >= original) return 0;
+    final discount = ((original - finalP) / original * 100).round();
+    return discount;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Debug: Check contact button conditions
@@ -659,26 +1977,64 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // Current price in green
-                      Text(
-                        widget.price ?? 'Gratuit',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2E9B5B),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Original price crossed out
-                      if (widget.originalPrice != null &&
-                          widget.originalPrice!.isNotEmpty)
+                      widget.originalPrice != null && widget.price == null
+                          ? Text(
+                              '${widget.originalPrice}€',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2E9B5B),
+                              ),
+                            )
+                          : (widget.tags[2].title == 'Infos pouvoir d\'achat'
+                                ? SizedBox.shrink()
+                                : Text(
+                                    widget.price != null &&
+                                            widget.price.toString().isNotEmpty
+                                        ? '${widget.price}€'
+                                        : 'Gratuit',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF2E9B5B),
+                                    ),
+                                  )),
+                      if (widget.price != null &&
+                          widget.originalPrice != null &&
+                          widget.originalPrice.toString().isNotEmpty) ...[
+                        const SizedBox(width: 8),
                         Text(
-                          widget.originalPrice!,
+                          '${widget.originalPrice}€',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 14,
                             color: Colors.grey[500],
                             decoration: TextDecoration.lineThrough,
                           ),
                         ),
+                        // Discount badge
+                        if (widget.price != null &&
+                            widget.price.toString().isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF5722),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '-${_calculateDiscount(widget.originalPrice, widget.price)}%',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                       const Spacer(),
                       // Discount badge
                       if (widget.discount != null &&
@@ -702,43 +2058,57 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           ),
                         ),
 
-                      // Promo code as tag
+                      // Promo code as tag - tappable to copy
                       if (widget.promo_code != null &&
                           widget.promo_code.toString().isNotEmpty) ...[
-                        Spacer(),
+                        const Spacer(),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2E9B5B).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: const Color(0xFF2E9B5B),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.local_offer_outlined,
-                                  size: 14,
-                                  color: Color(0xFF2E9B5B),
+                          padding: const EdgeInsets.only(left: 16),
+                          child: GestureDetector(
+                            onTap: () {
+                              Clipboard.setData(
+                                ClipboardData(text: widget.promo_code!),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Code copié !'),
+                                  duration: Duration(seconds: 2),
+                                  backgroundColor: Color(0xFF2E9B5B),
                                 ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Code promo: ${widget.promo_code}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2E9B5B).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFF2E9B5B),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.local_offer_outlined,
+                                    size: 14,
                                     color: Color(0xFF2E9B5B),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Code promo: ${widget.promo_code}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF2E9B5B),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -800,7 +2170,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: 0,
                         ),
@@ -809,7 +2179,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   const SizedBox(height: 16),
                   // Action buttons row: Favoris (Share button commented out)
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       // Favoris button
                       Column(
@@ -846,41 +2216,125 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           ),
                         ],
                       ),
-                      // Commented out: Partager (Share) button
-                      // Column(
-                      //   mainAxisSize: MainAxisSize.min,
-                      //   children: [
-                      //     IconButton(
-                      //       onPressed: () {
-                      //         // TODO: Implement share functionality
-                      //       },
-                      //       icon: Icon(
-                      //         Icons.share_outlined,
-                      //         color: Colors.grey[600],
-                      //         size: 24,
-                      //       ),
-                      //     ),
-                      //     Text(
-                      //       'Partager',
-                      //       style: TextStyle(
-                      //         fontSize: 12,
-                      //         color: Colors.grey[600],
-                      //       ),
-                      //     ),
-                      //   ],
-                      // ),
+                      // Share button
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              // TODO: Implement share functionality
+                            },
+                            icon: Icon(
+                              Icons.share_outlined,
+                              color: Colors.grey[600],
+                              size: 24,
+                            ),
+                          ),
+                          Text(
+                            'Partager',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   // Posted time
                   Text(
-                    widget.time.isNotEmpty ? widget.time : 'Posté il y a 4 h.',
+                    widget.time.isNotEmpty
+                        ? "Posté ${widget.time}"
+                        : 'Posté il y a 4 h.',
                     style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 8),
+            // Description - no card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Description',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildDescription(),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Details du bon plan - no card, full width
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Details du bon plan',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Disponibilité
+                  _buildDetailItem(
+                    icon: Icons.public,
+                    iconColor: const Color(0xFF3AAE5E),
+                    bgColor: const Color(0xFFE6F7EF),
+                    label: 'Disponibilité',
+                    value: widget.availability,
+                    prefixValue: 'Chez ',
+                  ),
+                  const SizedBox(height: 16),
+                  // Validité
+                  _buildDetailItem(
+                    icon: Icons.calendar_month_outlined,
+                    iconColor: Colors.lightBlue,
+                    bgColor: Colors.lightBlue.withOpacity(0.1),
+                    label: 'Validité',
+                    value: _formatValidity(),
+                  ),
+                  const SizedBox(height: 16),
+                  // Livraison / Frais de port
+                  _buildDetailItem(
+                    icon: Icons.local_shipping_outlined,
+                    iconColor: Colors.purpleAccent,
+                    bgColor: Colors.purpleAccent.withOpacity(0.05),
+                    label:
+                        widget.deliveryInfo == 'Livraison disponible' ||
+                            widget.deliveryInfo == 'En magasin uniquement' ||
+                            widget.deliveryInfo == 'En magasin et livraison'
+                        ? 'Moyen de retrait'
+                        : 'Livraison',
+                    value: _buildShippingCostDisplay(),
+                  ),
+                  // Conditions - only show if present
+                  if (widget.conditions != null &&
+                      widget.conditions!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildDetailItem(
+                      icon: Icons.info_outline,
+                      iconColor: Colors.orange,
+                      bgColor: Colors.orange.withOpacity(0.1),
+                      label: 'Conditions',
+                      value: widget.conditions!,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
             // Owner section - no card
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -916,11 +2370,23 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                               color: Color(0xFF1A1A1A),
                             ),
                           ),
-                          Text(
-                            widget.userType,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[600],
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3AAE5E),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              widget.userType.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ],
@@ -964,82 +2430,6 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
-            // Description - no card
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Description',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildDescription(),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Details du bon plan - no card, full width
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Details du bon plan',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Prix
-                  _buildDetailItem(
-                    icon: Icons.euro_symbol,
-                    iconColor: Colors.orange,
-                    bgColor: Colors.orange.withOpacity(0.1),
-                    label: 'Prix',
-                    value: widget.price ?? 'Gratuit',
-                    originalValue: widget.originalPrice,
-                  ),
-                  const SizedBox(height: 16),
-                  // Disponibilité
-                  _buildDetailItem(
-                    icon: Icons.public,
-                    iconColor: const Color(0xFF3AAE5E),
-                    bgColor: const Color(0xFFE6F7EF),
-                    label: 'Disponibilité',
-                    value: widget.availability,
-                    prefixValue: 'Chez ',
-                  ),
-                  const SizedBox(height: 16),
-                  // Validité
-                  _buildDetailItem(
-                    icon: Icons.calendar_month_outlined,
-                    iconColor: Colors.lightBlue,
-                    bgColor: Colors.lightBlue.withOpacity(0.1),
-                    label: 'Validité',
-                    value: _formatValidity(),
-                  ),
-                  const SizedBox(height: 16),
-                  // Livraison
-                  _buildDetailItem(
-                    icon: Icons.directions_bike,
-                    iconColor: Colors.purpleAccent,
-                    bgColor: Colors.purpleAccent.withOpacity(0.05),
-                    label: 'Livraison',
-                    value: widget.deliveryInfo,
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 16),
             // Contact button - only if not owner and acceptMessages is true
             if (!widget.isOwner &&
@@ -1070,54 +2460,55 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 widget.acceptMessages &&
                 widget.authorData != null)
               const SizedBox(height: 16),
-            // Localisation - no card
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Localisation',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (widget.location != null &&
-                      widget.location!.isNotEmpty) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        'assets/images/details_bon_plans/Rectangle 128 (1).png',
-                        width: double.infinity,
-                        height: 180,
-                        fit: BoxFit.cover,
+            // Localisation - only show if available_location_type is 'En magasin'
+            if (widget.availableLocationType == 'En magasin')
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Localisation',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      widget.location!,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF616161),
-                        fontWeight: FontWeight.w500,
+                    if (widget.location != null &&
+                        widget.location!.isNotEmpty) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/images/details_bon_plans/Rectangle 128 (1).png',
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    ),
-                  ] else ...[
-                    Text(
-                      'Localisation non spécifiée',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[500],
-                        fontStyle: FontStyle.italic,
+                      const SizedBox(height: 12),
+                      Text(
+                        widget.location!,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF616161),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
+                    ] else ...[
+                      Text(
+                        'Localisation non spécifiée',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[500],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
             const SizedBox(height: 16),
             // Comments Card - Tap to open full comments sheet
             Container(
@@ -1263,112 +2654,433 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 ),
               )
             else
-              ..._relatedBonPlans.map((bonPlan) {
-                // Helper function to parse potentially JSON string fields
-                dynamic parseField(dynamic field) {
-                  if (field is String) {
-                    try {
-                      return jsonDecode(field);
-                    } catch (_) {
-                      return field;
+              ..._relatedBonPlans.map((bp) {
+                final bpId = bp['id']?.toString() ?? '';
+                final title = bp['title']?.toString() ?? '';
+                final category = bp['category']?.toString() ?? '';
+                final subCategory = bp['sub_category']?.toString() ?? '';
+                final type = bp['type']?.toString() ?? '';
+                final merchantName = bp['available_at_name']?.toString() ?? '';
+                final locationType =
+                    bp['available_location_type']?.toString() ?? '';
+                final createdAt = bp['created_at']?.toString();
+                // Support both media_files (from BonPlanController) and media (from FeedController)
+                final mediaFiles = (bp['media_files'] as List? ?? [])
+                  ..addAll(bp['media'] as List? ?? []);
+                final imageUrls = mediaFiles
+                    .where((m) => m['type'] == 'image' || m['type'] == null)
+                    .map((m) {
+                      final url = m['url']?.toString() ?? '';
+                      if (url.isEmpty) return '';
+                      // If URL is already complete (http/https), use it as-is
+                      if (url.startsWith('http')) return url;
+                      // Otherwise use the storage URL builder
+                      return _buildStorageUrl(url) ?? '';
+                    })
+                    .where((url) => url.isNotEmpty)
+                    .toList();
+                // Check if already favorited by current user
+                final favoris = bp['bon_plan_favorites'] as List? ?? [];
+                final currentUserId = UserSession().id;
+                bool _isFavorited =
+                    currentUserId != null &&
+                    favoris.any(
+                      (f) =>
+                          f is Map &&
+                          (f['user_id']?.toString() == currentUserId ||
+                              f['user']?['id']?.toString() == currentUserId),
+                    );
+
+                return StatefulBuilder(
+                  builder: (context, setState) {
+                    bool _isLoading = false;
+
+                    Future<void> _toggleFavorite() async {
+                      if (_isLoading || bpId.isEmpty) return;
+
+                      setState(() => _isLoading = true);
+
+                      try {
+                        if (_isFavorited) {
+                          // Remove from favorites
+                          await ApiClient().authenticatedDelete(
+                            '/bonplans/$bpId/favorite',
+                          );
+                        } else {
+                          // Add to favorites
+                          await ApiClient().authenticatedPost(
+                            '/bonplans/$bpId/favorite',
+                          );
+                        }
+
+                        setState(() {
+                          _isFavorited = !_isFavorited;
+                          _isLoading = false;
+                        });
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                _isFavorited
+                                    ? 'Ajouté aux favoris'
+                                    : 'Retiré des favoris',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              duration: const Duration(seconds: 2),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        debugPrint('Favorite toggle error: $e');
+                        setState(() => _isLoading = false);
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Erreur lors de la mise à jour des favoris',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
                     }
-                  }
-                  return field;
-                }
 
-                final userData = parseField(bonPlan['user']);
-                final user = userData is Map<String, dynamic> ? userData : null;
-                final userName =
-                    user?['particulier_profile']?['pseudo'] ??
-                    user?['pro_profile']?['company_name'] ??
-                    bonPlan['author']?['name'] ??
-                    'Utilisateur';
-                final accountType =
-                    user?['account_type']?.toString() ??
-                    user?['type']?.toString() ??
-                    'particulier';
-                final userType = accountType == 'pro'
-                    ? 'Professionnel'
-                    : 'Particulier';
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Image carousel at top
+                              if (imageUrls.isNotEmpty)
+                                _buildBonPlanImageCarousel(imageUrls),
 
-                // Resolve avatar URL with proper base URL and storage prefix
-                final rawAvatarUrl =
-                    user?['particulier_profile']?['avatar_url'] ??
-                    user?['pro_profile']?['avatar_url'];
-                final avatarUrl =
-                    ApiConfig.resolveMediaUrl(rawAvatarUrl) ??
-                    'assets/images/dashboard_particulier/Ellipse 10.png';
+                              // Title
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  16,
+                                  100,
+                                  0,
+                                ),
+                                child: Text(
+                                  title,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF333333),
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
 
-                final mediaData = parseField(bonPlan['media']);
-                final media = mediaData is List ? mediaData : <dynamic>[];
+                              // Description
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: _buildBonPlanDescription(bp),
+                              ),
+                              const SizedBox(height: 12),
 
-                final imageUrl = media.isNotEmpty
-                    ? ApiConfig.resolveMediaUrl(
-                            media.first['url']?.toString(),
-                          ) ??
-                          'assets/images/dashboard_particulier/Rectangle 12 (4).png'
-                    : 'assets/images/dashboard_particulier/Rectangle 12 (4).png';
+                              // Price instead of tags
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      bp['price'] != null &&
+                                              bp['price'].toString().isNotEmpty
+                                          ? '${bp['price']}€'
+                                          : 'Gratuit',
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF2E9B5B),
+                                      ),
+                                    ),
+                                    if (bp['original_price'] != null &&
+                                        bp['original_price']
+                                            .toString()
+                                            .isNotEmpty) ...[
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        '${bp['original_price']}€',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey[500],
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                        ),
+                                      ),
+                                      if (bp['price'] != null &&
+                                          bp['price']
+                                              .toString()
+                                              .isNotEmpty) ...[
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFF5722),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '-${_calculateDiscount(bp['original_price'], bp['price'])}%',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                    // Promo code as tag
+                                    if (bp['promo_code'] != null &&
+                                        bp['promo_code']
+                                            .toString()
+                                            .isNotEmpty) ...[
+                                      Spacer(),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(
+                                              0xFF2E9B5B,
+                                            ).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            border: Border.all(
+                                              color: const Color(0xFF2E9B5B),
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.local_offer_outlined,
+                                                size: 14,
+                                                color: Color(0xFF2E9B5B),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                'Code promo: ${bp['promo_code']}',
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0xFF2E9B5B),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
 
-                final categoryData = parseField(bonPlan['category']);
-                final category = categoryData is Map<String, dynamic>
-                    ? categoryData
-                    : null;
-                final categoryName = category?['name'] ?? 'Catégorie';
-                final categoryIcon = category?['icon'] != null
-                    ? _getIconFromString(category!['icon']?.toString())
-                    : Icons.category_outlined;
-
-                return ProPostCard(
-                  profileImage: avatarUrl,
-                  username: userName,
-                  userType: userType,
-                  postText: bonPlan['title'] ?? 'Sans titre',
-                  postImage: imageUrl,
-                  reductionPercentage:
-                      bonPlan['discount_display']?.toString() ?? '',
-                  categoryIcon: categoryIcon,
-                  categoryName: categoryName,
-                  merchantName: bonPlan['merchant_name'] ?? '',
-                  timeAgo: _formatTimeAgo(bonPlan['created_at']),
-                  onTapCTA: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProPostDetailScreen(
-                          images: media
-                              .map(
-                                (m) =>
-                                    ApiConfig.resolveMediaUrl(
-                                      m['url']?.toString(),
-                                    ) ??
-                                    '',
-                              )
-                              .where((s) => s.isNotEmpty)
-                              .toList(),
-                          discount: bonPlan['discount_display']?.toString(),
-                          avatar: avatarUrl,
-                          name: userName,
-                          userType: userType,
-                          title: bonPlan['title'] ?? 'Sans titre',
-                          description: bonPlan['description'] ?? '',
-                          price: bonPlan['price']?.toString(),
-                          originalPrice: bonPlan['original_price']?.toString(),
-                          location: bonPlan['location'],
-                          link: bonPlan['external_link'],
-                          isOwner: false,
-                          bonPlanId: bonPlan['id']?.toString(),
-                          bonPlanData: bonPlan,
-                          acceptMessages:
-                              bonPlan['accept_messages'] == true ||
-                              bonPlan['accept_messages'] == 1,
-                          authorData: user,
-                        ),
+                              // Merchant + time
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Row(
+                                  children: [
+                                    if (merchantName.isNotEmpty) ...[
+                                      Icon(
+                                        Icons.store_outlined,
+                                        size: 14,
+                                        color: Colors.grey[500],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          '$locationType chez $merchantName',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ] else
+                                      const Spacer(),
+                                    if (createdAt != null) ...[
+                                      Icon(
+                                        Icons.access_time,
+                                        size: 14,
+                                        color: Colors.grey[500],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _buildTimeAgo(createdAt),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                child: Divider(height: 1),
+                              ),
+                              const SizedBox(height: 10),
+                              if (bpId.isNotEmpty) ...[
+                                Builder(
+                                  builder: (context) {
+                                    _seedReactionFromResource(
+                                      'bon-plans',
+                                      bpId,
+                                      bp,
+                                    );
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      child: _buildReactionBar(
+                                        'bon-plans',
+                                        bpId,
+                                        acceptedMessages:
+                                            bp['accept_messages'] == true,
+                                        authorData:
+                                            bp['user'] as Map<String, dynamic>?,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                              const SizedBox(height: 10),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                child: Divider(height: 1),
+                              ),
+                              const SizedBox(height: 12),
+                              // CTA Button
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  16,
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () =>
+                                        _navigateToBonPlanDetail(bp),
+                                    icon: const Icon(
+                                      Icons.visibility_outlined,
+                                      size: 18,
+                                    ),
+                                    label: const Text('VOIR LE BON PLAN'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFFF9800),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          // Favorite button at top-left
+                          Positioned(
+                            top: 12,
+                            left: 12,
+                            child: GestureDetector(
+                              onTap: _isLoading ? null : _toggleFavorite,
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: _isLoading
+                                    ? SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.grey[600],
+                                        ),
+                                      )
+                                    : Icon(
+                                        _isFavorited
+                                            ? Icons.favorite
+                                            : Icons.favorite_border,
+                                        color: _isFavorited
+                                            ? Colors.red
+                                            : Colors.grey[600],
+                                        size: 20,
+                                      ),
+                              ),
+                            ),
+                          ),
+                          // Bon Plan tag at top-right
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: _buildTypeTag(
+                              'Bon Plan',
+                              const Color(0xFFFF9800),
+                              Icons.local_offer,
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },
-                  price: bonPlan['price']?.toString() ?? '',
-                  likesCount: bonPlan['likes_count'] ?? 0,
-                  commentsCount: bonPlan['comments_count'] ?? 0,
                 );
               }).toList(),
             const SizedBox(height: 40),
@@ -1379,20 +3091,43 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
   }
 
   String _formatValidity() {
-    if (widget.validityType == 'permanent') {
-      return 'Offre permanente';
-    } else if (widget.validityType == 'dates' &&
-        widget.validFrom != null &&
-        widget.validUntil != null) {
-      try {
-        final from = DateTime.parse(widget.validFrom!);
-        final until = DateTime.parse(widget.validUntil!);
-        return 'Du ${from.day}/${from.month}/${from.year} au ${until.day}/${until.month}/${until.year}';
-      } catch (_) {
-        return 'Dates spécifiées';
-      }
+    switch (widget.validityType) {
+      case 'permanent':
+        return 'Offre permanente';
+      case 'dates':
+        // Handle all combinations for dates type
+        final hasFrom =
+            widget.validFrom != null && widget.validFrom!.isNotEmpty;
+        final hasUntil =
+            widget.validUntil != null && widget.validUntil!.isNotEmpty;
+
+        if (hasFrom && hasUntil) {
+          try {
+            final from = DateTime.parse(widget.validFrom!);
+            final until = DateTime.parse(widget.validUntil!);
+            return 'À partir du ${from.day}/${from.month}/${from.year} jusqu\'au ${until.day}/${until.month}/${until.year}';
+          } catch (_) {
+            return 'Offre avec dates';
+          }
+        } else if (hasFrom) {
+          try {
+            final from = DateTime.parse(widget.validFrom!);
+            return 'À partir du ${from.day}/${from.month}/${from.year}';
+          } catch (_) {
+            return 'Offre avec dates';
+          }
+        } else if (hasUntil) {
+          try {
+            final until = DateTime.parse(widget.validUntil!);
+            return 'Jusqu\'au ${until.day}/${until.month}/${until.year}';
+          } catch (_) {
+            return 'Offre avec dates';
+          }
+        }
+        return 'Offre avec dates';
+      default:
+        return 'Offre permanente';
     }
-    return 'Offre permanente';
   }
 
   String _formatExpirationDate() {

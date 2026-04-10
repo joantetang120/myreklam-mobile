@@ -21,7 +21,11 @@ class _ReactionData {
   int commentsCount;
   String? userReaction; // 'like' or null
 
-  _ReactionData({this.likesCount = 0, this.commentsCount = 0, this.userReaction});
+  _ReactionData({
+    this.likesCount = 0,
+    this.commentsCount = 0,
+    this.userReaction,
+  });
 }
 
 class _BonsPlansScreenState extends State<BonsPlansScreen> {
@@ -827,18 +831,20 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                   ),
                   const SizedBox(height: 10),
                   if (bpId.isNotEmpty) ...[
-                    Builder(builder: (context) {
-                      _seedReactionFromResource('bon-plans', bpId, bp);
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildReactionBar(
-                          'bon-plans',
-                          bpId,
-                          acceptedMessages: bp['accept_messages'] == true,
-                          authorData: bp['user'] as Map<String, dynamic>?,
-                        ),
-                      );
-                    }),
+                    Builder(
+                      builder: (context) {
+                        _seedReactionFromResource('bon-plans', bpId, bp);
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _buildReactionBar(
+                            'bon-plans',
+                            bpId,
+                            acceptedMessages: bp['accept_messages'] == true,
+                            authorData: bp['user'] as Map<String, dynamic>?,
+                          ),
+                        );
+                      },
+                    ),
                   ],
                   const SizedBox(height: 10),
                   const Padding(
@@ -1063,12 +1069,13 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
 
   Widget _buildBonPlanDescription(Map<String, dynamic> item) {
     final descriptionPlain = item['description']?.toString() ?? '';
-    return Text(
-      _stripHtml(descriptionPlain),
-      style: const TextStyle(fontSize: 14, color: Color(0xFF666666)),
-      maxLines: 3,
-      overflow: TextOverflow.ellipsis,
-    );
+    final cleanText = _stripHtml(descriptionPlain);
+
+    if (cleanText.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return _ExpandableDescription(text: cleanText);
   }
 
   final Map<String, _ReactionData> _reactions = {};
@@ -1105,7 +1112,9 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
 
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
     try {
-      final response = await ApiClient().authenticatedGet('/$apiSlug/$entityId');
+      final response = await ApiClient().authenticatedGet(
+        '/$apiSlug/$entityId',
+      );
       final data = response['data'] as Map<String, dynamic>?;
       if (data != null && mounted) {
         setState(() {
@@ -1502,12 +1511,14 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                       .toList() ??
                   [];
               // Get avatar URL from user data - check nested profiles
-              final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
+              final particulierProfile =
+                  user['particulier_profile'] as Map<String, dynamic>?;
               final proProfile = user['pro_profile'] as Map<String, dynamic>?;
-              final avatarUrl = particulierProfile?['avatar_url']?.toString()
-                  ?? proProfile?['avatar_url']?.toString()
-                  ?? proProfile?['logo_url']?.toString()
-                  ?? user['avatar_url']?.toString();
+              final avatarUrl =
+                  particulierProfile?['avatar_url']?.toString() ??
+                  proProfile?['avatar_url']?.toString() ??
+                  proProfile?['logo_url']?.toString() ??
+                  user['avatar_url']?.toString();
 
               return Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
@@ -1520,8 +1531,12 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                         CircleAvatar(
                           radius: isReply ? 14 : 18,
                           backgroundColor: const Color(0xFFE6F7EF),
-                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? avatarUrl)
+                          backgroundImage:
+                              avatarUrl != null && avatarUrl.isNotEmpty
+                              ? NetworkImage(
+                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
+                                      avatarUrl,
+                                )
                               : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
                               ? Text(
@@ -1921,6 +1936,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
     final isPost = apiSlug == 'posts';
+    final isBonPlan = apiSlug == 'bon-plans';
 
     return Row(
       children: [
@@ -1982,7 +1998,222 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
             ),
           ),
         ],
+        // Share icon
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: () => _shareBonPlan(entityId),
+          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
+        ),
+        // For bon plans: show author avatar and name on the left
+        if (isBonPlan && authorData != null) ...[
+          const Spacer(),
+          _buildAuthorInfo(authorData),
+        ],
       ],
+    );
+  }
+
+  Widget _buildAuthorInfo(Map<String, dynamic> authorData) {
+    // Extract profile data based on account type
+    final accountType = authorData['account_type']?.toString();
+    final proProfile = authorData['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile =
+        authorData['particulier_profile'] as Map<String, dynamic>?;
+
+    // Get the appropriate profile
+    final profile = accountType == 'pro' ? proProfile : particulierProfile;
+
+    // Extract name from profile or fallback to direct fields
+    final name =
+        profile?['company_name']?.toString() ??
+        '${profile?['first_name']?.toString() ?? ''} ${profile?['last_name']?.toString() ?? ''}'
+            .trim();
+
+    // Extract avatar from profile or fallback to direct fields
+    final avatarUrl =
+        profile?['avatar_url']?.toString() ?? profile?['avatar']?.toString();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.grey[300],
+            image: avatarUrl != null && avatarUrl.isNotEmpty
+                ? DecorationImage(
+                    image: NetworkImage(avatarUrl),
+                    fit: BoxFit.cover,
+                  )
+                : null,
+          ),
+          child: avatarUrl == null || avatarUrl.isEmpty
+              ? Icon(Icons.person, size: 16, color: Colors.grey[600])
+              : null,
+        ),
+        const SizedBox(width: 8),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              name.isNotEmpty ? name : 'Utilisateur',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (accountType == 'pro')
+              Container(
+                margin: const EdgeInsets.only(top: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3AAE5E),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'PRO',
+                  style: TextStyle(
+                    fontSize: 7,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _shareBonPlan(String bonPlanId) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Partager ce bon plan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
+                title: const Text('Copier le lien'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lien copié dans le presse-papiers'),
+                      backgroundColor: Color(0xFF3AAE5E),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
+                title: const Text('Partager via...'),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Expandable description widget with "voir plus" functionality
+  Widget _ExpandableDescription({required String text}) {
+    return _ExpandableDescriptionStateful(text: text);
+  }
+}
+
+class _ExpandableDescriptionStateful extends StatefulWidget {
+  final String text;
+
+  const _ExpandableDescriptionStateful({required this.text});
+
+  @override
+  State<_ExpandableDescriptionStateful> createState() =>
+      _ExpandableDescriptionStatefulState();
+}
+
+class _ExpandableDescriptionStatefulState
+    extends State<_ExpandableDescriptionStateful> {
+  bool isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = widget.text;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isExpanded = !isExpanded;
+        });
+      },
+      child: AnimatedCrossFade(
+        firstChild: RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: text.length > 100
+                    ? '${text.substring(0, 100)}... '
+                    : text,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF666666),
+                  height: 1.4,
+                ),
+              ),
+              if (text.length > 100)
+                const TextSpan(
+                  text: 'voir plus',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF3AAE5E),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        secondChild: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Color(0xFF666666),
+            height: 1.4,
+          ),
+        ),
+        crossFadeState: isExpanded
+            ? CrossFadeState.showSecond
+            : CrossFadeState.showFirst,
+        duration: const Duration(milliseconds: 200),
+      ),
     );
   }
 }

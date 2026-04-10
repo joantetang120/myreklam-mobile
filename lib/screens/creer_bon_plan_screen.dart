@@ -141,6 +141,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   }
 
   void _handleTypeChanged(String? newType) {
+    print("_handleTypeChanged $newType");
     setState(() {
       _selectedType = newType;
       if (_isFreeType) {
@@ -1073,12 +1074,6 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
   @override
   void dispose() {
-    _prixAvantFocusNode.removeListener(_onPriceFocusChanged);
-    _prixFinalFocusNode.removeListener(_onPriceFocusChanged);
-    _prixAvantFocusNode.dispose();
-    _prixFinalFocusNode.dispose();
-    _titleController.dispose();
-    _descriptionQuillController.dispose();
     _disponibleChezController.dispose();
     _linkController.dispose();
     _siteWebController.dispose();
@@ -1138,10 +1133,6 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         if (_selectedDisponibleLocation == null) {
           return 'Précisez où est disponible cette offre.';
         }
-        // Validation du code promo pour le type "Codes promo"
-        if (_isPromoCodeType && _promoCodeController.text.trim().isEmpty) {
-          return 'Veuillez entrer le code promo.';
-        }
         break;
 
       case 3: // Step 4: Prix et détails
@@ -1152,13 +1143,21 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             return 'Le prix final doit être inférieur ou égal au prix avant réduction.';
           }
         }
+        // For period type, at least one date must be selected
         if (_validityType == 'dates') {
-          if (_validFrom == null || _validUntil == null) {
-            return 'Sélectionnez une date de début et une date de fin.';
+          if (_validFrom == null && _validUntil == null) {
+            return 'Sélectionnez au moins une date (début ou fin).';
           }
-          if (_validUntil!.isBefore(_validFrom!)) {
-            return 'La date de fin doit être postérieure à la date de début.';
+          // Only validate order if both dates are provided
+          if (_validFrom != null && _validUntil != null) {
+            if (_validUntil!.isBefore(_validFrom!)) {
+              return 'La date de fin doit être postérieure à la date de début.';
+            }
           }
+        }
+        // Validation du code promo pour le type "Codes promo"
+        if (_isPromoCodeType && _promoCodeController.text.trim().isEmpty) {
+          return 'Veuillez entrer le code promo.';
         }
         if (!_isOnlineOnly) {
           print(
@@ -1216,10 +1215,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     if (prixAvant != null && prixFinal != null && prixFinal > prixAvant) {
       return 'Le prix final doit être inférieur ou égal au prix avant réduction.';
     }
-    if (_validityType == 'dates') {
-      if (_validFrom == null || _validUntil == null) {
-        return 'Sélectionnez une date de début et une date de fin.';
-      }
+    // Dates are optional - only validate if both are provided
+    if (_validityType == 'dates' && _validFrom != null && _validUntil != null) {
       if (_validUntil!.isBefore(_validFrom!)) {
         return 'La date de fin doit être postérieure à la date de début.';
       }
@@ -1600,9 +1597,22 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
-  String _formatDateRange(DateTime? start, DateTime? end) {
-    if (start == null || end == null) return 'Offre avec dates';
-    return '${_formatSingleDate(start)} - ${_formatSingleDate(end)}';
+  String _buildValidityDisplayText() {
+    switch (_validityType) {
+      case 'permanent':
+        return 'Offre permanente';
+      case 'dates':
+        if (_validFrom != null && _validUntil != null) {
+          return 'À partir du ${_formatSingleDate(_validFrom!)} jusqu\'au ${_formatSingleDate(_validUntil!)}';
+        } else if (_validFrom != null) {
+          return 'À partir du ${_formatSingleDate(_validFrom!)}';
+        } else if (_validUntil != null) {
+          return 'Jusqu\'au ${_formatSingleDate(_validUntil!)}';
+        }
+        return 'Offre avec dates';
+      default:
+        return 'Offre permanente';
+    }
   }
 
   @override
@@ -2230,18 +2240,6 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               hint: _buildRequiredHint('Ou est disponible cette offre'),
               backgroundColor: const Color(0xFFF9FAFB),
             ),
-            // Champ code promo visible uniquement pour le type "Codes promo"
-            if (_isPromoCodeType) ...[
-              const SizedBox(height: 12),
-              _buildTextField(
-                label: 'Code promo*',
-                controller: _promoCodeController,
-                fieldKey: 'promo_code',
-                helperText:
-                    'Entrez le code promo à utiliser pour bénéficier de l\'offre. (max 10 caractères)',
-                maxLength: 10,
-              ),
-            ],
           ],
         ),
         const SizedBox(height: 24),
@@ -2260,102 +2258,115 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           icon: Icons.location_on_outlined,
           title: 'Localisation et validité',
           children: [
-            if (!_isFreeType) ...[
+            if (!_isFreeType && _selectedType != 'Infos pouvoir d\'achat') ...[
               _buildPriceSection(),
               const SizedBox(height: 20),
             ] else ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'Cette offre est gratuite, aucune information tarifaire n\'est requise.',
-                  style: TextStyle(
-                    color: Color(0xFF1B5E20),
-                    fontSize: 13,
-                    height: 1.4,
+              if (_selectedType != 'Infos pouvoir d\'achat')
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Cette offre est gratuite, aucune information tarifaire n\'est requise.',
+                    style: TextStyle(
+                      color: Color(0xFF1B5E20),
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
+              if (_selectedType != 'Infos pouvoir d\'achat')
+                const SizedBox(height: 20),
             ],
-            // Site web de l'enseigne
-            _buildTextField(
-              label: 'Site web de l\'enseigne',
-              controller: _siteWebController,
-              keyboardType: TextInputType.url,
-              fieldKey: 'site_web',
-              helperText:
-                  'Saisissez l\'adresse du site web officiel de l\'enseigne.',
-            ),
-            const SizedBox(height: 16),
-
-            // Validity type radio buttons
-            const Text(
-              'Quand cette offre est-elle valide ?',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF424242),
+            if (!_isOnlineOnly) ...[
+              const SizedBox(height: 16),
+              const Text(
+                'Site web de l\'enseigne ?',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            RadioListTile<String>(
-              title: const Text(
-                'Offre permanente',
-                style: TextStyle(fontSize: 13),
+              const SizedBox(height: 8),
+              // Site web de l'enseigne
+              _buildTextField(
+                label: 'ex: www.wwebsitepromo.fr/code-save-10',
+                controller: _siteWebController,
+                keyboardType: TextInputType.url,
+                fieldKey: 'site_web',
+                helperText:
+                    'Saisissez l\'adresse du site web officiel de l\'enseigne.',
               ),
-              subtitle: const Text(
-                'Aucune date, toute l\'année',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
+              const SizedBox(height: 16),
+            ],
+            if (!_isOnlineOnly) ...[
+              const Text(
+                'Quand cette offre est-elle valide ?',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
               ),
-              value: 'permanent',
-              groupValue: _validityType,
-              onChanged: (val) => _setValidityType(val!),
-              contentPadding: EdgeInsets.zero,
-              activeColor: const Color(0xFF3AAE5E),
-            ),
-            RadioListTile<String>(
-              title: const Text(
-                'Offre avec dates',
-                style: TextStyle(fontSize: 13),
+              const SizedBox(height: 8),
+              RadioListTile<String>(
+                title: const Text(
+                  'Offre permanente',
+                  style: TextStyle(fontSize: 13),
+                ),
+                subtitle: const Text(
+                  'Aucune date, toute l\'année',
+                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+                value: 'permanent',
+                groupValue: _validityType,
+                onChanged: (val) => _setValidityType(val!),
+                contentPadding: EdgeInsets.zero,
+                activeColor: const Color(0xFF3AAE5E),
               ),
-              subtitle: const Text(
-                'Définir une période de validité',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
+              RadioListTile<String>(
+                title: const Text(
+                  'Offre avec dates',
+                  style: TextStyle(fontSize: 13),
+                ),
+                subtitle: const Text(
+                  'Définir une période de validité (optionnel)',
+                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+                value: 'dates',
+                groupValue: _validityType,
+                onChanged: (val) => _setValidityType(val!),
+                contentPadding: EdgeInsets.zero,
+                activeColor: const Color(0xFF3AAE5E),
               ),
-              value: 'dates',
-              groupValue: _validityType,
-              onChanged: (val) => _setValidityType(val!),
-              contentPadding: EdgeInsets.zero,
-              activeColor: const Color(0xFF3AAE5E),
-            ),
-            if (_validityType == 'dates') ...[
+              if (_validityType == 'dates') ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDateField(
+                        label: 'Date de début',
+                        value: _validFrom,
+                        onTap: () => _selectDate(isStart: true),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDateField(
+                        label: 'Date de fin',
+                        value: _validUntil,
+                        onTap: () => _selectDate(isStart: false),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDateField(
-                      label: 'Date de début',
-                      value: _validFrom,
-                      onTap: () => _selectDate(isStart: true),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildDateField(
-                      label: 'Date de fin',
-                      value: _validUntil,
-                      onTap: () => _selectDate(isStart: false),
-                    ),
-                  ),
-                ],
-              ),
             ],
-            const SizedBox(height: 16),
-
             // Location section (hidden when 'En ligne' is selected)
             if (!_isOnlineOnly) ...[
               const Text(
@@ -2382,7 +2393,6 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 },
               ),
               const SizedBox(height: 12),
-
               // Toute la France toggle
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -2590,6 +2600,113 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               ],
               const SizedBox(height: 16),
             ],
+            // Champ code promo visible uniquement pour le type "Codes promo"
+            if (_isPromoCodeType) ...[
+              const Text(
+                'Quel est le code promo ?',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildTextField(
+                label: 'ex: CODESAVE10X',
+                controller: _promoCodeController,
+                fieldKey: 'promo_code',
+                helperText:
+                    'Entrez le code promo à utiliser pour bénéficier de l\'offre. (max 10 caractères)',
+              ),
+            ],
+            if (_isOnlineOnly) ...[
+              const SizedBox(height: 16),
+              const Text(
+                'Ou trouver le bon plan ?',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Site web de l'enseigne
+              _buildTextField(
+                label: 'ex: www.wwebsitepromo.fr/code-save-10',
+                controller: _siteWebController,
+                keyboardType: TextInputType.url,
+                fieldKey: 'site_web',
+                helperText:
+                    'Saisissez l\'adresse du site web officiel de l\'enseigne.',
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Validity type radio buttons
+            if (_isOnlineOnly) ...[
+              const Text(
+                'Quand cette offre est-elle valide ?',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 8),
+              RadioListTile<String>(
+                title: const Text(
+                  'Offre permanente',
+                  style: TextStyle(fontSize: 13),
+                ),
+                subtitle: const Text(
+                  'Aucune date, toute l\'année',
+                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+                value: 'permanent',
+                groupValue: _validityType,
+                onChanged: (val) => _setValidityType(val!),
+                contentPadding: EdgeInsets.zero,
+                activeColor: const Color(0xFF3AAE5E),
+              ),
+              RadioListTile<String>(
+                title: const Text(
+                  'Offre avec dates',
+                  style: TextStyle(fontSize: 13),
+                ),
+                subtitle: const Text(
+                  'Définir une période de validité (optionnel)',
+                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+                value: 'dates',
+                groupValue: _validityType,
+                onChanged: (val) => _setValidityType(val!),
+                contentPadding: EdgeInsets.zero,
+                activeColor: const Color(0xFF3AAE5E),
+              ),
+              if (_validityType == 'dates') ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildDateField(
+                        label: 'Date de début',
+                        value: _validFrom,
+                        onTap: () => _selectDate(isStart: true),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDateField(
+                        label: 'Date de fin',
+                        value: _validUntil,
+                        onTap: () => _selectDate(isStart: false),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+
             const SizedBox(height: 16),
 
             // Conditions field
@@ -2726,59 +2843,64 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           title: 'Étape 4 - Prix et détails',
           onEdit: () => setState(() => _currentStep = 3),
           rows: [
-            _buildReviewRow(
-              'Prix avant réduction',
-              _prixAvantReductionController.text.isEmpty
-                  ? '-'
-                  : '${_prixAvantReductionController.text} €',
-            ),
-            _buildReviewRow(
-              'Prix final',
-              _prixFinalController.text.isEmpty
-                  ? '-'
-                  : '${_prixFinalController.text} €',
-            ),
-            _buildReviewRow(
-              'Réduction',
-              _calculatedDiscount != null
-                  ? _discountMode == 'percent'
-                        ? '${_calculatedDiscount!.toStringAsFixed(2)} %'
-                        : '${_calculatedDiscount!.toStringAsFixed(2)} €'
-                  : '-',
-            ),
+            if (_prixAvantReductionController.text.isNotEmpty)
+              _buildReviewRow(
+                'Prix avant réduction',
+                '${_prixAvantReductionController.text} €',
+              ),
+            if (_prixFinalController.text.isNotEmpty)
+              _buildReviewRow('Prix final', '${_prixFinalController.text} €'),
+            if (_calculatedDiscount != null)
+              _buildReviewRow(
+                'Réduction',
+                _discountMode == 'percent'
+                    ? '${_calculatedDiscount!.toStringAsFixed(2)} %'
+                    : '${_calculatedDiscount!.toStringAsFixed(2)} €',
+              ),
             _buildReviewRow(
               'Site web de l\'enseigne',
               _siteWebController.text.isEmpty ? '-' : _siteWebController.text,
             ),
-            _buildReviewRow(
-              'Validité',
-              _validityType == 'permanent'
-                  ? 'Offre permanente'
-                  : _formatDateRange(_validFrom, _validUntil),
-            ),
-            _buildReviewRow(
-              'Lieu',
-              _locationController.text.isEmpty ? '-' : _locationController.text,
-            ),
+            _buildReviewRow('Validité', _buildValidityDisplayText()),
+            if (_isOnlineOnly) ...[
+              _buildReviewRow(
+                'Frais de port',
+                _shippingOption == 'paid'
+                    ? (_shippingCostController.text.isEmpty
+                          ? 'Frais de port (montant non spécifié)'
+                          : '${_shippingCostController.text} €')
+                    : 'Gratuit',
+              ),
+            ],
+            if (!_isOnlineOnly && !_touteFrance) ...[
+              _buildReviewRow(
+                'Lieu',
+                _locationController.text.isEmpty
+                    ? '-'
+                    : _locationController.text,
+              ),
+            ],
             _buildReviewRow('Toute la France', _touteFrance ? 'Oui' : 'Non'),
             _buildReviewRow(
               'Afficher localisation Google',
               _afficherGoogleLocation ? 'Oui' : 'Non',
             ),
-            _buildReviewRow(
-              'Moyen de retrait',
-              [
-                    if (_moyenRetraitMagasin) 'Magasin',
-                    if (_moyenRetraitEnLigne) 'Livraison',
-                    if (_moyenRetraitDrive) 'Drive',
-                  ].isEmpty
-                  ? '-'
-                  : [
+            if (!_isOnlineOnly) ...[
+              _buildReviewRow(
+                'Moyen de retrait',
+                [
                       if (_moyenRetraitMagasin) 'Magasin',
                       if (_moyenRetraitEnLigne) 'Livraison',
                       if (_moyenRetraitDrive) 'Drive',
-                    ].join(', '),
-            ),
+                    ].isEmpty
+                    ? '-'
+                    : [
+                        if (_moyenRetraitMagasin) 'Magasin',
+                        if (_moyenRetraitEnLigne) 'Livraison',
+                        if (_moyenRetraitDrive) 'Drive',
+                      ].join(', '),
+              ),
+            ],
             if (_conditionsController.text.isNotEmpty)
               _buildReviewRow('Conditions', _conditionsController.text),
           ],
@@ -3209,6 +3331,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF424242),
               ),
+              counterStyle: const TextStyle(color: Colors.transparent),
             ),
           ),
         ),
