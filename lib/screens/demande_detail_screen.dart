@@ -82,6 +82,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
   List<Map<String, dynamic>> _similarDemandes = [];
   bool _isLoadingSimilar = false;
 
+  // Categories API data for translating secteur/fonction
+  Map<String, String> _sectorCodeToLabel = {};
+  Map<String, String> _functionCodeToLabel = {};
+  bool _categoriesLoaded = false;
+
   static const _natureLabels = {
     'searchjob': 'Recherche d\'emploi',
     'training': 'Formation',
@@ -258,6 +263,70 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     _checkFavoriteStatus();
     _fetchComments();
     _fetchSimilarDemandes();
+    _loadCategoriesForTranslation();
+  }
+
+  /// Load categories from API to translate sector and function codes to French labels
+  Future<void> _loadCategoriesForTranslation() async {
+    try {
+      final response = await http.post(
+        Uri.parse('https://api.myreklam.fr/Categorie.php'),
+        headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: const {'Method': 'getByType', 'type': 'offres_emploi'},
+      );
+
+      if (response.statusCode != 200) return;
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic> || decoded['status'] != 'success')
+        return;
+
+      final data = decoded['data'];
+      if (data is! Map<String, dynamic>) return;
+
+      final sectorCodeToLabel = <String, String>{};
+      final functionCodeToLabel = <String, String>{};
+
+      // Parse main categories (secteurs)
+      final mainRaw = data['main'];
+      if (mainRaw is List) {
+        for (final item in mainRaw) {
+          if (item is Map<String, dynamic>) {
+            final code = item['code']?.toString();
+            final label = item['label']?.toString();
+            if (code != null && label != null) {
+              sectorCodeToLabel[code] = label;
+            }
+          }
+        }
+      }
+
+      // Parse sub-categories (fonctions) grouped by parentId
+      final subsRaw = data['subs'];
+      if (subsRaw is Map) {
+        subsRaw.forEach((key, value) {
+          if (value is List) {
+            for (final func in value) {
+              if (func is Map<String, dynamic>) {
+                final code = func['code']?.toString();
+                final label = func['label']?.toString();
+                if (code != null && label != null) {
+                  functionCodeToLabel[code] = label;
+                }
+              }
+            }
+          }
+        });
+      }
+
+      setState(() {
+        _sectorCodeToLabel = sectorCodeToLabel;
+        _functionCodeToLabel = functionCodeToLabel;
+        _categoriesLoaded = true;
+      });
+    } catch (e) {
+      debugPrint('Error loading categories for translation: $e');
+    }
   }
 
   Future<void> _fetchComments() async {
@@ -1894,13 +1963,17 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: color,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Manjari',
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Manjari',
+              ),
             ),
           ),
         ],
@@ -2463,20 +2536,22 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
       };
 
       final sectorKey = str(data['activity_sector']);
+      final sectorLabel = _sectorCodeToLabel[sectorKey] ?? sectorKey;
       addTile(
         icon: Icons.work_outline,
         iconBg: const Color(0xFFE3F2FD),
         iconColor: const Color(0xFF1E88E5),
         title: 'Secteur d\'activité',
-        value: sectorLabels[sectorKey] ?? sectorKey,
+        value: sectorLabel,
       );
       final functionKey = str(data['function']);
+      final functionLabel = _functionCodeToLabel[functionKey] ?? functionKey;
       addTile(
         icon: Icons.badge_outlined,
         iconBg: const Color(0xFFF5F5F5),
         iconColor: const Color(0xFF616161),
         title: 'Fonction recherchée',
-        value: functionLabels[functionKey] ?? functionKey,
+        value: functionLabel,
       );
       final contracts = listStr(
         data['contract_types'],
