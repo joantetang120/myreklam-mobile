@@ -41,6 +41,35 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:166441708619:android:449c9fb5d4589e3a1b31ce",
+        "android_client_info": {
+          "package_name": "com.myreklam.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "166441708619-tt4a3fg0ah3g5ol3mmt0f5a65hgif4f8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3voo0Cdm-kN3891rzRLTqoWDS6C1fODQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "166441708619-tt4a3fg0ah3g5ol3mmt0f5a65hgif4f8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"
