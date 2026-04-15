@@ -13,6 +13,8 @@ import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
+import 'package:myreklam/models/location_data.dart';
+import 'package:myreklam/widgets/location_picker_field.dart';
 
 class _CategoryLoadResult {
   final List<String> categories;
@@ -63,7 +65,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   final TextEditingController _prixFinalController = TextEditingController();
   final FocusNode _prixAvantFocusNode = FocusNode();
   final FocusNode _prixFinalFocusNode = FocusNode();
-  final TextEditingController _locationController = TextEditingController();
+  LocationData? _selectedLocation;
   final TextEditingController _conditionsController = TextEditingController();
   String _validityType = 'permanent'; // 'permanent' or 'dates'
   DateTime? _validFrom;
@@ -162,7 +164,20 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     _promoCodeController.text = data['promo_code']?.toString() ?? '';
     _linkController.text = data['link']?.toString() ?? '';
     _siteWebController.text = data['brand_website']?.toString() ?? '';
-    _locationController.text = data['location_search']?.toString() ?? '';
+    // Restore location data
+    if (data['location_search'] != null) {
+      _selectedLocation = LocationData(
+        address: data['location_search']?.toString() ?? '',
+        latitude: data['location_lat'] != null 
+          ? double.tryParse(data['location_lat'].toString()) 
+          : null,
+        longitude: data['location_lng'] != null 
+          ? double.tryParse(data['location_lng'].toString()) 
+          : null,
+        city: data['location_city']?.toString(),
+        postalCode: data['location_postal_code']?.toString(),
+      );
+    }
     _conditionsController.text = data['conditions']?.toString() ?? '';
 
     _selectedCategory = data['category']?.toString();
@@ -384,7 +399,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         'prix_final': _prixFinalController.text,
         'discount_mode': _discountMode,
         'available_location_type': _selectedDisponibleLocation,
-        'location': _locationController.text,
+        'location': _selectedLocation?.toMap(),
         'conditions': _conditionsController.text,
         'validity_type': _validityType,
         'valid_from': _validFrom?.toIso8601String(),
@@ -421,7 +436,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         _prixFinalController.text = formData['prix_final'] ?? '';
         _discountMode = formData['discount_mode'] ?? 'percent';
         _selectedDisponibleLocation = formData['available_location_type'];
-        _locationController.text = formData['location'] ?? '';
+        if (formData['location'] != null) {
+          _selectedLocation = LocationData.fromMap(formData['location']);
+        }
         _conditionsController.text = formData['conditions'] ?? '';
         _validityType = formData['validity_type'] ?? 'permanent';
         _promoCodeController.text = formData['promo_code'] ?? '';
@@ -1079,7 +1096,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     _siteWebController.dispose();
     _prixAvantReductionController.dispose();
     _prixFinalController.dispose();
-    _locationController.dispose();
+    // Location is not a controller anymore, no disposal needed
     _conditionsController.dispose();
     _promoCodeController.dispose();
     super.dispose();
@@ -1163,7 +1180,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           print(
             'DEBUG STEP4: _isOnlineOnly = $_isOnlineOnly, validating location and pickup...',
           );
-          if (_locationController.text.trim().isEmpty && !_touteFrance) {
+          if (_selectedLocation == null && !_touteFrance) {
             return 'Renseignez une ville ou activez "Toute la France".';
           }
           if (!_moyenRetraitMagasin &&
@@ -1222,7 +1239,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       }
     }
     if (!_isOnlineOnly) {
-      if (_locationController.text.trim().isEmpty && !_touteFrance) {
+      if (_selectedLocation == null && !_touteFrance) {
         return 'Renseignez une ville ou activez "Toute la France".';
       }
     }
@@ -1257,7 +1274,6 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     final disponibleChez = _disponibleChezController.text.trim();
     final link = _linkController.text.trim();
     final brandWebsite = _siteWebController.text.trim();
-    final location = _locationController.text.trim();
     final conditions = _conditionsController.text.trim();
     final prixAvant = _parsePrice(_prixAvantReductionController.text);
     final prixFinal = _parsePrice(_prixFinalController.text);
@@ -1277,7 +1293,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       'validity_type': _validityType,
       'valid_from': _validFrom?.toIso8601String(),
       'valid_until': _validUntil?.toIso8601String(),
-      'location_search': location,
+      'location_search': _selectedLocation?.address,
+      'location_lat': _selectedLocation?.latitude,
+      'location_lng': _selectedLocation?.longitude,
+      'location_city': _selectedLocation?.city,
+      'location_postal_code': _selectedLocation?.postalCode,
       'nationwide': _touteFrance,
       'show_google_location': _afficherGoogleLocation,
       'pickup_methods': _isOnlineOnly
@@ -2378,18 +2398,17 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              _buildTextField(
-                label: 'Rechercher par ville ou code postal...',
-                controller: _locationController,
-                prefixIcon: Icons.search,
-                fieldKey: 'location',
-                helperText:
-                    'Entrez la ville ou le code postal où ce bon plan est valable.',
-                enabled: !_touteFrance,
-                onChanged: (value) {
-                  if (value.trim().isNotEmpty && _touteFrance) {
-                    setState(() => _touteFrance = false);
-                  }
+              LocationPickerField(
+                initialLocation: _selectedLocation,
+                label: 'Localisation du bon plan',
+                helperText: 'Recherchez une adresse, ville ou code postal',
+                onLocationSelected: (location) {
+                  setState(() {
+                    _selectedLocation = location;
+                    if (location != null && _touteFrance) {
+                      _touteFrance = false;
+                    }
+                  });
                 },
               ),
               const SizedBox(height: 12),
@@ -2412,12 +2431,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                     ),
                     Switch(
                       value: _touteFrance,
-                      onChanged: _locationController.text.trim().isEmpty
+                      onChanged: _selectedLocation == null
                           ? (val) {
                               setState(() {
                                 _touteFrance = val;
                                 if (val) {
-                                  _locationController.clear();
+                                  _selectedLocation = null;
                                 }
                               });
                             }
@@ -2875,9 +2894,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             if (!_isOnlineOnly && !_touteFrance) ...[
               _buildReviewRow(
                 'Lieu',
-                _locationController.text.isEmpty
-                    ? '-'
-                    : _locationController.text,
+                _selectedLocation?.address ?? '-',
               ),
             ],
             _buildReviewRow('Toute la France', _touteFrance ? 'Oui' : 'Non'),

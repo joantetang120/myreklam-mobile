@@ -1639,7 +1639,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       final shippingCost = data['shipping_cost']?.toString();
       final availableLocationType = data['available_location_type']?.toString();
       final conditions = data['conditions']?.toString();
-      final location = data['location_search']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
+      final location = locationCity != null
+          ? (locationPostalCode != null
+              ? '$locationCity ($locationPostalCode)'
+              : locationCity)
+          : locationPostalCode;
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
       final reductionLabel = data['reduction_label']?.toString();
