@@ -13,6 +13,8 @@ import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/models/location_data.dart';
+import 'package:myreklam/widgets/location_picker_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _EventMediaFile {
@@ -70,9 +72,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   // Focus tracking for helper text
   String? _focusedField;
   final TextEditingController _organizerNameController = TextEditingController();
-  final TextEditingController _disponibleChezController =
-      TextEditingController();
-  String? _selectedDisponibleLocation;
+  LocationData? _selectedLocation;
   String? selectedOptionOrg = "Oui";
   bool _touteLaFrance = false;
   String? _selectedPrixEntree = "Gratuit";
@@ -147,7 +147,6 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     _titleController.dispose();
     _descriptionQuillController.dispose();
     _organizerNameController.dispose();
-    _disponibleChezController.dispose();
     _linkController.dispose();
     _prixInitialController.dispose();
     _prixFinalController.dispose();
@@ -234,9 +233,21 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         selectedOptionOrg = 'Oui';
       }
 
-      // Coverage
-      _disponibleChezController.text = data['coverage_area']?.toString() ?? '';
+      // Coverage / Location
       _touteLaFrance = data['is_nationwide'] == true || data['is_nationwide'] == 1;
+      if (data['coverage_area'] != null || data['location_city'] != null) {
+        _selectedLocation = LocationData(
+          address: data['coverage_area']?.toString() ?? '',
+          latitude: data['location_lat'] != null
+              ? double.tryParse(data['location_lat'].toString())
+              : null,
+          longitude: data['location_lng'] != null
+              ? double.tryParse(data['location_lng'].toString())
+              : null,
+          city: data['location_city']?.toString(),
+          postalCode: data['location_postal_code']?.toString(),
+        );
+      }
 
       // Price
       final priceType = data['price_type']?.toString();
@@ -492,7 +503,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         'link': _linkController.text,
         'organizer': selectedOptionOrg,
         'organizer_name': _organizerNameController.text,
-        'disponible_chez': _disponibleChezController.text,
+        'location': _selectedLocation?.toMap(),
         'toute_la_france': _touteLaFrance,
         'prix_entree': _selectedPrixEntree,
         'pricing_mode': _selectedPricingMode,
@@ -537,7 +548,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         _linkController.text = formData['link'] ?? '';
         selectedOptionOrg = formData['organizer'] ?? 'Oui';
         _organizerNameController.text = formData['organizer_name'] ?? '';
-        _disponibleChezController.text = formData['disponible_chez'] ?? '';
+        if (formData['location'] != null) {
+          _selectedLocation = LocationData.fromMap(formData['location']);
+        }
         _touteLaFrance = formData['toute_la_france'] ?? false;
         _selectedPrixEntree = formData['prix_entree'] ?? 'Gratuit';
         _selectedPricingMode = formData['pricing_mode'];
@@ -740,7 +753,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         if (_descriptionQuillController.document.toPlainText().trim().length < 20) {
           return 'La description doit contenir au moins 20 caractères.';
         }
-        if (_disponibleChezController.text.trim().isEmpty) {
+        if (_selectedLocation == null && !_touteLaFrance) {
           return 'Indiquez le lieu de l\'événement.';
         }
         if (_selectedPrixEntree == null) {
@@ -920,7 +933,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       'landing_url': _linkController.text.trim().isEmpty ? null : _linkController.text.trim(),
       'is_organizer': selectedOptionOrg == 'Oui',
       'organizer_name': selectedOptionOrg == 'Non' ? _organizerNameController.text.trim() : null,
-      'coverage_area': _disponibleChezController.text.trim(),
+      'coverage_area': _selectedLocation?.address,
+      'location_lat': _selectedLocation?.latitude,
+      'location_lng': _selectedLocation?.longitude,
+      'location_city': _selectedLocation?.city,
+      'location_postal_code': _selectedLocation?.postalCode,
       'is_nationwide': _touteLaFrance,
       'price_type': priceType,
       'price_amount': priceType == 'payant' && _selectedPricingMode == 'Prix unique'
@@ -1928,16 +1945,17 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 helperText: 'Indiquez le nom de la personne ou de l\'organisme qui organise cet événement.',
               ),
             const SizedBox(height: 12),
-            _buildTextField(
-              label: 'Précisez la ville/région où cette offre est valide',
-              controller: _disponibleChezController,
-              fieldKey: 'disponible_chez',
-              helperText: 'Indiquez la ville, la région ou le lieu précis de l\'événement.',
-              enabled: !_touteLaFrance,
-              onChanged: (value) {
-                if (value.trim().isNotEmpty && _touteLaFrance) {
-                  setState(() => _touteLaFrance = false);
-                }
+            LocationPickerField(
+              initialLocation: _selectedLocation,
+              label: 'Lieu de l\'événement',
+              helperText: 'Recherchez une ville, adresse ou code postal',
+              onLocationSelected: (location) {
+                setState(() {
+                  _selectedLocation = location;
+                  if (location != null && _touteLaFrance) {
+                    _touteLaFrance = false;
+                  }
+                });
               },
             ),
             const SizedBox(height: 16),
@@ -1958,12 +1976,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   ),
                   Switch(
                     value: _touteLaFrance,
-                    onChanged: _disponibleChezController.text.trim().isEmpty
+                    onChanged: _selectedLocation == null
                         ? (val) {
                             setState(() {
                               _touteLaFrance = val;
                               if (val) {
-                                _disponibleChezController.clear();
+                                _selectedLocation = null;
                               }
                             });
                           }
@@ -2405,7 +2423,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             ),
             _buildReviewRow(
               'Lieu',
-              _disponibleChezController.text.isEmpty ? '-' : _disponibleChezController.text,
+              _selectedLocation?.address ?? '-',
             ),
             _buildReviewRow('Toute la France', _touteLaFrance ? 'Oui' : 'Non'),
             _buildReviewRow('Prix d\'entrée', _selectedPrixEntree ?? '-'),
