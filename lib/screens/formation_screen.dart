@@ -9,6 +9,7 @@ import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/services/reaction_cache_service.dart';
 
 // Helper class for reaction data
 class _ReactionData {
@@ -35,7 +36,7 @@ class _FormationScreenState extends State<FormationScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    ReactionCacheService.init().then((_) => _loadData());
   }
 
   Future<void> _loadData() async {
@@ -54,6 +55,13 @@ class _FormationScreenState extends State<FormationScreen> {
         fetched = List<Map<String, dynamic>>.from(data['items'] as List);
       }
       if (mounted) {
+        // Seed reactions BEFORE setState to prevent _getReaction pre-populating with empty data
+        for (final item in fetched) {
+          final itemId = item['id']?.toString() ?? '';
+          if (itemId.isNotEmpty) {
+            _seedReactionFromResource('trainings', itemId, item);
+          }
+        }
         setState(() {
           _items = fetched;
           _isLoading = false;
@@ -692,10 +700,7 @@ class _FormationScreenState extends State<FormationScreen> {
         }
       },
       reactionBar: trainingId.isNotEmpty
-          ? () {
-              _seedReactionFromResource('trainings', trainingId, training);
-              return _buildReactionBar('trainings', trainingId);
-            }()
+          ? _buildReactionBar('trainings', trainingId)
           : null,
     );
   }
@@ -917,30 +922,18 @@ class _FormationScreenState extends State<FormationScreen> {
     Map<String, dynamic> resource,
   ) {
     final key = _reactionKey(apiSlug, entityId);
-    // Always update from resource data to ensure fresh counts
-    _reactions[key] = _ReactionData(
-      likesCount: _asInt(resource['likes_count']),
-      commentsCount: _asInt(resource['comments_count']),
-      userReaction: resource['user_reaction']?.toString(),
-    );
-  }
-
-  Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
-    try {
-      final response = await ApiClient().authenticatedGet('/$apiSlug/$entityId');
-      final data = response['data'] as Map<String, dynamic>?;
-      if (data != null && mounted) {
-        setState(() {
-          final key = _reactionKey(apiSlug, entityId);
-          _reactions[key] = _ReactionData(
-            likesCount: _asInt(data['likes_count']),
-            commentsCount: _asInt(data['comments_count']),
-            userReaction: data['user_reaction']?.toString(),
-          );
-        });
-      }
-    } catch (e) {
-      debugPrint('Error refreshing reaction: $e');
+    if (!_reactions.containsKey(key)) {
+      final apiReaction = resource['user_reaction']?.toString();
+      final userReaction = ReactionCacheService.isCached(apiSlug, entityId)
+          ? ReactionCacheService.load(apiSlug, entityId)
+          : apiReaction;
+      final apiCount = _asInt(resource['likes_count']);
+      final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
+      _reactions[key] = _ReactionData(
+        likesCount: (cachedCount != null && cachedCount > apiCount) ? cachedCount : apiCount,
+        commentsCount: _asInt(resource['comments_count']),
+        userReaction: userReaction,
+      );
     }
   }
 
@@ -973,13 +966,14 @@ class _FormationScreenState extends State<FormationScreen> {
       );
       final respData = response['data'] as Map<String, dynamic>?;
       if (respData != null && mounted) {
+        final newReaction = respData['user_reaction']?.toString();
         setState(() {
           data.likesCount = _asInt(respData['likes_count']);
-          data.userReaction = respData['user_reaction']?.toString();
+          data.userReaction = newReaction;
         });
+        ReactionCacheService.save(apiSlug, entityId, newReaction);
+        ReactionCacheService.saveCount(apiSlug, entityId, data.likesCount);
       }
-      // Also refresh to ensure counts are accurate
-      await _refreshReactionFromApi(apiSlug, entityId);
     } catch (e) {
       debugPrint('Reaction error: $e');
       if (mounted) {

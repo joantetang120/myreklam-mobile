@@ -4,6 +4,7 @@ import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/screens/public_profile_screen.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
@@ -39,7 +40,7 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
   void initState() {
     super.initState();
     _ensureCurrentUserId();
-    _loadData();
+    ReactionCacheService.init().then((_) => _loadData());
   }
 
   Future<String?> _ensureCurrentUserId() async {
@@ -74,6 +75,13 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
         fetched = List<Map<String, dynamic>>.from(data['items'] as List);
       }
       if (mounted) {
+        // Seed reactions BEFORE setState to prevent _getReaction pre-populating with empty data
+        for (final item in fetched) {
+          final itemId = item['id']?.toString() ?? '';
+          if (itemId.isNotEmpty) {
+            _seedReactionFromResource('job-offers', itemId, item);
+          }
+        }
         setState(() {
           _items = fetched;
           _isLoading = false;
@@ -571,10 +579,7 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
             }
           },
           reactionBar: jobId.isNotEmpty
-              ? () {
-                  _seedReactionFromResource('job-offers', jobId, job);
-                  return _buildReactionBar('job-offers', jobId);
-                }()
+              ? _buildReactionBar('job-offers', jobId)
               : null,
         );
       },
@@ -1700,13 +1705,14 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
       );
       final respData = response['data'] as Map<String, dynamic>?;
       if (respData != null && mounted) {
+        final newReaction = respData['user_reaction']?.toString();
         setState(() {
           data.likesCount = _asInt(respData['likes_count']);
-          data.userReaction = respData['user_reaction']?.toString();
+          data.userReaction = newReaction;
         });
+        ReactionCacheService.save(apiSlug, entityId, newReaction);
+        ReactionCacheService.saveCount(apiSlug, entityId, data.likesCount);
       }
-      // Also refresh to ensure counts are accurate
-      await _refreshReactionFromApi(apiSlug, entityId);
     } catch (e) {
       debugPrint('Reaction error: $e');
       if (mounted) {
@@ -1733,12 +1739,19 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
     Map<String, dynamic> resource,
   ) {
     final key = _reactionKey(apiSlug, entityId);
-    // Always update from resource data to ensure fresh counts
-    _reactions[key] = _ReactionData(
-      likesCount: _asInt(resource['likes_count']),
-      commentsCount: _asInt(resource['comments_count']),
-      userReaction: resource['user_reaction']?.toString(),
-    );
+    if (!_reactions.containsKey(key)) {
+      final apiReaction = resource['user_reaction']?.toString();
+      final userReaction = ReactionCacheService.isCached(apiSlug, entityId)
+          ? ReactionCacheService.load(apiSlug, entityId)
+          : apiReaction;
+      final apiCount = _asInt(resource['likes_count']);
+      final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
+      _reactions[key] = _ReactionData(
+        likesCount: (cachedCount != null && cachedCount > apiCount) ? cachedCount : apiCount,
+        commentsCount: _asInt(resource['comments_count']),
+        userReaction: userReaction,
+      );
+    }
   }
 
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {

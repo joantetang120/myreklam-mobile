@@ -36,6 +36,7 @@ import 'package:myreklam/screens/suggested_users_screen.dart';
 import 'package:myreklam/screens/search_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/widgets/particulier_onboarding_modal.dart';
 import 'package:myreklam/widgets/pro_onboarding_modal.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -1033,7 +1034,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_onFeedScroll);
     _prefetchCurrentUser();
-    _loadUnifiedFeed(reset: true);
+    ReactionCacheService.init().then((_) => _loadUnifiedFeed(reset: true));
     _storyStore.loadFeed();
     _loadSuggestions();
     _checkAndShowWelcomeBonus();
@@ -3475,12 +3476,19 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     Map<String, dynamic> resource,
   ) {
     final key = _reactionKey(apiSlug, entityId);
-    // Always update from resource data to ensure fresh counts
-    _reactions[key] = _ReactionData(
-      likesCount: _asInt(resource['likes_count']),
-      commentsCount: _asInt(resource['comments_count']),
-      userReaction: resource['user_reaction']?.toString(),
-    );
+    if (!_reactions.containsKey(key)) {
+      final apiReaction = resource['user_reaction']?.toString();
+      final userReaction = ReactionCacheService.isCached(apiSlug, entityId)
+          ? ReactionCacheService.load(apiSlug, entityId)
+          : apiReaction;
+      final apiCount = _asInt(resource['likes_count']);
+      final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
+      _reactions[key] = _ReactionData(
+        likesCount: (cachedCount != null && cachedCount > apiCount) ? cachedCount : apiCount,
+        commentsCount: _asInt(resource['comments_count']),
+        userReaction: userReaction,
+      );
+    }
   }
 
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
@@ -3533,13 +3541,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       );
       final respData = response['data'] as Map<String, dynamic>?;
       if (respData != null && mounted) {
+        final newReaction = respData['user_reaction']?.toString();
         setState(() {
           data.likesCount = _asInt(respData['likes_count']);
-          data.userReaction = respData['user_reaction']?.toString();
+          data.userReaction = newReaction;
         });
+        ReactionCacheService.save(apiSlug, entityId, newReaction);
+        ReactionCacheService.saveCount(apiSlug, entityId, data.likesCount);
       }
-      // Also refresh to ensure counts are accurate
-      await _refreshReactionFromApi(apiSlug, entityId);
     } catch (e) {
       debugPrint('Reaction error: $e');
       if (mounted) {
