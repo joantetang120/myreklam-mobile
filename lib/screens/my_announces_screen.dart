@@ -655,7 +655,13 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       final link = data['link']?.toString();
       final pickupMethods = data['pickup_methods'] as Map<String, dynamic>?;
       final deliveryInfo = _buildDeliveryInfo(pickupMethods);
-      final location = data['location_search']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
+      final location = locationCity != null
+          ? (locationPostalCode != null
+              ? '$locationCity ($locationPostalCode)'
+              : locationCity)
+          : locationPostalCode;
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
       final reductionLabel = data['reduction_label']?.toString();

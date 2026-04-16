@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/training_service.dart';
+import 'package:myreklam/models/location_data.dart';
+import 'package:myreklam/widgets/location_picker_field.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
@@ -95,10 +97,8 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   final TextEditingController _websiteController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
-  final TextEditingController _addressLine1Controller = TextEditingController();
-  final TextEditingController _addressLine2Controller = TextEditingController();
-  final TextEditingController _addressCityController = TextEditingController();
-  final TextEditingController _addressZipcodeController = TextEditingController();
+
+  LocationData? _selectedLocation;
 
   List<String> _selectedTeachingStyles = [];
   List<String> _selectedTargetPublics = [];
@@ -153,10 +153,6 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     _websiteController.dispose();
     _priceController.dispose();
     _durationController.dispose();
-    _addressLine1Controller.dispose();
-    _addressLine2Controller.dispose();
-    _addressCityController.dispose();
-    _addressZipcodeController.dispose();
     _customLevelController.dispose();
     _customCertificationController.dispose();
     super.dispose();
@@ -210,10 +206,19 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       }
 
       // Location
-      _addressLine1Controller.text = data['address_line1']?.toString() ?? '';
-      _addressLine2Controller.text = data['address_line2']?.toString() ?? '';
-      _addressCityController.text = data['address_city']?.toString() ?? '';
-      _addressZipcodeController.text = data['address_zipcode']?.toString() ?? '';
+      if (data['location_lat'] != null || data['location_city'] != null || data['address_city'] != null) {
+        _selectedLocation = LocationData(
+          address: data['address_line1']?.toString() ?? data['location_city']?.toString() ?? '',
+          latitude: data['location_lat'] != null
+              ? double.tryParse(data['location_lat'].toString())
+              : null,
+          longitude: data['location_lng'] != null
+              ? double.tryParse(data['location_lng'].toString())
+              : null,
+          city: data['location_city']?.toString() ?? data['address_city']?.toString(),
+          postalCode: data['location_postal_code']?.toString() ?? data['address_zipcode']?.toString(),
+        );
+      }
       _showLocation = data['show_location'] != false;
       _acceptMessages = data['accept_messages'] != false;
 
@@ -432,10 +437,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         'date_to_define': _dateToDefine,
         'start_date': _startDate?.toIso8601String(),
         'end_date': _endDate?.toIso8601String(),
-        'address_line1': _addressLine1Controller.text,
-        'address_line2': _addressLine2Controller.text,
-        'address_city': _addressCityController.text,
-        'address_zipcode': _addressZipcodeController.text,
+        'location': _selectedLocation?.toMap(),
         'show_location': _showLocation,
         'accept_messages': _acceptMessages,
       };
@@ -577,10 +579,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           _websiteController.text = formData['website'] ?? '';
           _linkController.text = formData['link'] ?? '';
           _dateToDefine = formData['date_to_define'] ?? false;
-          _addressLine1Controller.text = formData['address_line1'] ?? '';
-          _addressLine2Controller.text = formData['address_line2'] ?? '';
-          _addressCityController.text = formData['address_city'] ?? '';
-          _addressZipcodeController.text = formData['address_zipcode'] ?? '';
+          if (formData['location'] != null && formData['location'] is Map) {
+            _selectedLocation = LocationData.fromMap(formData['location']);
+          }
           _showLocation = formData['show_location'] ?? true;
           _acceptMessages = formData['accept_messages'] ?? true;
         });
@@ -819,17 +820,12 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         }
       }
 
-      if (_addressLine1Controller.text.trim().isNotEmpty) {
-        trainingData['address_line1'] = _addressLine1Controller.text.trim();
-      }
-      if (_addressLine2Controller.text.trim().isNotEmpty) {
-        trainingData['address_line2'] = _addressLine2Controller.text.trim();
-      }
-      if (_addressCityController.text.trim().isNotEmpty) {
-        trainingData['address_city'] = _addressCityController.text.trim();
-      }
-      if (_addressZipcodeController.text.trim().isNotEmpty) {
-        trainingData['address_zipcode'] = _addressZipcodeController.text.trim();
+      if (_selectedLocation != null) {
+        trainingData['address_line1'] = _selectedLocation?.address;
+        trainingData['location_lat'] = _selectedLocation?.latitude;
+        trainingData['location_lng'] = _selectedLocation?.longitude;
+        trainingData['location_city'] = _selectedLocation?.city;
+        trainingData['location_postal_code'] = _selectedLocation?.postalCode;
       }
       trainingData['address_country'] = 'FR';
       trainingData['show_location'] = _showLocation;
@@ -2296,12 +2292,13 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           style: TextStyle(fontSize: 11, color: Colors.grey[500]),
         ),
         const SizedBox(height: 8),
-        _buildTextField(
+        LocationPickerField(
+          initialLocation: _selectedLocation,
           label: 'Rechercher par ville ou code postal...',
-          controller: _addressCityController,
-          prefixIcon: Icons.search,
-          fieldKey: 'location',
           helperText: 'Saisissez le nom de la ville ou le code postal où la formation se déroule.',
+          onLocationSelected: (location) {
+            setState(() => _selectedLocation = location);
+          },
         ),
         const SizedBox(height: 12),
         _buildCheckOption(
@@ -2517,9 +2514,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           rows: [
             _buildReviewRow(
               'Adresse',
-              _addressLine1Controller.text.isEmpty && _addressCityController.text.isEmpty
-                  ? '-'
-                  : '${_addressLine1Controller.text}${_addressCityController.text.isNotEmpty ? ", " + _addressCityController.text : ""}',
+              _selectedLocation?.address ?? '-',
             ),
             _buildReviewRow(
               'Afficher localisation',

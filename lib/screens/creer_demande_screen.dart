@@ -13,7 +13,11 @@ import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/models/location_data.dart';
+import 'package:myreklam/widgets/location_picker_field.dart';
+import 'package:myreklam/services/location_service.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CreerDemandeScreen extends StatefulWidget {
   final String? demandeId;
@@ -315,8 +319,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   final List<String> _selectedCvOptions = [];
 
   // Step 3 - Localisation
-  final TextEditingController _disponibleChezController =
-      TextEditingController();
+  LocationData? _selectedLocation;
   bool _touteLaFrance = false;
   bool _useCurrentLocation = false;
   bool _showGoogleLocation = false;
@@ -423,7 +426,19 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     if (data == null) return;
 
     _titleController.text = data['title']?.toString() ?? '';
-    _disponibleChezController.text = data['location']?.toString() ?? '';
+    if (data['location'] != null || data['location_city'] != null) {
+      _selectedLocation = LocationData(
+        address: data['location']?.toString() ?? '',
+        latitude: data['latitude'] != null
+            ? double.tryParse(data['latitude'].toString())
+            : null,
+        longitude: data['longitude'] != null
+            ? double.tryParse(data['longitude'].toString())
+            : null,
+        city: data['location_city']?.toString(),
+        postalCode: data['location_postal_code']?.toString(),
+      );
+    }
     _selectedCategory = data['nature']?.toString();
     _selectedType = data['type']?.toString();
     _acceptDemand = data['urgent'] == true;
@@ -603,7 +618,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         'end_date': _endDate?.toIso8601String(),
         'budget_min': _prixInitialController.text,
         'budget_max': _prixFinalController.text,
-        'location': _disponibleChezController.text,
+        'location': _selectedLocation?.toMap(),
         'toute_la_france': _touteLaFrance,
         'use_current_location': _useCurrentLocation,
         'show_google_location': _showGoogleLocation,
@@ -669,7 +684,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         _titleController.text = formData['title'] ?? '';
         _prixInitialController.text = formData['budget_min'] ?? '';
         _prixFinalController.text = formData['budget_max'] ?? '';
-        _disponibleChezController.text = formData['location'] ?? '';
+        if (formData['location'] != null && formData['location'] is Map) {
+          _selectedLocation = LocationData.fromMap(formData['location']);
+        }
         _acceptDemand = formData['urgent'] ?? false;
         if (formData['start_date'] != null)
           _startDate = DateTime.tryParse(formData['start_date'].toString());
@@ -1636,8 +1653,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       final v = double.tryParse(_prixFinalController.text.replaceAll(',', '.'));
       if (v != null && v > 0) payload['budget_max'] = v;
     }
-    if (_disponibleChezController.text.trim().isNotEmpty) {
-      payload['location'] = _disponibleChezController.text.trim();
+    if (_selectedLocation != null) {
+      payload['location'] = _selectedLocation?.address;
+      payload['latitude'] = _selectedLocation?.latitude;
+      payload['longitude'] = _selectedLocation?.longitude;
+      payload['location_city'] = _selectedLocation?.city;
+      payload['location_postal_code'] = _selectedLocation?.postalCode;
     }
     if (_rayonRecherche > 0) {
       payload['search_radius_km'] = _rayonRecherche.toInt();
@@ -1664,7 +1685,6 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionQuillController.dispose();
-    _disponibleChezController.dispose();
     _prixInitialController.dispose();
     _prixFinalController.dispose();
     super.dispose();
@@ -1830,6 +1850,67 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     );
   }
 
+  /// Handle the "Use my current location" checkbox toggle
+  Future<void> _handleUseCurrentLocationToggle(bool value) async {
+    if (!value) {
+      // Unchecked - clear location
+      setState(() {
+        _useCurrentLocation = false;
+        _selectedLocation = null;
+      });
+      return;
+    }
+
+    // Check location permission
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        _showSnack('Permission de localisation refusée', isError: true);
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _showSnack(
+        'Permission de localisation refusée définitivement. Veuillez l\'activer dans les paramètres.',
+        isError: true,
+      );
+      return;
+    }
+
+    // Show loading
+    setState(() => _useCurrentLocation = true);
+    _showSnack('Récupération de votre position...');
+
+    try {
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Reverse geocode to get address
+      final locationData = await LocationService.reverseGeocode(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (locationData != null) {
+        setState(() {
+          _useCurrentLocation = true;
+          _selectedLocation = locationData;
+        });
+        _showSnack('Position trouvée : ${locationData.address}');
+      } else {
+        setState(() => _useCurrentLocation = false);
+        _showSnack('Impossible de déterminer l\'adresse de votre position', isError: true);
+      }
+    } catch (e) {
+      setState(() => _useCurrentLocation = false);
+      _showSnack('Erreur lors de la récupération de la position : $e', isError: true);
+    }
+  }
+
   Future<String> _getUserRole() async {
     try {
       final response = await ApiClient().authenticatedGet('/profile/me');
@@ -1954,7 +2035,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
       case 2: // Step 3: Localisation
         if (!_touteLaFrance &&
-            _disponibleChezController.text.trim().isEmpty &&
+            _selectedLocation == null &&
             !_useCurrentLocation) {
           return 'Veuillez indiquer une ville/adresse, utiliser votre position ou cocher "Toute la France".';
         }
@@ -4765,19 +4846,24 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             }),
             if (!_touteLaFrance) ...[
               const SizedBox(height: 12),
-              _buildTextField(
+              LocationPickerField(
+                initialLocation: _selectedLocation,
                 label: 'Ville ou adresse',
-                controller: _disponibleChezController,
-                fieldKey: 'location',
-                helperText:
-                    'Indiquez la ville ou l\'adresse où vous souhaitez que la prestation soit réalisée.',
+                helperText: 'Recherchez une ville, adresse ou code postal',
+                onLocationSelected: (location) {
+                  setState(() {
+                    _selectedLocation = location;
+                    if (location != null) {
+                      _useCurrentLocation = false;
+                    }
+                  });
+                },
               ),
               const SizedBox(height: 8),
               _buildCheckOption(
                 'Utiliser ma position actuelle',
                 _useCurrentLocation,
-                () =>
-                    setState(() => _useCurrentLocation = !_useCurrentLocation),
+                () => _handleUseCurrentLocationToggle(!_useCurrentLocation),
               ),
               const SizedBox(height: 16),
               const Text(
@@ -5725,9 +5811,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             if (!_touteLaFrance) ...[
               _buildReviewRow(
                 'Ville / Adresse',
-                _disponibleChezController.text.trim().isEmpty
-                    ? '-'
-                    : _disponibleChezController.text.trim(),
+                _selectedLocation?.address ?? '-',
               ),
             ],
             _buildReviewRow(
