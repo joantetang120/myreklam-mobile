@@ -1374,12 +1374,16 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               UserSession().updateMys(newBalance);
             }
 
-            // Show reward modal after dialog is closed
-            await MysRewardModal.show(
-              context,
-              amount: mysResponse['earning']?['amount'] ?? 2,
-              actionType: 'bon_plan',
-            );
+            // Show reward modal after dialog is closed - use microtask to avoid conflict
+            Future.microtask(() async {
+              if (mounted) {
+                await MysRewardModal.show(
+                  context,
+                  amount: mysResponse['earning']?['amount'] ?? 2,
+                  actionType: 'bon_plan',
+                );
+              }
+            });
           }
         } catch (e) {
           debugPrint("Error awarding My's for bon plan: $e");
