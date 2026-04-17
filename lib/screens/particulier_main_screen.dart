@@ -22,6 +22,10 @@ class ParticulierMainScreen extends StatefulWidget {
   final String? searchQuery;
   final String? searchCategory;
   final String? searchLocation;
+  final double? searchLocationLat;
+  final double? searchLocationLng;
+  final String? searchLocationCity;
+  final String? searchLocationPostalCode;
   final double? searchRadius;
   final bool? searchAllFrance;
   final String? searchType;
@@ -34,6 +38,10 @@ class ParticulierMainScreen extends StatefulWidget {
     this.searchQuery,
     this.searchCategory,
     this.searchLocation,
+    this.searchLocationLat,
+    this.searchLocationLng,
+    this.searchLocationCity,
+    this.searchLocationPostalCode,
     this.searchRadius,
     this.searchAllFrance,
     this.searchType,
@@ -49,6 +57,7 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
   late bool _showCreatePost;
   late bool _showSearchResults;
   int _dashboardRefreshKey = 0;
+  int _profileRefreshKey = 0;
 
   @override
   void initState() {
@@ -84,7 +93,7 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
     const MessageScreen(),
     const Scaffold(body: Center(child: Text('Publier Screen'))),
     const SearchScreen(),
-    UserSession().isPro ? const ProfileProScreen() : const ProfileScreen(),
+    UserSession().isPro ? ProfileProScreen(key: ValueKey(_profileRefreshKey)) : ProfileScreen(key: ValueKey(_profileRefreshKey)),
   ];
 
   void _handleTabTapped(int index) {
@@ -100,6 +109,11 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
       // Refresh dashboard when Accueil is tapped again
       setState(() {
         _dashboardRefreshKey++;
+      });
+    } else if (index == 4 && _currentIndex == 4) {
+      // Refresh profile when Profile is tapped again
+      setState(() {
+        _profileRefreshKey++;
       });
     } else {
       setState(() {
@@ -130,6 +144,10 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
         query: widget.searchQuery ?? '',
         category: widget.searchCategory,
         location: widget.searchLocation ?? '',
+        locationLat: widget.searchLocationLat,
+        locationLng: widget.searchLocationLng,
+        locationCity: widget.searchLocationCity,
+        locationPostalCode: widget.searchLocationPostalCode,
         radius: widget.searchRadius ?? 0,
         allFrance: widget.searchAllFrance ?? false,
         searchType: widget.searchType,

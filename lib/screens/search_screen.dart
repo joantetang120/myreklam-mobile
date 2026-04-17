@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/models/location_data.dart';
+import 'package:myreklam/widgets/location_picker_field.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -10,7 +12,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
+  LocationData? _selectedLocation;
   double _searchRadius = 0;
   bool _searchAllFrance = false;
   String? _selectedCategory;
@@ -19,7 +21,6 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void dispose() {
     _searchController.dispose();
-    _locationController.dispose();
     super.dispose();
   }
 
@@ -179,47 +180,15 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _locationController,
-                        decoration: InputDecoration(
-                          hintText: 'Ville, code postal...',
-                          hintStyle: TextStyle(color: Colors.grey[400]),
-                          prefixIcon: Icon(Icons.location_on_outlined, color: Colors.grey[400]),
-                          filled: true,
-                          fillColor: Colors.grey[100],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: Icon(
-                        Icons.my_location,
-                        color: Colors.grey[600],
-                        size: 24,
-                      ),
-                    ),
-                  ],
+                LocationPickerField(
+                  initialLocation: _selectedLocation,
+                  label: 'Localisation',
+                  helperText: 'Recherchez une ville ou adresse précise',
+                  onLocationSelected: (location) {
+                    setState(() {
+                      _selectedLocation = location;
+                    });
+                  },
                 ),
                 const SizedBox(height: 24),
                 const Text(
@@ -301,7 +270,11 @@ class _SearchScreenState extends State<SearchScreen> {
                           showSearchResults: true,
                           searchQuery: _searchController.text.trim(),
                           searchCategory: _selectedCategory,
-                          searchLocation: _locationController.text.trim(),
+                          searchLocation: _selectedLocation?.address ?? '',
+                          searchLocationLat: _selectedLocation?.latitude,
+                          searchLocationLng: _selectedLocation?.longitude,
+                          searchLocationCity: _selectedLocation?.city,
+                          searchLocationPostalCode: _selectedLocation?.postalCode,
                           searchRadius: _searchRadius,
                           searchAllFrance: _searchAllFrance,
                           searchType: _searchType,
@@ -468,9 +441,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     const SizedBox(height: 6),
                     _buildCriteriaRow(
                       'Lieu',
-                      _locationController.text.isEmpty
-                          ? 'France'
-                          : _locationController.text,
+                      _selectedLocation?.address ?? 'France',
                     ),
                     const SizedBox(height: 6),
                     _buildCriteriaRow(
