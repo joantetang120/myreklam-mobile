@@ -17,7 +17,7 @@ class _AddStoryScreenState extends State<AddStoryScreen>
   static const PermissionRequestOption _permissionRequestOption =
       PermissionRequestOption(
         androidPermission: AndroidPermission(
-          type: RequestType.image,
+          type: RequestType.common,
           mediaLocation: false,
         ),
       );
@@ -93,7 +93,7 @@ class _AddStoryScreenState extends State<AddStoryScreen>
         );
 
       final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
-        type: RequestType.image,
+        type: RequestType.common,
         onlyAll: true,
         filterOption: filterOption,
       );
@@ -250,7 +250,7 @@ class _AddStoryScreenState extends State<AddStoryScreen>
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.only(left: 12, right: 12, bottom: 16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 6,
@@ -292,13 +292,63 @@ class _AddStoryScreenState extends State<AddStoryScreen>
   }
 
   Future<void> _openCamera() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_camera_outlined,
+                  color: Color(0xFF2E9B5B),
+                ),
+                title: const Text('Prendre une photo'),
+                onTap: () => Navigator.pop(ctx, 'photo'),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.videocam_outlined,
+                  color: Color(0xFF2E9B5B),
+                ),
+                title: const Text('Enregistrer une vidéo'),
+                onTap: () => Navigator.pop(ctx, 'video'),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (choice == null) return;
+
     final picker = ImagePicker();
-    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
-    if (photo != null && mounted) {
+    XFile? file;
+    if (choice == 'video') {
+      file = await picker.pickVideo(source: ImageSource.camera);
+    } else {
+      file = await picker.pickImage(source: ImageSource.camera);
+    }
+
+    if (file != null && mounted) {
       final result = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => StoryEditorScreen(cameraFile: photo),
+          builder: (context) => StoryEditorScreen(cameraFile: file),
         ),
       );
       if (result != null && mounted) {
@@ -367,6 +417,8 @@ class _GalleryAssetTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isVideo = asset.type == AssetType.video;
+
     return GestureDetector(
       onTap: () async {
         final result = await Navigator.push(
@@ -381,20 +433,63 @@ class _GalleryAssetTile extends StatelessWidget {
       },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: FutureBuilder<Uint8List?>(
-          future: asset.thumbnailDataWithSize(const ThumbnailSize(400, 400)),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Container(color: Colors.grey[200]);
-            }
-            final data = snapshot.data;
-            if (data == null) {
-              return Container(color: Colors.grey[300]);
-            }
-            return Image.memory(data, fit: BoxFit.cover);
-          },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            FutureBuilder<Uint8List?>(
+              future: asset.thumbnailDataWithSize(
+                const ThumbnailSize(400, 400),
+              ),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Container(color: Colors.grey[200]);
+                }
+                final data = snapshot.data;
+                if (data == null) {
+                  return Container(color: Colors.grey[300]);
+                }
+                return Image.memory(data, fit: BoxFit.cover);
+              },
+            ),
+            if (isVideo) ...[
+              Positioned(
+                right: 6,
+                bottom: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _formatDuration(asset.videoDuration),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const Positioned(
+                left: 6,
+                bottom: 6,
+                child: Icon(Icons.videocam, size: 16, color: Colors.white),
+              ),
+            ],
+          ],
         ),
       ),
     );
+  }
+
+  String _formatDuration(Duration d) {
+    final totalSeconds = d.inSeconds;
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 }

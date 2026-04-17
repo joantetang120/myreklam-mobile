@@ -17,10 +17,12 @@ class ParticulierPublicViewScreen extends StatefulWidget {
   const ParticulierPublicViewScreen({super.key, this.userId});
 
   @override
-  State<ParticulierPublicViewScreen> createState() => _ParticulierPublicViewScreenState();
+  State<ParticulierPublicViewScreen> createState() =>
+      _ParticulierPublicViewScreenState();
 }
 
-class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScreen>
+class _ParticulierPublicViewScreenState
+    extends State<ParticulierPublicViewScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _profileService = ProfileService();
@@ -52,7 +54,7 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
   bool get _isViewingOwnProfile {
     final currentUserId = UserSession().id?.toString();
     final viewingUserId = widget.userId;
-    
+
     if (viewingUserId == null) return true;
     return viewingUserId == currentUserId;
   }
@@ -96,7 +98,7 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
       final response = widget.userId == null
           ? await _profileService.getProfile()
           : await _profileService.getUserProfile(widget.userId!);
-      
+
       if (!mounted) return;
 
       setState(() {
@@ -136,7 +138,8 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
       ) {
         if (currentUserId == null || currentUserId.isEmpty) return items;
         return items.where((m) {
-          final userId = m['user_id']?.toString() ?? m['user']?['id']?.toString();
+          final userId =
+              m['user_id']?.toString() ?? m['user']?['id']?.toString();
           return userId == currentUserId;
         }).toList();
       }
@@ -189,7 +192,8 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
       final currentUserId = _profileResponse?['user']?['id']?.toString();
       if (currentUserId != null && currentUserId.isNotEmpty) {
         posts = posts.where((p) {
-          final userId = p['user_id']?.toString() ?? p['user']?['id']?.toString();
+          final userId =
+              p['user_id']?.toString() ?? p['user']?['id']?.toString();
           return userId == currentUserId;
         }).toList();
       }
@@ -236,9 +240,9 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
       final endpoint = _isViewingOwnProfile
           ? '/candidate-documents'
           : '/candidate-documents?user_id=$currentUserId';
-      
+
       final response = await ApiClient().authenticatedGet(endpoint);
-      
+
       if (!mounted) return;
 
       if (response['success'] == true && response['data'] is List) {
@@ -247,7 +251,7 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
         final filteredDocs = _isViewingOwnProfile
             ? docs
             : docs.where((d) => d['is_visible'] == true).toList();
-        
+
         setState(() {
           _documents = filteredDocs;
           _isLoadingDocuments = false;
@@ -278,7 +282,7 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
 
   Future<void> _toggleFollow() async {
     if (_isViewingOwnProfile || _isLoadingFollow) return;
-    
+
     final targetId = widget.userId;
     if (targetId == null) return;
 
@@ -298,7 +302,11 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isFollowing ? 'Vous suivez maintenant cet utilisateur' : 'Vous ne suivez plus cet utilisateur'),
+            content: Text(
+              _isFollowing
+                  ? 'Vous suivez maintenant cet utilisateur'
+                  : 'Vous ne suivez plus cet utilisateur',
+            ),
             backgroundColor: const Color(0xFF3AAE5E),
           ),
         );
@@ -315,7 +323,7 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
 
   Future<void> _startConversation() async {
     if (_isViewingOwnProfile) return;
-    
+
     final targetIdStr = widget.userId;
     if (targetIdStr == null) return;
 
@@ -329,20 +337,24 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
     );
 
     try {
-      final conversation = await _conversationService.getOrCreateConversation(targetId);
+      final conversation = await _conversationService.getOrCreateConversation(
+        targetId,
+      );
       if (!mounted) return;
       Navigator.pop(context);
 
       final profile = _profileResponse?['profile'];
       final pseudo = profile is Map ? profile['pseudo']?.toString() : null;
       final displayName = pseudo ?? 'Utilisateur';
-      
+
       String? avatarUrl;
       if (profile is Map) {
         avatarUrl = profile['avatar_url']?.toString();
       }
       final resolvedAvatar = avatarUrl != null && avatarUrl.isNotEmpty
-          ? (avatarUrl.startsWith('http') ? avatarUrl : ApiConfig.resolveMediaUrl(avatarUrl))
+          ? (avatarUrl.startsWith('http')
+                ? avatarUrl
+                : ApiConfig.resolveMediaUrl(avatarUrl))
           : null;
 
       Navigator.push(
@@ -351,7 +363,9 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
           builder: (context) => ChatConversationScreen(
             conversationId: conversation.id.toString(),
             name: displayName,
-            avatar: resolvedAvatar ?? 'assets/images/dashboard_particulier/Ellipse 10.png',
+            avatar:
+                resolvedAvatar ??
+                'assets/images/dashboard_particulier/Ellipse 10.png',
             status: 'En ligne',
           ),
         ),
@@ -433,8 +447,12 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
 
     // Get counts from user data
     final userData = _profileResponse?['user'];
-    final followersCount = userData is Map ? (userData['followers_count'] ?? 0) : 0;
-    final followingCount = userData is Map ? (userData['following_count'] ?? 0) : 0;
+    final followersCount = userData is Map
+        ? (userData['followers_count'] ?? 0)
+        : 0;
+    final followingCount = userData is Map
+        ? (userData['following_count'] ?? 0)
+        : 0;
     final postsCount = userData is Map ? (userData['posts_count'] ?? 0) : 0;
 
     return Scaffold(
@@ -506,14 +524,18 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
                                   width: 1,
                                   height: 30,
                                   color: Colors.grey[300],
-                                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
                                 ),
                                 _buildStat('Abonnements', followingCount),
                                 Container(
                                   width: 1,
                                   height: 30,
                                   color: Colors.grey[300],
-                                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
                                 ),
                                 _buildStat('Posts', postsCount),
                               ],
@@ -559,8 +581,15 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
                               backgroundImage: avatarUrl != null
                                   ? (avatarUrl.startsWith('http')
                                         ? NetworkImage(avatarUrl)
-                                        : NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? ''))
-                                  : const AssetImage('assets/images/dashboard_particulier/Ellipse 10.png'),
+                                        : NetworkImage(
+                                            ApiConfig.resolveMediaUrl(
+                                                  avatarUrl,
+                                                ) ??
+                                                '',
+                                          ))
+                                  : const AssetImage(
+                                      'assets/images/dashboard_particulier/Ellipse 10.png',
+                                    ),
                             ),
                           ),
                         ),
@@ -609,18 +638,26 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
                   // Message and Suivre buttons - only show when viewing other users' profiles
                   if (!_isViewingOwnProfile)
                     Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       child: Row(
                         children: [
                           Expanded(
                             child: ElevatedButton.icon(
                               onPressed: _startConversation,
-                              icon: const Icon(Icons.message_outlined, size: 18),
+                              icon: const Icon(
+                                Icons.message_outlined,
+                                size: 18,
+                              ),
                               label: const Text('Message'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF3AAE5E),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -630,27 +667,36 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
                           const SizedBox(width: 12),
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: _isLoadingFollow ? null : _toggleFollow,
+                              onPressed: _isLoadingFollow
+                                  ? null
+                                  : _toggleFollow,
                               icon: _isLoadingFollow
                                   ? SizedBox(
                                       width: 18,
                                       height: 18,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          Color(0xFF3AAE5E),
-                                        ),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Color(0xFF3AAE5E),
+                                            ),
                                       ),
                                     )
                                   : Icon(
-                                      _isFollowing ? Icons.check : Icons.person_add_outlined,
+                                      _isFollowing
+                                          ? Icons.check
+                                          : Icons.person_add_outlined,
                                       size: 18,
                                     ),
                               label: Text(_isFollowing ? 'Suivi' : 'Suivre'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: const Color(0xFF3AAE5E),
-                                side: const BorderSide(color: Color(0xFF3AAE5E)),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                side: const BorderSide(
+                                  color: Color(0xFF3AAE5E),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -707,9 +753,12 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
                             textAlign: TextAlign.center,
                           ),
                         ),
-                        const Tab(
+                        Tab(
                           height: 32,
-                          child: Text('Post', textAlign: TextAlign.center),
+                          child: Text(
+                            'Post(${_myPosts.length})',
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                         const Tab(
                           height: 32,
@@ -747,13 +796,7 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
             color: Color(0xFF333333),
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
       ],
     );
   }
@@ -853,9 +896,18 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
             runSpacing: 8,
             children: [
               _buildFilterChip('Tout', _selectedAnnonceFilter == 'Tout'),
-              _buildFilterChip('Bons plans', _selectedAnnonceFilter == 'Bons plans'),
-              _buildFilterChip('Événements', _selectedAnnonceFilter == 'Événements'),
-              _buildFilterChip('Demandes', _selectedAnnonceFilter == 'Demandes'),
+              _buildFilterChip(
+                'Bons plans',
+                _selectedAnnonceFilter == 'Bons plans',
+              ),
+              _buildFilterChip(
+                'Événements',
+                _selectedAnnonceFilter == 'Événements',
+              ),
+              _buildFilterChip(
+                'Demandes',
+                _selectedAnnonceFilter == 'Demandes',
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -961,7 +1013,10 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Column(
                 children: [
-                  Text(_documentsError!, style: const TextStyle(color: Colors.red)),
+                  Text(
+                    _documentsError!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => _loadDocuments(),
@@ -981,7 +1036,9 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
             )
           else
             Column(
-              children: _documents.map((doc) => _buildDocumentCard(doc)).toList(),
+              children: _documents
+                  .map((doc) => _buildDocumentCard(doc))
+                  .toList(),
             ),
         ],
       ),
@@ -1056,10 +1113,7 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
                 const SizedBox(height: 4),
                 Text(
                   type.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -1291,7 +1345,9 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
         ? (mediaFiles.first is Map ? mediaFiles.first['url'] : null)?.toString()
         : null;
 
-    final displayLocation = nationwide ? 'Toute la France' : (location.isNotEmpty ? location : 'Non spécifié');
+    final displayLocation = nationwide
+        ? 'Toute la France'
+        : (location.isNotEmpty ? location : 'Non spécifié');
 
     return DemandeCard(
       profileImage: 'assets/images/profil/Rectangle 238.png',
@@ -1299,7 +1355,9 @@ class _ParticulierPublicViewScreenState extends State<ParticulierPublicViewScree
       categoryLabel: nature,
       categoryColor: const Color(0xFFEF8A40),
       title: title,
-      description: description.length > 200 ? '${description.substring(0, 200)}...' : description,
+      description: description.length > 200
+          ? '${description.substring(0, 200)}...'
+          : description,
       location: displayLocation,
       postImage: imageUrlRaw,
       likesCount: 0,

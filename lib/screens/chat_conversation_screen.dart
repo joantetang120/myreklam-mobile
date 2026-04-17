@@ -378,85 +378,79 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: Column(
         children: [
           // Shared Post Card
-          Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(
-                    'assets/images/dashboard_particulier/Rectangle 12 (1).png',
-                    width: 70,
-                    height: 70,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Catégorie : Bons Plans',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF616161),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Promo Appareil photo Hybride Sony A6400 Noir + Objectif E PZ 16-50 mm...',
-                        style: TextStyle(fontSize: 11, color: Colors.grey),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 12,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Publié il y a 1 semaine',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Container(
+          //   margin: const EdgeInsets.all(16),
+          //   padding: const EdgeInsets.all(12),
+          //   decoration: BoxDecoration(
+          //     color: Colors.white,
+          //     borderRadius: BorderRadius.circular(12),
+          //     boxShadow: [
+          //       BoxShadow(
+          //         color: Colors.black.withOpacity(0.05),
+          //         blurRadius: 8,
+          //         offset: const Offset(0, 2),
+          //       ),
+          //     ],
+          //   ),
+          //   child: Row(
+          //     children: [
+          //       ClipRRect(
+          //         borderRadius: BorderRadius.circular(8),
+          //         child: Image.asset(
+          //           'assets/images/dashboard_particulier/Rectangle 12 (1).png',
+          //           width: 70,
+          //           height: 70,
+          //           fit: BoxFit.cover,
+          //         ),
+          //       ),
+          //       const SizedBox(width: 12),
+          //       Expanded(
+          //         child: Column(
+          //           crossAxisAlignment: CrossAxisAlignment.start,
+          //           children: [
+          //             const Text(
+          //               'Catégorie : Bons Plans',
+          //               style: TextStyle(
+          //                 fontSize: 12,
+          //                 fontWeight: FontWeight.w600,
+          //                 color: Color(0xFF616161),
+          //               ),
+          //             ),
+          //             const SizedBox(height: 4),
+          //             const Text(
+          //               'Promo Appareil photo Hybride Sony A6400 Noir + Objectif E PZ 16-50 mm...',
+          //               style: TextStyle(fontSize: 11, color: Colors.grey),
+          //               maxLines: 2,
+          //               overflow: TextOverflow.ellipsis,
+          //             ),
+          //             const SizedBox(height: 6),
+          //             Row(
+          //               children: [
+          //                 Icon(
+          //                   Icons.access_time,
+          //                   size: 12,
+          //                   color: Colors.grey[600],
+          //                 ),
+          //                 const SizedBox(width: 4),
+          //                 Text(
+          //                   'Publié il y a 1 semaine',
+          //                   style: TextStyle(
+          //                     fontSize: 10,
+          //                     color: Colors.grey[600],
+          //                   ),
+          //                 ),
+          //               ],
+          //             ),
+          //           ],
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
 
           // Date Divider - Dynamique basé sur les messages
           Consumer<ConversationProvider>(

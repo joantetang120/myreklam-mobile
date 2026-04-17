@@ -1101,7 +1101,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
       _reactions[key] = _ReactionData(
-        likesCount: (cachedCount != null && cachedCount > apiCount) ? cachedCount : apiCount,
+        likesCount: (cachedCount != null && cachedCount > apiCount)
+            ? cachedCount
+            : apiCount,
         commentsCount: _asInt(resource['comments_count']),
         userReaction: userReaction,
       );
@@ -1162,7 +1164,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           data.likesCount = _asInt(respData['likes_count']);
           data.userReaction = respData['user_reaction']?.toString();
         });
-        ReactionCacheService.save(apiSlug, entityId, respData['user_reaction']?.toString());
+        ReactionCacheService.save(
+          apiSlug,
+          entityId,
+          respData['user_reaction']?.toString(),
+        );
         ReactionCacheService.saveCount(apiSlug, entityId, data.likesCount);
       }
     } catch (e) {
@@ -1373,8 +1379,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       final locationPostalCode = data['location_postal_code']?.toString();
       final location = locationCity != null
           ? (locationPostalCode != null
-              ? '$locationCity ($locationPostalCode)'
-              : locationCity)
+                ? '$locationCity ($locationPostalCode)'
+                : locationCity)
           : locationPostalCode;
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
@@ -3795,7 +3801,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       }
       for (final job in jobOffers) {
         final jobId = job['id']?.toString() ?? '';
-        if (jobId.isNotEmpty) _seedReactionFromResource('job-offers', jobId, job);
+        if (jobId.isNotEmpty)
+          _seedReactionFromResource('job-offers', jobId, job);
       }
       for (final tr in trainings) {
         final trId = tr['id']?.toString() ?? '';
@@ -4330,14 +4337,17 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             textAlign: TextAlign.center,
                           ),
                         ),
-                        const Tab(
+                        Tab(
                           height: 32,
-                          child: Text('Post', textAlign: TextAlign.center),
+                          child: Text(
+                            'Post(${_myPosts.length})',
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                         Tab(
                           height: 32,
                           child: Text(
-                            'Avis ($_totalReviews)',
+                            'Avis($_totalReviews)',
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -4417,6 +4427,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         children: [
           // Merged Banner + Presentation + Social Links Card
           Container(
+            width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),

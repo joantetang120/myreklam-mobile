@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:video_player/video_player.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/story_service.dart';
@@ -41,6 +42,12 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
   bool _isUploading = false;
   String? _userAvatar;
 
+  // Video playback state
+  VideoPlayerController? _videoController;
+  bool _isVideo = false;
+  bool _isVideoInitialized = false;
+  bool _showVideoControls = true;
+
   // Text overlay state - simplified WhatsApp style
   bool _isEditingText = false;
   String _overlayText = '';
@@ -57,6 +64,107 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
   void initState() {
     super.initState();
     _loadUserProfile();
+    _initVideo();
+  }
+
+  Future<void> _initVideo() async {
+    // Check if asset is video via AssetEntity type
+    if (widget.asset != null) {
+      if (widget.asset!.type == AssetType.video) {
+        setState(() => _isVideo = true);
+        await _initializeVideoPlayer();
+      }
+    } else if (widget.cameraFile != null) {
+      // Check file extension for camera file
+      final name = widget.cameraFile!.name.toLowerCase();
+      if (name.endsWith('.mp4') ||
+          name.endsWith('.mov') ||
+          name.endsWith('.avi') ||
+          name.endsWith('.mkv') ||
+          name.endsWith('.3gp') ||
+          name.endsWith('.webm')) {
+        setState(() => _isVideo = true);
+        await _initializeVideoPlayer();
+      }
+    }
+  }
+
+  Future<String?> _getFilePath() async {
+    if (widget.cameraFile != null) {
+      return widget.cameraFile!.path;
+    }
+    if (widget.asset != null) {
+      final file = await widget.asset!.file;
+      return file?.path;
+    }
+    return null;
+  }
+
+  Future<void> _initializeVideoPlayer() async {
+    final path = await _getFilePath();
+    if (path == null) return;
+
+    _videoController = VideoPlayerController.file(File(path));
+    await _videoController!.initialize();
+
+    // Add listener to limit playback to 1 minute (videos longer than 1min will be truncated)
+    _videoController!.addListener(_limitVideoDuration);
+
+    if (mounted) {
+      setState(() => _isVideoInitialized = true);
+      _videoController!.play();
+      _videoController!.setLooping(true);
+
+      // Auto-hide controls after 2 seconds
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() => _showVideoControls = false);
+        }
+      });
+    }
+  }
+
+  void _limitVideoDuration() {
+    if (_videoController?.value.isInitialized != true) return;
+
+    final position = _videoController!.value.position;
+    const oneMinute = Duration(minutes: 1);
+
+    // If video exceeds 1 minute, seek back to start (loop only first minute)
+    if (position >= oneMinute) {
+      _videoController!.seekTo(Duration.zero);
+    }
+  }
+
+  void _togglePlayPause() {
+    if (_videoController == null || !_isVideoInitialized) return;
+
+    setState(() {
+      if (_videoController!.value.isPlaying) {
+        _videoController!.pause();
+      } else {
+        _videoController!.play();
+      }
+      _showVideoControls = true;
+    });
+
+    // Auto-hide controls after 2 seconds if playing
+    if (_videoController!.value.isPlaying) {
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted && _videoController?.value.isPlaying == true) {
+          setState(() => _showVideoControls = false);
+        }
+      });
+    }
+  }
+
+  void _showControls() {
+    setState(() => _showVideoControls = true);
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted && _videoController?.value.isPlaying == true) {
+        setState(() => _showVideoControls = false);
+      }
+    });
   }
 
   Future<void> _loadUserProfile() async {
@@ -219,7 +327,73 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
     _captionController.dispose();
     _textEditController.dispose();
     _textFocusNode.dispose();
+    _videoController?.dispose();
     super.dispose();
+  }
+
+  Widget _buildVideoPlayer() {
+    if (!_isVideoInitialized) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+
+    return GestureDetector(
+      onTap: _showControls,
+      child: Stack(
+        fit: StackFit.loose,
+        children: [
+          // Video Player
+          AspectRatio(
+            aspectRatio: _videoController!.value.aspectRatio,
+            child: VideoPlayer(_videoController!),
+          ),
+
+          // Play/Pause Button Overlay
+          if (_showVideoControls)
+            Container(
+              color: Colors.black.withOpacity(0.3),
+              child: Center(
+                child: GestureDetector(
+                  onTap: _togglePlayPause,
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _videoController!.value.isPlaying
+                          ? Icons.pause
+                          : Icons.play_arrow,
+                      size: 40,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // Video Progress Indicator (bottom)
+          if (_showVideoControls)
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 20,
+              child: VideoProgressIndicator(
+                _videoController!,
+                allowScrubbing: true,
+                colors: const VideoProgressColors(
+                  playedColor: Colors.white,
+                  bufferedColor: Colors.white54,
+                  backgroundColor: Colors.white24,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -229,26 +403,29 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background Image
-          FutureBuilder<Uint8List?>(
-            future: widget._getImageBytes(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                );
-              }
-              if (snapshot.hasError || snapshot.data == null) {
-                return const Center(
-                  child: Text(
-                    'Erreur de chargement',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                );
-              }
-              return Image.memory(snapshot.data!, fit: BoxFit.contain);
-            },
-          ),
+          // Background Media (Image or Video)
+          if (_isVideo)
+            _buildVideoPlayer()
+          else
+            FutureBuilder<Uint8List?>(
+              future: widget._getImageBytes(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
+                }
+                if (snapshot.hasError || snapshot.data == null) {
+                  return const Center(
+                    child: Text(
+                      'Erreur de chargement',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  );
+                }
+                return Image.memory(snapshot.data!, fit: BoxFit.contain);
+              },
+            ),
 
           // Text Display (when not editing)
           if (!_isEditingText && _overlayText.isNotEmpty)
@@ -305,9 +482,9 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                                 )
                               : EdgeInsets.zero,
                           decoration: BoxDecoration(
-                            color: _overlayText.isNotEmpty
-                                ? _getTextBackgroundColor()
-                                : Colors.transparent,
+                            // color: _overlayText.isNotEmpty
+                            //     ? _getTextBackgroundColor()
+                            //     : Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: TextField(
@@ -568,15 +745,32 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                               : () async {
                                   setState(() => _isUploading = true);
                                   try {
-                                    final imageBytes = await widget
-                                        ._getImageBytes();
-                                    if (imageBytes == null) {
-                                      setState(() => _isUploading = false);
-                                      return;
+                                    Uint8List mediaBytes;
+
+                                    if (_isVideo) {
+                                      // For videos, read the file bytes
+                                      final path = await _getFilePath();
+                                      if (path == null) {
+                                        setState(() => _isUploading = false);
+                                        return;
+                                      }
+                                      mediaBytes = await File(
+                                        path,
+                                      ).readAsBytes();
+                                    } else {
+                                      // For images, use the existing method
+                                      final bytes = await widget
+                                          ._getImageBytes();
+                                      if (bytes == null) {
+                                        setState(() => _isUploading = false);
+                                        return;
+                                      }
+                                      mediaBytes = bytes;
                                     }
+
                                     final title = await widget._getFileName();
                                     final story = await _storyService.uploadStory(
-                                      imageBytes: imageBytes,
+                                      mediaBytes: mediaBytes,
                                       fileName: title,
                                       caption: _captionController.text.trim(),
                                       overlayText: _overlayText.isNotEmpty
@@ -594,6 +788,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                                       overlayY: _overlayText.isNotEmpty
                                           ? _textY
                                           : null,
+                                      mediaType: _isVideo ? 'video' : 'image',
                                     );
                                     if (story != null && mounted) {
                                       Navigator.pop(context, story);

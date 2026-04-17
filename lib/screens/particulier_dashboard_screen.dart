@@ -3484,7 +3484,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
       _reactions[key] = _ReactionData(
-        likesCount: (cachedCount != null && cachedCount > apiCount) ? cachedCount : apiCount,
+        likesCount: (cachedCount != null && cachedCount > apiCount)
+            ? cachedCount
+            : apiCount,
         commentsCount: _asInt(resource['comments_count']),
         userReaction: userReaction,
       );
@@ -4966,8 +4968,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       final locationPostalCode = data['location_postal_code']?.toString();
       final location = locationCity != null
           ? (locationPostalCode != null
-              ? '$locationCity ($locationPostalCode)'
-              : locationCity)
+                ? '$locationCity ($locationPostalCode)'
+                : locationCity)
           : locationPostalCode;
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);

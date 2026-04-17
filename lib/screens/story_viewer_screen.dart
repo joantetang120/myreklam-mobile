@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/models/story_model.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
@@ -37,6 +38,12 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   final StoryService _storyService = StoryService();
   late FocusNode _replyFocusNode;
 
+  // Video playback
+  VideoPlayerController? _videoController;
+  bool _isVideo = false;
+  bool _isVideoInitialized = false;
+  bool _isLongPressPaused = false;
+
   @override
   void initState() {
     super.initState();
@@ -50,19 +57,123 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
           });
     _progressController.forward();
     _recordCurrentView();
+    _initCurrentVideo();
 
     _replyFocusNode = FocusNode()
       ..addListener(() {
         if (_replyFocusNode.hasFocus) {
           _progressController.stop();
+          _videoController?.pause();
         } else {
-          _progressController.forward();
+          if (!_isVideo) {
+            _progressController.forward();
+          }
+          _videoController?.play();
         }
       });
   }
 
+  void _initCurrentVideo() {
+    final story = widget.stories[_currentIndex];
+    final mediaType = story['media_type'] as String? ?? 'image';
+    final mediaUrl = story['image'] as String? ?? '';
+
+    if (mediaType == 'video' &&
+        mediaUrl.isNotEmpty &&
+        mediaUrl.startsWith('http')) {
+      setState(() {
+        _isVideo = true;
+        _isVideoInitialized = false;
+      });
+      _videoController?.dispose();
+      _videoController = VideoPlayerController.networkUrl(Uri.parse(mediaUrl))
+        ..initialize()
+            .then((_) {
+              if (mounted) {
+                setState(() => _isVideoInitialized = true);
+                _videoController?.play();
+                _videoController?.setLooping(false);
+
+                // Sync video position with progress indicator
+                _videoController?.addListener(_onVideoProgress);
+              }
+            })
+            .catchError((e) {
+              debugPrint('Error initializing video: $e');
+              setState(() => _isVideo = false);
+            });
+    } else {
+      setState(() {
+        _isVideo = false;
+        _isVideoInitialized = false;
+      });
+      _videoController?.dispose();
+      _videoController = null;
+    }
+  }
+
+  void _onVideoProgress() {
+    if (_videoController?.value.isInitialized != true) return;
+
+    final position = _videoController!.value.position;
+    final duration = _videoController!.value.duration;
+    const oneMinute = Duration(minutes: 1);
+
+    // Limit video to 1 minute (loop back to start after 1 minute)
+    final effectiveDuration = duration > oneMinute ? oneMinute : duration;
+    final effectivePosition = position > oneMinute ? oneMinute : position;
+
+    if (effectiveDuration.inMilliseconds > 0) {
+      final progress =
+          effectivePosition.inMilliseconds / effectiveDuration.inMilliseconds;
+      _progressController.value = progress.clamp(0.0, 1.0);
+    }
+
+    // Loop at 1 minute or when video ends
+    if (position >= effectiveDuration &&
+        !_videoController!.value.isPlaying &&
+        !_isLongPressPaused) {
+      _videoController!.seekTo(Duration.zero);
+      _videoController!.play();
+    }
+  }
+
+  void _onLongPressStart() {
+    if (_videoController?.value.isInitialized != true) return;
+    if (_videoController!.value.isPlaying) {
+      _videoController!.pause();
+      _progressController.stop();
+      setState(() => _isLongPressPaused = true);
+    }
+  }
+
+  void _onLongPressEnd() {
+    if (_videoController?.value.isInitialized != true) return;
+    if (_isLongPressPaused) {
+      _videoController!.play();
+      _progressController.forward();
+      setState(() => _isLongPressPaused = false);
+    }
+  }
+
+  void _toggleVideoPlayPause() {
+    if (_videoController == null || !_isVideoInitialized) return;
+
+    setState(() {
+      if (_videoController!.value.isPlaying) {
+        _videoController!.pause();
+        _progressController.stop();
+      } else {
+        _videoController!.play();
+        _progressController.forward();
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _videoController?.removeListener(_onVideoProgress);
+    _videoController?.dispose();
     _progressController.dispose();
     _replyFocusNode.dispose();
     super.dispose();
@@ -78,6 +189,10 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   }
 
   void _nextStory() {
+    _videoController?.removeListener(_onVideoProgress);
+    _videoController?.dispose();
+    _videoController = null;
+
     if (_currentIndex < widget.stories.length - 1) {
       setState(() {
         _currentIndex++;
@@ -85,12 +200,17 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       _progressController.reset();
       _progressController.forward();
       _recordCurrentView();
+      _initCurrentVideo();
     } else {
       Navigator.pop(context);
     }
   }
 
   void _previousStory() {
+    _videoController?.removeListener(_onVideoProgress);
+    _videoController?.dispose();
+    _videoController = null;
+
     if (_currentIndex > 0) {
       setState(() {
         _currentIndex--;
@@ -98,6 +218,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       _progressController.reset();
       _progressController.forward();
       _recordCurrentView();
+      _initCurrentVideo();
     }
   }
 
@@ -221,16 +342,51 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     return "il y a ${diff.inDays}j";
   }
 
-  Widget _buildStoryImage(Map<String, dynamic> story) {
-    final image = story['image'];
+  Widget _buildStoryMedia(Map<String, dynamic> story) {
+    final mediaUrl = story['image'] as String?;
+    final mediaType = story['media_type'] as String? ?? 'image';
+
     // Calculate available height (screen minus safe areas, header, text area and bottom padding)
     final screenHeight = MediaQuery.of(context).size.height;
     final safePadding = MediaQuery.of(context).padding;
     final availableHeight = screenHeight - safePadding.top - safePadding.bottom;
 
-    if (image is String && image.startsWith('http')) {
+    // Video display
+    if (mediaType == 'video' && _isVideo && _videoController != null) {
+      if (!_isVideoInitialized) {
+        return SizedBox(
+          height: availableHeight,
+          child: const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          ),
+        );
+      }
+
+      return GestureDetector(
+        onLongPressStart: (_) => _onLongPressStart(),
+        onLongPressEnd: (_) => _onLongPressEnd(),
+        child: Stack(
+          fit: StackFit.loose,
+          children: [
+            AspectRatio(
+              aspectRatio: _videoController!.value.aspectRatio,
+              child: VideoPlayer(_videoController!),
+            ),
+            // Pause overlay when paused (by long press or user action)
+            if (!_videoController!.value.isPlaying)
+              Container(
+                color: Colors.black.withOpacity(0.3),
+                child: Center(child: Container(width: 72, height: 72)),
+              ),
+          ],
+        ),
+      );
+    }
+
+    // Image display
+    if (mediaUrl is String && mediaUrl.startsWith('http')) {
       return Image.network(
-        image,
+        mediaUrl,
         width: double.infinity,
         height: availableHeight,
         fit: BoxFit.contain,
@@ -253,9 +409,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     }
 
     // Fallback for asset images
-    if (image is String && image.isNotEmpty) {
+    if (mediaUrl is String && mediaUrl.isNotEmpty) {
       return Image.asset(
-        image,
+        mediaUrl,
         width: double.infinity,
         height: availableHeight,
         fit: BoxFit.contain,
@@ -620,8 +776,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          // Story image - full screen
-                          _buildStoryImage(story),
+                          // Story media - full screen (image or video)
+                          _buildStoryMedia(story),
 
                           // Story text overlay at bottom
                           if (story['text'] != null &&

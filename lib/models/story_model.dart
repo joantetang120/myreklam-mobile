@@ -5,6 +5,7 @@ class StoryModel {
   final int? id;
   final int? userId;
   final String? mediaUrl;
+  final String? mediaType;
   final Uint8List? imageBytes;
   final String caption;
   final String? overlayText;
@@ -22,6 +23,7 @@ class StoryModel {
     this.id,
     this.userId,
     this.mediaUrl,
+    this.mediaType,
     this.imageBytes,
     required this.caption,
     this.overlayText,
@@ -45,6 +47,7 @@ class StoryModel {
           ? json['user_id']
           : int.tryParse(json['user_id']?.toString() ?? ''),
       mediaUrl: ApiConfig.resolveMediaUrl(json['media_url']?.toString()),
+      mediaType: json['media_type']?.toString() ?? 'image',
       caption: json['caption']?.toString() ?? '',
       overlayText: json['overlay_text']?.toString(),
       overlayColor: json['overlay_color']?.toString(),
