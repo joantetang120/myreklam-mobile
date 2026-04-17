@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/models/location_data.dart';
+import 'package:myreklam/widgets/location_picker_field.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/utils/user_session.dart';
@@ -74,7 +76,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
   DateTime? _availableUntilDate;
   List<String> _selectedAdvantages = [];
   bool _teleworkPossible = false;
-  final TextEditingController _locationController = TextEditingController();
+  LocationData? _selectedLocation;
   bool _nationwide = false;
   bool _showGoogleMap = false;
   final TextEditingController _companyNameController = TextEditingController();
@@ -122,7 +124,24 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     // Profile description will be restored in _restoreProfileDescription after frame
     final profileDescPlain = (data['profile_description'] ?? (data['profile'] is Map ? data['profile']['description'] : null))?.toString() ?? '';
     final profileDescDelta = data['profile_description_delta'] ?? (data['profile'] is Map ? data['profile']['description_delta'] : null);
-    _locationController.text = (data['location'] is Map ? (data['location']['city'] ?? '') : (data['location'] ?? '')).toString();
+    // Restore location data
+    if (data['location'] is Map) {
+      final locationMap = data['location'] as Map<String, dynamic>;
+      _selectedLocation = LocationData(
+        address: locationMap['city']?.toString() ?? '',
+        latitude: locationMap['lat'] != null
+            ? double.tryParse(locationMap['lat'].toString())
+            : null,
+        longitude: locationMap['lng'] != null
+            ? double.tryParse(locationMap['lng'].toString())
+            : null,
+        city: locationMap['location_city']?.toString(),
+        postalCode: locationMap['location_postal_code']?.toString(),
+      );
+    } else if (data['location'] != null) {
+      // Legacy location string
+      _selectedLocation = LocationData(address: data['location'].toString());
+    }
     _nationwide = (data['all_france'] ?? data['nationwide'] ?? (data['location'] is Map ? data['location']['nationwide'] : null)) == true;
     _showGoogleMap = (data['show_google_location'] ?? (data['location'] is Map ? data['location']['show_google_map'] : null)) == true;
     _teleworkPossible = (data['remote_work'] ?? data['telework_possible']) == true;
@@ -394,7 +413,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         'salary_min': _salaryMinController.text,
         'salary_max': _salaryMaxController.text,
         'salary_exact': _salaryExactController.text,
-        'location': _locationController.text,
+        'location': _selectedLocation?.toMap(),
         'education_level': _selectedEducationLevel,
         'experience_level': _selectedExperienceLevel,
         'profile_description': _profileDescQuillController.document.toPlainText().trim(),
@@ -431,7 +450,9 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         _salaryMinController.text = formData['salary_min'] ?? '';
         _salaryMaxController.text = formData['salary_max'] ?? '';
         _salaryExactController.text = formData['salary_exact'] ?? '';
-        _locationController.text = formData['location'] ?? '';
+        if (formData['location'] != null && formData['location'] is Map) {
+          _selectedLocation = LocationData.fromMap(formData['location']);
+        }
         _selectedEducationLevel = formData['education_level'];
         _selectedExperienceLevel = formData['experience_level'];
         // Restore rich text description
@@ -547,7 +568,6 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     _salaryMinController.dispose();
     _salaryMaxController.dispose();
     _salaryExactController.dispose();
-    _locationController.dispose();
     _companyNameController.dispose();
     _companyWebsiteController.dispose();
     _profileDescQuillController.dispose();
@@ -956,7 +976,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         if (_selectedAvailabilityType == null) {
           return 'Veuillez préciser la disponibilité souhaitée.';
         }
-        if (_locationController.text.trim().isEmpty && !_nationwide) {
+        if (_selectedLocation == null && !_nationwide) {
           return 'Renseignez une ville ou activez "Toute la France".';
         }
         if (_companyNameController.text.trim().isEmpty) {
@@ -1108,7 +1128,11 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         'telework_possible': _teleworkPossible,
         'location': {
           'country': 'FR',
-          if (_locationController.text.isNotEmpty) 'city': _locationController.text,
+          if (_selectedLocation?.address != null && _selectedLocation!.address.isNotEmpty) 'city': _selectedLocation!.address,
+          if (_selectedLocation?.latitude != null) 'lat': _selectedLocation!.latitude,
+          if (_selectedLocation?.longitude != null) 'lng': _selectedLocation!.longitude,
+          if (_selectedLocation?.city != null) 'location_city': _selectedLocation!.city,
+          if (_selectedLocation?.postalCode != null) 'location_postal_code': _selectedLocation!.postalCode,
           'nationwide': _nationwide,
           'show_google_map': _showGoogleMap,
         },
@@ -2119,28 +2143,35 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               () => setState(() => _teleworkPossible = !_teleworkPossible),
             ),
             const SizedBox(height: 16),
-            _buildTextField(
-              label: 'Précisez la ville/région où cette offre est valide',
-              controller: _locationController,
-              fieldKey: 'location',
-              helperText: 'Indiquez la ville ou la région où le poste est basé.',
-              enabled: !_nationwide,
-              onChanged: (value) {
-                if (value.trim().isNotEmpty && _nationwide) {
-                  setState(() => _nationwide = false);
-                }
-              },
+            AbsorbPointer(
+              absorbing: _nationwide,
+              child: Opacity(
+                opacity: _nationwide ? 0.5 : 1.0,
+                child: LocationPickerField(
+                  initialLocation: _selectedLocation,
+                  label: 'Précisez la ville/région où cette offre est valide',
+                  helperText: 'Recherchez une ville, région ou adresse',
+                  onLocationSelected: (location) {
+                    setState(() {
+                      _selectedLocation = location;
+                      if (location != null && _nationwide) {
+                        _nationwide = false;
+                      }
+                    });
+                  },
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             _buildCheckOption(
               'Toute la France',
               _nationwide,
-              _locationController.text.trim().isEmpty
+              _selectedLocation?.address == null || _selectedLocation!.address.isEmpty
                   ? () {
                       setState(() {
                         _nationwide = !_nationwide;
                         if (_nationwide) {
-                          _locationController.clear();
+                          _selectedLocation = null;
                         }
                       });
                     }
@@ -2389,7 +2420,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             ),
             _buildReviewRow('Avantages', _selectedAdvantages.isEmpty ? '-' : _selectedAdvantages.join(', ')),
             _buildReviewRow('Télétravail possible', _teleworkPossible ? 'Oui' : 'Non'),
-            _buildReviewRow('Localisation', _locationController.text.isEmpty ? '-' : _locationController.text),
+            _buildReviewRow('Localisation', _selectedLocation?.address ?? '-'),
             _buildReviewRow('Toute la France', _nationwide ? 'Oui' : 'Non'),
             _buildReviewRow('Afficher localisation Google', _showGoogleMap ? 'Oui' : 'Non'),
             _buildReviewRow('Nom de l\'entreprise', _companyNameController.text.isEmpty ? '-' : _companyNameController.text),

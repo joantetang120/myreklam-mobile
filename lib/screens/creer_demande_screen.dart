@@ -13,7 +13,11 @@ import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/models/location_data.dart';
+import 'package:myreklam/widgets/location_picker_field.dart';
+import 'package:myreklam/services/location_service.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CreerDemandeScreen extends StatefulWidget {
   final String? demandeId;
@@ -244,6 +248,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   final Map<String, String> _jobSecteursCodeToId = {};
   final Map<String, List<Map<String, String>>> _jobFonctionsByParentId = {};
 
+  // Training categories API (for Formation forms)
+  bool _isTrainingCategoriesLoading = false;
+  String? _trainingCategoriesLoadError;
+  List<Map<String, String>> _trainingCategoriesOptions = [];
+  final Map<String, String> _trainingCategoryCodeToId = {};
+  final Map<String, List<Map<String, String>>> _trainingSecteursByParentId = {};
+  List<Map<String, String>> _trainingTypesOptions = [];
+
   // Step 1 - Nature
   String? _selectedCategory;
   String? _selectedType;
@@ -307,8 +319,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   final List<String> _selectedCvOptions = [];
 
   // Step 3 - Localisation
-  final TextEditingController _disponibleChezController =
-      TextEditingController();
+  LocationData? _selectedLocation;
   bool _touteLaFrance = false;
   bool _useCurrentLocation = false;
   bool _showGoogleLocation = false;
@@ -322,6 +333,70 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   // Documents (CV, lettre de motivation, portfolio from Emploi/Stage forms)
   final List<PlatformFile> _selectedDocumentFiles = [];
   final Map<String, PlatformFile> _documentFilesByType = {}; // type -> file
+
+  // Candidate documents from API
+  List<Map<String, dynamic>> _candidateDocuments = [];
+  bool _isLoadingCandidateDocs = false;
+  String? _candidateDocsError;
+  final Set<String> _removedCandidateDocIds = {}; // Track removed docs
+
+  /// Fetch candidate documents from API when checkbox is checked
+  Future<void> _loadCandidateDocuments() async {
+    setState(() {
+      _isLoadingCandidateDocs = true;
+      _candidateDocsError = null;
+    });
+
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        throw Exception('Session expirée. Veuillez vous reconnecter.');
+      }
+
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/candidate-documents'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Erreur lors du chargement des documents');
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
+        throw Exception('Réponse invalide du serveur');
+      }
+
+      final docs = decoded['data'] as List? ?? [];
+      setState(() {
+        _candidateDocuments = List<Map<String, dynamic>>.from(docs);
+        _isLoadingCandidateDocs = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading candidate documents: $e');
+      setState(() {
+        _candidateDocsError = 'Impossible de charger les documents.';
+        _isLoadingCandidateDocs = false;
+      });
+    }
+  }
+
+  /// Remove a candidate document from the list
+  void _removeCandidateDocument(String docId) {
+    setState(() {
+      _removedCandidateDocIds.add(docId);
+    });
+  }
+
+  /// Get visible candidate documents (not removed)
+  List<Map<String, dynamic>> get _visibleCandidateDocuments {
+    return _candidateDocuments
+        .where((doc) => !_removedCandidateDocIds.contains(doc['id'].toString()))
+        .toList();
+  }
 
   // Review
   bool _acceptMessages = false;
@@ -351,7 +426,19 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     if (data == null) return;
 
     _titleController.text = data['title']?.toString() ?? '';
-    _disponibleChezController.text = data['location']?.toString() ?? '';
+    if (data['location'] != null || data['location_city'] != null) {
+      _selectedLocation = LocationData(
+        address: data['location']?.toString() ?? '',
+        latitude: data['latitude'] != null
+            ? double.tryParse(data['latitude'].toString())
+            : null,
+        longitude: data['longitude'] != null
+            ? double.tryParse(data['longitude'].toString())
+            : null,
+        city: data['location_city']?.toString(),
+        postalCode: data['location_postal_code']?.toString(),
+      );
+    }
     _selectedCategory = data['nature']?.toString();
     _selectedType = data['type']?.toString();
     _acceptDemand = data['urgent'] == true;
@@ -531,7 +618,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         'end_date': _endDate?.toIso8601String(),
         'budget_min': _prixInitialController.text,
         'budget_max': _prixFinalController.text,
-        'location': _disponibleChezController.text,
+        'location': _selectedLocation?.toMap(),
         'toute_la_france': _touteLaFrance,
         'use_current_location': _useCurrentLocation,
         'show_google_location': _showGoogleLocation,
@@ -597,7 +684,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         _titleController.text = formData['title'] ?? '';
         _prixInitialController.text = formData['budget_min'] ?? '';
         _prixFinalController.text = formData['budget_max'] ?? '';
-        _disponibleChezController.text = formData['location'] ?? '';
+        if (formData['location'] != null && formData['location'] is Map) {
+          _selectedLocation = LocationData.fromMap(formData['location']);
+        }
         _acceptDemand = formData['urgent'] ?? false;
         if (formData['start_date'] != null)
           _startDate = DateTime.tryParse(formData['start_date'].toString());
@@ -941,15 +1030,81 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     }
 
     switch (codeToUse) {
-      case 'formation_langues':
+      case 'formation_agriculture':
         return [
-          {'code': 'anglais', 'label': 'Anglais professionnel'},
-          {'code': 'espagnol', 'label': 'Espagnol'},
-          {'code': 'allemand', 'label': 'Allemand'},
-          {'code': 'italien', 'label': 'Italien'},
-          {'code': 'mandarin', 'label': 'Mandarin'},
-          {'code': 'arabe', 'label': 'Arabe'},
-          {'code': 'japonais', 'label': 'Japonais'},
+          {'code': 'agriculture', 'label': 'Agriculture'},
+          {'code': 'agroalimentaire', 'label': 'Agroalimentaire'},
+          {'code': 'environnement', 'label': 'Environnement'},
+          {'code': 'agronomie', 'label': 'Agronomie'},
+        ];
+      case 'formation_art':
+        return [
+          {'code': 'arts_plastiques', 'label': 'Arts plastiques'},
+          {'code': 'arts_appliques', 'label': 'Arts appliqués'},
+          {'code': 'artisanat', 'label': 'Artisanat d\'art'},
+          {'code': 'design', 'label': 'Design'},
+        ];
+      case 'formation_commerce':
+        return [
+          {'code': 'vente', 'label': 'Techniques de vente'},
+          {'code': 'negociation', 'label': 'Négociation commerciale'},
+          {'code': 'marketing_digital', 'label': 'Marketing digital'},
+          {'code': 'relation_client', 'label': 'Relation client'},
+          {'code': 'commerce_international', 'label': 'Commerce international'},
+        ];
+      case 'formation_communication':
+        return [
+          {'code': 'communication_entreprise', 'label': 'Communication d\'entreprise'},
+          {'code': 'journalisme', 'label': 'Journalisme'},
+          {'code': 'redaction', 'label': 'Rédaction'},
+          {'code': 'media', 'label': 'Médias'},
+        ];
+      case 'formation_comptabilite':
+        return [
+          {'code': 'comptabilite', 'label': 'Comptabilité'},
+          {'code': 'gestion', 'label': 'Gestion'},
+          {'code': 'finance', 'label': 'Finance'},
+          {'code': 'audit', 'label': 'Audit et contrôle de gestion'},
+        ];
+      case 'formation_construction':
+        return [
+          {'code': 'batiment', 'label': 'Bâtiment'},
+          {'code': 'travaux_publics', 'label': 'Travaux publics'},
+          {'code': 'genie_civil', 'label': 'Génie civil'},
+          {'code': 'architecture', 'label': 'Architecture'},
+        ];
+      case 'formation_developpement':
+        return [
+          {'code': 'developpement_personnel', 'label': 'Développement personnel'},
+          {'code': 'coaching', 'label': 'Coaching'},
+          {'code': 'pnl', 'label': 'PNL'},
+        ];
+      case 'formation_droit':
+        return [
+          {'code': 'droit_prive', 'label': 'Droit privé'},
+          {'code': 'droit_public', 'label': 'Droit public'},
+          {'code': 'sciences_politiques', 'label': 'Sciences politiques'},
+          {'code': 'notariat', 'label': 'Notariat'},
+        ];
+      case 'formation_education':
+        return [
+          {'code': 'enseignement', 'label': 'Enseignement'},
+          {'code': 'pedagogie', 'label': 'Pédagogie'},
+          {'code': 'formation_adultes', 'label': 'Formation des adultes'},
+        ];
+      case 'formation_hotellerie':
+        return [
+          {'code': 'hotellerie', 'label': 'Hôtellerie'},
+          {'code': 'restauration', 'label': 'Restauration'},
+          {'code': 'tourisme', 'label': 'Tourisme'},
+          {'code': 'loisirs', 'label': 'Loisirs'},
+        ];
+      case 'formation_industrie':
+        return [
+          {'code': 'production', 'label': 'Production industrielle'},
+          {'code': 'maintenance', 'label': 'Maintenance'},
+          {'code': 'qualite', 'label': 'Qualité'},
+          {'code': 'logistique_industrielle', 'label': 'Logistique industrielle'},
         ];
       case 'formation_informatique':
         return [
@@ -960,19 +1115,85 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           {'code': 'reseaux', 'label': 'Réseaux et systèmes'},
           {'code': 'devops', 'label': 'DevOps'},
         ];
-      case 'formation_commerce':
-        return [
-          {'code': 'vente', 'label': 'Techniques de vente'},
-          {'code': 'negociation', 'label': 'Négociation commerciale'},
-          {'code': 'marketing_digital', 'label': 'Marketing digital'},
-          {'code': 'relation_client', 'label': 'Relation client'},
-        ];
       case 'formation_sante':
         return [
           {'code': 'soins_infirmiers', 'label': 'Soins infirmiers'},
           {'code': 'aide_soignant', 'label': 'Aide-soignant'},
           {'code': 'auxiliaire_vie', 'label': 'Auxiliaire de vie'},
           {'code': 'kinesitherapie', 'label': 'Kinésithérapie'},
+          {'code': 'medicine', 'label': 'Médecine'},
+        ];
+      case 'formation_transport':
+        return [
+          {'code': 'transport_marchandises', 'label': 'Transport de marchandises'},
+          {'code': 'transport_voyageurs', 'label': 'Transport de voyageurs'},
+          {'code': 'logistique', 'label': 'Logistique'},
+          {'code': 'securite', 'label': 'Sécurité routière'},
+        ];
+      case 'formation_energie':
+        return [
+          {'code': 'energies_renouvelables', 'label': 'Énergies renouvelables'},
+          {'code': 'electricite', 'label': 'Électricité'},
+          {'code': 'nucleaire', 'label': 'Nucléaire'},
+          {'code': 'efficacite_energetique', 'label': 'Efficacité énergétique'},
+        ];
+      case 'formation_mecanique':
+        return [
+          {'code': 'aeronautique', 'label': 'Aéronautique'},
+          {'code': 'ferroviaire', 'label': 'Ferroviaire'},
+          {'code': 'automobile', 'label': 'Automobile'},
+          {'code': 'precision', 'label': 'Mécanique de précision'},
+        ];
+      case 'formation_fonction_publique':
+        return [
+          {'code': 'fonction_publique_etat', 'label': 'Fonction publique d\'État'},
+          {'code': 'fonction_publique_territoriale', 'label': 'Fonction publique territoriale'},
+          {'code': 'fonction_publique_hospitaliere', 'label': 'Fonction publique hospitalière'},
+        ];
+      case 'formation_jeux_video':
+        return [
+          {'code': 'game_design', 'label': 'Game design'},
+          {'code': 'animation_3d', 'label': 'Animation 3D'},
+          {'code': 'multimedia', 'label': 'Multimédia'},
+          {'code': 'realisation_jeux', 'label': 'Réalisation de jeux vidéo'},
+        ];
+      case 'formation_sciences':
+        return [
+          {'code': 'recherche', 'label': 'Recherche scientifique'},
+          {'code': 'biologie', 'label': 'Biologie'},
+          {'code': 'chimie', 'label': 'Chimie'},
+          {'code': 'physique', 'label': 'Physique'},
+          {'code': 'qualite', 'label': 'Qualité et normalisation'},
+        ];
+      case 'formation_langues':
+        return [
+          {'code': 'anglais', 'label': 'Anglais professionnel'},
+          {'code': 'espagnol', 'label': 'Espagnol'},
+          {'code': 'allemand', 'label': 'Allemand'},
+          {'code': 'italien', 'label': 'Italien'},
+          {'code': 'mandarin', 'label': 'Mandarin'},
+          {'code': 'arabe', 'label': 'Arabe'},
+          {'code': 'japonais', 'label': 'Japonais'},
+        ];
+      case 'formation_neurosciences':
+        return [
+          {'code': 'neurosciences_cognitives', 'label': 'Neurosciences cognitives'},
+          {'code': 'apprentissage', 'label': 'Apprentissage'},
+          {'code': 'pedagogie_innovante', 'label': 'Pédagogie innovante'},
+        ];
+      case 'transversal':
+        return [
+          {'code': 'management', 'label': 'Management'},
+          {'code': 'entrepreneuriat', 'label': 'Entrepreneuriat'},
+          {'code': 'soft_skills', 'label': 'Soft skills'},
+          {'code': 'gestion_projet', 'label': 'Gestion de projet'},
+        ];
+      case 'statuts':
+        return [
+          {'code': 'autoentrepreneur', 'label': 'Auto-entrepreneur'},
+          {'code': 'sasu', 'label': 'SASU'},
+          {'code': 'sarl', 'label': 'SARL'},
+          {'code': 'association', 'label': 'Association'},
         ];
       default:
         return [];
@@ -1072,6 +1293,116 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     }
   }
 
+  /// Load training categories (catégories, secteurs, types) from API for Formation forms
+  Future<void> _loadTrainingCategories() async {
+    setState(() {
+      _isTrainingCategoriesLoading = true;
+      _trainingCategoriesLoadError = null;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(_categoriesApiUrl),
+        headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: const {'Method': 'getByType', 'type': 'formations'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Status code ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic> || decoded['status'] != 'success') {
+        final message = decoded is Map<String, dynamic>
+            ? decoded['message']?.toString() ??
+                  'Réponse invalide du service des catégories.'
+            : 'Réponse invalide du service des catégories.';
+        throw Exception(message);
+      }
+
+      final data = decoded['data'];
+      if (data is! Map<String, dynamic>) {
+        throw Exception('Structure de données inattendue.');
+      }
+
+      // Parse main categories
+      final mainRaw = data['main'];
+      final parsedCategories = <Map<String, String>>[];
+      final parsedCodeToId = <String, String>{};
+
+      if (mainRaw is List) {
+        for (final item in mainRaw) {
+          if (item is Map<String, dynamic>) {
+            final id = item['id']?.toString();
+            final code = item['code']?.toString();
+            final label = (item['label'] ?? item['labelEn'])?.toString();
+            if (id != null && code != null && label != null) {
+              parsedCategories.add({'id': id, 'code': code, 'label': label});
+              parsedCodeToId[code] = id;
+            }
+          }
+        }
+      }
+
+      // Parse sub-categories (secteurs) grouped by parentId
+      final parsedSecteursByParentId = <String, List<Map<String, String>>>{};
+      final subsRaw = data['subs'];
+      if (subsRaw is Map) {
+        subsRaw.forEach((key, value) {
+          final parentId = key.toString();
+          if (value is List) {
+            final secteurList = <Map<String, String>>[];
+            for (final secteur in value) {
+              if (secteur is Map<String, dynamic>) {
+                final secteurCode = secteur['code']?.toString();
+                final secteurLabel = (secteur['label'] ?? secteur['labelEn'])
+                    ?.toString();
+                if (secteurCode != null && secteurLabel != null) {
+                  secteurList.add({'code': secteurCode, 'label': secteurLabel});
+                }
+              }
+            }
+            parsedSecteursByParentId[parentId] = secteurList;
+          }
+        });
+      }
+
+      // Parse types from data['types'] or fallback to empty
+      final typesRaw = data['types'];
+      final parsedTypes = <Map<String, String>>[];
+      if (typesRaw is List) {
+        for (final type in typesRaw) {
+          if (type is Map<String, dynamic>) {
+            final typeCode = type['code']?.toString();
+            final typeLabel = (type['label'] ?? type['labelEn'])?.toString();
+            if (typeCode != null && typeLabel != null) {
+              parsedTypes.add({'code': typeCode, 'label': typeLabel});
+            }
+          }
+        }
+      }
+
+      setState(() {
+        _trainingCategoriesOptions = parsedCategories;
+        _trainingCategoryCodeToId
+          ..clear()
+          ..addAll(parsedCodeToId);
+        _trainingSecteursByParentId
+          ..clear()
+          ..addAll(parsedSecteursByParentId);
+        _trainingTypesOptions = parsedTypes;
+        _isTrainingCategoriesLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading training categories: $e');
+      setState(() {
+        _trainingCategoriesLoadError =
+            'Impossible de charger les catégories de formation.';
+        _isTrainingCategoriesLoading = false;
+      });
+    }
+  }
+
   /// Get fonctions (sub-categories) for a selected secteur d'activité
   List<Map<String, String>> _getJobFonctionsForSecteur(String? secteurCode) {
     if (secteurCode == null) return [];
@@ -1082,12 +1413,42 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     return List<Map<String, String>>.from(fonctions);
   }
 
+  /// Get secteurs de formation for a selected formation category
+  List<Map<String, String>> _getFormationSectorsForCategory(String? categoryCode) {
+    if (categoryCode == null) return [];
+    
+    // Try to find parentId by code first
+    String? parentId = _trainingCategoryCodeToId[categoryCode];
+    
+    // If not found by code, try to find by label (since we useLabelAsValue=true)
+    if (parentId == null) {
+      for (final category in _trainingCategoriesOptions) {
+        if (category['label'] == categoryCode) {
+          parentId = category['id'];
+          break;
+        }
+      }
+    }
+    
+    if (parentId == null) return [];
+    final secteurs = _trainingSecteursByParentId[parentId];
+    if (secteurs == null) return [];
+    return List<Map<String, String>>.from(secteurs);
+  }
+
   void _onNatureChanged(String? code) {
     setState(() {
       _selectedCategory = code;
       // _selectedType = null;
       _typeOptions = _getSubCategoriesForCode(code);
     });
+
+    // Load training categories from API when Formation is selected
+    if (code != null &&
+        (code.toLowerCase() == 'formation' ||
+            code.toLowerCase().contains('formation'))) {
+      _loadTrainingCategories();
+    }
   }
 
   Future<void> _submitDemande() async {
@@ -1292,8 +1653,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       final v = double.tryParse(_prixFinalController.text.replaceAll(',', '.'));
       if (v != null && v > 0) payload['budget_max'] = v;
     }
-    if (_disponibleChezController.text.trim().isNotEmpty) {
-      payload['location'] = _disponibleChezController.text.trim();
+    if (_selectedLocation != null) {
+      payload['location'] = _selectedLocation?.address;
+      payload['latitude'] = _selectedLocation?.latitude;
+      payload['longitude'] = _selectedLocation?.longitude;
+      payload['location_city'] = _selectedLocation?.city;
+      payload['location_postal_code'] = _selectedLocation?.postalCode;
     }
     if (_rayonRecherche > 0) {
       payload['search_radius_km'] = _rayonRecherche.toInt();
@@ -1320,7 +1685,6 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionQuillController.dispose();
-    _disponibleChezController.dispose();
     _prixInitialController.dispose();
     _prixFinalController.dispose();
     super.dispose();
@@ -1486,6 +1850,67 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     );
   }
 
+  /// Handle the "Use my current location" checkbox toggle
+  Future<void> _handleUseCurrentLocationToggle(bool value) async {
+    if (!value) {
+      // Unchecked - clear location
+      setState(() {
+        _useCurrentLocation = false;
+        _selectedLocation = null;
+      });
+      return;
+    }
+
+    // Check location permission
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        _showSnack('Permission de localisation refusée', isError: true);
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _showSnack(
+        'Permission de localisation refusée définitivement. Veuillez l\'activer dans les paramètres.',
+        isError: true,
+      );
+      return;
+    }
+
+    // Show loading
+    setState(() => _useCurrentLocation = true);
+    _showSnack('Récupération de votre position...');
+
+    try {
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Reverse geocode to get address
+      final locationData = await LocationService.reverseGeocode(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (locationData != null) {
+        setState(() {
+          _useCurrentLocation = true;
+          _selectedLocation = locationData;
+        });
+        _showSnack('Position trouvée : ${locationData.address}');
+      } else {
+        setState(() => _useCurrentLocation = false);
+        _showSnack('Impossible de déterminer l\'adresse de votre position', isError: true);
+      }
+    } catch (e) {
+      setState(() => _useCurrentLocation = false);
+      _showSnack('Erreur lors de la récupération de la position : $e', isError: true);
+    }
+  }
+
   Future<String> _getUserRole() async {
     try {
       final response = await ApiClient().authenticatedGet('/profile/me');
@@ -1610,7 +2035,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
       case 2: // Step 3: Localisation
         if (!_touteLaFrance &&
-            _disponibleChezController.text.trim().isEmpty &&
+            _selectedLocation == null &&
             !_useCurrentLocation) {
           return 'Veuillez indiquer une ville/adresse, utiliser votre position ou cocher "Toute la France".';
         }
@@ -2147,38 +2572,81 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           icon: Icons.school_outlined,
           title: 'Détails de la formation',
           children: [
-            _buildDropdownFieldWithMap(
-              label: 'Catégorie de la formation recherchée*',
-              value: _selectedFormationCategory,
-              items: _formationCategories,
-              onChanged: (val) => {
-                print("_formationCategories: $_formationCategories"),
-                print(
-                  "_selectedFormationCategory: $_selectedFormationCategory",
+            // Loading or error state for training categories
+            if (_isTrainingCategoriesLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(
+                  child: SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 ),
-                setState(() {
-                  _selectedFormationCategory = val;
-                  _selectedFormationSector = null; // Réinitialiser le secteur
-                }),
-              },
-              hint: _buildRequiredHint(
-                'Sélectionner une catégorie de formation',
+              )
+            else if (_trainingCategoriesLoadError != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red.shade400, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _trainingCategoriesLoadError!,
+                        style: TextStyle(color: Colors.red.shade600, fontSize: 13),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _loadTrainingCategories,
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
+              )
+            else if (_trainingCategoriesOptions.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange.shade400, size: 18),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Catégories de formation non disponibles. Veuillez réessayer.',
+                        style: TextStyle(color: Colors.orange, fontSize: 13),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _loadTrainingCategories,
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
+              )
+            else
+              _buildDropdownFieldWithMap(
+                label: 'Catégorie de la formation recherchée*',
+                value: _selectedFormationCategory,
+                items: _trainingCategoriesOptions, // ONLY use API data
+                onChanged: (val) => setState(() {
+                      _selectedFormationCategory = val;
+                      _selectedFormationSector = null;
+                    }),
+                hint: _buildRequiredHint('Sélectionner une catégorie de formation'),
+                backgroundColor: const Color(0xFFF9FAFB),
+                useLabelAsValue: true,
               ),
-              backgroundColor: const Color(0xFFF9FAFB),
-              useLabelAsValue: true,
-            ),
             const SizedBox(height: 12),
-            // Afficher le champ Secteur si la catégorie a des secteurs
-            if (_getFormationSectors(
-              _selectedFormationCategory,
-            ).isNotEmpty) ...[
+            // Afficher le champ Secteur - ONLY if API has loaded and has sectors for this category
+            if (_selectedFormationCategory != null &&
+                _trainingCategoriesOptions.isNotEmpty &&
+                _getFormationSectorsForCategory(_selectedFormationCategory).isNotEmpty) ...[
               _buildDropdownFieldWithMap(
                 label: 'Secteur de formation recherché*',
                 value: _selectedFormationSector,
-                items: _getFormationSectors(_selectedFormationCategory),
-                onChanged: (val) => {
-                  setState(() => _selectedFormationSector = val),
-                },
+                items: _getFormationSectorsForCategory(_selectedFormationCategory),
+                onChanged: (val) => setState(() => _selectedFormationSector = val),
                 hint: _buildRequiredHint('Sélectionner un secteur'),
                 backgroundColor: const Color(0xFFF9FAFB),
               ),
@@ -2187,7 +2655,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             _buildDropdownFieldWithMap(
               label: 'Type de formation recherchée*',
               value: _selectedFormationType,
-              items: _formationTypes,
+              items: _trainingTypesOptions.isNotEmpty
+                  ? _trainingTypesOptions
+                  : _formationTypes, // Fallback to hardcoded if API empty
               onChanged: (val) => setState(() => _selectedFormationType = val),
               hint: _buildRequiredHint('Sélectionner un type'),
               backgroundColor: const Color(0xFFF9FAFB),
@@ -3683,8 +4153,78 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 setState(() {
                   _docCand = checked ?? false;
                 });
+                // Load candidate documents when checkbox is checked
+                if (_docCand && _candidateDocuments.isEmpty) {
+                  _loadCandidateDocuments();
+                }
               },
             ),
+            if (_docCand) ...[
+              const SizedBox(height: 16),
+              // Show candidate documents from API
+              if (_isLoadingCandidateDocs)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              else if (_candidateDocsError != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red.shade400, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _candidateDocsError!,
+                          style: TextStyle(color: Colors.red.shade600, fontSize: 13),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _loadCandidateDocuments,
+                        child: const Text('Réessayer'),
+                      ),
+                    ],
+                  ),
+                )
+              else if (_visibleCandidateDocuments.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Documents de l\'espace candidat:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1,
+                      ),
+                      itemCount: _visibleCandidateDocuments.length,
+                      itemBuilder: (context, index) {
+                        final doc = _visibleCandidateDocuments[index];
+                        return _buildCandidateDocumentCard(doc);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+            ],
             if (!_docCand) ...[
               const SizedBox(height: 8),
               Text(
@@ -4141,8 +4681,78 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 setState(() {
                   _docCand = checked ?? false;
                 });
+                // Load candidate documents when checkbox is checked
+                if (_docCand && _candidateDocuments.isEmpty) {
+                  _loadCandidateDocuments();
+                }
               },
             ),
+            if (_docCand) ...[
+              const SizedBox(height: 16),
+              // Show candidate documents from API
+              if (_isLoadingCandidateDocs)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              else if (_candidateDocsError != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red.shade400, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _candidateDocsError!,
+                          style: TextStyle(color: Colors.red.shade600, fontSize: 13),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _loadCandidateDocuments,
+                        child: const Text('Réessayer'),
+                      ),
+                    ],
+                  ),
+                )
+              else if (_visibleCandidateDocuments.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Documents de l\'espace candidat:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1,
+                      ),
+                      itemCount: _visibleCandidateDocuments.length,
+                      itemBuilder: (context, index) {
+                        final doc = _visibleCandidateDocuments[index];
+                        return _buildCandidateDocumentCard(doc);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+            ],
             if (!_docCand) ...[
               const SizedBox(height: 8),
               Text(
@@ -4236,19 +4846,24 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             }),
             if (!_touteLaFrance) ...[
               const SizedBox(height: 12),
-              _buildTextField(
+              LocationPickerField(
+                initialLocation: _selectedLocation,
                 label: 'Ville ou adresse',
-                controller: _disponibleChezController,
-                fieldKey: 'location',
-                helperText:
-                    'Indiquez la ville ou l\'adresse où vous souhaitez que la prestation soit réalisée.',
+                helperText: 'Recherchez une ville, adresse ou code postal',
+                onLocationSelected: (location) {
+                  setState(() {
+                    _selectedLocation = location;
+                    if (location != null) {
+                      _useCurrentLocation = false;
+                    }
+                  });
+                },
               ),
               const SizedBox(height: 8),
               _buildCheckOption(
                 'Utiliser ma position actuelle',
                 _useCurrentLocation,
-                () =>
-                    setState(() => _useCurrentLocation = !_useCurrentLocation),
+                () => _handleUseCurrentLocationToggle(!_useCurrentLocation),
               ),
               const SizedBox(height: 16),
               const Text(
@@ -4663,6 +5278,96 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     );
   }
 
+  /// Build a card for candidate documents from API
+  Widget _buildCandidateDocumentCard(Map<String, dynamic> doc) {
+    final docId = doc['id'].toString();
+    final fileName = doc['original_name'] as String? ?? 'Document';
+    final fileType = doc['type'] as String? ?? '';
+    final fileUrl = doc['url'] as String? ?? '';
+    final mimeType = doc['mime_type'] as String? ?? '';
+    final isPdf = mimeType.contains('pdf');
+    final isDoc = mimeType.contains('msword') || mimeType.contains('officedocument');
+
+    IconData iconData;
+    Color iconColor;
+    if (isPdf) {
+      iconData = Icons.picture_as_pdf;
+      iconColor = Colors.red;
+    } else if (isDoc) {
+      iconData = Icons.description;
+      iconColor = Colors.blue;
+    } else if (fileType == 'cv') {
+      iconData = Icons.badge;
+      iconColor = const Color(0xFF3AAE5E);
+    } else if (fileType == 'lettre' || fileType == 'lettre_motivation') {
+      iconData = Icons.mail;
+      iconColor = Colors.blue;
+    } else if (fileType == 'portfolio') {
+      iconData = Icons.folder;
+      iconColor = Colors.orange;
+    } else {
+      iconData = Icons.insert_drive_file;
+      iconColor = Colors.grey;
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF3AAE5E).withOpacity(0.3)),
+        color: const Color(0xFFF0F9F2),
+      ),
+      child: Stack(
+        children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(iconData, size: 40, color: iconColor),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    fileName,
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 6,
+            right: 6,
+            child: GestureDetector(
+              onTap: () => _removeCandidateDocument(docId),
+              child: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: 16,
+                  color: Color(0xFF666666),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPhotoPreviewCard(PlatformFile file, int index) {
     final isCover = index == 0 && _existingMediaUrls.isEmpty;
     return Container(
@@ -4870,7 +5575,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       rows.add(
         _buildReviewRow(
           'Catégorie',
-          _getLabelFromCode(_formationCategories, _selectedFormationCategory),
+          _getLabelFromCode(
+            _trainingCategoriesOptions.isNotEmpty
+                ? _trainingCategoriesOptions
+                : _formationCategories,
+            _selectedFormationCategory,
+          ),
         ),
       );
       if (_selectedFormationType != null) {
@@ -5101,9 +5811,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             if (!_touteLaFrance) ...[
               _buildReviewRow(
                 'Ville / Adresse',
-                _disponibleChezController.text.trim().isEmpty
-                    ? '-'
-                    : _disponibleChezController.text.trim(),
+                _selectedLocation?.address ?? '-',
               ),
             ],
             _buildReviewRow(

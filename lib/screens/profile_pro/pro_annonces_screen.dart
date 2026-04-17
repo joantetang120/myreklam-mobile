@@ -4,6 +4,7 @@ import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/screens/public_profile_screen.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:myreklam/widgets/categories_icon.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
@@ -80,11 +81,13 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
   void initState() {
     super.initState();
     _ensureCurrentUserId();
-    _loadBonPlans();
-    _loadJobOffers();
-    _loadEvents();
-    _loadDemandes();
-    _loadTrainings();
+    ReactionCacheService.init().then((_) {
+      _loadBonPlans();
+      _loadJobOffers();
+      _loadEvents();
+      _loadDemandes();
+      _loadTrainings();
+    });
   }
 
   @override
@@ -112,6 +115,11 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         _bonPlans = [];
       }
       debugPrint('Pro: Loaded ${_bonPlans.length} bon plans');
+      // Seed reactions
+      for (final bp in _bonPlans) {
+        final bpId = bp['id']?.toString() ?? '';
+        if (bpId.isNotEmpty) _seedReactionFromResource('bon-plans', bpId, bp);
+      }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading bon plans: ${e.message}');
       _bonPlansError = e.message;
@@ -142,6 +150,11 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         _jobOffers = [];
       }
       debugPrint('Pro: Loaded ${_jobOffers.length} job offers');
+      // Seed reactions
+      for (final job in _jobOffers) {
+        final jobId = job['id']?.toString() ?? '';
+        if (jobId.isNotEmpty) _seedReactionFromResource('job-offers', jobId, job);
+      }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading job offers: ${e.message}');
       _jobOffersError = e.message;
@@ -170,6 +183,11 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         _demandes = [];
       }
       debugPrint('Pro: Loaded ${_demandes.length} demandes');
+      // Seed reactions
+      for (final d in _demandes) {
+        final dId = d['id']?.toString() ?? '';
+        if (dId.isNotEmpty) _seedReactionFromResource('demandes', dId, d);
+      }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading demandes: ${e.message}');
       _demandesError = e.message;
@@ -198,6 +216,11 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         _events = [];
       }
       debugPrint('Pro: Loaded ${_events.length} events');
+      // Seed reactions
+      for (final evt in _events) {
+        final evtId = evt['id']?.toString() ?? '';
+        if (evtId.isNotEmpty) _seedReactionFromResource('events', evtId, evt);
+      }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading events: ${e.message}');
       _eventsError = e.message;
@@ -226,6 +249,11 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         _trainings = [];
       }
       debugPrint('Pro: Loaded ${_trainings.length} trainings');
+      // Seed reactions
+      for (final tr in _trainings) {
+        final trId = tr['id']?.toString() ?? '';
+        if (trId.isNotEmpty) _seedReactionFromResource('trainings', trId, tr);
+      }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading trainings: ${e.message}');
       _trainingsError = e.message;
@@ -417,7 +445,13 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final link = data['link']?.toString();
       final pickupMethods = data['pickup_methods'] as Map<String, dynamic>?;
       final deliveryInfo = _buildDeliveryInfo(pickupMethods);
-      final location = data['location_search']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
+      final location = locationCity != null
+          ? (locationPostalCode != null
+              ? '$locationCity ($locationPostalCode)'
+              : locationCity)
+          : locationPostalCode;
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
       final reductionLabel = data['reduction_label']?.toString();
@@ -1027,15 +1061,12 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
           reactionBar: demandeId.isNotEmpty
-              ? () {
-                  _seedReactionFromResource('demandes', demandeId, demande);
-                  return _buildReactionBar(
-                    'demandes',
-                    demandeId,
-                    acceptedMessages: demande['accept_messages'] == true,
-                    authorData: demande['user'],
-                  );
-                }()
+              ? _buildReactionBar(
+                  'demandes',
+                  demandeId,
+                  acceptedMessages: demande['accept_messages'] == true,
+                  authorData: demande['user'],
+                )
               : null,
         );
       },
@@ -1473,10 +1504,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         }
       },
       reactionBar: trainingId.isNotEmpty
-          ? () {
-              _seedReactionFromResource('trainings', trainingId, tr);
-              return _buildReactionBar('trainings', trainingId);
-            }()
+          ? _buildReactionBar('trainings', trainingId)
           : null,
     );
   }
@@ -1918,15 +1946,12 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             }
           },
           reactionBar: eventId.isNotEmpty
-              ? () {
-                  _seedReactionFromResource('events', eventId, event);
-                  return _buildReactionBar(
-                    'events',
-                    eventId,
-                    acceptedMessages: event['accept_messages'] == true,
-                    authorData: user,
-                  );
-                }()
+              ? _buildReactionBar(
+                  'events',
+                  eventId,
+                  acceptedMessages: event['accept_messages'] == true,
+                  authorData: user,
+                )
               : null,
         );
       },
@@ -2470,18 +2495,15 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                   ),
                   const SizedBox(height: 10),
                   if (bpId.isNotEmpty) ...[
-                    Builder(builder: (context) {
-                      _seedReactionFromResource('bon-plans', bpId, bp);
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildReactionBar(
-                          'bon-plans',
-                          bpId,
-                          acceptedMessages: bp['accept_messages'] == true,
-                          authorData: bp['user'] as Map<String, dynamic>?,
-                        ),
-                      );
-                    }),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildReactionBar(
+                        'bon-plans',
+                        bpId,
+                        acceptedMessages: bp['accept_messages'] == true,
+                        authorData: bp['user'] as Map<String, dynamic>?,
+                      ),
+                    ),
                   ],
                   const SizedBox(height: 10),
                   const Padding(
@@ -2741,10 +2763,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             }
           },
           reactionBar: jobId.isNotEmpty
-              ? () {
-                  _seedReactionFromResource('job-offers', jobId, job);
-                  return _buildReactionBar('job-offers', jobId);
-                }()
+              ? _buildReactionBar('job-offers', jobId)
               : null,
         );
       },
@@ -3028,12 +3047,19 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     Map<String, dynamic> resource,
   ) {
     final key = _reactionKey(apiSlug, entityId);
-    // Always update from resource data to ensure fresh counts
-    _reactions[key] = _ReactionData(
-      likesCount: _asInt(resource['likes_count']),
-      commentsCount: _asInt(resource['comments_count']),
-      userReaction: resource['user_reaction']?.toString(),
-    );
+    if (!_reactions.containsKey(key)) {
+      final apiReaction = resource['user_reaction']?.toString();
+      final userReaction = ReactionCacheService.isCached(apiSlug, entityId)
+          ? ReactionCacheService.load(apiSlug, entityId)
+          : apiReaction;
+      final apiCount = _asInt(resource['likes_count']);
+      final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
+      _reactions[key] = _ReactionData(
+        likesCount: (cachedCount != null && cachedCount > apiCount) ? cachedCount : apiCount,
+        commentsCount: _asInt(resource['comments_count']),
+        userReaction: userReaction,
+      );
+    }
   }
 
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
@@ -3061,40 +3087,45 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     String type,
   ) async {
     final data = _getReaction(apiSlug, entityId);
-    final isLiked = data.userReaction == 'like';
+
+    // Optimistic update
+    final oldReaction = data.userReaction;
+    final oldLikes = data.likesCount;
 
     setState(() {
-      if (isLiked) {
+      if (oldReaction == type) {
         data.userReaction = null;
-        data.likesCount = (data.likesCount > 0) ? data.likesCount - 1 : 0;
+        if (type == 'like') data.likesCount--;
       } else {
-        data.userReaction = 'like';
-        data.likesCount = data.likesCount + 1;
+        if (oldReaction == 'like') data.likesCount--;
+        data.userReaction = type;
+        if (type == 'like') data.likesCount++;
       }
     });
 
     try {
-      if (isLiked) {
-        await ApiClient().authenticatedDelete('/$apiSlug/$entityId/reactions');
-      } else {
-        await ApiClient().authenticatedPost(
-          '/$apiSlug/$entityId/reactions',
-          body: {'type': type},
-        );
+      final response = await ApiClient().authenticatedPost(
+        '/$apiSlug/$entityId/reactions',
+        body: {'type': type},
+      );
+      final respData = response['data'] as Map<String, dynamic>?;
+      if (respData != null && mounted) {
+        final newReaction = respData['user_reaction']?.toString();
+        setState(() {
+          data.likesCount = _asInt(respData['likes_count']);
+          data.userReaction = newReaction;
+        });
+        ReactionCacheService.save(apiSlug, entityId, newReaction);
+        ReactionCacheService.saveCount(apiSlug, entityId, data.likesCount);
       }
-      // Refresh to ensure counts are accurate
-      await _refreshReactionFromApi(apiSlug, entityId);
     } catch (e) {
-      debugPrint('Reaction toggle error: $e');
-      setState(() {
-        if (isLiked) {
-          data.userReaction = 'like';
-          data.likesCount = data.likesCount + 1;
-        } else {
-          data.userReaction = null;
-          data.likesCount = (data.likesCount > 0) ? data.likesCount - 1 : 0;
-        }
-      });
+      debugPrint('Reaction error: $e');
+      if (mounted) {
+        setState(() {
+          data.likesCount = oldLikes;
+          data.userReaction = oldReaction;
+        });
+      }
     }
   }
 

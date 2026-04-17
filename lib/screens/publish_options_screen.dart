@@ -285,7 +285,7 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const CreerDemandeScreen(),
+                        builder: (context) => CreerDemandeScreen(),
                       ),
                     );
                   },

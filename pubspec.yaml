@@ -80,6 +80,8 @@ dependencies:
   video_thumbnail: ^0.5.3
   # Video preview
   video_player: ^2.9.3
+  # Geolocation
+  geolocator: ^11.0.0
 
 dev_dependencies:
   flutter_test:
