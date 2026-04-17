@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/search_screen.dart';
@@ -273,33 +271,29 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     if (widget.locationPostalCode != null) queryParams['postal_code'] = widget.locationPostalCode!;
     if (widget.allFrance) queryParams['all_france'] = '1';
 
-    final uri = Uri.parse('${ApiConfig.baseUrl}/search').replace(queryParameters: queryParams);
-    final response = await http.get(uri, headers: {'Accept': 'application/json'});
+    final qs = Uri(queryParameters: queryParams).query;
+    final resp = await ApiClient().get('/search?$qs');
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final items = List<Map<String, dynamic>>.from(data['data']['items'] ?? []);
-      final total = data['data']['meta']['total'] ?? 0;
+    final data = resp['data'] as Map<String, dynamic>? ?? {};
+    final items = List<Map<String, dynamic>>.from(data['items'] ?? []);
+    final total = data['meta']?['total'] ?? 0;
 
-      // Seed reactions BEFORE setState to prevent _getReaction pre-populating with empty data
-      for (final item in items) {
-        final feedType = item['feed_type']?.toString() ?? '';
-        final resource = item['resource'];
-        if (resource is Map<String, dynamic>) {
-          final apiSlug = _feedTypeToApiSlug[feedType];
-          final entityId = resource['id']?.toString() ?? '';
-          if (apiSlug != null && entityId.isNotEmpty) {
-            _seedReactionFromFeed(apiSlug, entityId, resource);
-          }
-        }
+    // Seed reactions BEFORE setState to prevent _getReaction pre-populating with empty data
+    for (final item in items) {
+      final feedType = item['feed_type']?.toString() ?? '';
+      final resource = item['resource'] is Map<String, dynamic> ? item['resource'] as Map<String, dynamic> : item;
+      final apiSlug = _feedTypeToApiSlug[feedType];
+      final entityId = resource['id']?.toString() ?? '';
+      if (apiSlug != null && entityId.isNotEmpty) {
+        _seedReactionFromFeed(apiSlug, entityId, resource);
       }
+    }
 
-      if (mounted) {
-        setState(() {
-          _annonceResults = items;
-          _annoncesTotal = total;
-        });
-      }
+    if (mounted) {
+      setState(() {
+        _annonceResults = items;
+        _annoncesTotal = total is int ? total : int.tryParse(total.toString()) ?? 0;
+      });
     }
   }
 
@@ -320,17 +314,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     final q = _inlineSearchController.text.trim();
     if (q.isNotEmpty) queryParams['q'] = q;
 
-    final uri = Uri.parse('${ApiConfig.baseUrl}/search').replace(queryParameters: queryParams);
-    final response = await http.get(uri, headers: {'Accept': 'application/json'});
+    final qs = Uri(queryParameters: queryParams).query;
+    final resp = await ApiClient().get('/search?$qs');
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      if (mounted) {
-        setState(() {
-          _userResults = List<Map<String, dynamic>>.from(data['data']['users'] ?? []);
-          _usersTotal = data['data']['meta']['total'] ?? 0;
-        });
-      }
+    final data = resp['data'] as Map<String, dynamic>? ?? {};
+    if (mounted) {
+      setState(() {
+        _userResults = List<Map<String, dynamic>>.from(data['users'] ?? []);
+        final total = data['meta']?['total'] ?? 0;
+        _usersTotal = total is int ? total : int.tryParse(total.toString()) ?? 0;
+      });
     }
   }
 
@@ -1377,6 +1370,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         ],
       ),
       child: ListTile(
+        onTap: () => _navigateToUserProfile(user),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           radius: 24,
