@@ -702,11 +702,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   // ==================== POSTS TAB ====================
 
   Widget _buildPostTab() {
-    return RefreshIndicator(
-      onRefresh: _loadPosts,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        physics: const AlwaysScrollableScrollPhysics(),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_isLoadingPosts)
             const Center(
@@ -732,7 +731,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           else if (_myPosts.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 40),
-              child: Text('Aucun post', style: TextStyle(color: Colors.grey)),
+              child: Center(child: Text('Pas de post', style: TextStyle(color: Colors.grey))),
             )
           else
             for (final post in _myPosts) ...[
@@ -867,9 +866,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         _isLoadingPosts = false;
       });
     } catch (e) {
+      debugPrint('Error loading posts: $e');
       if (!mounted) return;
       setState(() {
-        _postsError = 'Erreur lors du chargement des posts';
+        _postsError = 'Erreur lors du chargement des posts: $e';
         _isLoadingPosts = false;
       });
     }
