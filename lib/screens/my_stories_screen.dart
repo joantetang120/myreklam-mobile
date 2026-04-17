@@ -142,6 +142,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
               stories: _stories.map((s) {
                 return {
                   'image': s.mediaUrl ?? '',
+                  'media_type': s.mediaType ?? 'image',
                   'text': s.caption,
                   'time': _getTimeAgo(s.timestamp),
                   'id': s.id,
@@ -172,13 +173,34 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
               ),
               child: ClipOval(
                 child: story.mediaUrl != null
-                    ? Image.network(
-                        story.mediaUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.image, color: Colors.grey),
-                        ),
+                    ? Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // Thumbnail (video or image)
+                          story.mediaType == 'video'
+                              ? Container(color: Colors.grey[800])
+                              : Image.network(
+                                  story.mediaUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    color: Colors.grey[200],
+                                    child: const Icon(
+                                      Icons.image,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                          // Play icon overlay for videos
+                          if (story.mediaType == 'video')
+                            Container(
+                              color: Colors.black.withOpacity(0.3),
+                              child: const Icon(
+                                Icons.play_circle_outline,
+                                color: Colors.white,
+                                size: 30,
+                              ),
+                            ),
+                        ],
                       )
                     : Container(
                         color: Colors.grey[200],

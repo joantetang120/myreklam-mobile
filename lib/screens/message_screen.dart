@@ -34,10 +34,19 @@ class _MessageScreenState extends State<MessageScreen> {
   Timer? _refreshTimer;
 
   int? _currentUserId;
+  String? _currentUserAvatar;
   List<ChatConversation> _allConversations = [];
   List<ChatConversation> _filteredConversations = [];
   bool _isLoading = true;
   String _searchQuery = '';
+
+  String _buildAvatarUrl(String? avatarUrl) {
+    if (avatarUrl == null || avatarUrl.isEmpty) return '';
+    if (avatarUrl.startsWith('http')) return avatarUrl;
+    // Handle relative paths like avatar/filename.jpg or /storage/avatar/filename.jpg
+    final baseUrl = ApiConfig.baseUrl.replaceAll('/api', '');
+    return '$baseUrl/storage/$avatarUrl';
+  }
 
   @override
   void initState() {
@@ -109,10 +118,14 @@ class _MessageScreenState extends State<MessageScreen> {
     try {
       final response = await ApiClient().authenticatedGet('/profile/me');
       final userId = int.tryParse(response['user']?['id']);
+      final profile = response['profile'] as Map<String, dynamic>?;
+      final avatarUrl =
+          profile?['avatar_url']?.toString() ?? profile?['avatar']?.toString();
 
       if (mounted && userId != null) {
         setState(() {
           _currentUserId = userId;
+          _currentUserAvatar = avatarUrl;
         });
         await _loadConversations();
       }
@@ -228,7 +241,7 @@ class _MessageScreenState extends State<MessageScreen> {
           builder: (_) => MyStoriesScreen(
             stories: _storyStore.stories,
             userName: 'Vous',
-            userAvatar: 'assets/images/dashboard_particulier/Ellipse 10.png',
+            userAvatar: _currentUserAvatar ?? _defaultAvatar,
           ),
         ),
       );
@@ -389,11 +402,22 @@ class _MessageScreenState extends State<MessageScreen> {
                                             ),
                                           ),
                                           child: hasOwnStories
-                                              ? const CircleAvatar(
+                                              ? CircleAvatar(
                                                   radius: 22,
-                                                  backgroundImage: AssetImage(
-                                                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                                                  ),
+                                                  backgroundImage:
+                                                      _currentUserAvatar !=
+                                                              null &&
+                                                          _currentUserAvatar!
+                                                              .isNotEmpty
+                                                      ? NetworkImage(
+                                                          _buildAvatarUrl(
+                                                            _currentUserAvatar,
+                                                          ),
+                                                        )
+                                                      : const AssetImage(
+                                                              'assets/images/dashboard_particulier/Ellipse 10.png',
+                                                            )
+                                                            as ImageProvider,
                                                 )
                                               : const Center(
                                                   child: Icon(

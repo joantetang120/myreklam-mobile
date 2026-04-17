@@ -72,7 +72,7 @@ class PostContentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 4),
+      padding: const EdgeInsets.only(top: 16, left: 14, right: 14, bottom: 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),

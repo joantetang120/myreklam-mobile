@@ -19,9 +19,9 @@ class StoryService {
     };
   }
 
-  /// Upload a new story (multipart image + optional caption + optional overlay text).
+  /// Upload a new story (multipart image/video + optional caption + optional overlay text).
   Future<StoryModel?> uploadStory({
-    required Uint8List imageBytes,
+    required Uint8List mediaBytes,
     required String fileName,
     String? caption,
     String? overlayText,
@@ -29,6 +29,7 @@ class StoryService {
     int? overlayStyle,
     double? overlayX,
     double? overlayY,
+    String mediaType = 'image',
   }) async {
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/stories');
@@ -40,12 +41,15 @@ class StoryService {
       request.files.add(
         http.MultipartFile.fromBytes(
           'media',
-          imageBytes,
+          mediaBytes,
           filename: fileName.isNotEmpty
               ? fileName
-              : 'story_${DateTime.now().millisecondsSinceEpoch}.jpg',
+              : 'story_${DateTime.now().millisecondsSinceEpoch}.$mediaType',
         ),
       );
+
+      // Add media_type field for the backend
+      request.fields['media_type'] = mediaType;
 
       if (caption != null && caption.trim().isNotEmpty) {
         request.fields['caption'] = caption.trim();
