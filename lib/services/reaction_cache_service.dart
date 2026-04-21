@@ -4,6 +4,7 @@ class ReactionCacheService {
   static SharedPreferences? _prefs;
   static const _prefix = 'rxn_';
   static const _countPrefix = 'rxn_cnt_';
+  static const _commentCountPrefix = 'cmt_cnt_';
 
   static Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -35,4 +36,14 @@ class ReactionCacheService {
 
   static int? loadCount(String apiSlug, String entityId) =>
       _prefs?.getInt(_countKey(apiSlug, entityId));
+
+  static String _commentCountKey(String apiSlug, String entityId) =>
+      '$_commentCountPrefix${apiSlug}_$entityId';
+
+  static void saveCommentsCount(String apiSlug, String entityId, int count) {
+    _prefs?.setInt(_commentCountKey(apiSlug, entityId), count);
+  }
+
+  static int? loadCommentsCount(String apiSlug, String entityId) =>
+      _prefs?.getInt(_commentCountKey(apiSlug, entityId));
 }

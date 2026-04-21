@@ -16,6 +16,8 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
+import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 
 class _ReactionData {
   int likesCount;
@@ -587,12 +589,12 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     Map<String, dynamic> resource,
   ) {
     final key = _reactionKey(apiSlug, entityId);
-    // Always update from resource data to ensure fresh counts
-    _reactions[key] = _ReactionData(
+    // Only seed if not already present to preserve locally incremented counts
+    _reactions.putIfAbsent(key, () => _ReactionData(
       likesCount: _asInt(resource['likes_count']),
       commentsCount: _asInt(resource['comments_count']),
       userReaction: resource['user_reaction']?.toString(),
-    );
+    ));
   }
 
   String _buildTimeAgo(String? isoDate) {
@@ -613,10 +615,15 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     }
   }
 
+  String _crudSlug(String reactionSlug) {
+    const map = {'bon-plans': 'bonplans'};
+    return map[reactionSlug] ?? reactionSlug;
+  }
+
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
     try {
       final response = await ApiClient().authenticatedGet(
-        '/$apiSlug/$entityId',
+        '/${_crudSlug(apiSlug)}/$entityId',
       );
       final data = response['data'] as Map<String, dynamic>?;
       if (data != null && mounted) {
@@ -996,6 +1003,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   ? 'Vous'
                   : (user['display_name']?.toString() ??
                         user['name']?.toString() ??
+                        (user['particulier_profile'] as Map<String, dynamic>?)?['pseudo']?.toString() ??
+                        (user['pro_profile'] as Map<String, dynamic>?)?['company_name']?.toString() ??
                         email.split('@').first);
               final body = comment['body']?.toString() ?? '';
               final createdAt = comment['created_at']?.toString();
@@ -1432,6 +1441,30 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
     final isPost = apiSlug == 'posts';
+    final isBonPlan = apiSlug == 'bon-plans';
+
+    // Extract owner info for bon plan cards
+    String? ownerId;
+    String ownerName = 'Utilisateur';
+    String ownerAvatar = '';
+    bool isPro = false;
+    if (isBonPlan && authorData != null) {
+      final proProfile = authorData['pro_profile'] as Map<String, dynamic>?;
+      final particulierProfile = authorData['particulier_profile'] as Map<String, dynamic>?;
+      ownerId = authorData['id']?.toString();
+      ownerName = authorData['display_name']?.toString() ??
+          proProfile?['company_name']?.toString() ??
+          proProfile?['pseudo']?.toString() ??
+          particulierProfile?['pseudo']?.toString() ??
+          authorData['name']?.toString() ??
+          'Utilisateur';
+      ownerAvatar = authorData['avatar_url']?.toString() ??
+          proProfile?['avatar_url']?.toString() ??
+          proProfile?['logo_url']?.toString() ??
+          particulierProfile?['avatar_url']?.toString() ??
+          '';
+      isPro = (authorData['account_type']?.toString() ?? '').toLowerCase() == 'pro';
+    }
 
     return Row(
       children: [
@@ -1476,6 +1509,48 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             ],
           ),
         ),
+        // Owner info for bon plan cards
+        if (isBonPlan && authorData != null) ...[
+          const Spacer(),
+          GestureDetector(
+            onTap: () {
+              if (ownerId != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => isPro
+                        ? ProPublicViewScreen(userId: ownerId!)
+                        : ParticulierPublicViewScreen(userId: ownerId!),
+                  ),
+                );
+              }
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 14,
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: ownerAvatar.isNotEmpty
+                      ? (ownerAvatar.startsWith('http')
+                          ? NetworkImage(ownerAvatar)
+                          : NetworkImage(ApiConfig.resolveMediaUrl(ownerAvatar) ?? ''))
+                      : null,
+                  child: ownerAvatar.isEmpty
+                      ? Icon(isPro ? Icons.business : Icons.person, size: 14, color: Colors.white)
+                      : null,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  ownerName,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF333333)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
         if (isPost) ...[
           const SizedBox(width: 10),
           // Repost
@@ -1992,7 +2067,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 color: Color(0xFF2E9B5B),
                               ),
                             )
-                          : (widget.tags[2].title == 'Infos pouvoir d\'achat'
+                          : (widget.tags.length > 2 && widget.tags[2].title == 'Infos pouvoir d\'achat'
                                 ? SizedBox.shrink()
                                 : Text(
                                     widget.price != null &&

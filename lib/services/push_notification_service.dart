@@ -5,6 +5,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:myreklam/firebase_options.dart';
 import 'package:myreklam/main.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/widgets/custom_bottom_bar.dart';
+import 'dart:async';
 
 /// Background message handler (must be top-level function)
 @pragma('vm:entry-point')
@@ -144,6 +146,9 @@ class PushNotificationService {
     final notification = message.notification;
     if (notification == null) return;
 
+    // Increment notification badge count
+    _incrementNotificationCount();
+
     await _localPlugin.show(
       DateTime.now().millisecondsSinceEpoch.remainder(100000),
       notification.title,
@@ -220,4 +225,15 @@ class PushNotificationService {
 
   /// Get current FCM token
   String? get token => _fcmToken;
+
+  /// Increment notification count when a new notification arrives
+  void _incrementNotificationCount() {
+    final currentCount = CustomBottomBar.notificationCountNotifier.value;
+    CustomBottomBar.notificationCountNotifier.value = currentCount + 1;
+  }
+
+  /// Refresh notification count from backend (call when app comes to foreground)
+  void refreshNotificationCount() {
+    CustomBottomBar.refreshNotificationNotifier.value = !CustomBottomBar.refreshNotificationNotifier.value;
+  }
 }

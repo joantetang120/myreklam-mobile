@@ -70,7 +70,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         '/notifications/unread-count',
       );
       if (mounted && response['success'] == true) {
-        setState(() => _unreadNotifCount = response['unread_count'] ?? 0);
+        final count = response['unread_count'] ?? 0;
+        setState(() => _unreadNotifCount = count);
+        // Sync with bottom bar
+        CustomBottomBar.notificationCountNotifier.value = count;
       }
     } catch (_) {}
   }

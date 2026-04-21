@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
-import 'package:myreklam/screens/public_profile_screen.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/services/profile_service.dart';
 
 class FollowersScreen extends StatefulWidget {
@@ -363,7 +363,7 @@ class _FollowersScreenState extends State<FollowersScreen>
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PublicProfileScreen(userId: userId),
+          builder: (context) => ParticulierPublicViewScreen(userId: userId),
         ),
       );
     }

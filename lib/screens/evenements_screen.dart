@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
-import 'package:myreklam/screens/public_profile_screen.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -841,7 +841,7 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
                 MaterialPageRoute(
                   builder: (context) => isProUser
                       ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : PublicProfileScreen(userId: user!['id'].toString()),
+                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
                 ),
               );
             }
@@ -885,9 +885,11 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
           : apiReaction;
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
+      final apiCommentsCount = _asInt(resource['comments_count']);
+      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(apiSlug, entityId);
       _reactions[key] = _ReactionData(
         likesCount: (cachedCount != null && cachedCount > apiCount) ? cachedCount : apiCount,
-        commentsCount: _asInt(resource['comments_count']),
+        commentsCount: (cachedCommentsCount != null && cachedCommentsCount > apiCommentsCount) ? cachedCommentsCount : apiCommentsCount,
         userReaction: userReaction,
       );
     }

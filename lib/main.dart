@@ -15,6 +15,7 @@ import 'package:myreklam/services/auth_state_manager.dart';
 import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,6 +51,7 @@ class MyApp extends StatelessWidget {
       create: (_) => ConversationProvider(),
       child: MaterialApp(
         navigatorKey: navigatorKey,
+        navigatorObservers: [routeObserver],
         debugShowCheckedModeBanner: false,
         title: 'Myreklam',
         localizationsDelegates: const [

@@ -61,6 +61,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   // Reactions cache
   final Map<String, _ReactionData> _reactions = {};
 
+  bool get _isOwnProfile {
+    final profileId = _userData?['id']?.toString();
+    final currentId = UserSession().id;
+    return profileId != null && currentId != null && profileId == currentId;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -270,7 +276,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           ),
         ),
         centerTitle: true,
-        actions: (widget.userId == null && widget.initialData?['id'] == null)
+        actions: (widget.userId == null && widget.initialData?['id'] == null) ||
+                _isOwnProfile
             ? null
             : [
                 PopupMenuButton<String>(
@@ -434,57 +441,58 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Action Buttons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _startConversation,
-                              icon: const Icon(
-                                Icons.message_outlined,
-                                size: 18,
-                              ),
-                              label: const Text('Message'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF3AAE5E),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
+                      // Action Buttons (hidden for own profile)
+                      if (!_isOwnProfile)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _startConversation,
+                                icon: const Icon(
+                                  Icons.message_outlined,
+                                  size: 18,
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _toggleFollow,
-                              icon: Icon(
-                                _isFollowing
-                                    ? Icons.check
-                                    : Icons.person_add_outlined,
-                                size: 18,
-                              ),
-                              label: Text(_isFollowing ? 'Suivi' : 'Suivre'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF3AAE5E),
-                                side: const BorderSide(
-                                  color: Color(0xFF3AAE5E),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                label: const Text('Message'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF3AAE5E),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _toggleFollow,
+                                icon: Icon(
+                                  _isFollowing
+                                      ? Icons.check
+                                      : Icons.person_add_outlined,
+                                  size: 18,
+                                ),
+                                label: Text(_isFollowing ? 'Suivi' : 'Suivre'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF3AAE5E),
+                                  side: const BorderSide(
+                                    color: Color(0xFF3AAE5E),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
