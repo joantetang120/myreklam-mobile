@@ -94,7 +94,7 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
   @override
   Widget build(BuildContext context) {
     // Constrain video height to avoid taking too much screen space
-    const maxVideoHeight = 400.0;
+    const maxVideoHeight = 500.0;
 
     if (_initError) {
       return ConstrainedBox(

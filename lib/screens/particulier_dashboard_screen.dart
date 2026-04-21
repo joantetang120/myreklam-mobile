@@ -564,15 +564,29 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             ),
                             const SizedBox(width: 6),
                             Expanded(
-                              child: Text(
-                                '${widget.reposter.displayName} a republié ceci',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
+                              child: RichText(
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: widget.reposter.displayName,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[800],
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: ' a republié ceci',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -591,7 +605,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                     builder: (context) =>
                                         widget.author.accountType
                                                 .toLowerCase() ==
-                                            'pro'
+                                            'professionnel'
                                         ? ProPublicViewScreen(
                                             userId: widget.author.id,
                                           )
@@ -3615,7 +3629,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de la republication: ${e.toString()}'),
+            content: Text('${e.toString()}'),
             backgroundColor: Colors.redAccent,
             duration: const Duration(seconds: 3),
           ),

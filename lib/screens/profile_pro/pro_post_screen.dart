@@ -246,8 +246,8 @@ class _ProPostScreenState extends State<ProPostScreen>
           unselectedLabelColor: Colors.grey,
           indicatorColor: const Color(0xFF3AAE5E),
           tabs: [
-            Tab(text: 'Posts (${myPostsOnly.length})'),
-            Tab(text: 'Republier (${repostsOnly.length})'),
+            Tab(text: 'Posts(${myPostsOnly.length})'),
+            Tab(text: 'Republications(${repostsOnly.length})'),
           ],
         ),
       ),
@@ -299,8 +299,9 @@ class _ProPostScreenState extends State<ProPostScreen>
     if (postsOverride.isEmpty) {
       return const Center(
         child: Text(
-          'Aucun post disponible',
+          'Vous n\'avez aucun post/republication pour l\'instant',
           style: TextStyle(color: Colors.grey),
+          textAlign: TextAlign.center,
         ),
       );
     }

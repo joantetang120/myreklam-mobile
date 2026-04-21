@@ -71,9 +71,9 @@ class _FollowersScreenState extends State<FollowersScreen>
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
         setState(() => _isLoading = false);
       }
     }
@@ -83,21 +83,25 @@ class _FollowersScreenState extends State<FollowersScreen>
     if (data == null) return 'Utilisateur';
     final pro = data['pro_profile'] as Map?;
     final part = data['particulier_profile'] as Map?;
-    
+
     if (part != null) return part['pseudo']?.toString() ?? 'Utilisateur';
-    if (pro != null) return pro['company_name']?.toString() ?? '${pro['first_name'] ?? ''} ${pro['last_name'] ?? ''}'.trim();
-    
+    if (pro != null)
+      return pro['company_name']?.toString() ??
+          '${pro['first_name'] ?? ''} ${pro['last_name'] ?? ''}'.trim();
+
     return data['name']?.toString() ?? 'Utilisateur';
   }
 
   String _extractAvatar(Map<String, dynamic>? data) {
-    if (data == null) return 'assets/images/dashboard_particulier/Ellipse 10.png';
+    if (data == null)
+      return 'assets/images/dashboard_particulier/Ellipse 10.png';
     final pro = data['pro_profile'] as Map?;
     final part = data['particulier_profile'] as Map?;
-    
-    String? url = part?['avatar_url']?.toString() ?? 
-                 pro?['avatar_url']?.toString() ?? 
-                 data['avatar']?.toString();
+
+    String? url =
+        part?['avatar_url']?.toString() ??
+        pro?['avatar_url']?.toString() ??
+        data['avatar']?.toString();
 
     if (url != null && url.isNotEmpty) {
       if (url.startsWith('http')) return url;
@@ -129,9 +133,9 @@ class _FollowersScreenState extends State<FollowersScreen>
       _loadData();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
       }
     }
   }
@@ -184,15 +188,15 @@ class _FollowersScreenState extends State<FollowersScreen>
           ),
         ),
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : TabBarView(
-            controller: _tabController,
-            children: [
-              _buildList(_followers, 'followers'),
-              _buildList(_following, 'following'),
-            ],
-          ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _buildList(_followers, 'followers'),
+                _buildList(_following, 'following'),
+              ],
+            ),
     );
   }
 
@@ -200,7 +204,9 @@ class _FollowersScreenState extends State<FollowersScreen>
     if (users.isEmpty) {
       return Center(
         child: Text(
-          type == 'followers' ? 'Aucun follower' : 'Aucun utilisateur suivi',
+          type == 'followers'
+              ? "Vous n'avez aucun follower pour l'instant"
+              : "Vous ne suivez personne pour l'instant",
           style: const TextStyle(color: Colors.grey),
         ),
       );
@@ -210,7 +216,9 @@ class _FollowersScreenState extends State<FollowersScreen>
       children: [
         _buildSearchField(),
         Divider(color: Colors.grey[300]),
-        _buildSectionTitle(type == 'followers' ? 'Tous les followers' : 'Suivie(s)'),
+        _buildSectionTitle(
+          type == 'followers' ? 'Tous les followers' : 'Suivie(s)',
+        ),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -276,9 +284,11 @@ class _FollowersScreenState extends State<FollowersScreen>
             onTap: () => _navigateToProfile(userId, user),
             child: CircleAvatar(
               radius: 26,
-              backgroundImage: avatar.startsWith('http') 
-                ? NetworkImage(avatar) as ImageProvider
-                : AssetImage('assets/images/dashboard_particulier/Ellipse 10.png'),
+              backgroundImage: avatar.startsWith('http')
+                  ? NetworkImage(avatar) as ImageProvider
+                  : AssetImage(
+                      'assets/images/dashboard_particulier/Ellipse 10.png',
+                    ),
               backgroundColor: Colors.grey[200],
             ),
           ),
@@ -313,9 +323,9 @@ class _FollowersScreenState extends State<FollowersScreen>
           OutlinedButton(
             onPressed: () => _toggleFollow(user),
             style: OutlinedButton.styleFrom(
-              backgroundColor: isFollowing 
-                ? Colors.transparent 
-                : const Color(0xFF04BC7B).withOpacity(0.1),
+              backgroundColor: isFollowing
+                  ? Colors.transparent
+                  : const Color(0xFF04BC7B).withOpacity(0.1),
               foregroundColor: const Color(0xFF2E9B5B),
               side: const BorderSide(color: Color(0xFF2E9B5B)),
               padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -336,9 +346,9 @@ class _FollowersScreenState extends State<FollowersScreen>
   void _navigateToProfile(String userId, Map<String, dynamic> user) {
     // Check if user is Pro or Particulier
     final accountType = user['account_type']?.toString().toLowerCase();
-    final isProUser = accountType == 'pro' || 
-                      (user['pro_profile'] != null && 
-                       user['particulier_profile'] == null);
+    final isProUser =
+        accountType == 'pro' ||
+        (user['pro_profile'] != null && user['particulier_profile'] == null);
 
     if (isProUser) {
       // Navigate to Pro public view
