@@ -14,8 +14,18 @@ import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/screens/creer_formation_screen.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
+import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
+
+class _ReactionData {
+  int likesCount;
+  int commentsCount;
+  String? userReaction;
+  _ReactionData({this.likesCount = 0, this.commentsCount = 0, this.userReaction});
+}
 
 class TrainingDetailScreen extends StatefulWidget {
   final List<String> images;
@@ -1416,6 +1426,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           FormationTag(icon: Icons.euro, text: '$price €', isSpecial: true),
                       ];
 
+                      final tid = training['id']?.toString() ?? '';
                       return FormationCard(
                         companyLogo: training['company_logo']?.toString() ?? 'assets/images/Formation.png',
                         companyName: training['owner_name']?.toString() ?? 'Organisme',
@@ -1424,6 +1435,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         tags: tags,
                         timeAgo: _timeAgo(training['created_at']?.toString() ?? ''),
                         onApply: () => _navigateToSimilarTraining(training),
+                        reactionBar: tid.isNotEmpty
+                            ? Builder(builder: (ctx) {
+                                _seedReaction('trainings', tid, training);
+                                return _buildSimilarReactionBar('trainings', tid);
+                              })
+                            : null,
                       );
                     }).toList(),
                   ),
@@ -2066,6 +2083,100 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     );
   }
 
+  // --- Reaction infrastructure for similar items ---
+  final Map<String, _ReactionData> _reactions = {};
+  String _rKey(String s, String id) => '${s}_$id';
+  int _asInt(dynamic v) { if (v is int) return v; if (v is double) return v.toInt(); return int.tryParse(v?.toString() ?? '') ?? 0; }
+  _ReactionData _getReaction(String s, String id) => _reactions.putIfAbsent(_rKey(s, id), () => _ReactionData());
+  void _seedReaction(String s, String id, Map<String, dynamic> r) {
+    _reactions.putIfAbsent(_rKey(s, id), () => _ReactionData(likesCount: _asInt(r['likes_count']), commentsCount: _asInt(r['comments_count']), userReaction: r['user_reaction']?.toString()));
+  }
+  Future<void> _toggleReaction(String s, String id, String type) async {
+    final d = _getReaction(s, id);
+    final wasLiked = d.userReaction == 'like';
+    setState(() { if (wasLiked) { d.userReaction = null; if (d.likesCount > 0) d.likesCount--; } else { d.userReaction = 'like'; d.likesCount++; } });
+    try {
+      if (wasLiked) await ApiClient().authenticatedDelete('/$s/$id/reactions');
+      else await ApiClient().authenticatedPost('/$s/$id/reactions', body: {'type': type});
+      final res = await ApiClient().authenticatedGet('/$s/$id');
+      final data = res['data'] as Map<String, dynamic>?;
+      if (data != null && mounted) setState(() { _reactions[_rKey(s, id)] = _ReactionData(likesCount: _asInt(data['likes_count']), commentsCount: _asInt(data['comments_count']), userReaction: data['user_reaction']?.toString()); });
+    } catch (_) { setState(() { if (wasLiked) { d.userReaction = 'like'; d.likesCount++; } else { d.userReaction = null; if (d.likesCount > 0) d.likesCount--; } }); }
+  }
+  void _showEntityCommentsSheet(String s, String id) {
+    List<Map<String, dynamic>> comments = [];
+    bool isLoading = true;
+    final ctrl = TextEditingController();
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => StatefulBuilder(builder: (ctx, ms) {
+        if (isLoading && comments.isEmpty) {
+          ApiClient().authenticatedGet('/$s/$id/comments?per_page=50').then((res) {
+            final data = res['data'];
+            List<Map<String, dynamic>> fetched = [];
+            if (data is Map && data['data'] is List) fetched = List<Map<String, dynamic>>.from(data['data']);
+            else if (data is List) fetched = List<Map<String, dynamic>>.from(data);
+            ms(() { comments = fetched; isLoading = false; });
+          }).catchError((_) { ms(() => isLoading = false); });
+        }
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7, maxChildSize: 0.95, minChildSize: 0.3,
+          builder: (_, sc) => Container(
+            decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+            child: Column(children: [
+              const SizedBox(height: 12),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 8),
+              const Text('Commentaires', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Divider(),
+              Expanded(child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : comments.isEmpty
+                  ? const Center(child: Text('Aucun commentaire.'))
+                  : ListView.builder(controller: sc, itemCount: comments.length, itemBuilder: (_, i) => _buildCommentItem(comments[i]))),
+              Padding(
+                padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 8, left: 12, right: 12, top: 8),
+                child: Row(children: [
+                  Expanded(child: TextField(controller: ctrl, decoration: InputDecoration(hintText: 'Ajouter un commentaire...', border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)))),
+                  const SizedBox(width: 8),
+                  IconButton(icon: const Icon(Icons.send, color: Color(0xFF3AAE5E)), onPressed: () async {
+                    final text = ctrl.text.trim(); if (text.isEmpty) return;
+                    try {
+                      final res = await ApiClient().authenticatedPost('/$s/$id/comments', body: {'body': text});
+                      final nc = res['data'] as Map<String, dynamic>?;
+                      if (nc != null) { ms(() => comments.insert(0, nc)); setState(() => _getReaction(s, id).commentsCount++); }
+                      ctrl.clear(); FocusScope.of(ctx).unfocus();
+                    } catch (e) { if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Erreur: $e'))); }
+                  }),
+                ]),
+              ),
+            ]),
+          ),
+        );
+      }),
+    );
+  }
+  Widget _buildSimilarReactionBar(String s, String id) {
+    final d = _getReaction(s, id);
+    final isLiked = d.userReaction == 'like';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(children: [
+        GestureDetector(onTap: () => _toggleReaction(s, id, 'like'), child: Row(children: [
+          Icon(isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined, size: 18, color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500]),
+          const SizedBox(width: 4),
+          Text(d.likesCount.toString(), style: TextStyle(fontSize: 12, color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600], fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal)),
+        ])),
+        const SizedBox(width: 18),
+        GestureDetector(onTap: () => _showEntityCommentsSheet(s, id), child: Row(children: [
+          Icon(Icons.chat_bubble_outline, size: 17, color: Colors.grey[500]),
+          const SizedBox(width: 4),
+          Text(d.commentsCount.toString(), style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        ])),
+      ]),
+    );
+  }
+
   // Navigate to similar training detail
   Future<void> _navigateToSimilarTraining(Map<String, dynamic> training) async {
     final trainingId = training['id']?.toString();
@@ -2281,13 +2392,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   // Navigate to user profile
   void _navigateToUserProfile(BuildContext context) {
     if (widget.authorData != null && widget.authorData!['id'] != null) {
-      // TODO: Navigate to PublicProfileScreen if available
-      // Navigator.push(
-      //   context,
-      //   MaterialPageRoute(
-      //     builder: (_) => PublicProfileScreen(userId: widget.authorData!['id'].toString()),
-      //   ),
-      // );
+      final isPro = widget.authorData!['account_type']?.toString().toLowerCase() == 'pro';
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => isPro
+              ? ProPublicViewScreen(userId: widget.authorData!['id'].toString())
+              : ParticulierPublicViewScreen(userId: widget.authorData!['id'].toString()),
+        ),
+      );
     }
   }
 

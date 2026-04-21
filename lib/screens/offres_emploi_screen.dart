@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
-import 'package:myreklam/screens/public_profile_screen.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/widgets/app_layout.dart';
@@ -573,7 +573,7 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                 MaterialPageRoute(
                   builder: (context) => isProUser
                       ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : PublicProfileScreen(userId: user!['id'].toString()),
+                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
                 ),
               );
             }
@@ -1034,6 +1034,7 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     data.commentsCount++;
+                    ReactionCacheService.saveCommentsCount(apiSlug, entityId, data.commentsCount);
                   });
                 }
                 commentCtrl.clear();
@@ -1746,9 +1747,11 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
           : apiReaction;
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
+      final apiCommentsCount = _asInt(resource['comments_count']);
+      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(apiSlug, entityId);
       _reactions[key] = _ReactionData(
         likesCount: (cachedCount != null && cachedCount > apiCount) ? cachedCount : apiCount,
-        commentsCount: _asInt(resource['comments_count']),
+        commentsCount: (cachedCommentsCount != null && cachedCommentsCount > apiCommentsCount) ? cachedCommentsCount : apiCommentsCount,
         userReaction: userReaction,
       );
     }
@@ -1761,11 +1764,22 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
       if (data != null && mounted) {
         setState(() {
           final key = _reactionKey(apiSlug, entityId);
+          final apiLikesCount = _asInt(data['likes_count']);
+          final apiCommentsCount = _asInt(data['comments_count']);
+          final apiReaction = data['user_reaction']?.toString();
+          final currentData = _getReaction(apiSlug, entityId);
+          final preservedLikesCount = apiLikesCount > currentData.likesCount ? apiLikesCount : currentData.likesCount;
+          final preservedCommentsCount = apiCommentsCount > currentData.commentsCount ? apiCommentsCount : currentData.commentsCount;
+          final cachedReaction = ReactionCacheService.load(apiSlug, entityId);
+          final preservedReaction = currentData.userReaction ?? cachedReaction ?? apiReaction;
           _reactions[key] = _ReactionData(
-            likesCount: _asInt(data['likes_count']),
-            commentsCount: _asInt(data['comments_count']),
-            userReaction: data['user_reaction']?.toString(),
+            likesCount: preservedLikesCount,
+            commentsCount: preservedCommentsCount,
+            userReaction: preservedReaction,
           );
+          ReactionCacheService.saveCount(apiSlug, entityId, preservedLikesCount);
+          ReactionCacheService.saveCommentsCount(apiSlug, entityId, preservedCommentsCount);
+          ReactionCacheService.save(apiSlug, entityId, preservedReaction);
         });
       }
     } catch (e) {

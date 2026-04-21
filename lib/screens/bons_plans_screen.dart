@@ -2032,6 +2032,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
     // Extract name from profile or fallback to direct fields
     final name =
         profile?['company_name']?.toString() ??
+        profile?['pseudo']?.toString() ??
         '${profile?['first_name']?.toString() ?? ''} ${profile?['last_name']?.toString() ?? ''}'
             .trim();
 

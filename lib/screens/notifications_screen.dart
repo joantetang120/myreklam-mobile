@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/widgets/custom_bottom_bar.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:intl/intl.dart';
@@ -58,6 +59,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           _hasMorePages = false;
         }
         _unreadCount = response['unread_count'] ?? 0;
+        // Sync with bottom bar
+        CustomBottomBar.notificationCountNotifier.value = _unreadCount;
       }
     } catch (e) {
       debugPrint('Error loading notifications: $e');
@@ -98,6 +101,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         if (index != -1) {
           _notifications[index]['read_at'] = DateTime.now().toIso8601String();
           _unreadCount = (_unreadCount - 1).clamp(0, _unreadCount);
+          // Sync with bottom bar
+          CustomBottomBar.notificationCountNotifier.value = _unreadCount;
         }
       });
     } catch (e) {
@@ -113,6 +118,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           n['read_at'] = DateTime.now().toIso8601String();
         }
         _unreadCount = 0;
+        // Sync with bottom bar
+        CustomBottomBar.notificationCountNotifier.value = 0;
       });
     } catch (e) {
       debugPrint('Error marking all as read: $e');

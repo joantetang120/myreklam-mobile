@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/services/profile_service.dart';
-import 'package:myreklam/screens/public_profile_screen.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/config/api_config.dart';
 
 class SuggestedUsersScreen extends StatefulWidget {
@@ -152,7 +152,7 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => PublicProfileScreen(
+                                        builder: (context) => ParticulierPublicViewScreen(
                                           userId: user['id'].toString(),
                                         ),
                                       ),
