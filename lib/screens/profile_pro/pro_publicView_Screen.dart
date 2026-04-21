@@ -10,6 +10,7 @@ import 'package:myreklam/screens/image_preview_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_profileEntreprise_screen.dart';
 import 'package:myreklam/screens/public_profile_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
@@ -1401,7 +1402,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     data.commentsCount++;
-                    ReactionCacheService.saveCommentsCount(apiSlug, entityId, data.commentsCount);
+                    ReactionCacheService.saveCommentsCount(
+                      apiSlug,
+                      entityId,
+                      data.commentsCount,
+                    );
                   });
                 }
                 commentCtrl.clear();
@@ -2073,12 +2078,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
       final apiCommentsCount = _asInt(resource['comments_count']);
-      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(apiSlug, entityId);
+      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(
+        apiSlug,
+        entityId,
+      );
       _reactions[key] = _ReactionData(
         likesCount: (cachedCount != null && cachedCount > apiCount)
             ? cachedCount
             : apiCount,
-        commentsCount: (cachedCommentsCount != null && cachedCommentsCount > apiCommentsCount) ? cachedCommentsCount : apiCommentsCount,
+        commentsCount:
+            (cachedCommentsCount != null &&
+                cachedCommentsCount > apiCommentsCount)
+            ? cachedCommentsCount
+            : apiCommentsCount,
         userReaction: userReaction,
       );
     }
@@ -2097,17 +2109,31 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           final apiCommentsCount = _asInt(data['comments_count']);
           final apiReaction = data['user_reaction']?.toString();
           final currentData = _getReaction(apiSlug, entityId);
-          final preservedLikesCount = apiLikesCount > currentData.likesCount ? apiLikesCount : currentData.likesCount;
-          final preservedCommentsCount = apiCommentsCount > currentData.commentsCount ? apiCommentsCount : currentData.commentsCount;
+          final preservedLikesCount = apiLikesCount > currentData.likesCount
+              ? apiLikesCount
+              : currentData.likesCount;
+          final preservedCommentsCount =
+              apiCommentsCount > currentData.commentsCount
+              ? apiCommentsCount
+              : currentData.commentsCount;
           final cachedReaction = ReactionCacheService.load(apiSlug, entityId);
-          final preservedReaction = currentData.userReaction ?? cachedReaction ?? apiReaction;
+          final preservedReaction =
+              currentData.userReaction ?? cachedReaction ?? apiReaction;
           _reactions[key] = _ReactionData(
             likesCount: preservedLikesCount,
             commentsCount: preservedCommentsCount,
             userReaction: preservedReaction,
           );
-          ReactionCacheService.saveCount(apiSlug, entityId, preservedLikesCount);
-          ReactionCacheService.saveCommentsCount(apiSlug, entityId, preservedCommentsCount);
+          ReactionCacheService.saveCount(
+            apiSlug,
+            entityId,
+            preservedLikesCount,
+          );
+          ReactionCacheService.saveCommentsCount(
+            apiSlug,
+            entityId,
+            preservedCommentsCount,
+          );
           ReactionCacheService.save(apiSlug, entityId, preservedReaction);
         });
       }
@@ -3533,7 +3559,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 MaterialPageRoute(
                   builder: (context) => isProUser
                       ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
+                      : ParticulierPublicViewScreen(
+                          userId: user!['id'].toString(),
+                        ),
                 ),
               );
             }
@@ -4536,7 +4564,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 MaterialPageRoute(
                   builder: (context) => isProUser
                       ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
+                      : ParticulierPublicViewScreen(
+                          userId: user!['id'].toString(),
+                        ),
                 ),
               );
             }
@@ -4867,7 +4897,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 MaterialPageRoute(
                   builder: (context) => isProUser
                       ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
+                      : ParticulierPublicViewScreen(
+                          userId: user!['id'].toString(),
+                        ),
                 ),
               );
             }
