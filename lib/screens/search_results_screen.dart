@@ -320,9 +320,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     final resp = await ApiClient().get('/search?$qs');
 
     final data = resp['data'] as Map<String, dynamic>? ?? {};
+    final currentUserId = UserSession().id;
     if (mounted) {
       setState(() {
-        _userResults = List<Map<String, dynamic>>.from(data['users'] ?? []);
+        final allUsers = List<Map<String, dynamic>>.from(data['users'] ?? []);
+        // Filter out current user from results
+        _userResults = allUsers.where((user) => user['id']?.toString() != currentUserId).toList();
         final total = data['meta']?['total'] ?? 0;
         _usersTotal = total is int ? total : int.tryParse(total.toString()) ?? 0;
       });
@@ -1433,6 +1436,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     final avatar = _resolveUrl(user['avatar']?.toString());
     final accountType = user['account_type']?.toString() ?? 'particulier';
     final ville = user['ville']?.toString();
+    final isFollowing = user['is_following'] == true;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -1474,6 +1478,25 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 ),
               ),
             ),
+            if (isFollowing) ...[
+              const SizedBox(width: 6),
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE3F2FD),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'Suivi',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2196F3),
+                  ),
+                ),
+              ),
+            ],
             if (ville != null && ville.isNotEmpty) ...[
               const SizedBox(width: 8),
               Padding(
