@@ -371,16 +371,20 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       }
 
       final docs = decoded['data'] as List? ?? [];
-      setState(() {
-        _candidateDocuments = List<Map<String, dynamic>>.from(docs);
-        _isLoadingCandidateDocs = false;
-      });
+      if (mounted) {
+        setState(() {
+          _candidateDocuments = List<Map<String, dynamic>>.from(docs);
+          _isLoadingCandidateDocs = false;
+        });
+      }
     } catch (e) {
       debugPrint('Error loading candidate documents: $e');
-      setState(() {
-        _candidateDocsError = 'Impossible de charger les documents.';
-        _isLoadingCandidateDocs = false;
-      });
+      if (mounted) {
+        setState(() {
+          _candidateDocsError = 'Impossible de charger les documents.';
+          _isLoadingCandidateDocs = false;
+        });
+      }
     }
   }
 
@@ -676,6 +680,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       final savedData = prefs.getString(_draftKey);
       if (savedData == null) return;
       final formData = jsonDecode(savedData) as Map<String, dynamic>;
+      if (!mounted) return;
       setState(() {
         _currentStep = formData['step'] ?? 0;
         _selectedCategory = formData['category'];
@@ -945,60 +950,64 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         convertedNatures.add(stringNature);
       }
 
-      setState(() {
-        _natureOptions = convertedNatures;
-        print("Filtered nature for $userRole: $_natureOptions");
-        _categoryCodeToId
-          ..clear()
-          ..addAll(parsedCodeToId);
-        _subsByParentId
-          ..clear()
-          ..addAll(parsedSubs);
-        _isCategoryLoading = false;
-        // In edit mode, re-populate type options from the now-loaded categories
-        if (_isEditMode && _selectedCategory != null) {
-          // Validate _selectedCategory exists in loaded nature options
-          final hasNatureCode = parsedNatures.any(
-            (o) => o['code'] == _selectedCategory,
-          );
-          if (!hasNatureCode) {
-            // Fallback: try matching by label (API may return label instead of code)
-            final matchByLabel = parsedNatures.firstWhere(
-              (o) => o['label'] == _selectedCategory,
-              orElse: () => {},
+      if (mounted) {
+        setState(() {
+          _natureOptions = convertedNatures;
+          print("Filtered nature for $userRole: $_natureOptions");
+          _categoryCodeToId
+            ..clear()
+            ..addAll(parsedCodeToId);
+          _subsByParentId
+            ..clear()
+            ..addAll(parsedSubs);
+          _isCategoryLoading = false;
+          // In edit mode, re-populate type options from the now-loaded categories
+          if (_isEditMode && _selectedCategory != null) {
+            // Validate _selectedCategory exists in loaded nature options
+            final hasNatureCode = parsedNatures.any(
+              (o) => o['code'] == _selectedCategory,
             );
-            if (matchByLabel.containsKey('code')) {
-              _selectedCategory = matchByLabel['code'];
-            }
-          }
-          _typeOptions = _getSubCategoriesForCode(_selectedCategory);
-          // Validate _selectedType exists in loaded options
-          if (_selectedType != null && _typeOptions.isNotEmpty) {
-            final hasCode = _typeOptions.any((o) => o['code'] == _selectedType);
-            if (!hasCode) {
+            if (!hasNatureCode) {
               // Fallback: try matching by label (API may return label instead of code)
-              final matchByLabel = _typeOptions.firstWhere(
-                (o) => o['label'] == _selectedType,
+              final matchByLabel = parsedNatures.firstWhere(
+                (o) => o['label'] == _selectedCategory,
                 orElse: () => {},
               );
               if (matchByLabel.containsKey('code')) {
-                _selectedType = matchByLabel['code'];
-              } else {
-                _selectedType = null;
+                _selectedCategory = matchByLabel['code'];
               }
             }
+            _typeOptions = _getSubCategoriesForCode(_selectedCategory);
+            // Validate _selectedType exists in loaded options
+            if (_selectedType != null && _typeOptions.isNotEmpty) {
+              final hasCode = _typeOptions.any((o) => o['code'] == _selectedType);
+              if (!hasCode) {
+                // Fallback: try matching by label (API may return label instead of code)
+                final matchByLabel = _typeOptions.firstWhere(
+                  (o) => o['label'] == _selectedType,
+                  orElse: () => {},
+                );
+                if (matchByLabel.containsKey('code')) {
+                  _selectedType = matchByLabel['code'];
+                } else {
+                  _selectedType = null;
+                }
+              }
+            }
+          } else {
+            _typeOptions = [];
           }
-        } else {
-          _typeOptions = [];
-        }
-      });
+        });
+      }
     } catch (e) {
       debugPrint('Error loading demande categories: $e');
-      setState(() {
-        _categoryLoadError =
-            'Impossible de charger les natures. Veuillez réessayer.';
-        _isCategoryLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _categoryLoadError =
+              'Impossible de charger les natures. Veuillez réessayer.';
+          _isCategoryLoading = false;
+        });
+      }
     }
   }
 
@@ -1273,23 +1282,27 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         });
       }
 
-      setState(() {
-        _jobSecteursOptions = parsedSecteurs;
-        _jobSecteursCodeToId
-          ..clear()
-          ..addAll(parsedCodeToId);
-        _jobFonctionsByParentId
-          ..clear()
-          ..addAll(parsedFonctions);
-        _isJobCategoriesLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _jobSecteursOptions = parsedSecteurs;
+          _jobSecteursCodeToId
+            ..clear()
+            ..addAll(parsedCodeToId);
+          _jobFonctionsByParentId
+            ..clear()
+            ..addAll(parsedFonctions);
+          _isJobCategoriesLoading = false;
+        });
+      }
     } catch (e) {
       debugPrint('Error loading job categories: $e');
-      setState(() {
-        _jobCategoriesLoadError =
-            'Impossible de charger les secteurs d\'activité.';
-        _isJobCategoriesLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _jobCategoriesLoadError =
+              'Impossible de charger les secteurs d\'activité.';
+          _isJobCategoriesLoading = false;
+        });
+      }
     }
   }
 
@@ -1382,24 +1395,28 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         }
       }
 
-      setState(() {
-        _trainingCategoriesOptions = parsedCategories;
-        _trainingCategoryCodeToId
-          ..clear()
-          ..addAll(parsedCodeToId);
-        _trainingSecteursByParentId
-          ..clear()
-          ..addAll(parsedSecteursByParentId);
-        _trainingTypesOptions = parsedTypes;
-        _isTrainingCategoriesLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _trainingCategoriesOptions = parsedCategories;
+          _trainingCategoryCodeToId
+            ..clear()
+            ..addAll(parsedCodeToId);
+          _trainingSecteursByParentId
+            ..clear()
+            ..addAll(parsedSecteursByParentId);
+          _trainingTypesOptions = parsedTypes;
+          _isTrainingCategoriesLoading = false;
+        });
+      }
     } catch (e) {
       debugPrint('Error loading training categories: $e');
-      setState(() {
-        _trainingCategoriesLoadError =
-            'Impossible de charger les catégories de formation.';
-        _isTrainingCategoriesLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _trainingCategoriesLoadError =
+              'Impossible de charger les catégories de formation.';
+          _isTrainingCategoriesLoading = false;
+        });
+      }
     }
   }
 

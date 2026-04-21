@@ -9,7 +9,7 @@ import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/formation_card.dart' show FormationCard, FormationTag;
 import 'package:myreklam/widgets/job_announcement_card.dart' show JobAnnouncementCard, JobDetailTag;
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
-import 'package:myreklam/screens/public_profile_screen.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
@@ -91,9 +91,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           : apiReaction;
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
+      final apiCommentsCount = _asInt(resource['comments_count']);
+      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(apiSlug, entityId);
       _reactions[key] = _ReactionData()
         ..likesCount = (cachedCount != null && cachedCount > apiCount) ? cachedCount : apiCount
-        ..commentsCount = _asInt(resource['comments_count'])
+        ..commentsCount = (cachedCommentsCount != null && cachedCommentsCount > apiCommentsCount) ? cachedCommentsCount : apiCommentsCount
         ..userReaction = userReaction;
     }
   }
@@ -544,6 +546,32 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       return _resolveUrl(url);
     }).where((url) => url.isNotEmpty).toList();
 
+    // Extract owner info from user data
+    // Feed API returns nested user object; Search API returns flat author_* fields
+    final user = bp['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile = user?['particulier_profile'] as Map<String, dynamic>?;
+    final ownerId = user?['id']?.toString() ?? bp['author_id']?.toString();
+    // display_name is computed server-side: company_name for pro, pseudo for particulier
+    final ownerName = user?['display_name']?.toString() ??
+        proProfile?['company_name']?.toString() ??
+        proProfile?['pseudo']?.toString() ??
+        particulierProfile?['pseudo']?.toString() ??
+        particulierProfile?['company_name']?.toString() ??
+        bp['author_name']?.toString() ??
+        user?['name']?.toString() ??
+        'Utilisateur';
+    // avatar_url is computed server-side: logo_url for pro, avatar_url for particulier
+    final ownerAvatar = user?['avatar_url']?.toString() ??
+        proProfile?['logo_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        particulierProfile?['avatar_url']?.toString() ??
+        bp['author_avatar']?.toString() ??
+        user?['avatar']?.toString() ??
+        '';
+    final accountTypeStr = user?['account_type']?.toString() ?? bp['author_type']?.toString() ?? '';
+    final isPro = accountTypeStr.toLowerCase() == 'pro';
+
     // Check if already favorited
     final favoris = bp['bon_plan_favorites'] as List? ?? [];
     final currentUserId = UserSession().id;
@@ -646,7 +674,53 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   if (bpId.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _buildReactionBar('bon-plans', bpId, acceptedMessages: bp['accept_messages'] == true, authorData: bp['user'] as Map<String, dynamic>?),
+                      child: Row(
+                        children: [
+                          // Reaction bar on the left
+                          Expanded(
+                            child: _buildReactionBar('bon-plans', bpId, acceptedMessages: false),
+                          ),
+                          // Owner avatar and name on the right
+                          GestureDetector(
+                            onTap: () {
+                              if (ownerId != null) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => isPro
+                                        ? ProPublicViewScreen(userId: ownerId)
+                                        : ParticulierPublicViewScreen(userId: ownerId),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircleAvatar(
+                                  radius: 14,
+                                  backgroundColor: Colors.grey[300],
+                                  backgroundImage: ownerAvatar.isNotEmpty
+                                      ? (ownerAvatar.startsWith('http')
+                                          ? NetworkImage(ownerAvatar)
+                                          : NetworkImage(ApiConfig.resolveMediaUrl(ownerAvatar) ?? ''))
+                                      : null,
+                                  child: ownerAvatar.isEmpty
+                                      ? Icon(isPro ? Icons.business : Icons.person, size: 14, color: Colors.white)
+                                      : null,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  ownerName,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF333333)),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   const SizedBox(height: 10),
                   const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Divider(height: 1)),
@@ -1065,7 +1139,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     final isPro = user['account_type']?.toString().toLowerCase() == 'pro';
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => isPro ? ProPublicViewScreen(userId: userId) : PublicProfileScreen(userId: userId)),
+      MaterialPageRoute(builder: (_) => isPro ? ProPublicViewScreen(userId: userId) : ParticulierPublicViewScreen(userId: userId)),
     );
   }
 

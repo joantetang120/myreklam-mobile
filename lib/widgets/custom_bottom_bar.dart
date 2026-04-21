@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/profile_service.dart';
+import 'package:myreklam/services/api_client.dart';
 
 class CustomBottomBar extends StatefulWidget {
   final int currentIndex;
@@ -12,6 +13,12 @@ class CustomBottomBar extends StatefulWidget {
   
   /// Global notifier to trigger avatar reload from backend
   static final ValueNotifier<bool> refreshAvatarNotifier = ValueNotifier<bool>(false);
+
+  /// Global notifier for notification count
+  static final ValueNotifier<int> notificationCountNotifier = ValueNotifier<int>(0);
+
+  /// Global notifier to trigger notification count refresh
+  static final ValueNotifier<bool> refreshNotificationNotifier = ValueNotifier<bool>(false);
 
   const CustomBottomBar({
     super.key,
@@ -25,20 +32,49 @@ class CustomBottomBar extends StatefulWidget {
 
 class _CustomBottomBarState extends State<CustomBottomBar> {
   String? _avatarUrl;
+  int _unreadNotifCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadAvatar();
+    _loadUnreadCount();
     CustomBottomBar.avatarNotifier.addListener(_onAvatarChanged);
     CustomBottomBar.refreshAvatarNotifier.addListener(_onRefreshAvatar);
+    CustomBottomBar.notificationCountNotifier.addListener(_onNotificationCountChanged);
+    CustomBottomBar.refreshNotificationNotifier.addListener(_onRefreshNotificationCount);
   }
 
   @override
   void dispose() {
     CustomBottomBar.avatarNotifier.removeListener(_onAvatarChanged);
     CustomBottomBar.refreshAvatarNotifier.removeListener(_onRefreshAvatar);
+    CustomBottomBar.notificationCountNotifier.removeListener(_onNotificationCountChanged);
+    CustomBottomBar.refreshNotificationNotifier.removeListener(_onRefreshNotificationCount);
     super.dispose();
+  }
+
+  void _onNotificationCountChanged() {
+    if (!mounted) return;
+    setState(() {
+      _unreadNotifCount = CustomBottomBar.notificationCountNotifier.value;
+    });
+  }
+
+  void _onRefreshNotificationCount() {
+    if (!mounted) return;
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final response = await ApiClient().authenticatedGet('/notifications/unread-count');
+      if (mounted && response['success'] == true) {
+        final count = response['unread_count'] ?? 0;
+        setState(() => _unreadNotifCount = count);
+        CustomBottomBar.notificationCountNotifier.value = count;
+      }
+    } catch (_) {}
   }
 
   void _onAvatarChanged() {
@@ -193,37 +229,69 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-            Container(
-              padding: const EdgeInsets.all(3),
-              child: Container(
-                width: 35,
-                height: 35,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.grey[300],
-                  border: Border.all(
-                    color: isSelected
-                        ? const Color(0xFF2E9B5B)
-                        : Colors.transparent,
-                    width: 2,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  child: Container(
+                    width: 35,
+                    height: 35,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.grey[300],
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFF2E9B5B)
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                      image: _avatarUrl != null
+                          ? DecorationImage(
+                              image: _avatarUrl!.startsWith('http')
+                                  ? NetworkImage(_avatarUrl!)
+                                  : NetworkImage(ApiConfig.resolveMediaUrl(_avatarUrl!) ?? ''),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                    ),
+                    child: _avatarUrl == null
+                        ? Icon(
+                            UserSession().isPro ? Icons.business : Icons.person,
+                            size: 20,
+                            color: Colors.white,
+                          )
+                        : null,
                   ),
-                  image: _avatarUrl != null
-                      ? DecorationImage(
-                          image: _avatarUrl!.startsWith('http')
-                              ? NetworkImage(_avatarUrl!)
-                              : NetworkImage(ApiConfig.resolveMediaUrl(_avatarUrl!) ?? ''),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
                 ),
-                child: _avatarUrl == null
-                    ? Icon(
-                        UserSession().isPro ? Icons.business : Icons.person,
-                        size: 20,
-                        color: Colors.white,
-                      )
-                    : null,
-              ),
+                if (_unreadNotifCount > 0)
+                  Positioned(
+                    top: -2,
+                    right: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                        border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 1.5)),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Center(
+                        child: Text(
+                          _unreadNotifCount > 99 ? '99+' : '$_unreadNotifCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             Text(
               'Vous',

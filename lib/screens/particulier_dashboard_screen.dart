@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:myreklam/main.dart' show routeObserver;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/widgets/avatars_story.dart';
@@ -29,7 +30,7 @@ import 'package:myreklam/services/story_store.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/screens/image_preview_screen.dart';
-import 'package:myreklam/screens/public_profile_screen.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/screens/suggested_users_screen.dart';
@@ -595,7 +596,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                         ? ProPublicViewScreen(
                                             userId: widget.author.id,
                                           )
-                                        : PublicProfileScreen(
+                                        : ParticulierPublicViewScreen(
                                             userId: widget.author.id,
                                           ),
                                   ),
@@ -637,7 +638,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                               ? ProPublicViewScreen(
                                                   userId: widget.author.id,
                                                 )
-                                              : PublicProfileScreen(
+                                              : ParticulierPublicViewScreen(
                                                   userId: widget.author.id,
                                                 ),
                                         ),
@@ -899,7 +900,7 @@ class _ReactionData {
 }
 
 class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, RouteAware {
   static const LinearGradient greenGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
@@ -1284,7 +1285,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                 ? ProPublicViewScreen(
                                     userId: user['id'].toString(),
                                   )
-                                : PublicProfileScreen(
+                                : ParticulierPublicViewScreen(
                                     userId: user['id'].toString(),
                                   ),
                           ),
@@ -1379,8 +1380,31 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     }
   }
 
+  // dispose is now defined above with routeObserver.unsubscribe
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App came to foreground
+      debugPrint('App resumed - refreshing user data');
+      _prefetchCurrentUser(forceRefresh: true);
+      _syncReactionsFromCache();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Subscribe to route observer
+    final modalRoute = ModalRoute.of(context);
+    if (modalRoute is PageRoute) {
+      routeObserver.subscribe(this, modalRoute);
+    }
+  }
+
   @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     ParticulierDashboardScreen.refreshMysNotifier.removeListener(
       _onRefreshMysRequested,
     );
@@ -1391,12 +1415,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // App came to foreground
-      debugPrint('App resumed - refreshing user data');
-      _prefetchCurrentUser(forceRefresh: true);
-    }
+  void didPopNext() {
+    // Called when returning to this screen from another route
+    debugPrint('Dashboard didPopNext - syncing reactions from cache');
+    _syncReactionsFromCache();
   }
 
   Future<void> _handleStoryEntryTap() async {
@@ -2269,7 +2291,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 MaterialPageRoute(
                   builder: (context) => isProUser
                       ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : PublicProfileScreen(userId: user!['id'].toString()),
+                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
                 ),
               );
             }
@@ -2577,7 +2599,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 MaterialPageRoute(
                   builder: (context) => isProUser
                       ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : PublicProfileScreen(userId: user!['id'].toString()),
+                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
                 ),
               );
             }
@@ -2782,7 +2804,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             MaterialPageRoute(
               builder: (context) => isProUser
                   ? ProPublicViewScreen(userId: user!['id'].toString())
-                  : PublicProfileScreen(userId: user!['id'].toString()),
+                  : ParticulierPublicViewScreen(userId: user!['id'].toString()),
             ),
           );
         }
@@ -2959,7 +2981,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 MaterialPageRoute(
                   builder: (context) => isProUser
                       ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : PublicProfileScreen(userId: user!['id'].toString()),
+                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
                 ),
               );
             }
@@ -3483,14 +3505,47 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           : apiReaction;
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
+      final apiCommentsCount = _asInt(resource['comments_count']);
+      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(apiSlug, entityId);
       _reactions[key] = _ReactionData(
         likesCount: (cachedCount != null && cachedCount > apiCount)
             ? cachedCount
             : apiCount,
-        commentsCount: _asInt(resource['comments_count']),
+        commentsCount: (cachedCommentsCount != null && cachedCommentsCount > apiCommentsCount)
+            ? cachedCommentsCount
+            : apiCommentsCount,
         userReaction: userReaction,
       );
     }
+  }
+
+  // Sync all existing reactions from cache (call when screen becomes visible)
+  void _syncReactionsFromCache() {
+    setState(() {
+      for (final entry in _reactions.entries) {
+        final key = entry.key;
+        final data = entry.value;
+        // Parse apiSlug and entityId from key (format: "apiSlug_entityId")
+        final underscoreIdx = key.lastIndexOf('_');
+        if (underscoreIdx == -1) continue;
+        final apiSlug = key.substring(0, underscoreIdx);
+        final entityId = key.substring(underscoreIdx + 1);
+        // Update from cache if cached count is higher
+        final cachedLikes = ReactionCacheService.loadCount(apiSlug, entityId);
+        final cachedComments = ReactionCacheService.loadCommentsCount(apiSlug, entityId);
+        if (cachedLikes != null && cachedLikes > data.likesCount) {
+          data.likesCount = cachedLikes;
+        }
+        if (cachedComments != null && cachedComments > data.commentsCount) {
+          data.commentsCount = cachedComments;
+        }
+        // Also sync reaction type
+        final cachedReaction = ReactionCacheService.load(apiSlug, entityId);
+        if (cachedReaction != null) {
+          data.userReaction = cachedReaction;
+        }
+      }
+    });
   }
 
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
@@ -3502,11 +3557,30 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       if (data != null && mounted) {
         setState(() {
           final key = _reactionKey(apiSlug, entityId);
+          final apiLikesCount = _asInt(data['likes_count']);
+          final apiCommentsCount = _asInt(data['comments_count']);
+          final apiReaction = data['user_reaction']?.toString();
+          // Get current in-memory data (may have local optimistic updates)
+          final currentData = _getReaction(apiSlug, entityId);
+          // Use max of API count and current count (don't let stale API overwrite local)
+          final preservedLikesCount = apiLikesCount > currentData.likesCount
+              ? apiLikesCount
+              : currentData.likesCount;
+          final preservedCommentsCount = apiCommentsCount > currentData.commentsCount
+              ? apiCommentsCount
+              : currentData.commentsCount;
+          // Preserve local reaction state if set, otherwise use API value
+          final cachedReaction = ReactionCacheService.load(apiSlug, entityId);
+          final preservedReaction = currentData.userReaction ?? cachedReaction ?? apiReaction;
           _reactions[key] = _ReactionData(
-            likesCount: _asInt(data['likes_count']),
-            commentsCount: _asInt(data['comments_count']),
-            userReaction: data['user_reaction']?.toString(),
+            likesCount: preservedLikesCount,
+            commentsCount: preservedCommentsCount,
+            userReaction: preservedReaction,
           );
+          // Save the preserved values to cache
+          ReactionCacheService.saveCount(apiSlug, entityId, preservedLikesCount);
+          ReactionCacheService.saveCommentsCount(apiSlug, entityId, preservedCommentsCount);
+          ReactionCacheService.save(apiSlug, entityId, preservedReaction);
         });
       }
     } catch (e) {
@@ -3637,6 +3711,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     // Extract name from profile or fallback to direct fields
     final name =
         profile?['company_name']?.toString() ??
+        profile?['pseudo']?.toString() ??
         '${profile?['first_name']?.toString() ?? ''} ${profile?['last_name']?.toString() ?? ''}'
             .trim();
 
@@ -3935,6 +4010,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     data.commentsCount++;
+                    ReactionCacheService.saveCommentsCount(apiSlug, entityId, data.commentsCount);
                   });
                 }
                 commentCtrl.clear();
@@ -4174,6 +4250,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   ? 'Vous'
                   : (user['display_name']?.toString() ??
                         user['name']?.toString() ??
+                        (user['particulier_profile'] as Map<String, dynamic>?)?['pseudo']?.toString() ??
+                        (user['pro_profile'] as Map<String, dynamic>?)?['company_name']?.toString() ??
                         email.split('@').first);
               final body = comment['body']?.toString() ?? '';
               final createdAt = comment['created_at']?.toString();
