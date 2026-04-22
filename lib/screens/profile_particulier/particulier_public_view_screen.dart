@@ -9,6 +9,7 @@ import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/screens/image_preview_screen.dart';
 import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
+import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/profile_service.dart';
@@ -26,11 +27,13 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 class _ReactionData {
   int likesCount;
   int commentsCount;
+  int repostsCount;
   String? userReaction; // 'like' or null
 
   _ReactionData({
     this.likesCount = 0,
     this.commentsCount = 0,
+    this.repostsCount = 0,
     this.userReaction,
   });
 }
@@ -59,6 +62,8 @@ bool _isVideoUrl(String url) {
 class _PostCardWidget extends StatefulWidget {
   final String postId;
   final bool isRepost;
+  final bool isQuoteRepost;
+  final String? repostContent;
   final _PostAuthorInfo reposter;
   final _PostAuthorInfo author;
   final String content;
@@ -71,6 +76,8 @@ class _PostCardWidget extends StatefulWidget {
   const _PostCardWidget({
     required this.postId,
     required this.isRepost,
+    this.isQuoteRepost = false,
+    this.repostContent,
     required this.reposter,
     required this.author,
     required this.content,
@@ -89,12 +96,94 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
   bool _isExpanded = false;
   static const int _collapsedMaxLength = 150;
 
+  Widget _buildAuthorRow(_PostAuthorInfo authorInfo) {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () {
+            final userId = authorInfo.id;
+            if (userId != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      authorInfo.accountType.toLowerCase() == 'professionnel'
+                      ? ProPublicViewScreen(userId: userId)
+                      : ParticulierPublicViewScreen(userId: userId),
+                ),
+              );
+            }
+          },
+          child: CircleAvatar(
+            radius: 20,
+            backgroundImage: authorInfo.avatar.startsWith('http')
+                ? NetworkImage(authorInfo.avatar) as ImageProvider
+                : authorInfo.avatar.startsWith('assets/')
+                ? AssetImage(authorInfo.avatar)
+                : NetworkImage(
+                        ApiConfig.resolveMediaUrl(authorInfo.avatar) ?? '',
+                      )
+                      as ImageProvider,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  final userId = authorInfo.id;
+                  if (userId != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            authorInfo.accountType.toLowerCase() ==
+                                'professionnel'
+                            ? ProPublicViewScreen(userId: userId)
+                            : ParticulierPublicViewScreen(userId: userId),
+                      ),
+                    );
+                  }
+                },
+                child: Text(
+                  authorInfo.displayName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Color(0xFF333333),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                '${authorInfo.accountType} • ${widget.timeAgo}',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final needsCollapse = widget.content.length > _collapsedMaxLength;
-    final displayContent = !_isExpanded && needsCollapse
-        ? '${widget.content.substring(0, _collapsedMaxLength)}...'
+    // For quote reposts, show the repost_content as main text
+    final mainContent = widget.isQuoteRepost
+        ? (widget.repostContent ?? '')
         : widget.content;
+    final needsCollapse = mainContent.length > _collapsedMaxLength;
+    final displayContent = !_isExpanded && needsCollapse
+        ? '${mainContent.substring(0, _collapsedMaxLength)}...'
+        : mainContent;
+
+    // For quote repost, the author row shows the reposter; for simple repost, it shows the original author
+    final displayAuthor = widget.isQuoteRepost
+        ? widget.reposter
+        : widget.author;
 
     return InkWell(
       onTap: () {
@@ -130,150 +219,231 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
             ),
           ],
         ),
-        child: Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header with author info
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Repost header if applicable
-                      if (widget.isRepost) ...[
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.repeat_rounded,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                '${widget.reposter.displayName} a republié ceci',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+            // Header with author info
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Repost header if applicable (simple repost only)
+                  if (widget.isRepost && !widget.isQuoteRepost) ...[
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(color: Colors.grey[200]!),
                         ),
-                        const SizedBox(height: 8),
-                      ],
-                      // Author row
-                      Row(
+                      ),
+                      padding: EdgeInsets.only(bottom: 4),
+                      child: Row(
                         children: [
-                          GestureDetector(
-                            onTap: () {},
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundImage:
-                                  widget.author.avatar.startsWith('http')
-                                  ? NetworkImage(widget.author.avatar)
-                                        as ImageProvider
-                                  : widget.author.avatar.startsWith('assets/')
-                                  ? AssetImage(widget.author.avatar)
-                                  : NetworkImage(
-                                          ApiConfig.resolveMediaUrl(
-                                                widget.author.avatar,
-                                              ) ??
-                                              '',
-                                        )
-                                        as ImageProvider,
-                            ),
+                          Icon(
+                            Icons.repeat_rounded,
+                            size: 14,
+                            color: Colors.grey[600],
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 6),
+                          CircleAvatar(
+                            radius: 10,
+                            backgroundImage:
+                                widget.reposter.avatar.startsWith('http')
+                                ? NetworkImage(widget.reposter.avatar)
+                                : widget.reposter.avatar.startsWith('assets/')
+                                ? AssetImage(widget.reposter.avatar)
+                                      as ImageProvider
+                                : NetworkImage(
+                                    ApiConfig.resolveMediaUrl(
+                                          widget.reposter.avatar,
+                                        ) ??
+                                        '',
+                                  ),
+                          ),
+                          const SizedBox(width: 6),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                GestureDetector(
-                                  onTap: () {},
-                                  child: Text(
-                                    widget.author.displayName,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                      color: Color(0xFF333333),
+                            child: RichText(
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: widget.reposter.displayName,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[800],
+                                      fontWeight: FontWeight.w700,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                                Text(
-                                  '${widget.author.accountType} • ${widget.timeAgo}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
+                                  TextSpan(
+                                    text: ' a republié ce contenu',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  // Author row
+                  _buildAuthorRow(displayAuthor),
+                ],
+              ),
+            ),
+            // Main content text (repost_content for quote, original content for simple/original)
+            if (mainContent.isNotEmpty && !widget.isQuoteRepost) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayContent,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF333333),
+                        height: 1.4,
+                      ),
+                    ),
+                    if (needsCollapse)
+                      GestureDetector(
+                        onTap: () => setState(() => _isExpanded = !_isExpanded),
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            _isExpanded ? '...moins' : '...plus',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+            // Quote repost: show repost_content then embedded original post
+            if (widget.isQuoteRepost) ...[
+              if (mainContent.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    displayContent,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF333333),
+                      height: 1.4,
+                    ),
                   ),
                 ),
-                // Content text
-                if (widget.content.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          displayContent,
+              ],
+              // Embedded original post card
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Original author info
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 14,
+                            backgroundImage:
+                                widget.author.avatar.startsWith('http')
+                                ? NetworkImage(widget.author.avatar)
+                                      as ImageProvider
+                                : widget.author.avatar.startsWith('assets/')
+                                ? AssetImage(widget.author.avatar)
+                                : NetworkImage(
+                                        ApiConfig.resolveMediaUrl(
+                                              widget.author.avatar,
+                                            ) ??
+                                            '',
+                                      )
+                                      as ImageProvider,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${widget.author.displayName} • ${widget.timeAgo}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Original content
+                    if (widget.content.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                        child: Text(
+                          widget.content.length > 200
+                              ? '${widget.content.substring(0, 200)}...'
+                              : widget.content,
                           style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF333333),
+                            fontSize: 13,
+                            color: Color(0xFF555555),
                             height: 1.4,
                           ),
                         ),
-                        if (needsCollapse)
-                          GestureDetector(
-                            onTap: () =>
-                                setState(() => _isExpanded = !_isExpanded),
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                _isExpanded ? '...moins' : '...more',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-                // Media images
-                if (widget.mediaUrls.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  _buildMediaSection(widget.mediaUrls),
-                ],
-                // Reaction bar
-                if (widget.postId.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: widget.buildReactionBar(),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              ],
-            ),
+                      ),
+                    // Original media
+                    if (widget.mediaUrls.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(11),
+                          bottomRight: Radius.circular(11),
+                        ),
+                        child: SizedBox(
+                          height: 150,
+                          width: double.infinity,
+                          child: _buildMediaSection(widget.mediaUrls),
+                        ),
+                      ),
+                    ] else
+                      const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            ],
+            // Media images (only for non-quote posts)
+            if (!widget.isQuoteRepost && widget.mediaUrls.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildMediaSection(widget.mediaUrls),
+            ],
+            // Reaction bar
+            if (widget.postId.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: widget.buildReactionBar(),
+              ),
+              const SizedBox(height: 12),
+            ],
           ],
         ),
       ),
@@ -1347,21 +1517,15 @@ class _ParticulierPublicViewScreenState
 
   Future<void> _refreshPosts() => _loadPosts(showLoader: false);
 
-  String? _extractPostImageUrl(Map<String, dynamic> post) {
-    final media = post['media_files'] as List? ?? post['media'] as List? ?? [];
-    if (media.isEmpty) return null;
-    final first = media.first;
-    if (first is Map) {
-      final url = first['url']?.toString();
-      if (url != null && url.isNotEmpty) {
-        if (url.startsWith('http') || url.startsWith('https')) {
-          return url;
-        } else {
-          return '${ApiConfig.baseUrl.replaceFirst('/api', '')}$url';
-        }
-      }
-    }
-    return null;
+  bool _isRepost(Map<String, dynamic> post) {
+    final originalPostId = post['original_post_id'];
+    return originalPostId != null && originalPostId.toString().isNotEmpty;
+  }
+
+  bool _isQuoteRepost(Map<String, dynamic> post) {
+    final isRepost = _isRepost(post);
+    final repostContent = post['repost_content']?.toString();
+    return isRepost && repostContent != null && repostContent.trim().isNotEmpty;
   }
 
   String _buildTimeAgo(String? isoDate) {
@@ -1794,7 +1958,7 @@ class _ParticulierPublicViewScreenState
                         Tab(
                           height: 32,
                           child: Text(
-                            'Post(${_myPosts.length})',
+                            'Posts(${_myPosts.where((p) => !_isRepost(p) || _isQuoteRepost(p)).length})',
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -1812,7 +1976,7 @@ class _ParticulierPublicViewScreenState
                       children: [
                         _buildPresentationTab(),
                         _buildAnnonceTab(),
-                        _buildPostTab(),
+                        _buildPostsTab(),
                         _buildDocumentsTab(),
                       ],
                     ),
@@ -1995,7 +2159,10 @@ class _ParticulierPublicViewScreenState
     );
   }
 
-  Widget _buildPostTab() {
+  Widget _buildPostsTab() {
+    final postsOnly = _myPosts
+        .where((p) => !_isRepost(p) || _isQuoteRepost(p))
+        .toList();
     return RefreshIndicator(
       onRefresh: _refreshPosts,
       child: ListView(
@@ -2023,7 +2190,7 @@ class _ParticulierPublicViewScreenState
                 ],
               ),
             )
-          else if (_myPosts.isEmpty)
+          else if (postsOnly.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 70),
               child: Center(
@@ -2036,9 +2203,9 @@ class _ParticulierPublicViewScreenState
               ),
             )
           else
-            for (final post in _myPosts) ...[
+            for (final post in postsOnly) ...[
               _buildPostCard(post),
-              const SizedBox(height: 12),
+              const SizedBox(height: 4),
             ],
           const SizedBox(height: 20),
         ],
@@ -2514,59 +2681,366 @@ class _ParticulierPublicViewScreenState
     );
   }
 
-  Future<void> _repostPost(String postId) async {
-    final confirmed = await showDialog<bool>(
+  Future<void> _repostPost(
+    String postId, {
+    Map<String, dynamic>? originalPostData,
+  }) async {
+    final textController = TextEditingController();
+    bool isSubmitting = false;
+
+    // Fetch current user info for the modal header
+    String userName = 'Vous';
+    String userAvatar = _defaultAvatar;
+    try {
+      final resp = await ApiClient().authenticatedGet('/profile/me');
+      final userData = resp['user'] as Map<String, dynamic>?;
+      final profile = resp['profile'] as Map<String, dynamic>?;
+      if (profile != null) {
+        userName =
+            profile['company_name']?.toString() ??
+            profile['pseudo']?.toString() ??
+            userData?['name']?.toString() ??
+            'Vous';
+        final av = profile['avatar_url']?.toString();
+        if (av != null) {
+          userAvatar = _buildStorageUrl(av) ?? _defaultAvatar;
+        }
+      }
+    } catch (_) {}
+
+    // Extract original post info for preview
+    String originalAuthorName = '';
+    String originalContent = '';
+    String originalTimeAgo = '';
+    String originalProfil = '';
+    List<String> originalMediaUrls = [];
+    if (originalPostData != null) {
+      final origPost =
+          originalPostData['original_post'] as Map<String, dynamic>? ??
+          originalPostData;
+      final origAuthor = _extractPostAuthorInfo(origPost);
+      originalAuthorName = origAuthor.displayName;
+      originalContent = origPost['content']?.toString() ?? '';
+      originalTimeAgo = _buildTimeAgo(origPost['created_at']?.toString());
+      originalMediaUrls = _extractAllMediaUrls(origPost);
+      originalProfil = origPost['author']['avatar_url'];
+    }
+
+    if (!mounted) return;
+
+    final result = await showModalBottomSheet<String?>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Republier cette publication'),
-        content: const Text(
-          'Voulez-vous partager cette publication sur votre profil ?',
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, modalSetState) {
+            return Container(
+              height: MediaQuery.of(ctx).size.height * 0.85,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
-            ),
-            child: const Text(
-              'Republier',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
+              child: Column(
+                children: [
+                  // Handle bar
+                  Container(
+                    margin: const EdgeInsets.only(top: 10),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Republier cette publication',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF333333),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          icon: const Icon(Icons.close, size: 22),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  // Scrollable content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // User profile row
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 22,
+                                  backgroundImage: userAvatar.startsWith('http')
+                                      ? NetworkImage(userAvatar)
+                                      : AssetImage(userAvatar) as ImageProvider,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        userName,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 15,
+                                          color: Color(0xFF333333),
+                                        ),
+                                      ),
+                                      Text(
+                                        'Public',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[500],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Text input
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                            child: TextField(
+                              controller: textController,
+                              maxLines: 5,
+                              minLines: 2,
+                              maxLength: 300,
+                              decoration: InputDecoration(
+                                hintText:
+                                    'Ajoutez un commentaire à votre republication...',
+                                hintStyle: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 14,
+                                ),
+                                border: InputBorder.none,
+                                counterStyle: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF333333),
+                                height: 1.5,
+                              ),
+                              onChanged: (_) => modalSetState(() {}),
+                            ),
+                          ),
+                          // Original post preview
+                          if (originalPostData != null)
+                            Container(
+                              margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey[300]!),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      12,
+                                      12,
+                                      12,
+                                      0,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 22,
+                                          backgroundImage: NetworkImage(
+                                            originalProfil.startsWith('http')
+                                                ? originalProfil
+                                                : (_buildStorageUrl(
+                                                        originalProfil,
+                                                      ) ??
+                                                      ''),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            '$originalAuthorName • $originalTimeAgo',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[600],
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (originalContent.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        12,
+                                        8,
+                                        12,
+                                        0,
+                                      ),
+                                      child: Text(
+                                        originalContent.length > 200
+                                            ? '${originalContent.substring(0, 200)}...'
+                                            : originalContent,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF555555),
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ),
+                                  if (originalMediaUrls.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: ClipRRect(
+                                        borderRadius: const BorderRadius.only(
+                                          bottomLeft: Radius.circular(11),
+                                          bottomRight: Radius.circular(11),
+                                        ),
+                                        child: SizedBox(
+                                          height: 180,
+                                          width: double.infinity,
+                                          child: Image.network(
+                                            originalMediaUrls.first,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                Container(
+                                                  color: Colors.grey[200],
+                                                  child: Icon(
+                                                    Icons.image,
+                                                    color: Colors.grey[400],
+                                                  ),
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    const SizedBox(height: 12),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Bottom action bar
+                  Container(
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      10,
+                      16,
+                      MediaQuery.of(ctx).padding.bottom + 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(top: BorderSide(color: Colors.grey[200]!)),
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: isSubmitting
+                            ? null
+                            : () async {
+                                modalSetState(() => isSubmitting = true);
+                                try {
+                                  final body = <String, dynamic>{};
+                                  final text = textController.text.trim();
+                                  if (text.isNotEmpty) {
+                                    body['repost_content'] = text;
+                                  }
+                                  await ApiClient().authenticatedPost(
+                                    '/posts/$postId/repost',
+                                    body: body,
+                                  );
+                                  if (ctx.mounted) {
+                                    Navigator.pop(ctx, 'success');
+                                  }
+                                } catch (e) {
+                                  modalSetState(() => isSubmitting = false);
+                                  if (ctx.mounted) {
+                                    ScaffoldMessenger.of(ctx).showSnackBar(
+                                      SnackBar(
+                                        content: Text(e.toString()),
+                                        backgroundColor: Colors.redAccent,
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF3AAE5E),
+                          disabledBackgroundColor: Colors.grey[300],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: isSubmitting
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'Republier',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
 
-    if (confirmed != true) return;
-
-    try {
-      await ApiClient().authenticatedPost('/posts/$postId/repost', body: {});
-
+    if (result == 'success') {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Publication republiée avec succès'),
             backgroundColor: Color(0xFF3AAE5E),
             duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('Repost error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${e.toString()}'),
-            backgroundColor: Colors.redAccent,
-            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -3431,11 +3905,12 @@ class _ParticulierPublicViewScreenState
     String entityId, {
     bool? acceptedMessages,
     Map<String, dynamic>? authorData,
+    Map<String, dynamic>? postData,
   }) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
-    final isBonPlan = apiSlug == 'bon-plans';
     final isPost = apiSlug == 'posts';
+    final isBonPlan = apiSlug == 'bon-plans';
 
     return Row(
       children: [
@@ -3481,21 +3956,24 @@ class _ParticulierPublicViewScreenState
           ),
         ),
         if (isPost) ...[
-          const SizedBox(width: 10),
-          // Repost
-          GestureDetector(
-            onTap: () => _repostPost(entityId),
-            child: Row(
-              children: [
-                Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Text(
-                  'Republier',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
+          if (postData?['original_post_id'] == null) ...[
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: () => _repostPost(entityId, originalPostData: postData),
+              child: Row(
+                children: [
+                  Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
+                  const SizedBox(width: 4),
+                  Text(
+                    data.repostsCount > 0
+                        ? data.repostsCount.toString()
+                        : 'Republier',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ],
         // Share icon
         const SizedBox(width: 14),
@@ -3506,7 +3984,23 @@ class _ParticulierPublicViewScreenState
         // For bon plans: show author avatar and name on the left
         if (isBonPlan && authorData != null) ...[
           const Spacer(),
-          _buildAuthorInfo(authorData),
+          GestureDetector(
+            onTap: () {
+              final userId = authorData['id']?.toString();
+              final accountType = authorData['account_type']?.toString();
+              if (userId != null && userId.isNotEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => accountType?.toLowerCase() == 'pro'
+                        ? ProPublicViewScreen(userId: userId)
+                        : ParticulierPublicViewScreen(userId: userId),
+                  ),
+                );
+              }
+            },
+            child: _buildAuthorInfo(authorData),
+          ),
         ],
       ],
     );
@@ -5103,11 +5597,22 @@ class _ParticulierPublicViewScreenState
           : apiReaction;
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
+      final apiCommentsCount = _asInt(resource['comments_count']);
+      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(
+        apiSlug,
+        entityId,
+      );
+      final apiRepostsCount = _asInt(resource['reposts_count']);
       _reactions[key] = _ReactionData(
         likesCount: (cachedCount != null && cachedCount > apiCount)
             ? cachedCount
             : apiCount,
-        commentsCount: _asInt(resource['comments_count']),
+        commentsCount:
+            (cachedCommentsCount != null &&
+                cachedCommentsCount > apiCommentsCount)
+            ? cachedCommentsCount
+            : apiCommentsCount,
+        repostsCount: apiRepostsCount,
         userReaction: userReaction,
       );
     }
@@ -5118,6 +5623,11 @@ class _ParticulierPublicViewScreenState
 
     // Détecter si c'est un repost
     final isRepost = raw['original_post_id'] != null;
+
+    // Détecter si c'est un quote repost (repost avec texte ajouté)
+    final repostContent = raw['repost_content']?.toString();
+    final isQuoteRepost =
+        isRepost && repostContent != null && repostContent.trim().isNotEmpty;
 
     // Si c'est un repost, utiliser les données du post original
     final originalPost = isRepost
@@ -5135,20 +5645,36 @@ class _ParticulierPublicViewScreenState
     final timeAgo = _buildTimeAgo(createdAt);
     final allMediaUrls = _extractAllMediaUrls(originalPost);
 
-    if (postId.isNotEmpty) {
-      _seedReactionFromFeed('posts', postId, raw);
+    // For simple reposts (no text), use original post's reactions
+    // For quote reposts (with text), use the repost's own reactions
+    final originalPostId = raw['original_post_id']?.toString() ?? '';
+    String reactionEntityId;
+    if (isRepost && !isQuoteRepost && originalPostId.isNotEmpty) {
+      // Simple repost: reactions go to original post
+      reactionEntityId = originalPostId;
+      _seedReactionFromFeed('posts', originalPostId, originalPost);
+    } else {
+      // Original post or quote repost: reactions are on this post itself
+      reactionEntityId = postId;
+      if (postId.isNotEmpty) {
+        _seedReactionFromFeed('posts', postId, isQuoteRepost ? raw : raw);
+      }
     }
 
     return _PostCardWidget(
       postId: postId,
       isRepost: isRepost,
+      isQuoteRepost: isQuoteRepost,
+      repostContent: repostContent,
       reposter: reposter,
       author: author,
       content: content,
       timeAgo: timeAgo,
       mediaUrls: allMediaUrls,
-      onToggleReaction: (type) => _toggleReaction('posts', postId, type),
-      buildReactionBar: () => _buildReactionBar('posts', postId),
+      onToggleReaction: (type) =>
+          _toggleReaction('posts', reactionEntityId, type),
+      buildReactionBar: () =>
+          _buildReactionBar('posts', reactionEntityId, postData: raw),
       buildTypeTag: _buildTypeTag,
     );
   }
