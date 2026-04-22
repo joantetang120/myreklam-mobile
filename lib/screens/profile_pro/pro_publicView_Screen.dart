@@ -627,6 +627,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
           border: Border(
             bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.09),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Stack(
           children: [
@@ -650,15 +657,29 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             ),
                             const SizedBox(width: 6),
                             Expanded(
-                              child: Text(
-                                '${widget.reposter.displayName} a republié ceci',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
+                              child: RichText(
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: widget.reposter.displayName,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[800],
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: ' a republié ceci',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -2713,6 +2734,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               // Remove from favorites
               await ApiClient().authenticatedDelete('/bonplans/$bpId/favorite');
               // Update underlying data to persist state across rebuilds
+              bp['is_favorited'] = false;
               if (bp['bon_plan_favorites'] is List) {
                 (bp['bon_plan_favorites'] as List).removeWhere(
                   (f) =>
@@ -2725,6 +2747,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               // Add to favorites
               await ApiClient().authenticatedPost('/bonplans/$bpId/favorite');
               // Update underlying data to persist state across rebuilds
+              bp['is_favorited'] = true;
               if (bp['bon_plan_favorites'] is! List) {
                 bp['bon_plan_favorites'] = [];
               }
@@ -2754,6 +2777,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             debugPrint('Favorite toggle error: $e');
             // Revert on error
             favoris = !favoris;
+            bp['is_favorited'] = favoris;
             setState(() {
               _isLoading = false;
             });
@@ -3456,6 +3480,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 '/job-offers/$jobId/favorite',
               );
               // Update underlying data to persist state across rebuilds
+              job['is_favorited'] = false;
               if (job['job_offer_favorites'] is List) {
                 (job['job_offer_favorites'] as List).removeWhere(
                   (f) =>
@@ -3470,6 +3495,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 '/job-offers/$jobId/favorite',
               );
               // Update underlying data to persist state across rebuilds
+              job['is_favorited'] = true;
               if (job['job_offer_favorites'] is! List) {
                 job['job_offer_favorites'] = [];
               }
@@ -3499,6 +3525,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             debugPrint('Favorite toggle error: $e');
             // Revert on error
             favoris = !favoris;
+            job['is_favorited'] = favoris;
             setState(() => _isLoading = false);
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -3957,6 +3984,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             }
           } catch (e) {
             debugPrint('Favorite toggle error: $e');
+            // Revert on error
+            isFavoritedNotifier.value = !isFavoritedNotifier.value;
             setState(() => isLoading = false);
 
             if (context.mounted) {
@@ -4393,6 +4422,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           });
 
           // Update underlying data immediately for persistence across rebuilds
+          event['is_favorited'] = favoris;
           if (favoris) {
             // Add to favorites
             if (event['event_favorites'] is! List) {
@@ -4455,6 +4485,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             });
 
             // Revert underlying data
+            event['is_favorited'] = favoris;
             if (!favoris) {
               // Was removing, so add back
               if (event['event_favorites'] is! List) {
@@ -4727,8 +4758,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     final demandeId = demande['id']?.toString() ?? '';
 
     // Check if already favorited by current user
-    bool favoris = demande['is_favorited'];
+    final bool initialIsFavorited = demande['is_favorited'] == true;
     final currentUserId = UserSession().id;
+
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -4738,16 +4772,18 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           if (isLoadingFavorite || demandeId.isEmpty) return;
 
           // Toggle immediately for responsive UI
-          favoris = !favoris;
+          final newValue = !isFavoritedNotifier.value;
+          isFavoritedNotifier.value = newValue;
           setState(() => isLoadingFavorite = true);
 
           try {
-            if (!favoris) {
+            if (!newValue) {
               // Remove from favorites
               await ApiClient().authenticatedDelete(
                 '/demandes/$demandeId/favorite',
               );
               // Update underlying data to persist state across rebuilds
+              demande['is_favorited'] = false;
               if (demande['demande_favorites'] is List) {
                 (demande['demande_favorites'] as List).removeWhere(
                   (f) =>
@@ -4762,6 +4798,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 '/demandes/$demandeId/favorite',
               );
               // Update underlying data to persist state across rebuilds
+              demande['is_favorited'] = true;
               if (demande['demande_favorites'] is! List) {
                 demande['demande_favorites'] = [];
               }
@@ -4779,7 +4816,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -4790,7 +4829,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           } catch (e) {
             debugPrint('Favorite toggle error: $e');
             // Revert on error
-            favoris = !favoris;
+            isFavoritedNotifier.value = !isFavoritedNotifier.value;
+            demande['is_favorited'] = isFavoritedNotifier.value;
             setState(() => isLoadingFavorite = false);
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -4822,7 +4862,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           timeAgo: _buildTimeAgo(demande['created_at']?.toString()),
           onTapCTA: () => _navigateToDemandeDetail(demande),
           onAvatarTap: () {},
-          isFavorited: favoris,
+          isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
           reactionBar: demandeId.isNotEmpty
