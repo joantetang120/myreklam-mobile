@@ -158,9 +158,17 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
   Future<bool> _requestStoragePermission() async {
     if (!Platform.isAndroid) return true;
 
-    // Try to request storage permission (permission_handler handles Android version differences)
-    // On Android 13+, this will use READ_MEDIA_IMAGES/READ_MEDIA_VIDEO
-    // On Android 12 and below, this uses READ_EXTERNAL_STORAGE
+    // On Android 13+ (API 33+), the system file picker doesn't require any permissions
+    // FilePicker uses ACTION_OPEN_DOCUMENT which is handled by the system UI
+    // Check Android SDK version
+    final sdkVersion = await _getAndroidSdkVersion();
+    if (sdkVersion != null && sdkVersion >= 33) {
+      // Android 13+ - no permission needed for system file picker
+      return true;
+    }
+
+    // For Android 12 and below, request storage permission
+    // Try multiple permission types for better compatibility
     PermissionStatus status = await Permission.storage.status;
     
     if (status.isDenied) {
@@ -185,13 +193,29 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     return true;
   }
 
+  Future<int?> _getAndroidSdkVersion() async {
+    try {
+      // Try to extract SDK version from Platform.version string
+      // Format is typically: "<osVersion> (<sdkVersion>) ..."
+      final versionString = Platform.version;
+      final regex = RegExp(r'\((\d+)\)');
+      final match = regex.firstMatch(versionString);
+      if (match != null) {
+        return int.tryParse(match.group(1)!);
+      }
+    } catch (e) {
+      debugPrint('Error getting Android SDK version: $e');
+    }
+    return null;
+  }
+
   void _showPermissionRationaleDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Permission requise'),
         content: const Text(
-          'Pour sélectionner des fichiers, l\'application a besoin d\'accéder à votre stockage. Cette permission est nécessaire pour uploader votre CV, lettre de motivation ou portfolio.',
+          'Pour sélectionner des fichiers sur Android 12 et versions antérieures, l\'application a besoin d\'accéder à votre stockage. Sur Android 13+, le sélecteur de fichiers système est utilisé automatiquement sans permission.',
         ),
         actions: [
           TextButton(
