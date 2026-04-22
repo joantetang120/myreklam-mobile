@@ -153,6 +153,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
           border: Border(
             bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.09),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Stack(
           children: [
@@ -3776,6 +3783,7 @@ class _ParticulierPublicViewScreenState
               // Remove from favorites
               await ApiClient().authenticatedDelete('/bonplans/$bpId/favorite');
               // Update underlying data to persist state across rebuilds
+              bp['is_favorited'] = false;
               if (bp['bon_plan_favorites'] is List) {
                 (bp['bon_plan_favorites'] as List).removeWhere(
                   (f) =>
@@ -3788,6 +3796,7 @@ class _ParticulierPublicViewScreenState
               // Add to favorites
               await ApiClient().authenticatedPost('/bonplans/$bpId/favorite');
               // Update underlying data to persist state across rebuilds
+              bp['is_favorited'] = true;
               if (bp['bon_plan_favorites'] is! List) {
                 bp['bon_plan_favorites'] = [];
               }
@@ -3817,6 +3826,7 @@ class _ParticulierPublicViewScreenState
             debugPrint('Favorite toggle error: $e');
             // Revert on error
             favoris = !favoris;
+            bp['is_favorited'] = favoris;
             setState(() {
               _isLoading = false;
             });
@@ -4515,6 +4525,7 @@ class _ParticulierPublicViewScreenState
           });
 
           // Update underlying data immediately for persistence across rebuilds
+          event['is_favorited'] = favoris;
           if (favoris) {
             // Add to favorites
             if (event['event_favorites'] is! List) {
@@ -4577,6 +4588,7 @@ class _ParticulierPublicViewScreenState
             });
 
             // Revert underlying data
+            event['is_favorited'] = favoris;
             if (!favoris) {
               // Was removing, so add back
               if (event['event_favorites'] is! List) {
@@ -4870,6 +4882,7 @@ class _ParticulierPublicViewScreenState
                 '/demandes/$demandeId/favorite',
               );
               // Update underlying data to persist state across rebuilds
+              demande['is_favorited'] = false;
               if (demande['demande_favorites'] is List) {
                 (demande['demande_favorites'] as List).removeWhere(
                   (f) =>
@@ -4884,6 +4897,7 @@ class _ParticulierPublicViewScreenState
                 '/demandes/$demandeId/favorite',
               );
               // Update underlying data to persist state across rebuilds
+              demande['is_favorited'] = true;
               if (demande['demande_favorites'] is! List) {
                 demande['demande_favorites'] = [];
               }
@@ -4913,6 +4927,7 @@ class _ParticulierPublicViewScreenState
             debugPrint('Favorite toggle error: $e');
             // Revert on error
             favoris = !favoris;
+            demande['is_favorited'] = favoris;
             setState(() => isLoadingFavorite = false);
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(

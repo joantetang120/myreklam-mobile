@@ -34,7 +34,78 @@ class _ReactionData {
   int commentsCount;
   String? userReaction; // 'like' or null
 
-  _ReactionData({this.likesCount = 0, this.commentsCount = 0, this.userReaction});
+  _ReactionData({
+    this.likesCount = 0,
+    this.commentsCount = 0,
+    this.userReaction,
+  });
+}
+
+class _ExpandableDescriptionStateful extends StatefulWidget {
+  final String text;
+
+  const _ExpandableDescriptionStateful({required this.text});
+
+  @override
+  State<_ExpandableDescriptionStateful> createState() =>
+      _ExpandableDescriptionStatefulState();
+}
+
+class _ExpandableDescriptionStatefulState
+    extends State<_ExpandableDescriptionStateful> {
+  bool isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = widget.text;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isExpanded = !isExpanded;
+        });
+      },
+      child: AnimatedCrossFade(
+        firstChild: RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: text.length > 100
+                    ? '${text.substring(0, 100)}... '
+                    : text,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF666666),
+                  height: 1.4,
+                ),
+              ),
+              if (text.length > 100)
+                const TextSpan(
+                  text: 'voir plus',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF3AAE5E),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        secondChild: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Color(0xFF666666),
+            height: 1.4,
+          ),
+        ),
+        crossFadeState: isExpanded
+            ? CrossFadeState.showSecond
+            : CrossFadeState.showFirst,
+        duration: const Duration(milliseconds: 200),
+      ),
+    );
+  }
 }
 
 class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
@@ -153,7 +224,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       // Seed reactions
       for (final job in _jobOffers) {
         final jobId = job['id']?.toString() ?? '';
-        if (jobId.isNotEmpty) _seedReactionFromResource('job-offers', jobId, job);
+        if (jobId.isNotEmpty)
+          _seedReactionFromResource('job-offers', jobId, job);
       }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading job offers: ${e.message}');
@@ -272,7 +344,25 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final title = (bp['title'] ?? '').toString().toLowerCase();
       final desc = (bp['description'] ?? '').toString().toLowerCase();
       final cat = (bp['category'] ?? '').toString().toLowerCase();
-      return title.contains(q) || desc.contains(q) || cat.contains(q);
+      final subCat = (bp['sub_category'] ?? '').toString().toLowerCase();
+      final location = (bp['coverage_area'] ?? bp['location'] ?? '')
+          .toString()
+          .toLowerCase();
+      final promoCode = (bp['promo_code'] ?? '').toString().toLowerCase();
+      final user = bp['user'] as Map<String, dynamic>?;
+      final userName =
+          (user?['pro_profile']?['company_name'] ??
+                  user?['particulier_profile']?['pseudo'] ??
+                  '')
+              .toString()
+              .toLowerCase();
+      return title.contains(q) ||
+          desc.contains(q) ||
+          cat.contains(q) ||
+          subCat.contains(q) ||
+          location.contains(q) ||
+          promoCode.contains(q) ||
+          userName.contains(q);
     }).toList();
   }
 
@@ -282,8 +372,23 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     return _jobOffers.where((jo) {
       final title = (jo['title'] ?? '').toString().toLowerCase();
       final desc = (jo['description'] ?? '').toString().toLowerCase();
-      final company = (jo['company']?['name'] ?? '').toString().toLowerCase();
-      return title.contains(q) || desc.contains(q) || company.contains(q);
+      final companyName =
+          (jo['user']?['pro_profile']?['company_name'] ??
+                  jo['company_name'] ??
+                  '')
+              .toString()
+              .toLowerCase();
+      final location = (jo['location'] ?? jo['city'] ?? '')
+          .toString()
+          .toLowerCase();
+      final contractType = (jo['contract_type'] ?? '').toString().toLowerCase();
+      final sector = (jo['sector'] ?? '').toString().toLowerCase();
+      return title.contains(q) ||
+          desc.contains(q) ||
+          companyName.contains(q) ||
+          location.contains(q) ||
+          contractType.contains(q) ||
+          sector.contains(q);
     }).toList();
   }
 
@@ -295,10 +400,22 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final desc = (d['description'] ?? '').toString().toLowerCase();
       final nature = (d['nature'] ?? '').toString().toLowerCase();
       final type = (d['type'] ?? '').toString().toLowerCase();
+      final location = (d['location'] ?? d['city'] ?? '')
+          .toString()
+          .toLowerCase();
+      final user = d['user'] as Map<String, dynamic>?;
+      final userName =
+          (user?['particulier_profile']?['pseudo'] ??
+                  user?['pro_profile']?['company_name'] ??
+                  '')
+              .toString()
+              .toLowerCase();
       return title.contains(q) ||
           desc.contains(q) ||
           nature.contains(q) ||
-          type.contains(q);
+          type.contains(q) ||
+          location.contains(q) ||
+          userName.contains(q);
     }).toList();
   }
 
@@ -308,8 +425,26 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     return _events.where((ev) {
       final title = (ev['title'] ?? '').toString().toLowerCase();
       final desc = (ev['description'] ?? '').toString().toLowerCase();
-      final location = (ev['coverage_area'] ?? '').toString().toLowerCase();
-      return title.contains(q) || desc.contains(q) || location.contains(q);
+      final location = (ev['coverage_area'] ?? ev['location'] ?? '')
+          .toString()
+          .toLowerCase();
+      final category = (ev['category_label'] ?? '').toString().toLowerCase();
+      final subCategory = (ev['sub_category_label'] ?? '')
+          .toString()
+          .toLowerCase();
+      final user = ev['user'] as Map<String, dynamic>?;
+      final userName =
+          (user?['pro_profile']?['company_name'] ??
+                  user?['particulier_profile']?['pseudo'] ??
+                  '')
+              .toString()
+              .toLowerCase();
+      return title.contains(q) ||
+          desc.contains(q) ||
+          location.contains(q) ||
+          category.contains(q) ||
+          subCategory.contains(q) ||
+          userName.contains(q);
     }).toList();
   }
 
@@ -320,7 +455,22 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final title = (tr['title'] ?? '').toString().toLowerCase();
       final desc = (tr['description'] ?? '').toString().toLowerCase();
       final cat = (tr['training_category'] ?? '').toString().toLowerCase();
-      return title.contains(q) || desc.contains(q) || cat.contains(q);
+      final subCat = (tr['training_sub_category'] ?? '')
+          .toString()
+          .toLowerCase();
+      final provider = (tr['provider_name'] ?? '').toString().toLowerCase();
+      final location = (tr['address_city'] ?? '').toString().toLowerCase();
+      final user = tr['user'] as Map<String, dynamic>?;
+      final userName = (user?['pro_profile']?['company_name'] ?? '')
+          .toString()
+          .toLowerCase();
+      return title.contains(q) ||
+          desc.contains(q) ||
+          cat.contains(q) ||
+          subCat.contains(q) ||
+          provider.contains(q) ||
+          location.contains(q) ||
+          userName.contains(q);
     }).toList();
   }
 
@@ -449,8 +599,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final locationPostalCode = data['location_postal_code']?.toString();
       final location = locationCity != null
           ? (locationPostalCode != null
-              ? '$locationCity ($locationPostalCode)'
-              : locationCity)
+                ? '$locationCity ($locationPostalCode)'
+                : locationCity)
           : locationPostalCode;
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
@@ -970,44 +1120,67 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     final demandeId = demande['id']?.toString() ?? '';
 
     // Check if already favorited by current user
-    bool isFavorited = demande['is_favorited'] == true;
+    final bool initialIsFavorited = demande['is_favorited'] == true;
+    final currentUserId = UserSession().id;
 
-    print("isFavorited: ${demande['is_favorited']}");
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
 
     return StatefulBuilder(
       builder: (context, setState) {
         bool isLoadingFavorite = false;
-        bool localIsFavorited = isFavorited;
 
         Future<void> toggleFavorite() async {
           if (isLoadingFavorite || demandeId.isEmpty) return;
 
+          // Toggle immediately for responsive UI
+          final newValue = !isFavoritedNotifier.value;
+          isFavoritedNotifier.value = newValue;
           setState(() => isLoadingFavorite = true);
 
           try {
-            if (localIsFavorited) {
+            if (!newValue) {
               // Remove from favorites
               await ApiClient().authenticatedDelete(
                 '/demandes/$demandeId/favorite',
               );
+              // Update underlying data to persist state across rebuilds
+              demande['is_favorited'] = false;
+              if (demande['demande_favorites'] is List) {
+                (demande['demande_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost(
                 '/demandes/$demandeId/favorite',
               );
+              // Update underlying data to persist state across rebuilds
+              demande['is_favorited'] = true;
+              if (demande['demande_favorites'] is! List) {
+                demande['demande_favorites'] = [];
+              }
+              (demande['demande_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
             }
 
             setState(() {
-              localIsFavorited = !localIsFavorited;
               isLoadingFavorite = false;
-              isFavorited = !isFavorited;
             });
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -1016,6 +1189,10 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
               );
             }
           } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            // Revert on error
+            isFavoritedNotifier.value = !isFavoritedNotifier.value;
+            demande['is_favorited'] = isFavoritedNotifier.value;
             setState(() => isLoadingFavorite = false);
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1032,6 +1209,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
           profileImage: profileImage,
           username: username,
           categoryLabel: categoryLabel,
+          accountType: proProfile != null && proProfile!.isNotEmpty
+              ? 'pro'
+              : 'particulier',
           categoryColor: _categoryColor(categoryLabel),
           title: title,
           description: description.isNotEmpty
@@ -1043,21 +1223,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
           commentsCount: _asInt(demande['comments_count']),
           timeAgo: _buildTimeAgo(demande['created_at']?.toString()),
           onTapCTA: () => _navigateToDemandeDetail(demande),
-          onAvatarTap: () {
-            if (user?['id'] != null) {
-              final isProUser =
-                  user?['account_type']?.toString().toLowerCase() == 'pro';
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => isProUser
-                      ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
-                ),
-              );
-            }
-          },
-          isFavorited: localIsFavorited,
+          onAvatarTap: () {},
+          isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
           reactionBar: demandeId.isNotEmpty
@@ -1237,19 +1404,19 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     return Column(children: items.map(_buildTrainingCard).toList());
   }
 
-  Widget _buildTrainingCard(Map<String, dynamic> tr) {
-    final trainingId = tr['id']?.toString() ?? '';
-    final title = tr['title']?.toString() ?? 'Formation';
-    final description = _stripHtml(tr['description']?.toString() ?? '');
-    final provider = tr['provider_name']?.toString() ?? 'Organisme';
-    final duration = tr['duration_in_h'];
-    final durationUnit = tr['duration_unit']?.toString();
-    final price = tr['price'];
-    final category = tr['training_category']?.toString() ?? '';
-    final subCategory = tr['training_sub_category']?.toString() ?? '';
-    final trainingType = tr['training_type']?.toString() ?? '';
+  Widget _buildTrainingCard(Map<String, dynamic> training) {
+    final trainingId = training['id']?.toString() ?? '';
+    final title = training['title']?.toString() ?? 'Formation';
+    final description = _stripHtml(training['description']?.toString() ?? '');
+    final provider = training['provider_name']?.toString() ?? 'Organisme';
+    final duration = training['duration_in_h'];
+    final durationUnit = training['duration_unit']?.toString();
+    final price = training['price'];
+    final category = training['training_category']?.toString() ?? '';
+    final subCategory = training['training_sub_category']?.toString() ?? '';
+    final trainingType = training['training_type']?.toString() ?? '';
 
-    final addressCity = tr['address_city']?.toString() ?? '';
+    final addressCity = training['address_city']?.toString() ?? '';
 
     // Helper to extract array values
     String _extractArrayValues(dynamic field) {
@@ -1284,7 +1451,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
     // Extract and translate training_style values
     String trainingStyleText = '';
-    final trainingStyleRaw = tr['training_style'];
+    final trainingStyleRaw = training['training_style'];
     if (trainingStyleRaw is List) {
       final translated = trainingStyleRaw
           .map((item) {
@@ -1320,7 +1487,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
     // Extract and translate training_public values
     String trainingPublicText = '';
-    final trainingPublicRaw = tr['training_public'];
+    final trainingPublicRaw = training['training_public'];
     if (trainingPublicRaw is List) {
       final translated = trainingPublicRaw
           .map((item) {
@@ -1338,10 +1505,10 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       );
     }
 
-    final certification = _extractArrayValues(tr['certification']);
+    final certification = _extractArrayValues(training['certification']);
 
     // Check if CPF is in training_funding array
-    final trainingFunding = tr['training_funding'];
+    final trainingFunding = training['training_funding'];
     bool hasCpf = false;
     if (trainingFunding is List) {
       hasCpf = trainingFunding.any(
@@ -1383,7 +1550,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       // 8th: Price (special/green) - LAST
       if (price != null) ...[
         () {
-          final publicType = tr['public_type']?.toString() ?? '';
+          final publicType = training['public_type']?.toString() ?? '';
           String priceText = '$price €';
           if (publicType == 'personne') {
             priceText += ' - Par personne';
@@ -1399,113 +1566,121 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       ],
     ];
 
-    final user = tr['user'] as Map<String, dynamic>?;
+    final user = training['user'] as Map<String, dynamic>?;
     final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
-    final particulierProfile =
-        user?['particulier_profile'] as Map<String, dynamic>?;
 
-    final avatarUrl =
-        proProfile?['logo_url']?.toString() ??
-        proProfile?['avatar_url']?.toString() ??
-        particulierProfile?['avatar_url']?.toString() ??
-        user?['avatar']?.toString();
+    final avatarUrl = proProfile?['avatar_url']?.toString();
 
     final companyLogoUrl =
         _buildStorageUrl(avatarUrl) ?? 'assets/images/Formation.png';
 
     // Extract owner name from profiles
-    final ownerName =
-        proProfile?['company_name']?.toString() ??
-        proProfile?['first_name']?.toString() ??
-        particulierProfile?['pseudo']?.toString() ??
-        particulierProfile?['first_name']?.toString() ??
-        tr['provider_name']?.toString() ??
-        'Organisme';
+    final ownerName = proProfile?['company_name']?.toString();
 
     // Check if already favorited by current user
-    bool isFavorited = tr['is_favorited'] == true;
+    final bool initialIsFavorited = training['is_favorited'] == true;
+    final currentUserId = UserSession().id;
 
-    bool isLoading = false;
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
 
-    Future<void> _toggleFavorite() async {
-      if (isLoading || trainingId.isEmpty) return;
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool isLoading = false;
 
-      setState(() => isLoading = true);
+        Future<void> _toggleFavorite() async {
+          if (isLoading || trainingId.isEmpty) return;
 
-      try {
-        if (isFavorited) {
-          // Remove from favorites
-          await ApiClient().authenticatedDelete(
-            '/trainings/$trainingId/favorite',
-          );
-        } else {
-          // Add to favorites
-          await ApiClient().authenticatedPost(
-            '/trainings/$trainingId/favorite',
-          );
+          // Toggle immediately for responsive UI
+          final newValue = !isFavoritedNotifier.value;
+          isFavoritedNotifier.value = newValue;
+          setState(() => isLoading = true);
+
+          try {
+            if (!newValue) {
+              // Remove from favorites
+              await ApiClient().authenticatedDelete(
+                '/trainings/$trainingId/favorite',
+              );
+              // Update the underlying data to persist state across rebuilds
+              training['is_favorited'] = false;
+              if (training['training_favorites'] is List) {
+                (training['training_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
+            } else {
+              // Add to favorites
+              await ApiClient().authenticatedPost(
+                '/trainings/$trainingId/favorite',
+              );
+              // Update the underlying data to persist state across rebuilds
+              training['is_favorited'] = true;
+              if (training['training_favorites'] is! List) {
+                training['training_favorites'] = [];
+              }
+              (training['training_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
+            }
+
+            setState(() {
+              isLoading = false;
+            });
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
+                  ),
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            // Revert on error
+            isFavoritedNotifier.value = !isFavoritedNotifier.value;
+            training['is_favorited'] = isFavoritedNotifier.value;
+            setState(() => isLoading = false);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Erreur lors de la mise à jour des favoris'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
         }
 
-        setState(() {
-          isFavorited = !isFavorited;
-          isLoading = false;
-        });
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-              ),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        debugPrint('Favorite toggle error: $e');
-        setState(() => isLoading = false);
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Erreur lors de la mise à jour des favoris'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-
-    return FormationCard(
-      companyLogo: companyLogoUrl,
-      companyName: ownerName,
-      formationTitle: title,
-      description: description.isNotEmpty
-          ? description
-          : 'Description non disponible.',
-      tags: tags,
-      timeAgo: _buildTimeAgo(tr['created_at']?.toString()),
-      isFavorited: isFavorited,
-      isLoadingFavorite: isLoading,
-      onFavoriteToggle: _toggleFavorite,
-      onApply: () => _navigateToTrainingDetail(tr),
-      onAvatarTap: () {
-        if (user?['id'] != null) {
-          final isProUser =
-              user?['account_type']?.toString().toLowerCase() == 'pro';
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => isProUser
-                  ? ProPublicViewScreen(userId: user!['id'].toString())
-                  : ParticulierPublicViewScreen(userId: user!['id'].toString()),
-            ),
-          );
-        }
+        return FormationCard(
+          companyLogo: companyLogoUrl,
+          companyName: ownerName ?? "",
+          formationTitle: title,
+          description: description.isNotEmpty
+              ? description
+              : 'Description non disponible.',
+          tags: tags,
+          timeAgo: _buildTimeAgo(training['created_at']?.toString()),
+          isFavorited: isFavoritedNotifier.value,
+          isLoadingFavorite: isLoading,
+          onFavoriteToggle: _toggleFavorite,
+          onApply: () => _navigateToTrainingDetail(training),
+          onAvatarTap: () {},
+          reactionBar: trainingId.isNotEmpty
+              ? _buildReactionBar('trainings', trainingId)
+              : null,
+        );
       },
-      reactionBar: trainingId.isNotEmpty
-          ? _buildReactionBar('trainings', trainingId)
-          : null,
     );
   }
 
@@ -1782,115 +1957,277 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     }
   }
 
-  String _formatEventDate(String? dateStr) {
-    if (dateStr == null) return 'Date à confirmer';
-    try {
-      final date = DateTime.parse(dateStr);
-      final months = [
-        'Janvier',
-        'Février',
-        'Mars',
-        'Avril',
-        'Mai',
-        'Juin',
-        'Juillet',
-        'Août',
-        'Septembre',
-        'Octobre',
-        'Novembre',
-        'Décembre',
-      ];
-      return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
-    } catch (_) {
-      return dateStr;
+  String _formatEventDate(Map<String, dynamic> event) {
+    final durationType = event['duration_type']?.toString();
+    final eventDate = event['event_date']?.toString();
+    final startDate = event['start_date']?.toString();
+    final endDate = event['end_date']?.toString();
+
+    String formatDate(String? iso) {
+      if (iso == null) return '';
+      try {
+        final date = DateTime.parse(iso);
+        const months = [
+          'janvier',
+          'février',
+          'mars',
+          'avril',
+          'mai',
+          'juin',
+          'juillet',
+          'août',
+          'septembre',
+          'octobre',
+          'novembre',
+          'décembre',
+        ];
+        return '${date.day} ${months[date.month - 1]} ${date.year}';
+      } catch (_) {
+        return iso;
+      }
     }
+
+    if (durationType == 'permanent') return 'Permanent';
+
+    // Handle multi_day with start/end dates like bon plan validity
+    if (durationType == 'multi_day') {
+      final hasStart = startDate != null && startDate.isNotEmpty;
+      final hasEnd = endDate != null && endDate.isNotEmpty;
+
+      if (hasStart && hasEnd) {
+        final formattedStart = formatDate(startDate);
+        final formattedEnd = formatDate(endDate);
+        return 'Du $formattedStart Au $formattedEnd';
+      } else if (hasStart) {
+        final formatted = formatDate(startDate);
+        return 'À partir du $formatted';
+      } else if (hasEnd) {
+        final formatted = formatDate(endDate);
+        return 'Jusqu\'au $formatted';
+      }
+      return 'À partir de bientôt';
+    }
+
+    final formatted = formatDate(eventDate);
+    return formatted.isNotEmpty
+        ? 'A lieu, $formatted'
+        : 'Date annoncée prochainement';
+  }
+
+  String _formatPrice(Map<String, dynamic> event) {
+    final priceType = event['price_type']?.toString();
+
+    // If price_type is gratuit or null, return "Gratuit"
+    if (priceType == null || priceType == 'gratuit') {
+      return 'Gratuit';
+    }
+
+    // If price_type is payant, check pricing_mode
+    if (priceType == 'payant') {
+      final pricingMode = event['pricing_mode']?.toString();
+
+      // If pricing_mode is categories, get first price from price_categories
+      if (pricingMode == 'categories') {
+        final priceCategories = event['price_categories'] as List?;
+        if (priceCategories != null && priceCategories.isNotEmpty) {
+          final firstCategory = priceCategories[0] as Map<String, dynamic>?;
+          if (firstCategory != null) {
+            final price = firstCategory['price']?.toString();
+            if (price != null && price.isNotEmpty) {
+              return 'À partir de $price €';
+            }
+          }
+        }
+        return 'Payant';
+      }
+
+      // If pricing_mode is unique, get price_amount
+      if (pricingMode == 'unique') {
+        final priceAmount = event['price_amount']?.toString();
+        if (priceAmount != null && priceAmount.isNotEmpty) {
+          return '$priceAmount €';
+        }
+        return 'Payant';
+      }
+
+      return 'Payant';
+    }
+
+    return 'Gratuit';
+  }
+
+  /// Translates English sub-category codes to French labels
+  String _translateSubCategory(String code) {
+    const Map<String, String> translations = {
+      'AfterworkTeamBuilding': 'Afterwork / Team Building',
+      'ConferenceCongressSeminars': 'Conférence / Congrès / Séminaires',
+      'SeminarOutings': 'Séminaire / Sorties',
+      'TradeShowForumExhibition': 'Salon / Forum / Exposition',
+      'OpenDay': 'Journée Portes Ouvertes',
+      'EntrepreneurialNetworking': 'Réseautage entrepreneurial',
+      'Music': 'Musique',
+      'CreativeHobbies': 'Loisir créatifs',
+      'MoviesSeries': 'Films & Séries',
+      'BooksMagazines': 'Livres & Magazines',
+      'ShowsTickets': 'Spectacles & Billeterie',
+      'GamblingBetting': 'Jeux de hasard & paris',
+      'SportsEvents': 'Événements Sportifs',
+      'AutoMotoBoatPlane': 'Auto / Moto / Bateau / Avion',
+      'TourismHikingGourmetWalk':
+          'Tourisme / Visite / Randonnée / Marche Gourmande',
+      'EsportsGamingEvents': 'Événements e-sport / Gaming',
+      'WorkshopsInternshipsCourses': 'Ateliers / Stage / Cours',
+      'ConferencesProfessionalTraining':
+          'Conférences et formations professionnelles',
+      'Associative': 'Associatifs',
+      'AuctionsCharity': 'Enchères / Charité',
+      'SolidarityEvents': 'Manifestations solidaires',
+      'ChildrenMuseums': 'Enfants / Musées',
+      'AnimalEvents': 'Manifestation Animalière',
+      'WorkshopsShowsForChildren': 'Ateliers et spectacles pour enfants',
+      'MarketFleaMarketCarBootSale':
+          'Marché / Bourse / Brocante / Vide Grenier',
+      'TradeFairs': 'Foires commerciales',
+      'GamesContestsLottery': 'Jeux / Concours / Loterie',
+      'BoardGameTournaments': 'Tournois de jeux de société',
+      'TastingsWineCheeseChocolate': 'Dégustations (vin, fromage, chocolat...)',
+      'CulinaryFestivals': 'Festivals culinaires',
+      'CookingWorkshops': 'Ateliers cuisine',
+      'MeditationYogaWellnessRetreats': 'Méditation, yoga, retraites bien-être',
+      'ConferencesWorkshopsPersonalDevelopment':
+          'Conférences et ateliers sur le développement personnel',
+      'AlternativeHealingTherapies': 'Soins et thérapies alternatives',
+      'Hackathons': 'Hackathons',
+      'TechConferencesStartups': 'Conférences tech & start-up',
+      'GamingEsportsEvents': 'Événements gaming & e-sport',
+      'FashionShows': 'Défilés de mode',
+      'BeautyExhibitionsFairs': 'Salons et foires de la beauté',
+      'MakeupSkincareWorkshops': 'Ateliers maquillage et soins',
+    };
+
+    return translations[code] ?? code;
   }
 
   Widget _buildEventCard(Map<String, dynamic> event) {
-    final title = event['title']?.toString() ?? '';
-    final description = _stripHtml(event['description']?.toString() ?? '');
-    final location =
-        event['location']?.toString() ?? event['city']?.toString() ?? '';
-    final eventDate =
-        event['event_date']?.toString() ?? event['start_date']?.toString();
-    final endDate =
-        event['end_date']?.toString() ?? event['event_end_date']?.toString();
-    final createdAt = event['created_at']?.toString();
-    final price =
-        event['price']?.toString() ?? event['ticket_price']?.toString();
-    final isPaid = event['is_paid'] == true || event['is_paid'] == 1;
-    final category = event['category']?.toString() ?? '';
-    final subCategory = event['sub_category']?.toString() ?? '';
-    final tags = (event['tags'] as List? ?? [])
-        .map((t) => t?.toString() ?? '')
-        .where((s) => s.isNotEmpty)
-        .toList();
-    final eventId = event['id']?.toString() ?? '';
-
-    // Media
-    final mediaFiles = event['media'] as List? ?? [];
-    final imageUrl = _extractMediaUrl(event);
-
-    // User info
     final user = event['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
     final particulierProfile =
         user?['particulier_profile'] as Map<String, dynamic>?;
-    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+
     final avatarUrl =
-        particulierProfile?['avatar_url']?.toString() ??
+        proProfile?['logo_url']?.toString() ??
         proProfile?['avatar_url']?.toString() ??
-        proProfile?['logo_url']?.toString();
+        particulierProfile?['avatar_url']?.toString() ??
+        user?['avatar']?.toString();
+
     final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
-    final username =
-        particulierProfile?['pseudo']?.toString() ??
+
+    // Extract owner name from profiles
+    final ownerName =
         proProfile?['company_name']?.toString() ??
-        user?['email']?.toString() ??
+        proProfile?['first_name']?.toString() ??
+        particulierProfile?['pseudo']?.toString() ??
+        particulierProfile?['first_name']?.toString() ??
+        user?['name']?.toString() ??
         'Organisateur';
-    final accountType = user?['account_type']?.toString() ?? 'particulier';
+    final eventTitle = event['title']?.toString() ?? 'Évènement';
+    final eventImage = _extractMediaUrl(event) ?? '';
+    final categories = <String>[
+      if (event['category_label']?.toString().isNotEmpty ?? false)
+        event['category_label'].toString(),
+      if (event['sub_category_label']?.toString().isNotEmpty ?? false)
+        event['sub_category_label'].toString(),
+    ];
+    final price = _formatPrice(event);
+    final coverageArea =
+        event['coverage_area']?.toString() ??
+        event['location']?.toString() ??
+        'Non spécifié';
+
+    final eventId = event['id']?.toString() ?? '';
+
+    // Build tags for display
+    final tags = <String>[];
+
+    // Add sub_category_code if available (and translate to French)
+    final subCategoryCode = event['sub_category_code']?.toString();
+    if (subCategoryCode != null && subCategoryCode.isNotEmpty) {
+      tags.add(_translateSubCategory(subCategoryCode));
+    }
+
+    // Add format_type if available
+    final formatType = event['format_type']?.toString();
+    if (formatType != null && formatType.isNotEmpty) {
+      const formatTranslations = {
+        'Présentiel': 'Présentiel',
+        'En ligne': 'En ligne',
+        'Hybride': 'Hybride',
+      };
+      tags.add(formatTranslations[formatType] ?? formatType);
+    }
 
     // Check if already favorited by current user
-    bool isFavorited = event['is_favorited'] == true;
+    bool favoris = event['is_favorited'] == true;
 
-    // Prepare display values
-    final allCategories = <String>[
-      if (category.isNotEmpty) category,
-      if (subCategory.isNotEmpty) subCategory,
-      ...tags.take(2),
-    ];
+    final currentUserId = UserSession().id;
 
     return StatefulBuilder(
-      builder: (context, setState) {
-        bool isLoadingFavorite = false;
-        bool localIsFavorited = isFavorited;
+      builder: (context, cardSetState) {
+        Future<void> _toggleFavorite() async {
+          // Toggle immediately for responsive UI
+          cardSetState(() {
+            favoris = !favoris;
+          });
 
-        Future<void> toggleFavorite() async {
-          if (isLoadingFavorite || eventId.isEmpty) return;
-
-          setState(() => isLoadingFavorite = true);
+          // Update underlying data immediately for persistence across rebuilds
+          event['is_favorited'] = favoris;
+          if (favoris) {
+            // Add to favorites
+            if (event['event_favorites'] is! List) {
+              event['event_favorites'] = [];
+            }
+            // Check if already exists to avoid duplicates
+            final alreadyExists = (event['event_favorites'] as List).any(
+              (f) =>
+                  f is Map &&
+                  (f['user_id']?.toString() == currentUserId ||
+                      f['user']?['id']?.toString() == currentUserId),
+            );
+            if (!alreadyExists) {
+              (event['event_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
+            }
+          } else {
+            // Remove from favorites
+            if (event['event_favorites'] is List) {
+              (event['event_favorites'] as List).removeWhere(
+                (f) =>
+                    f is Map &&
+                    (f['user_id']?.toString() == currentUserId ||
+                        f['user']?['id']?.toString() == currentUserId),
+              );
+            }
+          }
 
           try {
-            if (localIsFavorited) {
-              // Remove from favorites
+            if (!favoris) {
+              // Remove from favorites (API call)
               await ApiClient().authenticatedDelete(
                 '/events/$eventId/favorite',
               );
             } else {
-              // Add to favorites
+              // Add to favorites (API call)
               await ApiClient().authenticatedPost('/events/$eventId/favorite');
             }
-
-            setState(() {
-              localIsFavorited = !localIsFavorited;
-              isLoadingFavorite = false;
-              isFavorited = !isFavorited;
-            });
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: const TextStyle(color: Colors.white),
+                    favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
                   backgroundColor: Colors.green,
@@ -1898,11 +2235,40 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
               );
             }
           } catch (e) {
-            setState(() => isLoadingFavorite = false);
-            if (mounted) {
+            debugPrint('Favorite toggle error: $e');
+
+            // Revert on error
+            cardSetState(() {
+              favoris = !favoris;
+            });
+
+            // Revert underlying data
+            event['is_favorited'] = favoris;
+            if (!favoris) {
+              // Was removing, so add back
+              if (event['event_favorites'] is! List) {
+                event['event_favorites'] = [];
+              }
+              (event['event_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
+            } else {
+              // Was adding, so remove
+              if (event['event_favorites'] is List) {
+                (event['event_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
+            }
+
+            if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Erreur: ${e.toString()}'),
+                  content: Text('Erreur: $e'),
                   backgroundColor: Colors.red,
                 ),
               );
@@ -1912,47 +2278,26 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
         return EvenementCard(
           profileImage: profileImage,
-          username: username,
-          userType: accountType == 'pro' ? 'Pro' : 'Particulier',
-          eventTitle: title.isNotEmpty ? title : 'Évènement',
-          eventImage:
-              _buildStorageUrl(imageUrl) ??
-              'assets/images/dashboard_particulier/Rectangle 12 (4).png',
-          badge: _formatEventStatus(eventDate, endDate),
-          categories: allCategories.isNotEmpty ? allCategories : ['Évènement'],
-          eventDate: _formatEventDate(eventDate),
-          location: location.isNotEmpty ? location : 'Lieu à confirmer',
-          timeAgo: _buildTimeAgo(createdAt),
-          price: isPaid && price != null && price.isNotEmpty
-              ? '${price}€'
-              : 'Gratuit',
+          username: ownerName,
+          userType: user?['account_type']?.toString() ?? 'particulier',
+          eventTitle: eventTitle,
+          eventImage: eventImage,
+          badge: event['status']?.toString(),
+          categories: categories.isNotEmpty ? categories : ['Général'],
+          eventDate: _formatEventDate(event),
+          location: coverageArea,
+          timeAgo: _buildTimeAgo(event['created_at']?.toString()),
+          price: price,
           likesCount: _asInt(event['likes_count']),
           commentsCount: _asInt(event['comments_count']),
-          isFavorite: localIsFavorited,
-          onFavoriteToggle: toggleFavorite,
           onTapCTA: () => _navigateToEventDetail(event),
-          onAvatarTap: () {
-            if (user?['id'] != null) {
-              final isProUser =
-                  user?['account_type']?.toString().toLowerCase() == 'pro';
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => isProUser
-                      ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
-                ),
-              );
-            }
-          },
+          tags: tags.isNotEmpty ? tags : null,
+          onAvatarTap: () {},
           reactionBar: eventId.isNotEmpty
-              ? _buildReactionBar(
-                  'events',
-                  eventId,
-                  acceptedMessages: event['accept_messages'] == true,
-                  authorData: user,
-                )
+              ? _buildReactionBar('events', eventId)
               : null,
+          isFavorite: favoris,
+          onFavoriteToggle: _toggleFavorite,
         );
       },
     );
@@ -2186,12 +2531,18 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
   Widget _buildBonPlanDescription(Map<String, dynamic> item) {
     final descriptionPlain = item['description']?.toString() ?? '';
-    return Text(
-      _stripHtml(descriptionPlain),
-      style: const TextStyle(fontSize: 14, color: Color(0xFF666666)),
-      maxLines: 3,
-      overflow: TextOverflow.ellipsis,
-    );
+    final cleanText = _stripHtml(descriptionPlain);
+
+    if (cleanText.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return _ExpandableDescription(text: cleanText);
+  }
+
+  // Expandable description widget with "voir plus" functionality
+  Widget _ExpandableDescription({required String text}) {
+    return _ExpandableDescriptionStateful(text: text);
   }
 
   String _buildTimeAgo(String? isoDate) {
@@ -2251,6 +2602,14 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     );
   }
 
+  int _calculateDiscount(dynamic originalPrice, dynamic finalPrice) {
+    final original = double.tryParse(originalPrice.toString()) ?? 0;
+    final finalP = double.tryParse(finalPrice.toString()) ?? 0;
+    if (original <= 0 || finalP <= 0 || finalP >= original) return 0;
+    final discount = ((original - finalP) / original * 100).round();
+    return discount;
+  }
+
   Widget _buildBonPlanCard(Map<String, dynamic> bp) {
     final bpId = bp['id']?.toString() ?? '';
     final title = bp['title']?.toString() ?? '';
@@ -2269,35 +2628,56 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
           final url = m['url']?.toString() ?? '';
           if (url.isEmpty) return '';
           // If URL is already complete (http/https), use it as-is
-          if (url.startsWith('http')) return url;
+          if (url.startsWith('http') || url.startsWith('https')) return url;
           // Otherwise use the storage URL builder
           return _buildStorageUrl(url) ?? '';
         })
         .where((url) => url.isNotEmpty)
         .toList();
     // Check if already favorited by current user
-    bool _isFavorited = bp['is_favorited'] == true;
+    bool favoris = bp['is_favorited'];
+    final currentUserId = UserSession().id;
 
     return StatefulBuilder(
       builder: (context, setState) {
         bool _isLoading = false;
 
         Future<void> _toggleFavorite() async {
-          if (_isLoading || bpId.isEmpty) return;
+          if (_isLoading) return;
 
+          // Toggle immediately for responsive UI
+          favoris = !favoris;
           setState(() => _isLoading = true);
 
           try {
-            if (_isFavorited) {
+            if (!favoris) {
               // Remove from favorites
               await ApiClient().authenticatedDelete('/bonplans/$bpId/favorite');
+              // Update underlying data to persist state across rebuilds
+              bp['is_favorited'] = false;
+              if (bp['bon_plan_favorites'] is List) {
+                (bp['bon_plan_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost('/bonplans/$bpId/favorite');
+              // Update underlying data to persist state across rebuilds
+              bp['is_favorited'] = true;
+              if (bp['bon_plan_favorites'] is! List) {
+                bp['bon_plan_favorites'] = [];
+              }
+              (bp['bon_plan_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
             }
 
             setState(() {
-              _isFavorited = !_isFavorited;
               _isLoading = false;
             });
 
@@ -2305,8 +2685,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: const TextStyle(color: Colors.white),
+                    favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
                   backgroundColor: Colors.green,
@@ -2315,7 +2695,12 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             }
           } catch (e) {
             debugPrint('Favorite toggle error: $e');
-            setState(() => _isLoading = false);
+            // Revert on error
+            favoris = !favoris;
+            bp['is_favorited'] = favoris;
+            setState(() {
+              _isLoading = false;
+            });
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -2377,39 +2762,79 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        Text(
-                          bp['price'] != null &&
-                                  bp['price'].toString().isNotEmpty
-                              ? '${bp['price']}€'
-                              : 'Gratuit',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2E9B5B),
-                          ),
-                        ),
-                        if (bp['original_price'] != null &&
-                            bp['original_price'].toString().isNotEmpty) ...[
+                        bp['prix_avant_reduction'] != null &&
+                                bp['prix_final'] == null
+                            ? Text(
+                                '${bp['prix_avant_reduction']}€',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E9B5B),
+                                ),
+                              )
+                            : (type == 'Infos pouvoir d\'achat'
+                                  ? SizedBox.shrink()
+                                  : Text(
+                                      bp['prix_final'] != null &&
+                                              bp['prix_final']
+                                                  .toString()
+                                                  .isNotEmpty
+                                          ? '${bp['prix_final']}€'
+                                          : 'Gratuit',
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF2E9B5B),
+                                      ),
+                                    )),
+                        if (bp['prix_final'] != null &&
+                            bp['prix_avant_reduction'] != null &&
+                            bp['prix_avant_reduction']
+                                .toString()
+                                .isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Text(
-                            '${bp['original_price']}€',
+                            '${bp['prix_avant_reduction']}€',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[500],
                               decoration: TextDecoration.lineThrough,
                             ),
                           ),
+                          // Discount badge
+                          if (bp['prix_final'] != null &&
+                              bp['prix_final'].toString().isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF5722),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '-${_calculateDiscount(bp['prix_avant_reduction'], bp['prix_final'])}%',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                         // Promo code as tag
                         if (bp['promo_code'] != null &&
                             bp['promo_code'].toString().isNotEmpty) ...[
                           Spacer(),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.only(left: 16),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
+                                horizontal: 8,
+                                vertical: 4,
                               ),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF2E9B5B).withOpacity(0.1),
@@ -2431,7 +2856,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                                   Text(
                                     'Code promo: ${bp['promo_code']}',
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF2E9B5B),
                                     ),
@@ -2494,7 +2919,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                     child: Divider(height: 1),
                   ),
                   const SizedBox(height: 10),
-                  if (bpId.isNotEmpty) ...[
+                  if (bpId.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _buildReactionBar(
@@ -2504,7 +2929,6 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                         authorData: bp['user'] as Map<String, dynamic>?,
                       ),
                     ),
-                  ],
                   const SizedBox(height: 10),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
@@ -2563,10 +2987,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                             ),
                           )
                         : Icon(
-                            _isFavorited
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color: _isFavorited ? Colors.red : Colors.grey[600],
+                            favoris ? Icons.favorite : Icons.favorite_border,
+                            color: favoris ? Colors.red : Colors.grey[600],
                             size: 20,
                           ),
                   ),
@@ -2641,7 +3063,6 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
   Widget _buildJobOfferCard(Map<String, dynamic> job) {
     final jobId = job['id']?.toString() ?? '';
-    final companyName = job['company_name']?.toString() ?? 'Entreprise';
     final jobTitle = job['title']?.toString() ?? 'Offre d\'emploi';
     final description = _stripHtml(job['description']?.toString() ?? '');
     final location =
@@ -2655,8 +3076,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
         _buildJobSalaryDisplay(job) ??
         job['salary']?.toString();
 
-    // Check if already favorited by current user
-    bool isFavorited = job['is_favorited'] == true;
+    // Check initial favorite status
+    bool favoris = job['is_favorited'];
 
     final tags = <JobDetailTag>[
       // 1st: Place (location)
@@ -2672,69 +3093,91 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
     final user = job['user'] as Map<String, dynamic>?;
     final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
-    final particulierProfile =
-        user?['particulier_profile'] as Map<String, dynamic>?;
 
-    final avatarUrl =
-        proProfile?['logo_url']?.toString() ??
-        proProfile?['avatar_url']?.toString() ??
-        particulierProfile?['avatar_url']?.toString() ??
-        user?['avatar']?.toString();
+    final avatarUrl = proProfile?['avatar_url']?.toString() ?? '';
+
+    final companyName = proProfile?['company_name']?.toString() ?? 'Entreprise';
 
     final companyLogoUrl =
         _buildStorageUrl(avatarUrl) ??
         'assets/images/dashboard_particulier/Rectangle 13.png';
 
-    bool _isLoading = false;
-
-    Future<void> _toggleFavorite() async {
-      if (_isLoading || jobId.isEmpty) return;
-
-      setState(() => _isLoading = true);
-
-      try {
-        if (isFavorited) {
-          // Remove from favorites
-          await ApiClient().authenticatedDelete('/job-offers/$jobId/favorite');
-        } else {
-          // Add to favorites
-          await ApiClient().authenticatedPost('/job-offers/$jobId/favorite');
-        }
-
-        setState(() {
-          isFavorited = !isFavorited;
-          _isLoading = false;
-        });
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                style: TextStyle(color: Colors.white),
-              ),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        debugPrint('Favorite toggle error: $e');
-        setState(() => _isLoading = false);
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Erreur lors de la mise à jour des favoris'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-
     return StatefulBuilder(
       builder: (context, setState) {
+        bool _isLoading = false;
+
+        Future<void> _toggleFavorite() async {
+          if (_isLoading || jobId.isEmpty) return;
+
+          // Toggle immediately for responsive UI
+          favoris = !favoris;
+          setState(() => _isLoading = true);
+
+          try {
+            if (!favoris) {
+              // Remove from favorites
+              await ApiClient().authenticatedDelete(
+                '/job-offers/$jobId/favorite',
+              );
+              // Update underlying data to persist state across rebuilds
+              job['is_favorited'] = false;
+              if (job['job_offer_favorites'] is List) {
+                (job['job_offer_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == UserSession().id ||
+                          f['user']?['id']?.toString() == UserSession().id),
+                );
+              }
+            } else {
+              // Add to favorites
+              await ApiClient().authenticatedPost(
+                '/job-offers/$jobId/favorite',
+              );
+              // Update underlying data to persist state across rebuilds
+              job['is_favorited'] = true;
+              if (job['job_offer_favorites'] is! List) {
+                job['job_offer_favorites'] = [];
+              }
+              (job['job_offer_favorites'] as List).add({
+                'user_id': UserSession().id,
+                'user': {'id': UserSession().id},
+              });
+            }
+
+            setState(() {
+              _isLoading = false;
+            });
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            // Revert on error
+            favoris = !favoris;
+            job['is_favorited'] = favoris;
+            setState(() => _isLoading = false);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Erreur: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        }
+
         return JobAnnouncementCard(
           companyLogo: companyLogoUrl,
           companyName: companyName,
@@ -2744,24 +3187,11 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
               : 'Description non disponible.',
           tags: tags,
           timeAgo: _buildTimeAgo(job['created_at']?.toString()),
-          isFavorited: isFavorited,
+          isFavorited: favoris,
           isLoadingFavorite: _isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToJobOfferDetail(job),
-          onAvatarTap: () {
-            if (user?['id'] != null) {
-              final isProUser =
-                  user?['account_type']?.toString().toLowerCase() == 'pro';
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => isProUser
-                      ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
-                ),
-              );
-            }
-          },
+          onAvatarTap: () {},
           reactionBar: jobId.isNotEmpty
               ? _buildReactionBar('job-offers', jobId)
               : null,
@@ -3055,10 +3485,19 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
       final apiCommentsCount = _asInt(resource['comments_count']);
-      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(apiSlug, entityId);
+      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(
+        apiSlug,
+        entityId,
+      );
       _reactions[key] = _ReactionData(
-        likesCount: (cachedCount != null && cachedCount > apiCount) ? cachedCount : apiCount,
-        commentsCount: (cachedCommentsCount != null && cachedCommentsCount > apiCommentsCount) ? cachedCommentsCount : apiCommentsCount,
+        likesCount: (cachedCount != null && cachedCount > apiCount)
+            ? cachedCount
+            : apiCount,
+        commentsCount:
+            (cachedCommentsCount != null &&
+                cachedCommentsCount > apiCommentsCount)
+            ? cachedCommentsCount
+            : apiCommentsCount,
         userReaction: userReaction,
       );
     }
@@ -3066,7 +3505,9 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
 
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
     try {
-      final response = await ApiClient().authenticatedGet('/$apiSlug/$entityId');
+      final response = await ApiClient().authenticatedGet(
+        '/$apiSlug/$entityId',
+      );
       final data = response['data'] as Map<String, dynamic>?;
       if (data != null && mounted) {
         setState(() {
@@ -3075,17 +3516,31 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
           final apiCommentsCount = _asInt(data['comments_count']);
           final apiReaction = data['user_reaction']?.toString();
           final currentData = _getReaction(apiSlug, entityId);
-          final preservedLikesCount = apiLikesCount > currentData.likesCount ? apiLikesCount : currentData.likesCount;
-          final preservedCommentsCount = apiCommentsCount > currentData.commentsCount ? apiCommentsCount : currentData.commentsCount;
+          final preservedLikesCount = apiLikesCount > currentData.likesCount
+              ? apiLikesCount
+              : currentData.likesCount;
+          final preservedCommentsCount =
+              apiCommentsCount > currentData.commentsCount
+              ? apiCommentsCount
+              : currentData.commentsCount;
           final cachedReaction = ReactionCacheService.load(apiSlug, entityId);
-          final preservedReaction = currentData.userReaction ?? cachedReaction ?? apiReaction;
+          final preservedReaction =
+              currentData.userReaction ?? cachedReaction ?? apiReaction;
           _reactions[key] = _ReactionData(
             likesCount: preservedLikesCount,
             commentsCount: preservedCommentsCount,
             userReaction: preservedReaction,
           );
-          ReactionCacheService.saveCount(apiSlug, entityId, preservedLikesCount);
-          ReactionCacheService.saveCommentsCount(apiSlug, entityId, preservedCommentsCount);
+          ReactionCacheService.saveCount(
+            apiSlug,
+            entityId,
+            preservedLikesCount,
+          );
+          ReactionCacheService.saveCommentsCount(
+            apiSlug,
+            entityId,
+            preservedCommentsCount,
+          );
           ReactionCacheService.save(apiSlug, entityId, preservedReaction);
         });
       }
@@ -3232,11 +3687,15 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                     replyingToId = null;
                     replyingToName = null;
                   });
-                  // Update local comments count
+                  // Update local comments count in feed
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     data.commentsCount++;
-                    ReactionCacheService.saveCommentsCount(apiSlug, entityId, data.commentsCount);
+                    ReactionCacheService.saveCommentsCount(
+                      apiSlug,
+                      entityId,
+                      data.commentsCount,
+                    );
                   });
                 }
                 commentCtrl.clear();
@@ -3356,11 +3815,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                   });
 
                   // Recharger le feed pour actualiser les commentaires
-                  await _loadBonPlans();
-                  await _loadDemandes();
-                  await _loadEvents();
-                  await _loadJobOffers();
-                  await _loadTrainings();
+                  // await _loadUnifiedFeed(reset: true);
                 }
               } catch (e) {
                 if (mounted) {
@@ -3421,21 +3876,19 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
               try {
                 await ApiClient().authenticatedDelete('/comments/$commentId');
 
-                // Refresh reaction counts from API to ensure accuracy
+                // Update local comments count in feed
                 if (!isReply) {
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     if (data.commentsCount > 0) data.commentsCount--;
                   });
                 }
+
+                // Refresh reaction counts from API to ensure accuracy
                 await _refreshReactionFromApi(apiSlug, entityId);
 
                 // Recharger le feed pour actualiser les commentaires
-                await _loadBonPlans();
-                await _loadDemandes();
-                await _loadEvents();
-                await _loadJobOffers();
-                await _loadTrainings();
+                // await _loadUnifiedFeed(reset: true);
 
                 modalSetState(() {
                   if (isReply) {
@@ -3478,10 +3931,15 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
               final user = comment['user'] as Map<String, dynamic>? ?? {};
               final userId = user['id']?.toString(); // Convertir en String
               final email = user['email']?.toString() ?? '';
+
+              final userProfile = user['pro_profile'] != null
+                  ? user['pro_profile']
+                  : user['particulier_profile'];
+
               final displayName = (userId != null && userId == _currentUserId)
                   ? 'Vous'
-                  : (user['display_name']?.toString() ??
-                        user['name']?.toString() ??
+                  : (userProfile['pseudo']?.toString() ??
+                        userProfile['company_name']?.toString() ??
                         email.split('@').first);
               final body = comment['body']?.toString() ?? '';
               final createdAt = comment['created_at']?.toString();
@@ -3497,12 +3955,14 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                       .toList() ??
                   [];
               // Get avatar URL from user data - check nested profiles
-              final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
+              final particulierProfile =
+                  user['particulier_profile'] as Map<String, dynamic>?;
               final proProfile = user['pro_profile'] as Map<String, dynamic>?;
-              final avatarUrl = particulierProfile?['avatar_url']?.toString()
-                  ?? proProfile?['avatar_url']?.toString()
-                  ?? proProfile?['logo_url']?.toString()
-                  ?? user['avatar_url']?.toString();
+              final avatarUrl =
+                  particulierProfile?['avatar_url']?.toString() ??
+                  proProfile?['avatar_url']?.toString() ??
+                  proProfile?['logo_url']?.toString() ??
+                  user['avatar_url']?.toString();
 
               return Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
@@ -3515,8 +3975,12 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                         CircleAvatar(
                           radius: isReply ? 14 : 18,
                           backgroundColor: const Color(0xFFE6F7EF),
-                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? avatarUrl)
+                          backgroundImage:
+                              avatarUrl != null && avatarUrl.isNotEmpty
+                              ? NetworkImage(
+                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
+                                      avatarUrl,
+                                )
                               : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
                               ? Text(
@@ -3879,6 +4343,154 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
     );
   }
 
+  void _shareBonPlan(String bonPlanId) {
+    // Share functionality for bon plans
+    final String shareUrl =
+        '${ApiConfig.baseUrl.replaceAll('/api', '')}/bon-plans/$bonPlanId';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Partager ce bon plan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
+                title: const Text('Copier le lien'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lien copié dans le presse-papiers'),
+                      backgroundColor: Color(0xFF3AAE5E),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
+                title: const Text('Partager via...'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement native share
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAuthorInfo(Map<String, dynamic> authorData) {
+    // Extract profile data based on account type
+    final accountType = authorData['account_type']?.toString();
+    final proProfile = authorData['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile =
+        authorData['particulier_profile'] as Map<String, dynamic>?;
+
+    // Get the appropriate profile
+    final profile = proProfile != null ? proProfile : particulierProfile;
+
+    // Extract name from profile or fallback to direct fields
+    final name =
+        profile?['company_name']?.toString() ??
+        '${profile?['first_name']?.toString() ?? ''} ${profile?['last_name']?.toString() ?? ''}'
+            .trim();
+
+    // Extract avatar from profile or fallback to direct fields
+    final avatarUrl =
+        profile?['avatar_url']?.toString() ?? profile?['avatar']?.toString();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.grey[300],
+            image:
+                avatarUrl != null &&
+                    avatarUrl.isNotEmpty &&
+                    (avatarUrl.startsWith("https") ||
+                        avatarUrl.startsWith("http"))
+                ? DecorationImage(
+                    image: NetworkImage(avatarUrl),
+                    fit: BoxFit.cover,
+                  )
+                : (avatarUrl != null && avatarUrl.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(
+                            "${ApiConfig.baseUrl.replaceAll("/api", "")}/storage/$avatarUrl",
+                          ),
+                          fit: BoxFit.cover,
+                        )
+                      : null),
+          ),
+          child: avatarUrl == null || avatarUrl.isEmpty
+              ? Icon(Icons.person, size: 16, color: Colors.grey[600])
+              : null,
+        ),
+        const SizedBox(width: 8),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              name.isNotEmpty ? name : 'Utilisateur',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (accountType == 'pro')
+              Container(
+                margin: const EdgeInsets.only(top: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3AAE5E),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'PRO',
+                  style: TextStyle(
+                    fontSize: 7,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildReactionBar(
     String apiSlug,
     String entityId, {
@@ -3887,6 +4499,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
   }) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
+    final isBonPlan = apiSlug == 'bon-plans';
+    final isPost = apiSlug == 'posts';
 
     return Row(
       children: [
@@ -3931,6 +4545,17 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
             ],
           ),
         ),
+        // Share icon
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: () => _shareBonPlan(entityId),
+          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
+        ),
+        // For bon plans: show author avatar and name on the left
+        if (isBonPlan && authorData != null) ...[
+          const Spacer(),
+          _buildAuthorInfo(authorData),
+        ],
       ],
     );
   }
