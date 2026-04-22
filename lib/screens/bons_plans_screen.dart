@@ -287,7 +287,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
 
   List<String> _extractImages(List? mediaFiles) {
     if (mediaFiles == null || mediaFiles.isEmpty) {
-      return ['assets/images/details_bon_plans/Rectangle 35.png'];
+      return [];
     }
     final images = mediaFiles
         .where((m) => m is Map && m['url'] != null)
@@ -295,10 +295,6 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
         .where((url) => url.isNotEmpty)
         .toList();
 
-    // Ensure we always have at least one image
-    if (images.isEmpty) {
-      return ['assets/images/details_bon_plans/Rectangle 35.png'];
-    }
     return images;
   }
 
@@ -693,7 +689,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
 
                   // Title
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 100, 0),
+                    padding: EdgeInsets.fromLTRB(16, imageUrls.isNotEmpty ? 16 : 56, 100, 0),
                     child: Text(
                       title,
                       style: const TextStyle(

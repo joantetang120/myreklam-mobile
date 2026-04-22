@@ -89,6 +89,37 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
   bool _isExpanded = false;
   static const int _collapsedMaxLength = 150;
 
+  /// Build author avatar - shows icon if no avatar, otherwise shows image
+  Widget _buildAuthorAvatar(String avatarUrl) {
+    final hasAvatar = avatarUrl.isNotEmpty &&
+        avatarUrl != 'null' &&
+        avatarUrl != 'assets/images/dashboard_particulier/Ellipse 10.png';
+
+    if (!hasAvatar) {
+      return CircleAvatar(
+        radius: 20,
+        backgroundColor: Colors.grey[300],
+        child: Icon(
+          widget.author.accountType == 'pro' ? Icons.business : Icons.person,
+          color: Colors.grey[600],
+          size: 20,
+        ),
+      );
+    }
+
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: Colors.grey[300],
+      backgroundImage: avatarUrl.startsWith('http')
+          ? NetworkImage(avatarUrl) as ImageProvider
+          : avatarUrl.startsWith('assets/')
+              ? AssetImage(avatarUrl)
+              : NetworkImage(
+                  ApiConfig.resolveMediaUrl(avatarUrl) ?? '',
+                ) as ImageProvider,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final needsCollapse = widget.content.length > _collapsedMaxLength;
@@ -172,22 +203,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                         children: [
                           GestureDetector(
                             onTap: () {},
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundImage:
-                                  widget.author.avatar.startsWith('http')
-                                  ? NetworkImage(widget.author.avatar)
-                                        as ImageProvider
-                                  : widget.author.avatar.startsWith('assets/')
-                                  ? AssetImage(widget.author.avatar)
-                                  : NetworkImage(
-                                          ApiConfig.resolveMediaUrl(
-                                                widget.author.avatar,
-                                              ) ??
-                                              '',
-                                        )
-                                        as ImageProvider,
-                            ),
+                            child: _buildAuthorAvatar(widget.author.avatar),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -1618,18 +1634,25 @@ class _ParticulierPublicViewScreenState
                             ),
                             child: CircleAvatar(
                               radius: 50,
-                              backgroundImage: avatarUrl != null
+                              backgroundColor: Colors.grey[300],
+                              backgroundImage: avatarUrl != null &&
+                                      avatarUrl.isNotEmpty
                                   ? (avatarUrl.startsWith('http')
-                                        ? NetworkImage(avatarUrl)
-                                        : NetworkImage(
-                                            ApiConfig.resolveMediaUrl(
-                                                  avatarUrl,
-                                                ) ??
-                                                '',
-                                          ))
-                                  : const AssetImage(
-                                      'assets/images/dashboard_particulier/Ellipse 10.png',
-                                    ),
+                                      ? NetworkImage(avatarUrl)
+                                      : NetworkImage(
+                                          ApiConfig.resolveMediaUrl(
+                                                avatarUrl,
+                                              ) ??
+                                              '',
+                                        ))
+                                  : null,
+                              child: avatarUrl == null || avatarUrl.isEmpty
+                                  ? Icon(
+                                      Icons.person,
+                                      size: 50,
+                                      color: Colors.grey[600],
+                                    )
+                                  : null,
                             ),
                           ),
                         ),
@@ -2334,9 +2357,24 @@ class _ParticulierPublicViewScreenState
 
   String? _buildStorageUrl(String? url) {
     if (url == null || url.isEmpty) return null;
-    if (url.startsWith('http')) return url;
+    // Handle already complete URLs (both http:// and https://)
+    if (url.toLowerCase().startsWith('http://') ||
+        url.toLowerCase().startsWith('https://')) {
+      return url;
+    }
+    // Handle URLs that might incorrectly start with /storage/ followed by http
+    if (url.startsWith('/storage/http')) {
+      // Extract the actual URL after /storage/
+      final actualUrl = url.substring(9); // Remove '/storage/'
+      if (actualUrl.toLowerCase().startsWith('http://') ||
+          actualUrl.toLowerCase().startsWith('https://')) {
+        return actualUrl;
+      }
+    }
     final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
-    return '$serverBase/storage/$url';
+    // Remove leading slash if present to avoid double slashes
+    final cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    return '$serverBase/storage/$cleanUrl';
   }
 
   String _stripHtml(String input) {
@@ -2996,7 +3034,7 @@ class _ParticulierPublicViewScreenState
                       children: [
                         CircleAvatar(
                           radius: isReply ? 14 : 18,
-                          backgroundColor: const Color(0xFFE6F7EF),
+                          backgroundColor: Colors.grey[300],
                           backgroundImage:
                               avatarUrl != null && avatarUrl.isNotEmpty
                               ? NetworkImage(
@@ -3005,15 +3043,10 @@ class _ParticulierPublicViewScreenState
                                 )
                               : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Text(
-                                  displayName.isNotEmpty
-                                      ? displayName[0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    fontSize: isReply ? 11 : 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2A8143),
-                                  ),
+                              ? Icon(
+                                  Icons.person,
+                                  size: isReply ? 12 : 16,
+                                  color: Colors.grey[600],
                                 )
                               : null,
                         ),
@@ -3577,7 +3610,7 @@ class _ParticulierPublicViewScreenState
 
   List<String> _extractImages(List? mediaFiles) {
     if (mediaFiles == null || mediaFiles.isEmpty) {
-      return ['assets/images/details_bon_plans/Rectangle 35.png'];
+      return [];
     }
     final images = <String>[];
     for (final m in mediaFiles) {
@@ -3588,9 +3621,7 @@ class _ParticulierPublicViewScreenState
         }
       }
     }
-    return images.isNotEmpty
-        ? images
-        : ['assets/images/details_bon_plans/Rectangle 35.png'];
+    return images;
   }
 
   Future<void> _navigateToBonPlanDetail(Map<String, dynamic> bp) async {
@@ -3656,6 +3687,9 @@ class _ParticulierPublicViewScreenState
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
       final reductionLabel = data['reduction_label']?.toString();
+      // Extract price fields from API response (French field names)
+      final price = data['prix_final']?.toString();
+      final originalPrice = data['prix_avant_reduction']?.toString();
 
       final tags = <PostTag>[
         if (category.isNotEmpty)
@@ -3701,12 +3735,16 @@ class _ParticulierPublicViewScreenState
             validUntil: validUntil,
             deliveryInfo: deliveryInfo,
             location: location,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             link: link,
             isOwner: true,
             bonPlanId: bonPlanId,
             bonPlanData: data,
             acceptMessages: acceptMessages,
             authorData: user,
+            price: price,
+            originalPrice: originalPrice,
           ),
         ),
       );
@@ -3735,14 +3773,7 @@ class _ParticulierPublicViewScreenState
       ..addAll(bp['media'] as List? ?? []);
     final imageUrls = mediaFiles
         .where((m) => m['type'] == 'image' || m['type'] == null)
-        .map((m) {
-          final url = m['url']?.toString() ?? '';
-          if (url.isEmpty) return '';
-          // If URL is already complete (http/https), use it as-is
-          if (url.startsWith('http') || url.startsWith('https')) return url;
-          // Otherwise use the storage URL builder
-          return _buildStorageUrl(url) ?? '';
-        })
+        .map((m) => _buildStorageUrl(m['url']?.toString()) ?? '')
         .where((url) => url.isNotEmpty)
         .toList();
     // Check if already favorited by current user
@@ -3847,7 +3878,7 @@ class _ParticulierPublicViewScreenState
 
                   // Title
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 100, 0),
+                    padding: EdgeInsets.fromLTRB(16, imageUrls.isNotEmpty ? 16 : 56, 100, 0),
                     child: Text(
                       title,
                       style: const TextStyle(
@@ -4342,6 +4373,8 @@ class _ParticulierPublicViewScreenState
           <Map<String, dynamic>>[];
       final reservationMode = data['reservation_mode']?.toString();
       final coverageArea = data['coverage_area']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
       final isNationwide = data['is_nationwide'] == true;
       final organizerName = data['organizer_name']?.toString();
       final isOrganizer = data['is_organizer'] != false;
@@ -4410,6 +4443,8 @@ class _ParticulierPublicViewScreenState
             priceCategories: priceCategories,
             reservationMode: reservationMode,
             coverageArea: coverageArea,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             isNationwide: isNationwide,
             organizerName: organizerName,
             isOrganizer: isOrganizer,
@@ -4696,6 +4731,8 @@ class _ParticulierPublicViewScreenState
       final urgent = data['urgent'] == true;
       final budgetMax = data['budget_max']?.toString();
       final location = data['location']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
       final nationwide = data['nationwide'] == true;
       final searchRadiusKm = data['search_radius_km'] is int
           ? data['search_radius_km'] as int
@@ -4773,6 +4810,8 @@ class _ParticulierPublicViewScreenState
             urgent: urgent,
             budgetMax: budgetMax,
             location: location,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             nationwide: nationwide,
             searchRadiusKm: searchRadiusKm,
             showGoogleLocation: showGoogleLocation,

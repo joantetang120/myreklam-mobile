@@ -695,7 +695,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     return DemandeCard(
       profileImage: profileImage,
       username: username,
-      categoryLabel: nature,
+      categoryLabel: nature.isNotEmpty ? _getNatureLabel(nature) : 'Demande',
       categoryColor: const Color(0xFFEF8A40),
       title: title,
       description: description.length > 200
@@ -752,6 +752,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       final urgent = data['urgent'] == true;
       final budgetMax = data['budget_max']?.toString();
       final location = data['location']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
       final nationwide = data['nationwide'] == true;
       final searchRadiusKm = data['search_radius_km'] is int
           ? data['search_radius_km'] as int
@@ -829,6 +831,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             urgent: urgent,
             budgetMax: budgetMax,
             location: location,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             nationwide: nationwide,
             searchRadiusKm: searchRadiusKm,
             showGoogleLocation: showGoogleLocation,
@@ -1052,6 +1056,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       final addressCity = data['address_city']?.toString();
       final addressZipcode = data['address_zipcode']?.toString();
       final addressLine1 = data['address_line1']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
       final showLocation = data['show_location'] == true;
       final certificationRaw = data['certification'];
       final certification = certificationRaw is List
@@ -1121,6 +1127,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             addressCity: addressCity,
             addressZipcode: addressZipcode,
             addressLine1: addressLine1,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             showLocation: showLocation,
             certification: certification,
             documents: documents,
@@ -1405,6 +1413,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           <Map<String, dynamic>>[];
       final reservationMode = data['reservation_mode']?.toString();
       final coverageArea = data['coverage_area']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
       final isNationwide = data['is_nationwide'] == true;
       final organizerName = data['organizer_name']?.toString();
       final isOrganizer = data['is_organizer'] != false;
@@ -1473,6 +1483,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             priceCategories: priceCategories,
             reservationMode: reservationMode,
             coverageArea: coverageArea,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             isNationwide: isNationwide,
             organizerName: organizerName,
             isOrganizer: isOrganizer,
@@ -1897,6 +1909,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                 locationRaw['name'] ??
                 locationRaw.toString())
           : (locationRaw?.toString() ?? '');
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
 
       final categoryRaw = data['category'];
       final category = categoryRaw is Map
@@ -2016,6 +2030,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             advantages: advantagesList,
             timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
             location: location,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             remoteWork: remoteWork,
             educationLevel: educationLevel,
             experienceLevel: experienceLevel,
@@ -2145,6 +2161,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             validUntil: validUntil,
             deliveryInfo: deliveryInfo,
             location: location,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             link: link,
             isOwner: true,
             bonPlanId: bonPlanId,
@@ -2326,5 +2344,56 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
     );
+  }
+
+  String _getNatureLabel(String nature) {
+    switch (nature.toLowerCase()) {
+      // Main categories from the new table
+      case 'searchjob':
+        return 'Recherche d\'emploi';
+      case 'training':
+        return 'Formation';
+      case 'realestate':
+        return 'Immobilier';
+      case 'servicehelp':
+        return 'Services / Aide';
+      case 'promaterial':
+        return 'Matériel pro';
+      case 'house':
+        return 'Maison';
+      case 'fashion':
+        return 'Mode';
+      case 'vehicle':
+        return 'Véhicules';
+      case 'holiday':
+        return 'Vacances';
+      case 'multimedia':
+        return 'Multimédia';
+      case 'hobbies':
+        return 'Loisirs';
+      case 'animals':
+        return 'Animaux';
+      case 'various':
+        return 'Divers';
+      // Legacy mappings for backward compatibility
+      case 'emploi':
+        return 'Recherche d\'emploi';
+      case 'service':
+        return 'Services / Aide';
+      case 'logement':
+        return 'Immobilier';
+      case 'formation':
+        return 'Formation';
+      case 'internship':
+      case 'stage':
+        return 'Recherche de stage / alternance';
+      case 'product':
+      case 'produit':
+        return 'Recherche de produit';
+      case 'collaboration':
+        return 'Collaboration';
+      default:
+        return nature;
+    }
   }
 }

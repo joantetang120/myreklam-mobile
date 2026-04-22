@@ -630,7 +630,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 children: [
                   if (imageUrls.isNotEmpty) _buildImageCarousel(imageUrls),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 100, 0),
+                    padding: EdgeInsets.fromLTRB(16, imageUrls.isNotEmpty ? 16 : 56, 100, 0),
                     child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF333333)), maxLines: 2, overflow: TextOverflow.ellipsis),
                   ),
                   const SizedBox(height: 8),
@@ -772,7 +772,6 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   Widget _buildJobOfferCard(Map<String, dynamic> job) {
     final jobId = job['id']?.toString() ?? '';
-    final companyName = job['company_name']?.toString() ?? 'Entreprise';
     final jobTitle = job['title']?.toString() ?? 'Offre d\'emploi';
     final description = _stripHtml(job['description']?.toString() ?? '');
     final location = job['location']?.toString() ?? job['city']?.toString() ?? 'Non spécifié';
@@ -793,6 +792,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
     final user = job['user'] as Map<String, dynamic>?;
     final avatarUrl = _resolveUserAvatar(user);
+    // Use resolved user name from profile (company_name for pro users)
+    final companyName = _resolveUserName(user, fallback: job['company_name']?.toString() ?? 'Entreprise');
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -1123,17 +1124,43 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   String _resolveUserAvatar(Map<String, dynamic>? user, {String fallback = 'assets/images/default_avatar.png'}) {
     if (user == null) return fallback;
+    // Server-computed avatar_url (logo_url for pro, avatar_url for particulier)
+    final serverAvatarUrl = user['avatar_url']?.toString();
+    if (serverAvatarUrl != null && serverAvatarUrl.isNotEmpty) {
+      final resolved = _resolveUrl(serverAvatarUrl);
+      if (resolved.isNotEmpty) return resolved;
+    }
+    // Fallback to nested profile data
     final proProfile = user['pro_profile'] as Map<String, dynamic>?;
     final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
-    final avatarUrl = proProfile?['logo_url']?.toString() ?? proProfile?['avatar_url']?.toString() ?? particulierProfile?['avatar_url']?.toString() ?? user['avatar']?.toString() ?? '';
-    return avatarUrl.isNotEmpty ? _resolveUrl(avatarUrl) : fallback;
+    final avatarUrl = proProfile?['logo_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        particulierProfile?['avatar_url']?.toString() ??
+        user['avatar']?.toString() ??
+        user['author_avatar']?.toString() ??
+        '';
+    if (avatarUrl.isEmpty) return fallback;
+    final resolved = _resolveUrl(avatarUrl);
+    return resolved.isNotEmpty ? resolved : fallback;
   }
 
   String _resolveUserName(Map<String, dynamic>? user, {String fallback = 'Utilisateur'}) {
     if (user == null) return fallback;
+    // Server-computed display_name (company_name for pro, pseudo for particulier)
+    final serverDisplayName = user['display_name']?.toString();
+    if (serverDisplayName != null && serverDisplayName.isNotEmpty) {
+      return serverDisplayName;
+    }
+    // Fallback to nested profile data and flat fields
     final proProfile = user['pro_profile'] as Map<String, dynamic>?;
     final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
-    return proProfile?['company_name']?.toString() ?? proProfile?['first_name']?.toString() ?? particulierProfile?['pseudo']?.toString() ?? particulierProfile?['first_name']?.toString() ?? user['name']?.toString() ?? fallback;
+    return proProfile?['company_name']?.toString() ??
+        proProfile?['first_name']?.toString() ??
+        particulierProfile?['pseudo']?.toString() ??
+        particulierProfile?['first_name']?.toString() ??
+        user['name']?.toString() ??
+        user['author_name']?.toString() ??
+        fallback;
   }
 
   void _navigateToUserProfile(Map<String, dynamic>? user) {
@@ -1179,6 +1206,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         tags: tags, time: _timeAgo(data['created_at']?.toString()), availability: data['available_at_name']?.toString() ?? 'Non spécifié',
         validityType: data['validity_type']?.toString() ?? 'permanent', validFrom: data['valid_from']?.toString(), validUntil: data['valid_until']?.toString(),
         deliveryInfo: _buildDeliveryInfo(data['pickup_methods']), location: _buildLocation(data['location_city'], data['location_postal_code']),
+        locationCity: data['location_city']?.toString(),
+        locationPostalCode: data['location_postal_code']?.toString(),
         link: data['brand_website']?.toString(), isOwner: isOwner, bonPlanId: bpId, bonPlanData: data,
         acceptMessages: data['accept_messages'] == true, authorData: user, price: data['prix_final']?.toString(),
         originalPrice: data['prix_avant_reduction']?.toString(), shippingOption: data['shipping_option']?.toString(),
@@ -1232,6 +1261,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         advantages: const [],
         timeAgo: _timeAgo(data['created_at']?.toString()),
         location: location ?? '',
+        locationCity: data['location_city']?.toString(),
+        locationPostalCode: data['location_postal_code']?.toString(),
         isOwner: job['user_id']?.toString() == UserSession().id,
         jobOfferData: data,
         acceptMessages: data['accept_messages'] == true,
@@ -1284,6 +1315,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         images: images,
         tags: tags,
         timeAgo: _timeAgo(data['created_at']?.toString()),
+        locationCity: data['location_city']?.toString(),
+        locationPostalCode: data['location_postal_code']?.toString(),
         isOwner: tr['user_id']?.toString() == UserSession().id,
         trainingData: data,
         authorData: user,
@@ -1329,7 +1362,9 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         tags: tags,
         timeAgo: _timeAgo(data['created_at']?.toString()),
         eventDate: data['start_date']?.toString() ?? data['event_date']?.toString(),
-        coverageArea: data['location_city']?.toString() ?? data['location']?.toString(),
+        coverageArea: data['coverage_area']?.toString() ?? data['location']?.toString(),
+        locationCity: data['location_city']?.toString(),
+        locationPostalCode: data['location_postal_code']?.toString(),
         isOwner: ev['user_id']?.toString() == UserSession().id,
         eventData: data,
         acceptMessages: data['accept_messages'] == true,
@@ -1374,6 +1409,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         tags: tags,
         timeAgo: _timeAgo(data['created_at']?.toString()),
         location: data['location_city']?.toString(),
+        locationCity: data['location_city']?.toString(),
+        locationPostalCode: data['location_postal_code']?.toString(),
         budgetMax: data['budget']?.toString(),
         isOwner: demande['user_id']?.toString() == UserSession().id,
         demandeData: data,
@@ -1402,12 +1439,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   }
 
   List<String> _extractImagesFromMedia(List? mediaFiles) {
-    if (mediaFiles == null) return ['assets/images/dashboard_particulier/Rectangle 35.png'];
+    if (mediaFiles == null) return [];
     final urls = mediaFiles.where((m) => m is Map && m['url'] != null).map((m) {
       final url = m['url'].toString();
       return _resolveUrl(url);
     }).where((u) => u.isNotEmpty).toList();
-    return urls.isNotEmpty ? urls : ['assets/images/dashboard_particulier/Rectangle 35.png'];
+    return urls;
   }
 
   String _stripHtml(String html) {
