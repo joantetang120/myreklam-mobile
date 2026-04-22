@@ -12,7 +12,6 @@ import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_profileEntreprise_screen.dart';
-import 'package:myreklam/screens/public_profile_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
@@ -670,25 +669,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       Row(
                         children: [
                           GestureDetector(
-                            onTap: () {
-                              if (widget.author.id != null) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        widget.author.accountType
-                                                .toLowerCase() ==
-                                            'pro'
-                                        ? ProPublicViewScreen(
-                                            userId: widget.author.id,
-                                          )
-                                        : PublicProfileScreen(
-                                            userId: widget.author.id,
-                                          ),
-                                  ),
-                                );
-                              }
-                            },
+                            onTap: () {},
                             child: CircleAvatar(
                               radius: 20,
                               backgroundImage:
@@ -712,25 +693,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 GestureDetector(
-                                  onTap: () {
-                                    if (widget.author.id != null) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              widget.author.accountType
-                                                      .toLowerCase() ==
-                                                  'pro'
-                                              ? ProPublicViewScreen(
-                                                  userId: widget.author.id,
-                                                )
-                                              : PublicProfileScreen(
-                                                  userId: widget.author.id,
-                                                ),
-                                        ),
-                                      );
-                                    }
-                                  },
+                                  onTap: () {},
                                   child: Text(
                                     widget.author.displayName,
                                     style: const TextStyle(
@@ -2289,12 +2252,23 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.grey[300],
-            image: avatarUrl != null && avatarUrl.isNotEmpty
+            image:
+                avatarUrl != null &&
+                    avatarUrl.isNotEmpty &&
+                    (avatarUrl.startsWith("https") ||
+                        avatarUrl.startsWith("http"))
                 ? DecorationImage(
                     image: NetworkImage(avatarUrl),
                     fit: BoxFit.cover,
                   )
-                : null,
+                : (avatarUrl != null && avatarUrl.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(
+                            "${ApiConfig.baseUrl.replaceAll("/api", "")}/storage/$avatarUrl",
+                          ),
+                          fit: BoxFit.cover,
+                        )
+                      : null),
           ),
           child: avatarUrl == null || avatarUrl.isEmpty
               ? Icon(Icons.person, size: 16, color: Colors.grey[600])
@@ -3550,22 +3524,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           isLoadingFavorite: _isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToJobOfferDetail(job),
-          onAvatarTap: () {
-            if (user?['id'] != null) {
-              final isProUser =
-                  user?['account_type']?.toString().toLowerCase() == 'pro';
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => isProUser
-                      ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(
-                          userId: user!['id'].toString(),
-                        ),
-                ),
-              );
-            }
-          },
+          onAvatarTap: () {},
           reactionBar: jobId.isNotEmpty
               ? _buildReactionBar('job-offers', jobId)
               : null,
@@ -4024,20 +3983,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           isLoadingFavorite: isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToTrainingDetail(training),
-          onAvatarTap: () {
-            if (user?['id'] != null) {
-              final isProUser =
-                  user?['account_type']?.toString().toLowerCase() == 'pro';
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => isProUser
-                      ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : PublicProfileScreen(userId: user!['id'].toString()),
-                ),
-              );
-            }
-          },
+          onAvatarTap: () {},
           reactionBar: trainingId.isNotEmpty
               ? _buildReactionBar('trainings', trainingId)
               : null,
@@ -4137,7 +4083,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     }
 
     final formatted = formatDate(eventDate);
-    return formatted.isNotEmpty ? formatted : 'Date annoncée prochainement';
+    return formatted.isNotEmpty
+        ? 'A lieu, $formatted'
+        : 'Date annoncée prochainement';
   }
 
   Future<void> _navigateToEventDetail(Map<String, dynamic> ev) async {
@@ -4555,22 +4503,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           commentsCount: _asInt(event['comments_count']),
           onTapCTA: () => _navigateToEventDetail(event),
           tags: tags.isNotEmpty ? tags : null,
-          onAvatarTap: () {
-            if (user?['id'] != null) {
-              final isProUser =
-                  user?['account_type']?.toString().toLowerCase() == 'pro';
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => isProUser
-                      ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(
-                          userId: user!['id'].toString(),
-                        ),
-                ),
-              );
-            }
-          },
+          onAvatarTap: () {},
           reactionBar: eventId.isNotEmpty
               ? _buildReactionBar('events', eventId)
               : null,
@@ -4888,22 +4821,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           commentsCount: _asInt(demande['comments_count']),
           timeAgo: _buildTimeAgo(demande['created_at']?.toString()),
           onTapCTA: () => _navigateToDemandeDetail(demande),
-          onAvatarTap: () {
-            if (user?['id'] != null) {
-              final isProUser =
-                  user?['account_type']?.toString().toLowerCase() == 'pro';
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => isProUser
-                      ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(
-                          userId: user!['id'].toString(),
-                        ),
-                ),
-              );
-            }
-          },
+          onAvatarTap: () {},
           isFavorited: favoris,
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
@@ -5240,22 +5158,16 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     }
 
     try {
-      final response = await ApiClient().authenticatedGet('/posts');
+      final targetUserId = widget.userId;
+      final response = await ApiClient().authenticatedGet(
+        targetUserId != null ? '/posts?user_id=$targetUserId' : '/posts',
+      );
       final data = response['data'];
       List<Map<String, dynamic>> posts = [];
       if (data is List) {
         posts = List<Map<String, dynamic>>.from(data);
       } else if (data is Map<String, dynamic> && data['data'] is List) {
         posts = List<Map<String, dynamic>>.from(data['data'] as List);
-      }
-
-      final currentUserId = _profileResponse?['user']?['id']?.toString();
-      if (currentUserId != null && currentUserId.isNotEmpty) {
-        posts = posts.where((p) {
-          final userId =
-              p['user_id']?.toString() ?? p['user']?['id']?.toString();
-          return userId == currentUserId;
-        }).toList();
       }
 
       if (!mounted) return;
@@ -5529,32 +5441,41 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     });
 
     try {
-      final currentUserId = _profileResponse?['user']?['id']?.toString();
+      // Determine which user's announcements to fetch
+      // widget.userId is set when viewing another user's profile
+      final targetUserId = widget.userId;
 
       final results = await Future.wait([
-        ApiClient().authenticatedGet('/bonplans'),
-        ApiClient().authenticatedGet('/job-offers'),
-        ApiClient().authenticatedGet('/trainings'),
-        ApiClient().authenticatedGet('/events'),
-        ApiClient().authenticatedGet('/demandes'),
+        ApiClient().authenticatedGet(
+          targetUserId != null
+              ? '/bonplans?user_id=$targetUserId'
+              : '/bonplans',
+        ),
+        ApiClient().authenticatedGet(
+          targetUserId != null
+              ? '/job-offers?user_id=$targetUserId'
+              : '/job-offers',
+        ),
+        ApiClient().authenticatedGet(
+          targetUserId != null
+              ? '/trainings?user_id=$targetUserId'
+              : '/trainings',
+        ),
+        ApiClient().authenticatedGet(
+          targetUserId != null ? '/events?user_id=$targetUserId' : '/events',
+        ),
+        ApiClient().authenticatedGet(
+          targetUserId != null
+              ? '/demandes?user_id=$targetUserId'
+              : '/demandes',
+        ),
       ]);
 
-      List<Map<String, dynamic>> filterByUser(
-        List<Map<String, dynamic>> items,
-      ) {
-        if (currentUserId == null || currentUserId.isEmpty) return items;
-        return items.where((m) {
-          final userId =
-              m['user_id']?.toString() ?? m['user']?['id']?.toString();
-          return userId == currentUserId;
-        }).toList();
-      }
-
-      final bonPlans = filterByUser(_extractList(results[0]));
-      final jobOffers = filterByUser(_extractList(results[1]));
-      final trainings = filterByUser(_extractList(results[2]));
-      final events = filterByUser(_extractList(results[3]));
-      final demandes = filterByUser(_extractList(results[4]));
+      final bonPlans = _extractList(results[0]);
+      final jobOffers = _extractList(results[1]);
+      final trainings = _extractList(results[2]);
+      final events = _extractList(results[3]);
+      final demandes = _extractList(results[4]);
 
       if (!mounted) return;
       // Seed reactions BEFORE setState to prevent _getReaction pre-populating with empty data
@@ -5648,8 +5569,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     final facebookUrl = socialLinks['facebook']?.toString();
     final instagramUrl = socialLinks['instagram']?.toString();
     final youtubeUrl = socialLinks['youtube']?.toString();
-    // final linkedinUrl = socialLinks['linkedin']?.toString();
-    // final snapchatUrl = socialLinks['snapchat']?.toString();
+    final linkedinUrl = socialLinks['linkedin']?.toString();
+    final snapchatUrl = socialLinks['snapchat']?.toString();
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -5713,7 +5634,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         margin: const EdgeInsets.only(
                           left: 16,
                           right: 16,
-                          bottom: 25,
+                          bottom: 10,
                           top: 40,
                         ),
                         padding: const EdgeInsets.only(
@@ -5986,10 +5907,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   // Message and Suivre buttons - only show when viewing other users' profiles
                   if (!_isViewingOwnProfile)
                     Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.only(bottom: 10, top: 4),
                       child: Row(
                         children: [
                           Expanded(
@@ -6059,6 +5978,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       left: 14,
                       right: 14,
                       bottom: 4,
+                      top: 8,
                     ),
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                     height: 44,
@@ -6230,7 +6150,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       ],
                     ),
                   )
-                : (!_isViewingOwnProfile
+                : (!_isViewingOwnProfile &&
+                          (bannerUrl == null ||
+                              (presentation?.trim().isEmpty ?? true))
                       ? Padding(
                           padding: const EdgeInsets.fromLTRB(10, 18, 10, 16),
                           child: Column(
@@ -6306,7 +6228,6 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 instagramUrl != null ||
                                 youtubeUrl != null ||
                                 linkedinUrl != null ||
-                                tiktokUrl != null ||
                                 snapchatUrl != null ||
                                 xUrl != null) ...[
                               Padding(
@@ -6373,25 +6294,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                         const Color(0xFF0A66C2),
                                         linkedinUrl,
                                       ),
-                                    if (tiktokUrl != null &&
-                                        tiktokUrl.isNotEmpty)
-                                      _buildSocialIcon(
-                                        Icons.music_note,
-                                        Colors.black,
-                                        tiktokUrl,
-                                      ),
                                     if (snapchatUrl != null &&
                                         snapchatUrl.isNotEmpty)
                                       _buildSocialIcon(
                                         Icons.screenshot,
                                         const Color(0xFFFFFC00),
                                         snapchatUrl,
-                                      ),
-                                    if (xUrl != null && xUrl.isNotEmpty)
-                                      _buildSocialIcon(
-                                        Icons.tag,
-                                        Colors.black,
-                                        xUrl,
                                       ),
                                   ],
                                 ),
@@ -6724,11 +6632,13 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               ),
             )
           else if (_myPosts.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 70),
               child: Center(
                 child: Text(
-                  "Vous n'avez pas encore publié de post.",
+                  _isViewingOwnProfile
+                      ? "Vous n'avez pas encore publié de post."
+                      : "Aucun post disponible pour l'instant.",
                   style: TextStyle(color: Colors.grey),
                 ),
               ),
