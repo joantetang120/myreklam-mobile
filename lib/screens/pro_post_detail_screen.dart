@@ -50,6 +50,8 @@ class ProPostDetailScreen extends StatefulWidget {
   final String? validUntil;
   final String deliveryInfo;
   final String? location;
+  final String? locationCity;
+  final String? locationPostalCode;
   final String? link;
   final String? promo_code;
   final bool isOwner;
@@ -64,7 +66,7 @@ class ProPostDetailScreen extends StatefulWidget {
 
   const ProPostDetailScreen({
     super.key,
-    this.images = const ['assets/images/details_bon_plans/Rectangle 35.png'],
+    this.images = const [],
     this.discount,
     required this.avatar,
     required this.name,
@@ -82,6 +84,8 @@ class ProPostDetailScreen extends StatefulWidget {
     this.validUntil,
     this.deliveryInfo = 'Non spécifié',
     this.location,
+    this.locationCity,
+    this.locationPostalCode,
     this.link,
     this.promo_code,
     this.isOwner = false,
@@ -109,6 +113,35 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
   bool _isFavorite = false;
   bool _isLoadingFavorite = false;
   String? _currentUserId;
+
+  /// Check if edit option should be shown
+  /// Hide edit if: 1) post is older than 2 hours OR 2) people have favorited it
+  bool get _canEdit {
+    if (!widget.isOwner) return false;
+
+    final data = widget.bonPlanData;
+    if (data == null) return true; // Allow edit if no data (fallback)
+
+    // Check if post is older than 2 hours
+    final createdAtStr = data['created_at']?.toString();
+    if (createdAtStr != null && createdAtStr.isNotEmpty) {
+      final createdAt = DateTime.tryParse(createdAtStr);
+      if (createdAt != null) {
+        final twoHoursAgo = DateTime.now().subtract(const Duration(hours: 2));
+        if (createdAt.isBefore(twoHoursAgo)) {
+          return false; // Post is older than 2 hours
+        }
+      }
+    }
+
+    // Check if people have favorited this post
+    final favoritesCount = data['favorites_count'] ?? 0;
+    if (favoritesCount is int && favoritesCount > 0) {
+      return false; // People have favorited
+    }
+
+    return true;
+  }
 
   @override
   void initState() {
@@ -400,6 +433,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
                 // Ensure id is available at top level for filtering
                 resource['id'] = item['id'];
+                // Preserve media data from the feed item (not in resource)
+                if (item['media'] != null) {
+                  resource['media'] = item['media'];
+                }
                 return resource;
               })
               .where((bonPlan) => bonPlan['id'].toString() != widget.bonPlanId)
@@ -1636,7 +1673,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
   List<String> _extractImages(List? mediaFiles) {
     if (mediaFiles == null || mediaFiles.isEmpty) {
-      return ['assets/images/details_bon_plans/Rectangle 35.png'];
+      return [];
     }
     final images = mediaFiles
         .where((m) => m is Map && m['url'] != null)
@@ -1644,10 +1681,6 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         .where((url) => url.isNotEmpty)
         .toList();
 
-    // Ensure we always have at least one image
-    if (images.isEmpty) {
-      return ['assets/images/details_bon_plans/Rectangle 35.png'];
-    }
     return images;
   }
 
@@ -1724,6 +1757,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
       final reductionLabel = data['reduction_label']?.toString();
+      // Extract price fields from API response (French field names)
+      final price = data['prix_final']?.toString();
+      final originalPrice = data['prix_avant_reduction']?.toString();
 
       final tags = <PostTag>[
         if (category.isNotEmpty)
@@ -1780,6 +1816,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             acceptMessages: acceptMessages,
             authorData: user,
             promo_code: bp['promo_code'],
+            price: price,
+            originalPrice: originalPrice,
           ),
         ),
       );
@@ -1856,7 +1894,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          if (widget.isOwner)
+          if (_canEdit)
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
@@ -2626,11 +2664,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           color: Colors.grey[600],
                         ),
                       ),
-                      const Spacer(),
-                      Text(
-                        '${_comments.length}',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                      ),
+                      // const Spacer(),
+                      // Text(
+                      //   '${_comments.length}',
+                      //   style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      // ),
                     ],
                   ),
                   const SizedBox(height: 12),

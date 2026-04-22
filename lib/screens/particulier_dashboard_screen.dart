@@ -586,6 +586,37 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
     );
   }
 
+  /// Build author avatar - shows icon if no avatar, otherwise shows image
+  Widget _buildAuthorAvatar(String avatarUrl, String accountType) {
+    final hasAvatar =
+        avatarUrl.isNotEmpty &&
+        avatarUrl != 'null' &&
+        avatarUrl != 'assets/images/dashboard_particulier/Ellipse 10.png';
+
+    if (!hasAvatar) {
+      return CircleAvatar(
+        radius: 20,
+        backgroundColor: Colors.grey[300],
+        child: Icon(
+          accountType == 'pro' ? Icons.business : Icons.person,
+          color: Colors.grey[600],
+          size: 20,
+        ),
+      );
+    }
+
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: Colors.grey[300],
+      backgroundImage: avatarUrl.startsWith('http')
+          ? NetworkImage(avatarUrl) as ImageProvider
+          : avatarUrl.startsWith('assets/')
+          ? AssetImage(avatarUrl)
+          : NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? '')
+                as ImageProvider,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // For quote reposts, show the repost_content as main text
@@ -649,10 +680,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       padding: EdgeInsets.only(bottom: 4),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.repeat_rounded,
-                            size: 14,
-                            color: Colors.grey[600],
+                          GestureDetector(
+                            onTap: () {},
+                            child: _buildAuthorAvatar(
+                              widget.author.avatar,
+                              widget.author.accountType,
+                            ),
                           ),
                           const SizedBox(width: 6),
                           CircleAvatar(
@@ -1068,6 +1101,30 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     'demande': 'demandes',
   };
 
+  /// Build small avatar widget - shows icon if no avatar
+  Widget _buildSmallAvatar(String avatarUrl, double radius) {
+    final hasAvatar =
+        avatarUrl.isNotEmpty &&
+        avatarUrl != 'null' &&
+        avatarUrl != _defaultAvatar;
+
+    if (!hasAvatar) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: Colors.grey[300],
+        child: Icon(Icons.person, size: radius, color: Colors.grey[600]),
+      );
+    }
+
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: Colors.grey[300],
+      backgroundImage: avatarUrl.startsWith('http')
+          ? NetworkImage(avatarUrl) as ImageProvider
+          : AssetImage(avatarUrl),
+    );
+  }
+
   /// Translates English sub-category codes to French labels
   String _translateSubCategory(String code) {
     const Map<String, String> translations = {
@@ -1428,15 +1485,30 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                         children: [
                           CircleAvatar(
                             radius: 24,
-                            backgroundImage: avatarUrl.startsWith('http')
-                                ? NetworkImage(avatarUrl)
-                                : avatarUrl.startsWith('assets/')
-                                ? AssetImage(avatarUrl) as ImageProvider
-                                : NetworkImage(
-                                        ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                            '',
-                                      )
-                                      as ImageProvider,
+                            backgroundColor: Colors.grey[300],
+                            backgroundImage:
+                                avatarUrl.isNotEmpty &&
+                                    avatarUrl != _defaultAvatar
+                                ? (avatarUrl.startsWith('http')
+                                      ? NetworkImage(avatarUrl)
+                                      : avatarUrl.startsWith('assets/')
+                                      ? AssetImage(avatarUrl) as ImageProvider
+                                      : NetworkImage(
+                                              ApiConfig.resolveMediaUrl(
+                                                    avatarUrl,
+                                                  ) ??
+                                                  '',
+                                            )
+                                            as ImageProvider)
+                                : null,
+                            child:
+                                avatarUrl.isEmpty || avatarUrl == _defaultAvatar
+                                ? Icon(
+                                    isPro ? Icons.business : Icons.person,
+                                    size: 24,
+                                    color: Colors.grey[600],
+                                  )
+                                : null,
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -1797,20 +1869,30 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     final locationType = bp['available_location_type']?.toString() ?? '';
     final createdAt = bp['created_at']?.toString();
     // Support both media_files (from BonPlanController) and media (from FeedController)
-    final mediaFiles = (bp['media_files'] as List? ?? [])
-      ..addAll(bp['media'] as List? ?? []);
+    final mediaFilesFromFiles = bp['media_files'] as List? ?? [];
+    final mediaFromMedia = bp['media'] as List? ?? [];
+    final mediaFiles = [...mediaFilesFromFiles, ...mediaFromMedia];
+
+    // Debug logging for image URLs
+    debugPrint('=== BON PLAN #$bpId MEDIA DEBUG ===');
+    debugPrint('media_files count: ${mediaFilesFromFiles.length}');
+    debugPrint('media count: ${mediaFromMedia.length}');
+    for (final m in mediaFiles) {
+      debugPrint('Media item: $m');
+    }
+
     final imageUrls = mediaFiles
         .where((m) => m['type'] == 'image' || m['type'] == null)
         .map((m) {
-          final url = m['url']?.toString() ?? '';
-          if (url.isEmpty) return '';
-          // If URL is already complete (http/https), use it as-is
-          if (url.startsWith('http') || url.startsWith('https')) return url;
-          // Otherwise use the storage URL builder
-          return _buildStorageUrl(url) ?? '';
+          final rawUrl = m['url']?.toString() ?? '';
+          final resolvedUrl = _buildStorageUrl(rawUrl) ?? '';
+          debugPrint('Raw URL: $rawUrl -> Resolved: $resolvedUrl');
+          return resolvedUrl;
         })
         .where((url) => url.isNotEmpty)
         .toList();
+    debugPrint('Final imageUrls: $imageUrls');
+    debugPrint('=====================================');
     // Check if already favorited by current user
     final favoris = bp['bon_plan_favorites'] as List? ?? [];
     final currentUserId = UserSession().id;
@@ -1923,7 +2005,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
                   // Title
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 100, 0),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      imageUrls.isNotEmpty ? 16 : 56,
+                      100,
+                      0,
+                    ),
                     child: Text(
                       title,
                       style: const TextStyle(
@@ -4797,7 +4884,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       children: [
                         CircleAvatar(
                           radius: isReply ? 14 : 18,
-                          backgroundColor: const Color(0xFFE6F7EF),
+                          backgroundColor: Colors.grey[300],
                           backgroundImage:
                               avatarUrl != null && avatarUrl.isNotEmpty
                               ? NetworkImage(
@@ -4806,15 +4893,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                 )
                               : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Text(
-                                  displayName.isNotEmpty
-                                      ? displayName[0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    fontSize: isReply ? 11 : 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2A8143),
-                                  ),
+                              ? Icon(
+                                  Icons.person,
+                                  size: isReply ? 12 : 16,
+                                  color: Colors.grey[600],
                                 )
                               : null,
                         ),
@@ -5449,6 +5531,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             validUntil: validUntil,
             deliveryInfo: deliveryInfo,
             location: location,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             link: link,
             isOwner: isOwner,
             bonPlanId: bonPlanId,
@@ -5922,6 +6006,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           <Map<String, dynamic>>[];
       final reservationMode = data['reservation_mode']?.toString();
       final coverageArea = data['coverage_area']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
       final isNationwide = data['is_nationwide'] == true;
       final organizerName = data['organizer_name']?.toString();
       final isOrganizer = data['is_organizer'] != false;
@@ -5998,6 +6084,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             priceCategories: priceCategories,
             reservationMode: reservationMode,
             coverageArea: coverageArea,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             isNationwide: isNationwide,
             organizerName: organizerName,
             isOrganizer: isOrganizer,
@@ -6177,7 +6265,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
   List<String> _extractImages(List? mediaFiles) {
     if (mediaFiles == null || mediaFiles.isEmpty) {
-      return ['assets/images/details_bon_plans/Rectangle 35.png'];
+      return [];
     }
     final images = mediaFiles
         .where((m) => m is Map && m['url'] != null)
@@ -6185,10 +6273,6 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         .where((url) => url.isNotEmpty)
         .toList();
 
-    // Ensure we always have at least one image
-    if (images.isEmpty) {
-      return ['assets/images/details_bon_plans/Rectangle 35.png'];
-    }
     return images;
   }
 
@@ -6242,9 +6326,24 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
   String? _buildStorageUrl(String? url) {
     if (url == null || url.isEmpty) return null;
-    if (url.startsWith('http') || url.startsWith('https')) return url;
+    // Handle already complete URLs (both http:// and https://)
+    if (url.toLowerCase().startsWith('http://') ||
+        url.toLowerCase().startsWith('https://')) {
+      return url;
+    }
+    // Handle URLs that might incorrectly start with /storage/ followed by http
+    if (url.startsWith('/storage/http')) {
+      // Extract the actual URL after /storage/
+      final actualUrl = url.substring(9); // Remove '/storage/'
+      if (actualUrl.toLowerCase().startsWith('http://') ||
+          actualUrl.toLowerCase().startsWith('https://')) {
+        return actualUrl;
+      }
+    }
     final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
-    return '$serverBase/storage/$url';
+    // Remove leading slash if present to avoid double slashes
+    final cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    return '$serverBase/storage/$cleanUrl';
   }
 
   Future<void> _refreshFeed() {
