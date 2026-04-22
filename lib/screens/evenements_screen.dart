@@ -598,6 +598,8 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
           <Map<String, dynamic>>[];
       final reservationMode = data['reservation_mode']?.toString();
       final coverageArea = data['coverage_area']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
       final isNationwide = data['is_nationwide'] == true;
       final organizerName = data['organizer_name']?.toString();
       final isOrganizer = data['is_organizer'] != false;
@@ -674,6 +676,8 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
             priceCategories: priceCategories,
             reservationMode: reservationMode,
             coverageArea: coverageArea,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             isNationwide: isNationwide,
             organizerName: organizerName,
             isOrganizer: isOrganizer,

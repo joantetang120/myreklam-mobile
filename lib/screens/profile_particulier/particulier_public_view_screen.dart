@@ -2357,9 +2357,24 @@ class _ParticulierPublicViewScreenState
 
   String? _buildStorageUrl(String? url) {
     if (url == null || url.isEmpty) return null;
-    if (url.startsWith('http')) return url;
+    // Handle already complete URLs (both http:// and https://)
+    if (url.toLowerCase().startsWith('http://') ||
+        url.toLowerCase().startsWith('https://')) {
+      return url;
+    }
+    // Handle URLs that might incorrectly start with /storage/ followed by http
+    if (url.startsWith('/storage/http')) {
+      // Extract the actual URL after /storage/
+      final actualUrl = url.substring(9); // Remove '/storage/'
+      if (actualUrl.toLowerCase().startsWith('http://') ||
+          actualUrl.toLowerCase().startsWith('https://')) {
+        return actualUrl;
+      }
+    }
     final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
-    return '$serverBase/storage/$url';
+    // Remove leading slash if present to avoid double slashes
+    final cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    return '$serverBase/storage/$cleanUrl';
   }
 
   String _stripHtml(String input) {
@@ -3595,7 +3610,7 @@ class _ParticulierPublicViewScreenState
 
   List<String> _extractImages(List? mediaFiles) {
     if (mediaFiles == null || mediaFiles.isEmpty) {
-      return ['assets/images/details_bon_plans/Rectangle 35.png'];
+      return [];
     }
     final images = <String>[];
     for (final m in mediaFiles) {
@@ -3606,9 +3621,7 @@ class _ParticulierPublicViewScreenState
         }
       }
     }
-    return images.isNotEmpty
-        ? images
-        : ['assets/images/details_bon_plans/Rectangle 35.png'];
+    return images;
   }
 
   Future<void> _navigateToBonPlanDetail(Map<String, dynamic> bp) async {
@@ -3674,6 +3687,9 @@ class _ParticulierPublicViewScreenState
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
       final reductionLabel = data['reduction_label']?.toString();
+      // Extract price fields from API response (French field names)
+      final price = data['prix_final']?.toString();
+      final originalPrice = data['prix_avant_reduction']?.toString();
 
       final tags = <PostTag>[
         if (category.isNotEmpty)
@@ -3719,12 +3735,16 @@ class _ParticulierPublicViewScreenState
             validUntil: validUntil,
             deliveryInfo: deliveryInfo,
             location: location,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             link: link,
             isOwner: true,
             bonPlanId: bonPlanId,
             bonPlanData: data,
             acceptMessages: acceptMessages,
             authorData: user,
+            price: price,
+            originalPrice: originalPrice,
           ),
         ),
       );
@@ -3753,14 +3773,7 @@ class _ParticulierPublicViewScreenState
       ..addAll(bp['media'] as List? ?? []);
     final imageUrls = mediaFiles
         .where((m) => m['type'] == 'image' || m['type'] == null)
-        .map((m) {
-          final url = m['url']?.toString() ?? '';
-          if (url.isEmpty) return '';
-          // If URL is already complete (http/https), use it as-is
-          if (url.startsWith('http') || url.startsWith('https')) return url;
-          // Otherwise use the storage URL builder
-          return _buildStorageUrl(url) ?? '';
-        })
+        .map((m) => _buildStorageUrl(m['url']?.toString()) ?? '')
         .where((url) => url.isNotEmpty)
         .toList();
     // Check if already favorited by current user
@@ -4360,6 +4373,8 @@ class _ParticulierPublicViewScreenState
           <Map<String, dynamic>>[];
       final reservationMode = data['reservation_mode']?.toString();
       final coverageArea = data['coverage_area']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
       final isNationwide = data['is_nationwide'] == true;
       final organizerName = data['organizer_name']?.toString();
       final isOrganizer = data['is_organizer'] != false;
@@ -4428,6 +4443,8 @@ class _ParticulierPublicViewScreenState
             priceCategories: priceCategories,
             reservationMode: reservationMode,
             coverageArea: coverageArea,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             isNationwide: isNationwide,
             organizerName: organizerName,
             isOrganizer: isOrganizer,
@@ -4714,6 +4731,8 @@ class _ParticulierPublicViewScreenState
       final urgent = data['urgent'] == true;
       final budgetMax = data['budget_max']?.toString();
       final location = data['location']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
       final nationwide = data['nationwide'] == true;
       final searchRadiusKm = data['search_radius_km'] is int
           ? data['search_radius_km'] as int
@@ -4791,6 +4810,8 @@ class _ParticulierPublicViewScreenState
             urgent: urgent,
             budgetMax: budgetMax,
             location: location,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             nationwide: nationwide,
             searchRadiusKm: searchRadiusKm,
             showGoogleLocation: showGoogleLocation,

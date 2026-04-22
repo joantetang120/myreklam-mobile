@@ -39,6 +39,8 @@ class DemandeDetailScreen extends StatefulWidget {
   final bool urgent;
   final String? budgetMax;
   final String? location;
+  final String? locationCity;
+  final String? locationPostalCode;
   final bool nationwide;
   final int? searchRadiusKm;
   final bool showGoogleLocation;
@@ -64,6 +66,8 @@ class DemandeDetailScreen extends StatefulWidget {
     this.urgent = false,
     this.budgetMax,
     this.location,
+    this.locationCity,
+    this.locationPostalCode,
     this.nationwide = false,
     this.searchRadiusKm,
     this.showGoogleLocation = false,

@@ -52,6 +52,8 @@ class EventDetailScreen extends StatefulWidget {
   final List<Map<String, dynamic>> priceCategories;
   final String? reservationMode;
   final String? coverageArea;
+  final String? locationCity;
+  final String? locationPostalCode;
   final bool isNationwide;
   final String? organizerName;
   final bool isOrganizer;
@@ -90,6 +92,8 @@ class EventDetailScreen extends StatefulWidget {
     this.priceCategories = const [],
     this.reservationMode,
     this.coverageArea,
+    this.locationCity,
+    this.locationPostalCode,
     this.isNationwide = false,
     this.organizerName,
     this.isOrganizer = true,
@@ -402,6 +406,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           priceCategories: [],
           reservationMode: event['reservation_mode']?.toString(),
           coverageArea: event['coverage_area']?.toString(),
+          locationCity: event['location_city']?.toString(),
+          locationPostalCode: event['location_postal_code']?.toString(),
           websiteUrl: event['website_url']?.toString(),
           categoryCode: event['category_code']?.toString(),
           subCategoryCode: event['sub_category_code']?.toString(),
@@ -1060,6 +1066,23 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     return null;
   }
 
+  /// Build location display string combining coverage_area, city and postal_code
+  String _buildLocationDisplay() {
+    final List<String> parts = [];
+
+    if (widget.coverageArea != null && widget.coverageArea!.isNotEmpty) {
+      parts.add(widget.coverageArea!);
+    }
+    if (widget.locationCity != null && widget.locationCity!.isNotEmpty) {
+      parts.add(widget.locationCity!);
+    }
+    if (widget.locationPostalCode != null && widget.locationPostalCode!.isNotEmpty) {
+      parts.add(widget.locationPostalCode!);
+    }
+
+    return parts.join(' - ');
+  }
+
   /// Format date for Google Calendar (YYYYMMDDTHHmmSSZ)
   String _formatDateForGoogleCalendar(DateTime date, String? time) {
     String dateStr =
@@ -1520,27 +1543,27 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   if (widget.startTime != null && widget.startTime!.isNotEmpty)
                     const SizedBox(height: 12),
-                  // Organisateur
-                  _buildDetailItem(
-                    icon: Icons.person_outline,
-                    iconColor: const Color(0xFF1976D2),
-                    bgColor: const Color(0xFF1976D2).withValues(alpha: 0.1),
-                    label: 'Organisateur',
-                    value: _resolveOwnerName(),
-                  ),
-                  const SizedBox(height: 12),
+                  // Organisateur - only show when user is not the organizer
+                  if (!widget.isOrganizer && widget.organizerName != null && widget.organizerName!.isNotEmpty)
+                    _buildDetailItem(
+                      icon: Icons.person_outline,
+                      iconColor: const Color(0xFF1976D2),
+                      bgColor: const Color(0xFF1976D2).withValues(alpha: 0.1),
+                      label: 'Organisateur',
+                      value: widget.organizerName!,
+                    ),
+                  if (!widget.isOrganizer && widget.organizerName != null && widget.organizerName!.isNotEmpty)
+                    const SizedBox(height: 12),
                   // Lieu
-                  if (widget.coverageArea != null &&
-                      widget.coverageArea!.isNotEmpty)
+                  if (_buildLocationDisplay().isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.location_on_outlined,
                       iconColor: const Color(0xFF3AAE5E),
                       bgColor: const Color(0xFFE6F7EF),
                       label: 'Lieu',
-                      value: widget.coverageArea!,
+                      value: _buildLocationDisplay(),
                     ),
-                  if (widget.coverageArea != null &&
-                      widget.coverageArea!.isNotEmpty)
+                  if (_buildLocationDisplay().isNotEmpty)
                     const SizedBox(height: 12),
                   // Réservation
                   if (widget.reservationMode != null &&

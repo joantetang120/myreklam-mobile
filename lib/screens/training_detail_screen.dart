@@ -57,6 +57,8 @@ class TrainingDetailScreen extends StatefulWidget {
   final String? addressCity;
   final String? addressZipcode;
   final String? addressLine1;
+  final String? locationCity;
+  final String? locationPostalCode;
   final bool showLocation;
   final List<String> certification;
   final List<Map<String, dynamic>> documents;
@@ -97,6 +99,8 @@ class TrainingDetailScreen extends StatefulWidget {
     this.addressCity,
     this.addressZipcode,
     this.addressLine1,
+    this.locationCity,
+    this.locationPostalCode,
     this.showLocation = false,
     this.certification = const [],
     this.documents = const [],

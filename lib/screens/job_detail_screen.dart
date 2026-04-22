@@ -40,6 +40,8 @@ class JobDetailScreen extends StatefulWidget {
   final List<String> advantages;
   final String timeAgo;
   final String location;
+  final String? locationCity;
+  final String? locationPostalCode;
   final bool remoteWork;
   final String? educationLevel;
   final String? experienceLevel;
@@ -70,6 +72,8 @@ class JobDetailScreen extends StatefulWidget {
     required this.advantages,
     required this.timeAgo,
     this.location = '',
+    this.locationCity,
+    this.locationPostalCode,
     this.remoteWork = false,
     this.educationLevel,
     this.experienceLevel,
