@@ -82,6 +82,15 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
     } catch (_) {}
   }
 
+  num? _parseNum(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value;
+    if (value is String) {
+      return num.tryParse(value);
+    }
+    return null;
+  }
+
   Future<void> _loadProfile() async {
     try {
       final response = widget.userId == null
@@ -246,11 +255,15 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
             CustomBottomBar.avatarNotifier.value = response['avatar_url'];
 
             // Show My's reward modal if awarded
-            final mysAwarded = response['mys_awarded'] ?? 0;
+            final mysAwarded = _parseNum(response['mys_awarded']) ?? 0;
             if (mysAwarded > 0 && mounted) {
               // Trigger dashboard refresh
               ParticulierDashboardScreen.refreshMysNotifier.value = true;
-              _showMysRewardModal(mysAwarded, response['new_mys_balance'] ?? 0);
+              _showMysRewardModal(
+                mysAwarded,
+                _parseNum(response['new_mys_balance']) ?? 0,
+              );
+              _loadProfile();
             } else if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -273,7 +286,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
     }
   }
 
-  void _showMysRewardModal(int mysAwarded, int newBalance) {
+  void _showMysRewardModal(num mysAwarded, num newBalance) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -405,7 +418,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                   MaterialPageRoute(
                     builder: (context) => const NotificationsScreen(),
                   ),
-                ).then((_) => _loadProfile());
+                ).then((_) => {_loadProfile(), _loadUnreadCount()});
               },
               child: Stack(
                 clipBehavior: Clip.none,

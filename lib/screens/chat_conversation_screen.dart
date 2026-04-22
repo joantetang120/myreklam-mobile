@@ -338,13 +338,21 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
-                image: widget.avatar != null
-                    ? DecorationImage(
-                        image: NetworkImage(
-                          "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${widget.avatar!}",
-                        ),
-                        fit: BoxFit.cover,
-                      )
+                image:
+                    widget.avatar != null &&
+                        (widget.avatar!.startsWith('https') ||
+                            (widget.avatar!.startsWith('http')))
+                    ? (widget.avatar != null
+                          ? DecorationImage(
+                              image: NetworkImage("${widget.avatar}"),
+                              fit: BoxFit.cover,
+                            )
+                          : DecorationImage(
+                              image: NetworkImage(
+                                "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${widget.avatar!}",
+                              ),
+                              fit: BoxFit.cover,
+                            ))
                     : null,
               ),
               child: widget.avatar == null

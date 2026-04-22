@@ -2265,7 +2265,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   String _buildDateDisplay() {
     if (widget.durationType == 'permanent') return 'Permanent';
     if (widget.durationType == 'one_day' && widget.eventDate != null) {
-      return _formatDate(widget.eventDate!);
+      return 'A lieu, ${_formatDate(widget.eventDate!)}';
     }
     if (widget.durationType == 'multi_day') {
       final start = widget.startDate != null

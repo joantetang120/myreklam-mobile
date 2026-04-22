@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/profile_service.dart';
@@ -46,6 +49,10 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
 
   bool _showEmailPublic = false;
   bool _showPhonePublic = false;
+
+  // Gallery state
+  List<String> _gallery = [];
+  bool _isUploadingGallery = false;
 
   @override
   void initState() {
@@ -106,7 +113,11 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
       if (!mounted) return;
 
       final available = response['available'] ?? false;
-      final suggestions = (response['suggestions'] as List?)?.map((s) => s.toString()).toList() ?? [];
+      final suggestions =
+          (response['suggestions'] as List?)
+              ?.map((s) => s.toString())
+              .toList() ??
+          [];
 
       setState(() {
         _isCheckingPseudo = false;
@@ -147,8 +158,12 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
           _emailController.text = user != null ? (user['email'] ?? '') : '';
           _phoneController.text = profile['phone']?.toString() ?? '';
           _presentationController.text = profile['bio'] ?? '';
-          _showEmailPublic = profile['show_email_public'] == 1 || profile['show_email_public'] == true;
-          _showPhonePublic = profile['show_phone_public'] == 1 || profile['show_phone_public'] == true;
+          _showEmailPublic =
+              profile['show_email_public'] == 1 ||
+              profile['show_email_public'] == true;
+          _showPhonePublic =
+              profile['show_phone_public'] == 1 ||
+              profile['show_phone_public'] == true;
 
           // Social media
           if (profile['social_links'] != null) {
@@ -159,6 +174,12 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             _youtubeController.text = links['youtube'] ?? '';
             _snapchatController.text = links['snapchat'] ?? '';
           }
+
+          // Load gallery
+          if (profile['gallery'] != null) {
+            _gallery = List<String>.from(profile['gallery']);
+          }
+
           _isLoading = false;
         });
       }
@@ -191,13 +212,16 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profil mis à jour avec succès')),
+        const SnackBar(
+          content: Text('Profil mis à jour avec succès'),
+          backgroundColor: Colors.green,
+        ),
       );
       setState(() => _isLoading = false);
 
       // Check if ALL required fields are filled (except pictures)
       final allFieldsFilled = _areAllFieldsFilled();
-      
+
       if (allFieldsFilled) {
         // Award My's for completing profile
         try {
@@ -205,14 +229,14 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             actionType: 'profile_complete',
             referenceId: UserSession().id?.toString(),
           );
-          
+
           if (mysResponse['success'] == true && mounted) {
             // Update UserSession with new balance
             final newBalance = mysResponse['earning']?['new_balance'];
             if (newBalance != null) {
               UserSession().updateMys(newBalance);
             }
-            
+
             // Show reward modal after a short delay
             Future.microtask(() async {
               if (mounted) {
@@ -233,7 +257,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de la mise à jour: $e')),
+        SnackBar(content: Text('$e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -247,14 +271,14 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
       _phoneController.text.trim(),
       _presentationController.text.trim(),
     ];
-    
+
     // Check that all required fields have content
     for (final field in requiredFields) {
       if (field.isEmpty) {
         return false;
       }
     }
-    
+
     // Check that at least one social link is filled (optional but counts toward completion)
     final socialLinks = [
       _facebookController.text.trim(),
@@ -263,10 +287,10 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
       _youtubeController.text.trim(),
       _snapchatController.text.trim(),
     ];
-    
+
     // Profile is considered complete if all required fields + at least one social link
     final hasSocialLink = socialLinks.any((link) => link.isNotEmpty);
-    
+
     return hasSocialLink;
   }
 
@@ -491,7 +515,9 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
                 '$_pseudoChangeCount/$_maxPseudoChanges changements',
                 style: TextStyle(
                   fontSize: 11,
-                  color: _pseudoChangeLimitReached ? Colors.red : Colors.grey[500],
+                  color: _pseudoChangeLimitReached
+                      ? Colors.red
+                      : Colors.grey[500],
                 ),
               ),
           ],
@@ -503,17 +529,25 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
           decoration: BoxDecoration(
             color: _pseudoChangeLimitReached ? Colors.grey[100] : Colors.white,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: borderColor, width: _pseudoIsAvailable != null ? 2 : 1),
+            border: Border.all(
+              color: borderColor,
+              width: _pseudoIsAvailable != null ? 2 : 1,
+            ),
           ),
           child: TextField(
             controller: _pseudoController,
             enabled: !_pseudoChangeLimitReached,
             style: TextStyle(
               fontSize: 14,
-              color: _pseudoChangeLimitReached ? Colors.grey : const Color(0xFF424242),
+              color: _pseudoChangeLimitReached
+                  ? Colors.grey
+                  : const Color(0xFF424242),
             ),
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
               border: InputBorder.none,
               suffixIcon: _isCheckingPseudo
                   ? const SizedBox(
@@ -524,10 +558,10 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
                       ),
                     )
                   : _pseudoIsAvailable == true
-                      ? const Icon(Icons.check_circle, color: Color(0xFF3AAE5E))
-                      : _pseudoIsAvailable == false
-                          ? const Icon(Icons.error, color: Colors.red)
-                          : null,
+                  ? const Icon(Icons.check_circle, color: Color(0xFF3AAE5E))
+                  : _pseudoIsAvailable == false
+                  ? const Icon(Icons.error, color: Colors.red)
+                  : null,
             ),
           ),
         ),
@@ -564,7 +598,10 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
                     return GestureDetector(
                       onTap: () => _selectSuggestion(suggestion),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFE6F7EF),
                           borderRadius: BorderRadius.circular(16),
@@ -819,32 +856,342 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
   }
 
   Widget _buildMediaUploadBox() {
-    return Container(
-      width: double.infinity,
-      height: 100,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1FAF5),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF3AAE5E).withOpacity(0.2)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.add_photo_alternate_outlined,
-            color: const Color(0xFF3AAE5E).withOpacity(0.6),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Ajouter un média',
-            style: TextStyle(
-              fontSize: 12,
-              color: const Color(0xFF3AAE5E).withOpacity(0.8),
-              fontWeight: FontWeight.w600,
+    return Column(
+      children: [
+        // Gallery grid
+        if (_gallery.isNotEmpty) ...[
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
             ),
+            itemCount: _gallery.length,
+            itemBuilder: (context, index) {
+              return _buildGalleryItem(_gallery[index], index);
+            },
           ),
+          const SizedBox(height: 12),
         ],
+        // Upload button
+        _buildUploadButton(
+          label: 'Ajouter un media',
+          color: const Color(0xFF3AAE5E),
+          onTap: _showMediaPickerChoice,
+          isLoading: _isUploadingGallery,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUploadButton({
+    required String label,
+    required Color color,
+    VoidCallback? onTap,
+    bool isLoading = false,
+  }) {
+    return InkWell(
+      onTap: isLoading ? null : onTap,
+      child: Container(
+        width: double.infinity,
+        height: 50,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: isLoading
+            ? Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: color,
+                  ),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_photo_alternate_outlined,
+                    color: color,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
+  }
+
+  bool _isVideo(String url) {
+    final videoExtensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv'];
+    final lowerUrl = url.toLowerCase();
+    return videoExtensions.any((ext) => lowerUrl.endsWith(ext));
+  }
+
+  Widget _buildGalleryItem(String url, int index) {
+    final isVideo = _isVideo(url);
+
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: isVideo
+              ? Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  color: Colors.grey[800],
+                  child: const Center(
+                    child: Icon(
+                      Icons.play_circle_outline,
+                      color: Colors.white,
+                      size: 40,
+                    ),
+                  ),
+                )
+              : Image.network(
+                  _buildImageUrl(url),
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.image_not_supported),
+                    );
+                  },
+                ),
+        ),
+        // Delete button
+        Positioned(
+          top: 4,
+          right: 4,
+          child: InkWell(
+            onTap: () => _deleteGalleryImage(index),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.8),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 16),
+            ),
+          ),
+        ),
+        // Video indicator
+        if (isVideo)
+          Positioned(
+            bottom: 4,
+            left: 4,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.videocam, color: Colors.white, size: 12),
+                  SizedBox(width: 4),
+                  Text(
+                    'VIDÉO',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _buildImageUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    final serverBase = ApiConfig.baseUrl.replaceAll("/api", "");
+    if (url.startsWith('http') || url.startsWith('https')) return url;
+    return '$serverBase/storage/$url';
+  }
+
+  Future<void> _showMediaPickerChoice() async {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: Color(0xFF3AAE5E),
+                ),
+                title: const Text('Importer des images'),
+                subtitle: const Text('Sélectionner plusieurs photos'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAndUploadMultipleImages();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.videocam, color: Color(0xFFEF8A40)),
+                title: const Text('Importer une vidéo'),
+                subtitle: const Text('Sélectionner une vidéo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAndUploadVideo();
+                },
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.close, color: Colors.grey),
+                title: const Text('Annuler'),
+                onTap: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAndUploadMultipleImages() async {
+    final picker = ImagePicker();
+    final pickedFiles = await picker.pickMultiImage(
+      maxWidth: 1920,
+      maxHeight: 1920,
+      imageQuality: 85,
+    );
+
+    if (pickedFiles.isEmpty) return;
+
+    setState(() => _isUploadingGallery = true);
+
+    try {
+      final files = pickedFiles.map((f) => File(f.path)).toList();
+      final response = await _profileService.uploadGalleryImages(files);
+
+      if (response['success'] == true) {
+        setState(() {
+          if (response['gallery'] != null) {
+            _gallery = List<String>.from(response['gallery']);
+          }
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${pickedFiles.length} image(s) ajoutée(s) à la galerie !',
+              ),
+              backgroundColor: const Color(0xFF3AAE5E),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de l\'upload: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isUploadingGallery = false);
+    }
+  }
+
+  Future<void> _pickAndUploadVideo() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(minutes: 5),
+    );
+
+    if (pickedFile == null) return;
+
+    setState(() => _isUploadingGallery = true);
+
+    try {
+      final file = File(pickedFile.path);
+      final response = await _profileService.uploadGalleryVideo(file);
+
+      if (response['success'] == true) {
+        setState(() {
+          if (response['gallery'] != null) {
+            _gallery = List<String>.from(response['gallery']);
+          }
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vidéo ajoutée à la galerie !'),
+              backgroundColor: Color(0xFF3AAE5E),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de l\'upload: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isUploadingGallery = false);
+    }
+  }
+
+  Future<void> _deleteGalleryImage(int index) async {
+    try {
+      final response = await _profileService.deleteGalleryImage(index);
+
+      if (response['success'] == true) {
+        setState(() {
+          if (response['gallery'] != null) {
+            _gallery = List<String>.from(response['gallery']);
+          } else {
+            _gallery.removeAt(index);
+          }
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Média supprimé'),
+              backgroundColor: Color(0xFF3AAE5E),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la suppression: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

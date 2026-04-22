@@ -565,15 +565,29 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             ),
                             const SizedBox(width: 6),
                             Expanded(
-                              child: Text(
-                                '${widget.reposter.displayName} a republié ceci',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
+                              child: RichText(
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: widget.reposter.displayName,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[800],
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: ' a republié ceci',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -585,19 +599,18 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                         children: [
                           GestureDetector(
                             onTap: () {
-                              if (widget.author.id != null) {
+                              final userId = widget.author.id;
+                              if (userId != null) {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
                                         widget.author.accountType
                                                 .toLowerCase() ==
-                                            'pro'
-                                        ? ProPublicViewScreen(
-                                            userId: widget.author.id,
-                                          )
+                                            'professionnel'
+                                        ? ProPublicViewScreen(userId: userId)
                                         : ParticulierPublicViewScreen(
-                                            userId: widget.author.id,
+                                            userId: userId,
                                           ),
                                   ),
                                 );
@@ -627,19 +640,20 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                               children: [
                                 GestureDetector(
                                   onTap: () {
-                                    if (widget.author.id != null) {
+                                    final userId = widget.author.id;
+                                    if (userId != null) {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) =>
                                               widget.author.accountType
                                                       .toLowerCase() ==
-                                                  'pro'
+                                                  'professionnel'
                                               ? ProPublicViewScreen(
-                                                  userId: widget.author.id,
+                                                  userId: userId,
                                                 )
                                               : ParticulierPublicViewScreen(
-                                                  userId: widget.author.id,
+                                                  userId: userId,
                                                 ),
                                         ),
                                       );
@@ -2146,7 +2160,6 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
   Widget _buildJobOfferFeedCard(Map<String, dynamic> job) {
     final jobId = job['id']?.toString() ?? '';
-    final companyName = job['company_name']?.toString() ?? 'Entreprise';
     final jobTitle = job['title']?.toString() ?? 'Offre d\'emploi';
     final description = _stripHtml(job['description']?.toString() ?? '');
     final location =
@@ -2183,6 +2196,13 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
     final particulierProfile =
         user?['particulier_profile'] as Map<String, dynamic>?;
+
+    // Extract display name: company_name for pros, pseudo for particuliers
+    final String companyName =
+        proProfile?['company_name']?.toString() ??
+        particulierProfile?['pseudo']?.toString() ??
+        job['company_name']?.toString() ??
+        'Entreprise';
 
     final avatarUrl =
         proProfile?['logo_url']?.toString() ??
@@ -2291,7 +2311,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 MaterialPageRoute(
                   builder: (context) => isProUser
                       ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
+                      : ParticulierPublicViewScreen(
+                          userId: user!['id'].toString(),
+                        ),
                 ),
               );
             }
@@ -2599,7 +2621,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 MaterialPageRoute(
                   builder: (context) => isProUser
                       ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
+                      : ParticulierPublicViewScreen(
+                          userId: user!['id'].toString(),
+                        ),
                 ),
               );
             }
@@ -2981,7 +3005,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 MaterialPageRoute(
                   builder: (context) => isProUser
                       ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
+                      : ParticulierPublicViewScreen(
+                          userId: user!['id'].toString(),
+                        ),
                 ),
               );
             }
@@ -3165,7 +3191,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     }
 
     final formatted = formatDate(eventDate);
-    return formatted.isNotEmpty ? formatted : 'Date annoncée prochainement';
+    return formatted.isNotEmpty
+        ? 'A lieu, $formatted'
+        : 'Date annoncée prochainement';
   }
 
   String _getNatureLabel(String nature) {
@@ -3506,12 +3534,17 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
       final apiCommentsCount = _asInt(resource['comments_count']);
-      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(apiSlug, entityId);
+      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(
+        apiSlug,
+        entityId,
+      );
       _reactions[key] = _ReactionData(
         likesCount: (cachedCount != null && cachedCount > apiCount)
             ? cachedCount
             : apiCount,
-        commentsCount: (cachedCommentsCount != null && cachedCommentsCount > apiCommentsCount)
+        commentsCount:
+            (cachedCommentsCount != null &&
+                cachedCommentsCount > apiCommentsCount)
             ? cachedCommentsCount
             : apiCommentsCount,
         userReaction: userReaction,
@@ -3532,7 +3565,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         final entityId = key.substring(underscoreIdx + 1);
         // Update from cache if cached count is higher
         final cachedLikes = ReactionCacheService.loadCount(apiSlug, entityId);
-        final cachedComments = ReactionCacheService.loadCommentsCount(apiSlug, entityId);
+        final cachedComments = ReactionCacheService.loadCommentsCount(
+          apiSlug,
+          entityId,
+        );
         if (cachedLikes != null && cachedLikes > data.likesCount) {
           data.likesCount = cachedLikes;
         }
@@ -3566,20 +3602,30 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           final preservedLikesCount = apiLikesCount > currentData.likesCount
               ? apiLikesCount
               : currentData.likesCount;
-          final preservedCommentsCount = apiCommentsCount > currentData.commentsCount
+          final preservedCommentsCount =
+              apiCommentsCount > currentData.commentsCount
               ? apiCommentsCount
               : currentData.commentsCount;
           // Preserve local reaction state if set, otherwise use API value
           final cachedReaction = ReactionCacheService.load(apiSlug, entityId);
-          final preservedReaction = currentData.userReaction ?? cachedReaction ?? apiReaction;
+          final preservedReaction =
+              currentData.userReaction ?? cachedReaction ?? apiReaction;
           _reactions[key] = _ReactionData(
             likesCount: preservedLikesCount,
             commentsCount: preservedCommentsCount,
             userReaction: preservedReaction,
           );
           // Save the preserved values to cache
-          ReactionCacheService.saveCount(apiSlug, entityId, preservedLikesCount);
-          ReactionCacheService.saveCommentsCount(apiSlug, entityId, preservedCommentsCount);
+          ReactionCacheService.saveCount(
+            apiSlug,
+            entityId,
+            preservedLikesCount,
+          );
+          ReactionCacheService.saveCommentsCount(
+            apiSlug,
+            entityId,
+            preservedCommentsCount,
+          );
           ReactionCacheService.save(apiSlug, entityId, preservedReaction);
         });
       }
@@ -3689,7 +3735,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur lors de la republication: ${e.toString()}'),
+            content: Text('${e.toString()}'),
             backgroundColor: Colors.redAccent,
             duration: const Duration(seconds: 3),
           ),
@@ -3728,12 +3774,23 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.grey[300],
-            image: avatarUrl != null && avatarUrl.isNotEmpty
+            image:
+                avatarUrl != null &&
+                    avatarUrl.isNotEmpty &&
+                    (avatarUrl.startsWith("https") ||
+                        avatarUrl.startsWith("http"))
                 ? DecorationImage(
                     image: NetworkImage(avatarUrl),
                     fit: BoxFit.cover,
                   )
-                : null,
+                : (avatarUrl != null && avatarUrl.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(
+                            "${ApiConfig.baseUrl.replaceAll("/api", "")}/storage/$avatarUrl",
+                          ),
+                          fit: BoxFit.cover,
+                        )
+                      : null),
           ),
           child: avatarUrl == null || avatarUrl.isEmpty
               ? Icon(Icons.person, size: 16, color: Colors.grey[600])
@@ -3916,7 +3973,23 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         // For bon plans: show author avatar and name on the left
         if (isBonPlan && authorData != null) ...[
           const Spacer(),
-          _buildAuthorInfo(authorData),
+          GestureDetector(
+            onTap: () {
+              final userId = authorData['id']?.toString();
+              final accountType = authorData['account_type']?.toString();
+              if (userId != null && userId.isNotEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => accountType?.toLowerCase() == 'pro'
+                        ? ProPublicViewScreen(userId: userId)
+                        : ParticulierPublicViewScreen(userId: userId),
+                  ),
+                );
+              }
+            },
+            child: _buildAuthorInfo(authorData),
+          ),
         ],
       ],
     );
@@ -4010,7 +4083,11 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     data.commentsCount++;
-                    ReactionCacheService.saveCommentsCount(apiSlug, entityId, data.commentsCount);
+                    ReactionCacheService.saveCommentsCount(
+                      apiSlug,
+                      entityId,
+                      data.commentsCount,
+                    );
                   });
                 }
                 commentCtrl.clear();
@@ -4250,8 +4327,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   ? 'Vous'
                   : (user['display_name']?.toString() ??
                         user['name']?.toString() ??
-                        (user['particulier_profile'] as Map<String, dynamic>?)?['pseudo']?.toString() ??
-                        (user['pro_profile'] as Map<String, dynamic>?)?['company_name']?.toString() ??
+                        (user['particulier_profile']
+                                as Map<String, dynamic>?)?['pseudo']
+                            ?.toString() ??
+                        (user['pro_profile']
+                                as Map<String, dynamic>?)?['company_name']
+                            ?.toString() ??
                         email.split('@').first);
               final body = comment['body']?.toString() ?? '';
               final createdAt = comment['created_at']?.toString();

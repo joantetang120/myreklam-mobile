@@ -1,11 +1,17 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/demande_detail_screen.dart';
 import 'package:myreklam/screens/event_detail_screen.dart';
+import 'package:myreklam/screens/image_preview_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
+import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
+import 'package:myreklam/screens/profile_pro/pro_profileEntreprise_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
@@ -21,6 +27,8 @@ import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 class ProPublicViewScreen extends StatefulWidget {
   final String? userId; // null means viewing own profile
@@ -135,6 +143,866 @@ Widget _buildBonPlanImageCarousel(List<String> urls) {
   );
 }
 
+/// Widget that displays video thumbnail using video_thumbnail package
+class _VideoThumbnailWidget extends StatefulWidget {
+  final String videoUrl;
+  final double? height;
+  final BoxFit fit;
+
+  const _VideoThumbnailWidget({
+    required this.videoUrl,
+    this.height,
+    this.fit = BoxFit.cover,
+  });
+
+  @override
+  State<_VideoThumbnailWidget> createState() => _VideoThumbnailWidgetState();
+}
+
+class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
+  Uint8List? _thumbnailData;
+  bool _isLoading = true;
+  bool _hasError = false;
+  bool _showPreview = true;
+  VideoPlayerController? _previewController;
+  bool _isMuted = true;
+  Timer? _positionTimer;
+  Duration _position = Duration.zero;
+
+  Widget _wrapWithConstraints(Widget child) {
+    if (widget.height != null) {
+      return SizedBox(
+        height: widget.height,
+        width: double.infinity,
+        child: child,
+      );
+    }
+    return AspectRatio(aspectRatio: 16 / 9, child: child);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _startPreviewThenGenerateThumbnail();
+  }
+
+  @override
+  void dispose() {
+    _positionTimer?.cancel();
+    _previewController?.dispose();
+    super.dispose();
+  }
+
+  void _startPositionTimer() {
+    _positionTimer?.cancel();
+    _positionTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final c = _previewController;
+      if (!mounted || c == null || !c.value.isInitialized) return;
+      final newPos = c.value.position;
+      if (newPos.inSeconds != _position.inSeconds) {
+        setState(() {
+          _position = newPos;
+        });
+      }
+    });
+  }
+
+  Future<void> _startPreviewThenGenerateThumbnail() async {
+    // Autoplay preview in loop (muted by default).
+    // If preview init fails (network/codec), fallback to thumbnail.
+    final trimmedUrl = widget.videoUrl.trim();
+    if (trimmedUrl.isEmpty ||
+        (!trimmedUrl.toLowerCase().startsWith('http://') &&
+            !trimmedUrl.toLowerCase().startsWith('https://'))) {
+      setState(() {
+        _hasError = true;
+        _isLoading = false;
+        _showPreview = false;
+      });
+      return;
+    }
+
+    // Start generating thumbnail in background.
+    _generateThumbnail();
+
+    // Start preview.
+    try {
+      _previewController = VideoPlayerController.networkUrl(
+        Uri.parse(trimmedUrl),
+      );
+      await _previewController!.initialize();
+      await _previewController!.setLooping(true);
+      await _previewController!.setVolume(_isMuted ? 0.0 : 1.0);
+      await _previewController!.play();
+
+      _position = Duration.zero;
+      _startPositionTimer();
+
+      if (mounted) {
+        setState(() {
+          _showPreview = true;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      // Ignore preview errors and fall back to thumbnail/fallback.
+      if (mounted) {
+        setState(() {
+          _showPreview = false;
+        });
+      }
+    }
+  }
+
+  String _formatDuration(Duration d) {
+    final totalSeconds = d.inSeconds;
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Duration _remaining(Duration duration, Duration position) {
+    if (duration == Duration.zero) return Duration.zero;
+    final remainingMs = duration.inMilliseconds - position.inMilliseconds;
+    if (remainingMs <= 0) return Duration.zero;
+    return Duration(milliseconds: remainingMs);
+  }
+
+  Future<void> _toggleMute() async {
+    final c = _previewController;
+    if (c == null || !c.value.isInitialized) return;
+    final newMuted = !_isMuted;
+    await c.setVolume(newMuted ? 0.0 : 1.0);
+    if (mounted) {
+      setState(() {
+        _isMuted = newMuted;
+      });
+    }
+  }
+
+  Future<void> _generateThumbnail() async {
+    try {
+      debugPrint(
+        '[_VideoThumbnailWidget] Generating thumbnail for: ${widget.videoUrl}',
+      );
+
+      // Check if URL is valid
+      final trimmedUrl = widget.videoUrl.trim();
+      if (trimmedUrl.isEmpty ||
+          (!trimmedUrl.toLowerCase().startsWith('http://') &&
+              !trimmedUrl.toLowerCase().startsWith('https://'))) {
+        debugPrint('[_VideoThumbnailWidget] Invalid URL: "${widget.videoUrl}"');
+        debugPrint('[_VideoThumbnailWidget] Trimmed URL: "$trimmedUrl"');
+        debugPrint(
+          '[_VideoThumbnailWidget] Starts with http: ${trimmedUrl.toLowerCase().startsWith('http://')}',
+        );
+        debugPrint(
+          '[_VideoThumbnailWidget] Starts with https: ${trimmedUrl.toLowerCase().startsWith('https://')}',
+        );
+        setState(() {
+          _hasError = true;
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Generate thumbnail at ~10% of video duration or 5 seconds
+      final thumbnail = await VideoThumbnail.thumbnailData(
+        video: widget.videoUrl,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth: 500,
+        quality: 80,
+        timeMs: 5000, // 5 seconds
+      );
+
+      if (thumbnail == null) {
+        debugPrint(
+          '[_VideoThumbnailWidget] Thumbnail generation returned null',
+        );
+        setState(() {
+          _hasError = true;
+          _isLoading = false;
+        });
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _thumbnailData = thumbnail;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('[_VideoThumbnailWidget] Error generating thumbnail: $e');
+      // Silently fail to fallback - video thumbnails may not work for remote URLs
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasError) {
+      return _buildFallback();
+    }
+
+    if (_showPreview &&
+        _previewController != null &&
+        _previewController!.value.isInitialized) {
+      final duration = _previewController!.value.duration;
+      final remaining = _remaining(duration, _position);
+      return _wrapWithConstraints(
+        Stack(
+          fit: StackFit.expand,
+          children: [
+            FittedBox(
+              fit: widget.fit,
+              clipBehavior: Clip.hardEdge,
+              child: SizedBox(
+                width: _previewController!.value.size.width,
+                height: _previewController!.value.size.height,
+                child: VideoPlayer(_previewController!),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.45),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _formatDuration(remaining),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              left: 8,
+              child: GestureDetector(
+                onTap: _toggleMute,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.45),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    _isMuted ? Icons.volume_off : Icons.volume_up,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_isLoading) {
+      return _wrapWithConstraints(
+        Container(
+          color: Colors.grey[300],
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+      );
+    }
+
+    return _wrapWithConstraints(
+      Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.memory(
+            _thumbnailData!,
+            fit: widget.fit,
+            width: double.infinity,
+            errorBuilder: (_, __, ___) => _buildFallback(),
+          ),
+          // Play icon overlay
+          Center(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.4),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.play_circle_outline,
+                size: 40,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFallback() {
+    return _wrapWithConstraints(
+      Container(
+        color: Colors.grey[300],
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.play_circle_outline,
+                size: 40,
+                color: Colors.grey[700],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ExpandableDescriptionStateful extends StatefulWidget {
+  final String text;
+
+  const _ExpandableDescriptionStateful({required this.text});
+
+  @override
+  State<_ExpandableDescriptionStateful> createState() =>
+      _ExpandableDescriptionStatefulState();
+}
+
+class _ExpandableDescriptionStatefulState
+    extends State<_ExpandableDescriptionStateful> {
+  bool isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = widget.text;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isExpanded = !isExpanded;
+        });
+      },
+      child: AnimatedCrossFade(
+        firstChild: RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: text.length > 100
+                    ? '${text.substring(0, 100)}... '
+                    : text,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF666666),
+                  height: 1.4,
+                ),
+              ),
+              if (text.length > 100)
+                const TextSpan(
+                  text: 'voir plus',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF3AAE5E),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        secondChild: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Color(0xFF666666),
+            height: 1.4,
+          ),
+        ),
+        crossFadeState: isExpanded
+            ? CrossFadeState.showSecond
+            : CrossFadeState.showFirst,
+        duration: const Duration(milliseconds: 200),
+      ),
+    );
+  }
+}
+
+class _PostAuthorInfo {
+  const _PostAuthorInfo({
+    required this.id,
+    required this.displayName,
+    required this.accountType,
+    required this.avatar,
+  });
+
+  final String? id;
+  final String displayName;
+  final String accountType;
+  final String avatar;
+}
+
+/// Helper function to check if a URL is a video
+bool _isVideoUrl(String url) {
+  final videoExtensions = ['.mp4', '.mov', '.avi', '.quicktime', '.x-msvideo'];
+  final lowerUrl = url.toLowerCase();
+  return videoExtensions.any((ext) => lowerUrl.contains(ext));
+}
+
+class _PostCardWidget extends StatefulWidget {
+  final String postId;
+  final bool isRepost;
+  final _PostAuthorInfo reposter;
+  final _PostAuthorInfo author;
+  final String content;
+  final String timeAgo;
+  final List<String> mediaUrls;
+  final Function(String) onToggleReaction;
+  final Widget Function() buildReactionBar;
+  final Widget Function(String, Color, IconData) buildTypeTag;
+
+  const _PostCardWidget({
+    required this.postId,
+    required this.isRepost,
+    required this.reposter,
+    required this.author,
+    required this.content,
+    required this.timeAgo,
+    required this.mediaUrls,
+    required this.onToggleReaction,
+    required this.buildReactionBar,
+    required this.buildTypeTag,
+  });
+
+  @override
+  State<_PostCardWidget> createState() => _PostCardWidgetState();
+}
+
+class _PostCardWidgetState extends State<_PostCardWidget> {
+  bool _isExpanded = false;
+  static const int _collapsedMaxLength = 150;
+
+  @override
+  Widget build(BuildContext context) {
+    final needsCollapse = widget.content.length > _collapsedMaxLength;
+    final displayContent = !_isExpanded && needsCollapse
+        ? '${widget.content.substring(0, _collapsedMaxLength)}...'
+        : widget.content;
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PostDetailFullScreen(
+              author: {
+                'displayName': widget.author.displayName,
+                'accountType': widget.author.accountType,
+                'avatar': widget.author.avatar,
+              },
+              content: widget.content,
+              timeAgo: widget.timeAgo,
+              mediaUrls: widget.mediaUrls,
+              reactionBar: widget.buildReactionBar(),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
+          ),
+        ),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with author info
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Repost header if applicable
+                      if (widget.isRepost) ...[
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.repeat_rounded,
+                              size: 14,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                '${widget.reposter.displayName} a republié ceci',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      // Author row
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () {},
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundImage:
+                                  widget.author.avatar.startsWith('http')
+                                  ? NetworkImage(widget.author.avatar)
+                                        as ImageProvider
+                                  : widget.author.avatar.startsWith('assets/')
+                                  ? AssetImage(widget.author.avatar)
+                                  : NetworkImage(
+                                          ApiConfig.resolveMediaUrl(
+                                                widget.author.avatar,
+                                              ) ??
+                                              '',
+                                        )
+                                        as ImageProvider,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {},
+                                  child: Text(
+                                    widget.author.displayName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: Color(0xFF333333),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Text(
+                                  '${widget.author.accountType} • ${widget.timeAgo}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Content text
+                if (widget.content.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayContent,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF333333),
+                            height: 1.4,
+                          ),
+                        ),
+                        if (needsCollapse)
+                          GestureDetector(
+                            onTap: () =>
+                                setState(() => _isExpanded = !_isExpanded),
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                _isExpanded ? '...moins' : '...more',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+                // Media images
+                if (widget.mediaUrls.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _buildMediaSection(widget.mediaUrls),
+                ],
+                // Reaction bar
+                if (widget.postId.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: widget.buildReactionBar(),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMediaSection(List<String> urls) {
+    if (urls.isEmpty) return const SizedBox.shrink();
+
+    if (urls.length == 1) {
+      return _MediaItemWidget(
+        url: urls[0],
+        onTap: () => _openImagePreview(context, urls, 0),
+      );
+    }
+
+    // Multiple images/videos - show grid
+    return SizedBox(height: 300, child: _buildMediaGrid(urls));
+  }
+
+  void _openImagePreview(
+    BuildContext context,
+    List<String> urls,
+    int initialIndex,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            ImagePreviewScreen(imageUrls: urls, initialIndex: initialIndex),
+      ),
+    );
+  }
+
+  Widget _buildMediaGrid(List<String> urls) {
+    if (urls.length == 2) {
+      return Row(
+        children: [
+          Expanded(
+            child: _MediaItemWidget(
+              url: urls[0],
+              onTap: () => _openImagePreview(context, urls, 0),
+              height: 300,
+            ),
+          ),
+          const SizedBox(width: 2),
+          Expanded(
+            child: _MediaItemWidget(
+              url: urls[1],
+              onTap: () => _openImagePreview(context, urls, 1),
+              height: 300,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (urls.length == 3) {
+      return Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: _MediaItemWidget(
+              url: urls[0],
+              onTap: () => _openImagePreview(context, urls, 0),
+              height: 300,
+            ),
+          ),
+          const SizedBox(width: 2),
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(
+                  child: _MediaItemWidget(
+                    url: urls[1],
+                    onTap: () => _openImagePreview(context, urls, 1),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Expanded(
+                  child: _MediaItemWidget(
+                    url: urls[2],
+                    onTap: () => _openImagePreview(context, urls, 2),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // 4+ images/videos: 2x2 grid with overflow counter
+    final int remaining = urls.length - 4;
+    return Column(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                child: _MediaItemWidget(
+                  url: urls[0],
+                  onTap: () => _openImagePreview(context, urls, 0),
+                ),
+              ),
+              const SizedBox(width: 2),
+              Expanded(
+                child: _MediaItemWidget(
+                  url: urls[1],
+                  onTap: () => _openImagePreview(context, urls, 1),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                child: _MediaItemWidget(
+                  url: urls[2],
+                  onTap: () => _openImagePreview(context, urls, 2),
+                ),
+              ),
+              const SizedBox(width: 2),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _openImagePreview(context, urls, 3),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _isVideoUrl(urls[3])
+                          ? _VideoThumbnailWidget(videoUrl: urls[3])
+                          : Image.network(
+                              urls[3],
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  const SizedBox.shrink(),
+                            ),
+                      if (remaining > 0)
+                        Container(
+                          color: Colors.black54,
+                          alignment: Alignment.center,
+                          child: Text(
+                            '+$remaining',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Widget to display media item (image or video thumbnail)
+class _MediaItemWidget extends StatelessWidget {
+  final String url;
+  final VoidCallback onTap;
+  final double? height;
+
+  const _MediaItemWidget({required this.url, required this.onTap, this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    final isVideo = _isVideoUrl(url);
+    return GestureDetector(
+      onTap: onTap,
+      child: isVideo
+          ? _VideoThumbnailWidget(videoUrl: url, height: height)
+          : Image.network(
+              url,
+              fit: BoxFit.cover,
+              height: height,
+              width: double.infinity,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+    );
+  }
+}
+
+/// Widget for carousel media items (smaller play icon)
+class _CarouselMediaItemWidget extends StatelessWidget {
+  final String url;
+  final double? height;
+
+  const _CarouselMediaItemWidget({required this.url, this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    final isVideo = _isVideoUrl(url);
+    if (isVideo) {
+      return Stack(
+        alignment: Alignment.center,
+        fit: height == null ? StackFit.expand : StackFit.loose,
+        children: [
+          _VideoThumbnailWidget(videoUrl: url, height: height),
+          // Smaller play icon overlay for carousel
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.play_circle_outline,
+              size: 24,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      );
+    }
+    return Image.network(
+      url,
+      fit: BoxFit.cover,
+      height: height,
+      width: double.infinity,
+      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+    );
+  }
+}
+
 class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
@@ -197,6 +1065,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     ReactionCacheService.init().then((_) => _loadProfile());
+    _getCurrentUserId();
   }
 
   String _timeAgo(String isoDate) {
@@ -246,9 +1115,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   Widget _buildBonPlansList() {
     final items = _bonPlans;
     if (items.isEmpty) {
-      return const Text(
-        'Aucune annonce',
-        style: TextStyle(color: Color(0xFF666666)),
+      return Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 60),
+            child: Center(
+              child: const Text(
+                'Aucune annonce',
+                style: TextStyle(color: Color(0xFF666666)),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ],
       );
     }
     return Column(children: items.map((bp) => _buildBonPlanCard(bp)).toList());
@@ -257,9 +1136,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   Widget _buildJobOffersList() {
     final items = _jobOffers;
     if (items.isEmpty) {
-      return const Text(
-        'Aucune annonce',
-        style: TextStyle(color: Color(0xFF666666)),
+      return Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 60),
+            child: Center(
+              child: const Text(
+                'Aucune annonce',
+                style: TextStyle(color: Color(0xFF666666)),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ],
       );
     }
     return Column(children: items.map((jo) => _buildJobOfferCard(jo)).toList());
@@ -268,9 +1157,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   Widget _buildTrainingsList() {
     final items = _trainings;
     if (items.isEmpty) {
-      return const Text(
-        'Aucune annonce',
-        style: TextStyle(color: Color(0xFF666666)),
+      return Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 60),
+            child: Center(
+              child: const Text(
+                'Aucune annonce',
+                style: TextStyle(color: Color(0xFF666666)),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ],
       );
     }
     return Column(children: items.map((tr) => _buildTrainingCard(tr)).toList());
@@ -279,9 +1178,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   Widget _buildEventsList() {
     final items = _events;
     if (items.isEmpty) {
-      return const Text(
-        'Aucune annonce',
-        style: TextStyle(color: Color(0xFF666666)),
+      return Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 60),
+            child: Center(
+              child: const Text(
+                'Aucune annonce',
+                style: TextStyle(color: Color(0xFF666666)),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ],
       );
     }
     return Column(children: items.map((ev) => _buildEventCard(ev)).toList());
@@ -290,9 +1199,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   Widget _buildDemandesList() {
     final items = _demandes;
     if (items.isEmpty) {
-      return const Text(
-        'Aucune annonce',
-        style: TextStyle(color: Color(0xFF666666)),
+      return Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 60),
+            child: Center(
+              child: const Text(
+                'Aucune annonce',
+                style: TextStyle(color: Color(0xFF666666)),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ],
       );
     }
     return Column(children: items.map((d) => _buildDemandeCard(d)).toList());
@@ -346,12 +1265,18 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
   Widget _buildBonPlanDescription(Map<String, dynamic> item) {
     final descriptionPlain = item['description']?.toString() ?? '';
-    return Text(
-      _stripHtml(descriptionPlain),
-      style: const TextStyle(fontSize: 14, color: Color(0xFF666666)),
-      maxLines: 3,
-      overflow: TextOverflow.ellipsis,
-    );
+    final cleanText = _stripHtml(descriptionPlain);
+
+    if (cleanText.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return _ExpandableDescription(text: cleanText);
+  }
+
+  // Expandable description widget with "voir plus" functionality
+  Widget _ExpandableDescription({required String text}) {
+    return _ExpandableDescriptionStateful(text: text);
   }
 
   void _showEntityCommentsSheet(String apiSlug, String entityId) {
@@ -436,11 +1361,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     replyingToId = null;
                     replyingToName = null;
                   });
-                  // Update local comments count
+                  // Update local comments count in feed
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     data.commentsCount++;
-                    ReactionCacheService.saveCommentsCount(apiSlug, entityId, data.commentsCount);
+                    ReactionCacheService.saveCommentsCount(
+                      apiSlug,
+                      entityId,
+                      data.commentsCount,
+                    );
                   });
                 }
                 commentCtrl.clear();
@@ -560,7 +1489,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   });
 
                   // Recharger le feed pour actualiser les commentaires
-                  await _loadAnnonces();
+                  // await _loadUnifiedFeed(reset: true);
                 }
               } catch (e) {
                 if (mounted) {
@@ -621,14 +1550,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               try {
                 await ApiClient().authenticatedDelete('/comments/$commentId');
 
-                // Refresh reaction counts from API to ensure accuracy
+                // Update local comments count in feed
                 if (!isReply) {
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     if (data.commentsCount > 0) data.commentsCount--;
                   });
                 }
+
+                // Refresh reaction counts from API to ensure accuracy
                 await _refreshReactionFromApi(apiSlug, entityId);
+
+                // Recharger le feed pour actualiser les commentaires
+                // await _loadUnifiedFeed(reset: true);
 
                 modalSetState(() {
                   if (isReply) {
@@ -671,10 +1605,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               final user = comment['user'] as Map<String, dynamic>? ?? {};
               final userId = user['id']?.toString(); // Convertir en String
               final email = user['email']?.toString() ?? '';
+
+              final userProfile = user['pro_profile'] != null
+                  ? user['pro_profile']
+                  : user['particulier_profile'];
+
               final displayName = (userId != null && userId == _currentUserId)
                   ? 'Vous'
-                  : (user['display_name']?.toString() ??
-                        user['name']?.toString() ??
+                  : (userProfile['pseudo']?.toString() ??
+                        userProfile['company_name']?.toString() ??
                         email.split('@').first);
               final body = comment['body']?.toString() ?? '';
               final createdAt = comment['created_at']?.toString();
@@ -1102,12 +2041,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
       final apiCommentsCount = _asInt(resource['comments_count']);
-      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(apiSlug, entityId);
+      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(
+        apiSlug,
+        entityId,
+      );
       _reactions[key] = _ReactionData(
         likesCount: (cachedCount != null && cachedCount > apiCount)
             ? cachedCount
             : apiCount,
-        commentsCount: (cachedCommentsCount != null && cachedCommentsCount > apiCommentsCount) ? cachedCommentsCount : apiCommentsCount,
+        commentsCount:
+            (cachedCommentsCount != null &&
+                cachedCommentsCount > apiCommentsCount)
+            ? cachedCommentsCount
+            : apiCommentsCount,
         userReaction: userReaction,
       );
     }
@@ -1126,17 +2072,31 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           final apiCommentsCount = _asInt(data['comments_count']);
           final apiReaction = data['user_reaction']?.toString();
           final currentData = _getReaction(apiSlug, entityId);
-          final preservedLikesCount = apiLikesCount > currentData.likesCount ? apiLikesCount : currentData.likesCount;
-          final preservedCommentsCount = apiCommentsCount > currentData.commentsCount ? apiCommentsCount : currentData.commentsCount;
+          final preservedLikesCount = apiLikesCount > currentData.likesCount
+              ? apiLikesCount
+              : currentData.likesCount;
+          final preservedCommentsCount =
+              apiCommentsCount > currentData.commentsCount
+              ? apiCommentsCount
+              : currentData.commentsCount;
           final cachedReaction = ReactionCacheService.load(apiSlug, entityId);
-          final preservedReaction = currentData.userReaction ?? cachedReaction ?? apiReaction;
+          final preservedReaction =
+              currentData.userReaction ?? cachedReaction ?? apiReaction;
           _reactions[key] = _ReactionData(
             likesCount: preservedLikesCount,
             commentsCount: preservedCommentsCount,
             userReaction: preservedReaction,
           );
-          ReactionCacheService.saveCount(apiSlug, entityId, preservedLikesCount);
-          ReactionCacheService.saveCommentsCount(apiSlug, entityId, preservedCommentsCount);
+          ReactionCacheService.saveCount(
+            apiSlug,
+            entityId,
+            preservedLikesCount,
+          );
+          ReactionCacheService.saveCommentsCount(
+            apiSlug,
+            entityId,
+            preservedCommentsCount,
+          );
           ReactionCacheService.save(apiSlug, entityId, preservedReaction);
         });
       }
@@ -1204,6 +2164,213 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     return 0;
   }
 
+  void _shareBonPlan(String bonPlanId) {
+    // Share functionality for bon plans
+    final String shareUrl =
+        '${ApiConfig.baseUrl.replaceAll('/api', '')}/bon-plans/$bonPlanId';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Partager ce bon plan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
+                title: const Text('Copier le lien'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lien copié dans le presse-papiers'),
+                      backgroundColor: Color(0xFF3AAE5E),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
+                title: const Text('Partager via...'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement native share
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAuthorInfo(Map<String, dynamic> authorData) {
+    // Extract profile data based on account type
+    final accountType = authorData['account_type']?.toString();
+    final proProfile = authorData['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile =
+        authorData['particulier_profile'] as Map<String, dynamic>?;
+
+    // Get the appropriate profile
+    final profile = proProfile != null ? proProfile : particulierProfile;
+
+    // Extract name from profile or fallback to direct fields
+    final name =
+        profile?['company_name']?.toString() ??
+        '${profile?['first_name']?.toString() ?? ''} ${profile?['last_name']?.toString() ?? ''}'
+            .trim();
+
+    // Extract avatar from profile or fallback to direct fields
+    final avatarUrl =
+        profile?['avatar_url']?.toString() ?? profile?['avatar']?.toString();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.grey[300],
+            image:
+                avatarUrl != null &&
+                    avatarUrl.isNotEmpty &&
+                    (avatarUrl.startsWith("https") ||
+                        avatarUrl.startsWith("http"))
+                ? DecorationImage(
+                    image: NetworkImage(avatarUrl),
+                    fit: BoxFit.cover,
+                  )
+                : (avatarUrl != null && avatarUrl.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(
+                            "${ApiConfig.baseUrl.replaceAll("/api", "")}/storage/$avatarUrl",
+                          ),
+                          fit: BoxFit.cover,
+                        )
+                      : null),
+          ),
+          child: avatarUrl == null || avatarUrl.isEmpty
+              ? Icon(Icons.person, size: 16, color: Colors.grey[600])
+              : null,
+        ),
+        const SizedBox(width: 8),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              name.isNotEmpty ? name : 'Utilisateur',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (accountType == 'pro')
+              Container(
+                margin: const EdgeInsets.only(top: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3AAE5E),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'PRO',
+                  style: TextStyle(
+                    fontSize: 7,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _repostPost(String postId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Republier cette publication'),
+        content: const Text(
+          'Voulez-vous partager cette publication sur votre profil ?',
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3AAE5E),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Republier',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ApiClient().authenticatedPost('/posts/$postId/repost', body: {});
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Publication republiée avec succès'),
+            backgroundColor: Color(0xFF3AAE5E),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Repost error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildReactionBar(
     String apiSlug,
     String entityId, {
@@ -1212,6 +2379,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   }) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
+    final isBonPlan = apiSlug == 'bon-plans';
+    final isPost = apiSlug == 'posts';
 
     return Row(
       children: [
@@ -1256,6 +2425,34 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             ],
           ),
         ),
+        if (isPost) ...[
+          const SizedBox(width: 10),
+          // Repost
+          GestureDetector(
+            onTap: () => _repostPost(entityId),
+            child: Row(
+              children: [
+                Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Text(
+                  'Republier',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
+        // Share icon
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: () => _shareBonPlan(entityId),
+          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
+        ),
+        // For bon plans: show author avatar and name on the left
+        if (isBonPlan && authorData != null) ...[
+          const Spacer(),
+          _buildAuthorInfo(authorData),
+        ],
       ],
     );
   }
@@ -1464,6 +2661,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     }
   }
 
+  int _calculateDiscount(dynamic originalPrice, dynamic finalPrice) {
+    final original = double.tryParse(originalPrice.toString()) ?? 0;
+    final finalP = double.tryParse(finalPrice.toString()) ?? 0;
+    if (original <= 0 || finalP <= 0 || finalP >= original) return 0;
+    final discount = ((original - finalP) / original * 100).round();
+    return discount;
+  }
+
   Widget _buildBonPlanCard(Map<String, dynamic> bp) {
     final bpId = bp['id']?.toString() ?? '';
     final title = bp['title']?.toString() ?? '';
@@ -1482,35 +2687,54 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           final url = m['url']?.toString() ?? '';
           if (url.isEmpty) return '';
           // If URL is already complete (http/https), use it as-is
-          if (url.startsWith('http')) return url;
+          if (url.startsWith('http') || url.startsWith('https')) return url;
           // Otherwise use the storage URL builder
           return _buildStorageUrl(url) ?? '';
         })
         .where((url) => url.isNotEmpty)
         .toList();
     // Check if already favorited by current user
-    bool _isFavorited = bp['is_favorited'] == true;
+    bool favoris = bp['is_favorited'];
+    final currentUserId = UserSession().id;
 
     return StatefulBuilder(
       builder: (context, setState) {
         bool _isLoading = false;
 
         Future<void> _toggleFavorite() async {
-          if (_isLoading || bpId.isEmpty) return;
+          if (_isLoading) return;
 
+          // Toggle immediately for responsive UI
+          favoris = !favoris;
           setState(() => _isLoading = true);
 
           try {
-            if (_isFavorited) {
+            if (!favoris) {
               // Remove from favorites
               await ApiClient().authenticatedDelete('/bonplans/$bpId/favorite');
+              // Update underlying data to persist state across rebuilds
+              if (bp['bon_plan_favorites'] is List) {
+                (bp['bon_plan_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost('/bonplans/$bpId/favorite');
+              // Update underlying data to persist state across rebuilds
+              if (bp['bon_plan_favorites'] is! List) {
+                bp['bon_plan_favorites'] = [];
+              }
+              (bp['bon_plan_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
             }
 
             setState(() {
-              _isFavorited = !_isFavorited;
               _isLoading = false;
             });
 
@@ -1518,8 +2742,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: const TextStyle(color: Colors.white),
+                    favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
                   backgroundColor: Colors.green,
@@ -1528,7 +2752,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             }
           } catch (e) {
             debugPrint('Favorite toggle error: $e');
-            setState(() => _isLoading = false);
+            // Revert on error
+            favoris = !favoris;
+            setState(() {
+              _isLoading = false;
+            });
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1590,26 +2818,107 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        Text(
-                          bp['price'] != null &&
-                                  bp['price'].toString().isNotEmpty
-                              ? '${bp['price']}€'
-                              : 'Gratuit',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2E9B5B),
-                          ),
-                        ),
-                        if (bp['original_price'] != null &&
-                            bp['original_price'].toString().isNotEmpty) ...[
+                        bp['prix_avant_reduction'] != null &&
+                                bp['prix_final'] == null
+                            ? Text(
+                                '${bp['prix_avant_reduction']}€',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E9B5B),
+                                ),
+                              )
+                            : (type == 'Infos pouvoir d\'achat'
+                                  ? SizedBox.shrink()
+                                  : Text(
+                                      bp['prix_final'] != null &&
+                                              bp['prix_final']
+                                                  .toString()
+                                                  .isNotEmpty
+                                          ? '${bp['prix_final']}€'
+                                          : 'Gratuit',
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF2E9B5B),
+                                      ),
+                                    )),
+                        if (bp['prix_final'] != null &&
+                            bp['prix_avant_reduction'] != null &&
+                            bp['prix_avant_reduction']
+                                .toString()
+                                .isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Text(
-                            '${bp['original_price']}€',
+                            '${bp['prix_avant_reduction']}€',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[500],
                               decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                          // Discount badge
+                          if (bp['prix_final'] != null &&
+                              bp['prix_final'].toString().isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF5722),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '-${_calculateDiscount(bp['prix_avant_reduction'], bp['prix_final'])}%',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                        // Promo code as tag
+                        if (bp['promo_code'] != null &&
+                            bp['promo_code'].toString().isNotEmpty) ...[
+                          Spacer(),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2E9B5B).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: const Color(0xFF2E9B5B),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.local_offer_outlined,
+                                    size: 14,
+                                    color: Color(0xFF2E9B5B),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Code promo: ${bp['promo_code']}',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF2E9B5B),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -1666,7 +2975,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     child: Divider(height: 1),
                   ),
                   const SizedBox(height: 10),
-                  if (bpId.isNotEmpty) ...[
+                  if (bpId.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _buildReactionBar(
@@ -1676,7 +2985,6 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         authorData: bp['user'] as Map<String, dynamic>?,
                       ),
                     ),
-                  ],
                   const SizedBox(height: 10),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
@@ -1735,10 +3043,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             ),
                           )
                         : Icon(
-                            _isFavorited
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color: _isFavorited ? Colors.red : Colors.grey[600],
+                            favoris ? Icons.favorite : Icons.favorite_border,
+                            color: favoris ? Colors.red : Colors.grey[600],
                             size: 20,
                           ),
                   ),
@@ -2093,7 +3399,6 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
   Widget _buildJobOfferCard(Map<String, dynamic> job) {
     final jobId = job['id']?.toString() ?? '';
-    final companyName = job['company_name']?.toString() ?? 'Entreprise';
     final jobTitle = job['title']?.toString() ?? 'Offre d\'emploi';
     final description = _stripHtml(job['description']?.toString() ?? '');
     final location =
@@ -2107,8 +3412,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         _buildJobSalaryDisplay(job) ??
         job['salary']?.toString();
 
-    // Check if already favorited by current user
-    bool isFavorited = job['is_favorited'] == true;
+    // Check initial favorite status
+    bool favoris = job['is_favorited'];
 
     final tags = <JobDetailTag>[
       // 1st: Place (location)
@@ -2124,69 +3429,88 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
     final user = job['user'] as Map<String, dynamic>?;
     final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
-    final particulierProfile =
-        user?['particulier_profile'] as Map<String, dynamic>?;
 
-    final avatarUrl =
-        proProfile?['logo_url']?.toString() ??
-        proProfile?['avatar_url']?.toString() ??
-        particulierProfile?['avatar_url']?.toString() ??
-        user?['avatar']?.toString();
+    final avatarUrl = proProfile?['avatar_url']?.toString() ?? '';
+
+    final companyName = proProfile?['company_name']?.toString() ?? 'Entreprise';
 
     final companyLogoUrl =
         _buildStorageUrl(avatarUrl) ??
         'assets/images/dashboard_particulier/Rectangle 13.png';
 
-    bool _isLoading = false;
-
-    Future<void> _toggleFavorite() async {
-      if (_isLoading || jobId.isEmpty) return;
-
-      setState(() => _isLoading = true);
-
-      try {
-        if (isFavorited) {
-          // Remove from favorites
-          await ApiClient().authenticatedDelete('/job-offers/$jobId/favorite');
-        } else {
-          // Add to favorites
-          await ApiClient().authenticatedPost('/job-offers/$jobId/favorite');
-        }
-
-        setState(() {
-          isFavorited = !isFavorited;
-          _isLoading = false;
-        });
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                style: TextStyle(color: Colors.white),
-              ),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        debugPrint('Favorite toggle error: $e');
-        setState(() => _isLoading = false);
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Erreur lors de la mise à jour des favoris'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-
     return StatefulBuilder(
       builder: (context, setState) {
+        bool _isLoading = false;
+
+        Future<void> _toggleFavorite() async {
+          if (_isLoading || jobId.isEmpty) return;
+
+          // Toggle immediately for responsive UI
+          favoris = !favoris;
+          setState(() => _isLoading = true);
+
+          try {
+            if (!favoris) {
+              // Remove from favorites
+              await ApiClient().authenticatedDelete(
+                '/job-offers/$jobId/favorite',
+              );
+              // Update underlying data to persist state across rebuilds
+              if (job['job_offer_favorites'] is List) {
+                (job['job_offer_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == UserSession().id ||
+                          f['user']?['id']?.toString() == UserSession().id),
+                );
+              }
+            } else {
+              // Add to favorites
+              await ApiClient().authenticatedPost(
+                '/job-offers/$jobId/favorite',
+              );
+              // Update underlying data to persist state across rebuilds
+              if (job['job_offer_favorites'] is! List) {
+                job['job_offer_favorites'] = [];
+              }
+              (job['job_offer_favorites'] as List).add({
+                'user_id': UserSession().id,
+                'user': {'id': UserSession().id},
+              });
+            }
+
+            setState(() {
+              _isLoading = false;
+            });
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            // Revert on error
+            favoris = !favoris;
+            setState(() => _isLoading = false);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Erreur: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        }
+
         return JobAnnouncementCard(
           companyLogo: companyLogoUrl,
           companyName: companyName,
@@ -2196,24 +3520,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               : 'Description non disponible.',
           tags: tags,
           timeAgo: _buildTimeAgo(job['created_at']?.toString()),
-          isFavorited: isFavorited,
+          isFavorited: favoris,
           isLoadingFavorite: _isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToJobOfferDetail(job),
-          onAvatarTap: () {
-            if (user?['id'] != null) {
-              final isProUser =
-                  user?['account_type']?.toString().toLowerCase() == 'pro';
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => isProUser
-                      ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
-                ),
-              );
-            }
-          },
+          onAvatarTap: () {},
           reactionBar: jobId.isNotEmpty
               ? _buildReactionBar('job-offers', jobId)
               : null,
@@ -2398,19 +3709,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     }
   }
 
-  Widget _buildTrainingCard(Map<String, dynamic> tr) {
-    final trainingId = tr['id']?.toString() ?? '';
-    final title = tr['title']?.toString() ?? 'Formation';
-    final description = _stripHtml(tr['description']?.toString() ?? '');
-    final provider = tr['provider_name']?.toString() ?? 'Organisme';
-    final duration = tr['duration_in_h'];
-    final durationUnit = tr['duration_unit']?.toString();
-    final price = tr['price'];
-    final category = tr['training_category']?.toString() ?? '';
-    final subCategory = tr['training_sub_category']?.toString() ?? '';
-    final trainingType = tr['training_type']?.toString() ?? '';
+  Widget _buildTrainingCard(Map<String, dynamic> training) {
+    final trainingId = training['id']?.toString() ?? '';
+    final title = training['title']?.toString() ?? 'Formation';
+    final description = _stripHtml(training['description']?.toString() ?? '');
+    final provider = training['provider_name']?.toString() ?? 'Organisme';
+    final duration = training['duration_in_h'];
+    final durationUnit = training['duration_unit']?.toString();
+    final price = training['price'];
+    final category = training['training_category']?.toString() ?? '';
+    final subCategory = training['training_sub_category']?.toString() ?? '';
+    final trainingType = training['training_type']?.toString() ?? '';
 
-    final addressCity = tr['address_city']?.toString() ?? '';
+    final addressCity = training['address_city']?.toString() ?? '';
 
     // Helper to extract array values
     String _extractArrayValues(dynamic field) {
@@ -2445,7 +3756,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
     // Extract and translate training_style values
     String trainingStyleText = '';
-    final trainingStyleRaw = tr['training_style'];
+    final trainingStyleRaw = training['training_style'];
     if (trainingStyleRaw is List) {
       final translated = trainingStyleRaw
           .map((item) {
@@ -2481,7 +3792,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
     // Extract and translate training_public values
     String trainingPublicText = '';
-    final trainingPublicRaw = tr['training_public'];
+    final trainingPublicRaw = training['training_public'];
     if (trainingPublicRaw is List) {
       final translated = trainingPublicRaw
           .map((item) {
@@ -2499,10 +3810,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       );
     }
 
-    final certification = _extractArrayValues(tr['certification']);
+    final certification = _extractArrayValues(training['certification']);
 
     // Check if CPF is in training_funding array
-    final trainingFunding = tr['training_funding'];
+    final trainingFunding = training['training_funding'];
     bool hasCpf = false;
     if (trainingFunding is List) {
       hasCpf = trainingFunding.any(
@@ -2544,7 +3855,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       // 8th: Price (special/green) - LAST
       if (price != null) ...[
         () {
-          final publicType = tr['public_type']?.toString() ?? '';
+          final publicType = training['public_type']?.toString() ?? '';
           String priceText = '$price €';
           if (publicType == 'personne') {
             priceText += ' - Par personne';
@@ -2560,113 +3871,124 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       ],
     ];
 
-    final user = tr['user'] as Map<String, dynamic>?;
+    final user = training['user'] as Map<String, dynamic>?;
     final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
-    final particulierProfile =
-        user?['particulier_profile'] as Map<String, dynamic>?;
 
-    final avatarUrl =
-        proProfile?['logo_url']?.toString() ??
-        proProfile?['avatar_url']?.toString() ??
-        particulierProfile?['avatar_url']?.toString() ??
-        user?['avatar']?.toString();
+    final avatarUrl = proProfile?['avatar_url']?.toString();
 
     final companyLogoUrl =
         _buildStorageUrl(avatarUrl) ?? 'assets/images/Formation.png';
 
     // Extract owner name from profiles
-    final ownerName =
-        proProfile?['company_name']?.toString() ??
-        proProfile?['first_name']?.toString() ??
-        particulierProfile?['pseudo']?.toString() ??
-        particulierProfile?['first_name']?.toString() ??
-        tr['provider_name']?.toString() ??
-        'Organisme';
+    final ownerName = proProfile?['company_name']?.toString();
 
     // Check if already favorited by current user
-    bool isFavorited = tr['is_favorited'] == true;
+    final favoris = training['training_favorites'] as List? ?? [];
+    final currentUserId = UserSession().id;
+    final bool initialIsFavorited =
+        currentUserId != null &&
+        favoris.any(
+          (f) =>
+              f is Map &&
+              (f['user_id']?.toString() == currentUserId ||
+                  f['user']?['id']?.toString() == currentUserId),
+        );
 
-    bool isLoading = false;
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
 
-    Future<void> _toggleFavorite() async {
-      if (isLoading || trainingId.isEmpty) return;
+    return StatefulBuilder(
+      builder: (context, setState) {
+        bool isLoading = false;
 
-      setState(() => isLoading = true);
+        Future<void> _toggleFavorite() async {
+          if (isLoading || trainingId.isEmpty) return;
 
-      try {
-        if (isFavorited) {
-          // Remove from favorites
-          await ApiClient().authenticatedDelete(
-            '/trainings/$trainingId/favorite',
-          );
-        } else {
-          // Add to favorites
-          await ApiClient().authenticatedPost(
-            '/trainings/$trainingId/favorite',
-          );
+          // Toggle immediately for responsive UI
+          isFavoritedNotifier.value = !isFavoritedNotifier.value;
+          setState(() => isLoading = true);
+
+          try {
+            if (!isFavoritedNotifier.value) {
+              // Remove from favorites
+              await ApiClient().authenticatedDelete(
+                '/trainings/$trainingId/favorite',
+              );
+              // Update the underlying data to persist state across rebuilds
+              if (training['training_favorites'] is List) {
+                (training['training_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
+            } else {
+              // Add to favorites
+              await ApiClient().authenticatedPost(
+                '/trainings/$trainingId/favorite',
+              );
+              // Update the underlying data to persist state across rebuilds
+              if (training['training_favorites'] is! List) {
+                training['training_favorites'] = [];
+              }
+              (training['training_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
+            }
+
+            setState(() {
+              isLoading = false;
+            });
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
+                  ),
+                  duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            setState(() => isLoading = false);
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Erreur lors de la mise à jour des favoris'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
         }
 
-        setState(() {
-          isFavorited = !isFavorited;
-          isLoading = false;
-        });
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-              ),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        debugPrint('Favorite toggle error: $e');
-        setState(() => isLoading = false);
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Erreur lors de la mise à jour des favoris'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-
-    return FormationCard(
-      companyLogo: companyLogoUrl,
-      companyName: ownerName,
-      formationTitle: title,
-      description: description.isNotEmpty
-          ? description
-          : 'Description non disponible.',
-      tags: tags,
-      timeAgo: _buildTimeAgo(tr['created_at']?.toString()),
-      isFavorited: isFavorited,
-      isLoadingFavorite: isLoading,
-      onFavoriteToggle: _toggleFavorite,
-      onApply: () => _navigateToTrainingDetail(tr),
-      onAvatarTap: () {
-        if (user?['id'] != null) {
-          final isProUser =
-              user?['account_type']?.toString().toLowerCase() == 'pro';
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => isProUser
-                  ? ProPublicViewScreen(userId: user!['id'].toString())
-                  : ParticulierPublicViewScreen(userId: user!['id'].toString()),
-            ),
-          );
-        }
+        return FormationCard(
+          companyLogo: companyLogoUrl,
+          companyName: ownerName ?? "",
+          formationTitle: title,
+          description: description.isNotEmpty
+              ? description
+              : 'Description non disponible.',
+          tags: tags,
+          timeAgo: _buildTimeAgo(training['created_at']?.toString()),
+          isFavorited: isFavoritedNotifier.value,
+          isLoadingFavorite: isLoading,
+          onFavoriteToggle: _toggleFavorite,
+          onApply: () => _navigateToTrainingDetail(training),
+          onAvatarTap: () {},
+          reactionBar: trainingId.isNotEmpty
+              ? _buildReactionBar('trainings', trainingId)
+              : null,
+        );
       },
-      reactionBar: trainingId.isNotEmpty
-          ? _buildReactionBar('trainings', trainingId)
-          : null,
     );
   }
 
@@ -2709,28 +4031,61 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     }
   }
 
-  String _formatEventDate(String? dateStr) {
-    if (dateStr == null) return 'Date à confirmer';
-    try {
-      final date = DateTime.parse(dateStr);
-      final months = [
-        'Janvier',
-        'Février',
-        'Mars',
-        'Avril',
-        'Mai',
-        'Juin',
-        'Juillet',
-        'Août',
-        'Septembre',
-        'Octobre',
-        'Novembre',
-        'Décembre',
-      ];
-      return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
-    } catch (_) {
-      return dateStr;
+  String _formatEventDate(Map<String, dynamic> event) {
+    final durationType = event['duration_type']?.toString();
+    final eventDate = event['event_date']?.toString();
+    final startDate = event['start_date']?.toString();
+    final endDate = event['end_date']?.toString();
+
+    String formatDate(String? iso) {
+      if (iso == null) return '';
+      try {
+        final date = DateTime.parse(iso);
+        const months = [
+          'janvier',
+          'février',
+          'mars',
+          'avril',
+          'mai',
+          'juin',
+          'juillet',
+          'août',
+          'septembre',
+          'octobre',
+          'novembre',
+          'décembre',
+        ];
+        return '${date.day} ${months[date.month - 1]} ${date.year}';
+      } catch (_) {
+        return iso;
+      }
     }
+
+    if (durationType == 'permanent') return 'Permanent';
+
+    // Handle multi_day with start/end dates like bon plan validity
+    if (durationType == 'multi_day') {
+      final hasStart = startDate != null && startDate.isNotEmpty;
+      final hasEnd = endDate != null && endDate.isNotEmpty;
+
+      if (hasStart && hasEnd) {
+        final formattedStart = formatDate(startDate);
+        final formattedEnd = formatDate(endDate);
+        return 'Du $formattedStart Au $formattedEnd';
+      } else if (hasStart) {
+        final formatted = formatDate(startDate);
+        return 'À partir du $formatted';
+      } else if (hasEnd) {
+        final formatted = formatDate(endDate);
+        return 'Jusqu\'au $formatted';
+      }
+      return 'À partir de bientôt';
+    }
+
+    final formatted = formatDate(eventDate);
+    return formatted.isNotEmpty
+        ? 'A lieu, $formatted'
+        : 'Date annoncée prochainement';
   }
 
   Future<void> _navigateToEventDetail(Map<String, dynamic> ev) async {
@@ -2872,91 +4227,219 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     }
   }
 
+  String _formatPrice(Map<String, dynamic> event) {
+    final priceType = event['price_type']?.toString();
+
+    // If price_type is gratuit or null, return "Gratuit"
+    if (priceType == null || priceType == 'gratuit') {
+      return 'Gratuit';
+    }
+
+    // If price_type is payant, check pricing_mode
+    if (priceType == 'payant') {
+      final pricingMode = event['pricing_mode']?.toString();
+
+      // If pricing_mode is categories, get first price from price_categories
+      if (pricingMode == 'categories') {
+        final priceCategories = event['price_categories'] as List?;
+        if (priceCategories != null && priceCategories.isNotEmpty) {
+          final firstCategory = priceCategories[0] as Map<String, dynamic>?;
+          if (firstCategory != null) {
+            final price = firstCategory['price']?.toString();
+            if (price != null && price.isNotEmpty) {
+              return 'À partir de $price €';
+            }
+          }
+        }
+        return 'Payant';
+      }
+
+      // If pricing_mode is unique, get price_amount
+      if (pricingMode == 'unique') {
+        final priceAmount = event['price_amount']?.toString();
+        if (priceAmount != null && priceAmount.isNotEmpty) {
+          return '$priceAmount €';
+        }
+        return 'Payant';
+      }
+
+      return 'Payant';
+    }
+
+    return 'Gratuit';
+  }
+
+  /// Translates English sub-category codes to French labels
+  String _translateSubCategory(String code) {
+    const Map<String, String> translations = {
+      'AfterworkTeamBuilding': 'Afterwork / Team Building',
+      'ConferenceCongressSeminars': 'Conférence / Congrès / Séminaires',
+      'SeminarOutings': 'Séminaire / Sorties',
+      'TradeShowForumExhibition': 'Salon / Forum / Exposition',
+      'OpenDay': 'Journée Portes Ouvertes',
+      'EntrepreneurialNetworking': 'Réseautage entrepreneurial',
+      'Music': 'Musique',
+      'CreativeHobbies': 'Loisir créatifs',
+      'MoviesSeries': 'Films & Séries',
+      'BooksMagazines': 'Livres & Magazines',
+      'ShowsTickets': 'Spectacles & Billeterie',
+      'GamblingBetting': 'Jeux de hasard & paris',
+      'SportsEvents': 'Événements Sportifs',
+      'AutoMotoBoatPlane': 'Auto / Moto / Bateau / Avion',
+      'TourismHikingGourmetWalk':
+          'Tourisme / Visite / Randonnée / Marche Gourmande',
+      'EsportsGamingEvents': 'Événements e-sport / Gaming',
+      'WorkshopsInternshipsCourses': 'Ateliers / Stage / Cours',
+      'ConferencesProfessionalTraining':
+          'Conférences et formations professionnelles',
+      'Associative': 'Associatifs',
+      'AuctionsCharity': 'Enchères / Charité',
+      'SolidarityEvents': 'Manifestations solidaires',
+      'ChildrenMuseums': 'Enfants / Musées',
+      'AnimalEvents': 'Manifestation Animalière',
+      'WorkshopsShowsForChildren': 'Ateliers et spectacles pour enfants',
+      'MarketFleaMarketCarBootSale':
+          'Marché / Bourse / Brocante / Vide Grenier',
+      'TradeFairs': 'Foires commerciales',
+      'GamesContestsLottery': 'Jeux / Concours / Loterie',
+      'BoardGameTournaments': 'Tournois de jeux de société',
+      'TastingsWineCheeseChocolate': 'Dégustations (vin, fromage, chocolat...)',
+      'CulinaryFestivals': 'Festivals culinaires',
+      'CookingWorkshops': 'Ateliers cuisine',
+      'MeditationYogaWellnessRetreats': 'Méditation, yoga, retraites bien-être',
+      'ConferencesWorkshopsPersonalDevelopment':
+          'Conférences et ateliers sur le développement personnel',
+      'AlternativeHealingTherapies': 'Soins et thérapies alternatives',
+      'Hackathons': 'Hackathons',
+      'TechConferencesStartups': 'Conférences tech & start-up',
+      'GamingEsportsEvents': 'Événements gaming & e-sport',
+      'FashionShows': 'Défilés de mode',
+      'BeautyExhibitionsFairs': 'Salons et foires de la beauté',
+      'MakeupSkincareWorkshops': 'Ateliers maquillage et soins',
+    };
+
+    return translations[code] ?? code;
+  }
+
   Widget _buildEventCard(Map<String, dynamic> event) {
-    final title = event['title']?.toString() ?? '';
-    final description = _stripHtml(event['description']?.toString() ?? '');
-    final location =
-        event['location']?.toString() ?? event['city']?.toString() ?? '';
-    final eventDate =
-        event['event_date']?.toString() ?? event['start_date']?.toString();
-    final endDate =
-        event['end_date']?.toString() ?? event['event_end_date']?.toString();
-    final createdAt = event['created_at']?.toString();
-    final price =
-        event['price']?.toString() ?? event['ticket_price']?.toString();
-    final isPaid = event['is_paid'] == true || event['is_paid'] == 1;
-    final category = event['category']?.toString() ?? '';
-    final subCategory = event['sub_category']?.toString() ?? '';
-    final tags = (event['tags'] as List? ?? [])
-        .map((t) => t?.toString() ?? '')
-        .where((s) => s.isNotEmpty)
-        .toList();
-    final eventId = event['id']?.toString() ?? '';
-
-    // Media
-    final mediaFiles = event['media'] as List? ?? [];
-    final imageUrl = _extractMediaUrl(event);
-
-    // User info
     final user = event['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
     final particulierProfile =
         user?['particulier_profile'] as Map<String, dynamic>?;
-    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+
     final avatarUrl =
-        particulierProfile?['avatar_url']?.toString() ??
+        proProfile?['logo_url']?.toString() ??
         proProfile?['avatar_url']?.toString() ??
-        proProfile?['logo_url']?.toString();
+        particulierProfile?['avatar_url']?.toString() ??
+        user?['avatar']?.toString();
+
     final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
-    final username =
-        particulierProfile?['pseudo']?.toString() ??
+
+    // Extract owner name from profiles
+    final ownerName =
         proProfile?['company_name']?.toString() ??
-        user?['email']?.toString() ??
+        proProfile?['first_name']?.toString() ??
+        particulierProfile?['pseudo']?.toString() ??
+        particulierProfile?['first_name']?.toString() ??
+        user?['name']?.toString() ??
         'Organisateur';
-    final accountType = user?['account_type']?.toString() ?? 'particulier';
+    final eventTitle = event['title']?.toString() ?? 'Évènement';
+    final eventImage = _extractMediaUrl(event) ?? '';
+    final categories = <String>[
+      if (event['category_label']?.toString().isNotEmpty ?? false)
+        event['category_label'].toString(),
+      if (event['sub_category_label']?.toString().isNotEmpty ?? false)
+        event['sub_category_label'].toString(),
+    ];
+    final price = _formatPrice(event);
+    final coverageArea =
+        event['coverage_area']?.toString() ??
+        event['location']?.toString() ??
+        'Non spécifié';
+
+    final eventId = event['id']?.toString() ?? '';
+
+    // Build tags for display
+    final tags = <String>[];
+
+    // Add sub_category_code if available (and translate to French)
+    final subCategoryCode = event['sub_category_code']?.toString();
+    if (subCategoryCode != null && subCategoryCode.isNotEmpty) {
+      tags.add(_translateSubCategory(subCategoryCode));
+    }
+
+    // Add format_type if available
+    final formatType = event['format_type']?.toString();
+    if (formatType != null && formatType.isNotEmpty) {
+      const formatTranslations = {
+        'Présentiel': 'Présentiel',
+        'En ligne': 'En ligne',
+        'Hybride': 'Hybride',
+      };
+      tags.add(formatTranslations[formatType] ?? formatType);
+    }
 
     // Check if already favorited by current user
-    bool isFavorited = event['is_favorited'] == true;
+    bool favoris = event['is_favorited'] == true;
 
-    // Prepare display values
-    final allCategories = <String>[
-      if (category.isNotEmpty) category,
-      if (subCategory.isNotEmpty) subCategory,
-      ...tags.take(2),
-    ];
+    final currentUserId = UserSession().id;
 
     return StatefulBuilder(
-      builder: (context, setState) {
-        bool isLoadingFavorite = false;
-        bool localIsFavorited = isFavorited;
+      builder: (context, cardSetState) {
+        Future<void> _toggleFavorite() async {
+          // Toggle immediately for responsive UI
+          cardSetState(() {
+            favoris = !favoris;
+          });
 
-        Future<void> toggleFavorite() async {
-          if (isLoadingFavorite || eventId.isEmpty) return;
-
-          setState(() => isLoadingFavorite = true);
+          // Update underlying data immediately for persistence across rebuilds
+          if (favoris) {
+            // Add to favorites
+            if (event['event_favorites'] is! List) {
+              event['event_favorites'] = [];
+            }
+            // Check if already exists to avoid duplicates
+            final alreadyExists = (event['event_favorites'] as List).any(
+              (f) =>
+                  f is Map &&
+                  (f['user_id']?.toString() == currentUserId ||
+                      f['user']?['id']?.toString() == currentUserId),
+            );
+            if (!alreadyExists) {
+              (event['event_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
+            }
+          } else {
+            // Remove from favorites
+            if (event['event_favorites'] is List) {
+              (event['event_favorites'] as List).removeWhere(
+                (f) =>
+                    f is Map &&
+                    (f['user_id']?.toString() == currentUserId ||
+                        f['user']?['id']?.toString() == currentUserId),
+              );
+            }
+          }
 
           try {
-            if (localIsFavorited) {
-              // Remove from favorites
+            if (!favoris) {
+              // Remove from favorites (API call)
               await ApiClient().authenticatedDelete(
                 '/events/$eventId/favorite',
               );
             } else {
-              // Add to favorites
+              // Add to favorites (API call)
               await ApiClient().authenticatedPost('/events/$eventId/favorite');
             }
-
-            setState(() {
-              localIsFavorited = !localIsFavorited;
-              isLoadingFavorite = false;
-              isFavorited = !isFavorited;
-            });
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: const TextStyle(color: Colors.white),
+                    favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
                   backgroundColor: Colors.green,
@@ -2964,11 +4447,39 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               );
             }
           } catch (e) {
-            setState(() => isLoadingFavorite = false);
-            if (mounted) {
+            debugPrint('Favorite toggle error: $e');
+
+            // Revert on error
+            cardSetState(() {
+              favoris = !favoris;
+            });
+
+            // Revert underlying data
+            if (!favoris) {
+              // Was removing, so add back
+              if (event['event_favorites'] is! List) {
+                event['event_favorites'] = [];
+              }
+              (event['event_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
+            } else {
+              // Was adding, so remove
+              if (event['event_favorites'] is List) {
+                (event['event_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
+            }
+
+            if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Erreur: ${e.toString()}'),
+                  content: Text('Erreur: $e'),
                   backgroundColor: Colors.red,
                 ),
               );
@@ -2978,47 +4489,26 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
         return EvenementCard(
           profileImage: profileImage,
-          username: username,
-          userType: accountType == 'pro' ? 'Pro' : 'Particulier',
-          eventTitle: title.isNotEmpty ? title : 'Évènement',
-          eventImage:
-              _buildStorageUrl(imageUrl) ??
-              'assets/images/dashboard_particulier/Rectangle 12 (4).png',
-          badge: _formatEventStatus(eventDate, endDate),
-          categories: allCategories.isNotEmpty ? allCategories : ['Évènement'],
-          eventDate: _formatEventDate(eventDate),
-          location: location.isNotEmpty ? location : 'Lieu à confirmer',
-          timeAgo: _buildTimeAgo(createdAt),
-          price: isPaid && price != null && price.isNotEmpty
-              ? '${price}€'
-              : 'Gratuit',
+          username: ownerName,
+          userType: user?['account_type']?.toString() ?? 'particulier',
+          eventTitle: eventTitle,
+          eventImage: eventImage,
+          badge: event['status']?.toString(),
+          categories: categories.isNotEmpty ? categories : ['Général'],
+          eventDate: _formatEventDate(event),
+          location: coverageArea,
+          timeAgo: _buildTimeAgo(event['created_at']?.toString()),
+          price: price,
           likesCount: _asInt(event['likes_count']),
           commentsCount: _asInt(event['comments_count']),
-          isFavorite: localIsFavorited,
-          onFavoriteToggle: toggleFavorite,
           onTapCTA: () => _navigateToEventDetail(event),
-          onAvatarTap: () {
-            if (user?['id'] != null) {
-              final isProUser =
-                  user?['account_type']?.toString().toLowerCase() == 'pro';
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => isProUser
-                      ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
-                ),
-              );
-            }
-          },
+          tags: tags.isNotEmpty ? tags : null,
+          onAvatarTap: () {},
           reactionBar: eventId.isNotEmpty
-              ? _buildReactionBar(
-                  'events',
-                  eventId,
-                  acceptedMessages: event['accept_messages'] == true,
-                  authorData: user,
-                )
+              ? _buildReactionBar('events', eventId)
               : null,
+          isFavorite: favoris,
+          onFavoriteToggle: _toggleFavorite,
         );
       },
     );
@@ -3237,44 +4727,59 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     final demandeId = demande['id']?.toString() ?? '';
 
     // Check if already favorited by current user
-    bool isFavorited = demande['is_favorited'] == true;
-
-    print("isFavorited: ${demande['is_favorited']}");
+    bool favoris = demande['is_favorited'];
+    final currentUserId = UserSession().id;
 
     return StatefulBuilder(
       builder: (context, setState) {
         bool isLoadingFavorite = false;
-        bool localIsFavorited = isFavorited;
 
         Future<void> toggleFavorite() async {
           if (isLoadingFavorite || demandeId.isEmpty) return;
 
+          // Toggle immediately for responsive UI
+          favoris = !favoris;
           setState(() => isLoadingFavorite = true);
 
           try {
-            if (localIsFavorited) {
+            if (!favoris) {
               // Remove from favorites
               await ApiClient().authenticatedDelete(
                 '/demandes/$demandeId/favorite',
               );
+              // Update underlying data to persist state across rebuilds
+              if (demande['demande_favorites'] is List) {
+                (demande['demande_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost(
                 '/demandes/$demandeId/favorite',
               );
+              // Update underlying data to persist state across rebuilds
+              if (demande['demande_favorites'] is! List) {
+                demande['demande_favorites'] = [];
+              }
+              (demande['demande_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
             }
 
             setState(() {
-              localIsFavorited = !localIsFavorited;
               isLoadingFavorite = false;
-              isFavorited = !isFavorited;
             });
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -3283,6 +4788,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               );
             }
           } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            // Revert on error
+            favoris = !favoris;
             setState(() => isLoadingFavorite = false);
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -3299,6 +4807,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           profileImage: profileImage,
           username: username,
           categoryLabel: categoryLabel,
+          accountType: proProfile != null && proProfile!.isNotEmpty
+              ? 'pro'
+              : 'particulier',
           categoryColor: _categoryColor(categoryLabel),
           title: title,
           description: description.isNotEmpty
@@ -3310,21 +4821,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           commentsCount: _asInt(demande['comments_count']),
           timeAgo: _buildTimeAgo(demande['created_at']?.toString()),
           onTapCTA: () => _navigateToDemandeDetail(demande),
-          onAvatarTap: () {
-            if (user?['id'] != null) {
-              final isProUser =
-                  user?['account_type']?.toString().toLowerCase() == 'pro';
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => isProUser
-                      ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
-                ),
-              );
-            }
-          },
-          isFavorited: localIsFavorited,
+          onAvatarTap: () {},
+          isFavorited: favoris,
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
           reactionBar: demandeId.isNotEmpty
@@ -3660,22 +5158,16 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     }
 
     try {
-      final response = await ApiClient().authenticatedGet('/posts');
+      final targetUserId = widget.userId;
+      final response = await ApiClient().authenticatedGet(
+        targetUserId != null ? '/posts?user_id=$targetUserId' : '/posts',
+      );
       final data = response['data'];
       List<Map<String, dynamic>> posts = [];
       if (data is List) {
         posts = List<Map<String, dynamic>>.from(data);
       } else if (data is Map<String, dynamic> && data['data'] is List) {
         posts = List<Map<String, dynamic>>.from(data['data'] as List);
-      }
-
-      final currentUserId = _profileResponse?['user']?['id']?.toString();
-      if (currentUserId != null && currentUserId.isNotEmpty) {
-        posts = posts.where((p) {
-          final userId =
-              p['user_id']?.toString() ?? p['user']?['id']?.toString();
-          return userId == currentUserId;
-        }).toList();
       }
 
       if (!mounted) return;
@@ -3735,30 +5227,199 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     }
   }
 
-  Widget _buildPostCard(Map<String, dynamic> rawPost) {
-    final user = rawPost['user'] as Map<String, dynamic>?;
-    final userType = user?['account_type']?.toString() ?? 'Professionnel';
-    final postText = rawPost['content']?.toString() ?? '';
-    final createdAt = rawPost['created_at']?.toString();
-    final imageUrl = _extractPostImageUrl(rawPost);
+  String? _joinNames(dynamic first, dynamic last) {
+    final firstName = first?.toString().trim();
+    final lastName = last?.toString().trim();
+    if ((firstName == null || firstName.isEmpty) &&
+        (lastName == null || lastName.isEmpty)) {
+      return null;
+    }
+    if (firstName != null &&
+        firstName.isNotEmpty &&
+        lastName != null &&
+        lastName.isNotEmpty) {
+      return '$firstName $lastName';
+    }
+    return firstName?.isNotEmpty == true ? firstName : lastName;
+  }
 
-    final tags = <PostTag>[
-      PostTag(
-        title: userType,
-        icon: userType.toUpperCase() == 'PRO' ? Icons.business : Icons.person,
-        color: userType.toUpperCase() == 'PRO'
-            ? const Color(0xFF2E9B5B)
-            : const Color(0xFF3AAE5E),
-      ),
+  _PostAuthorInfo _extractPostAuthorInfo(Map<String, dynamic> raw) {
+    final authorMap = (raw['author'] ?? raw['user']) as Map<String, dynamic>?;
+    final authorId =
+        authorMap?['id']?.toString() ??
+        raw['author_id']?.toString() ??
+        raw['user_id']?.toString();
+
+    final feedAuthor = raw['author'] as Map<String, dynamic>?;
+
+    final nameCandidates = [
+      feedAuthor?['display_name'],
+      authorMap?['display_name'],
+      raw['display_name'],
+      raw['author_display_name'],
+      authorMap?['pseudo'],
+      authorMap?['nomsociete'],
+      _joinNames(authorMap?['first_name'], authorMap?['last_name']),
+      authorMap?['name'],
+      raw['author_name'],
+      raw['authorName'],
     ];
 
-    return PostContentCard(
-      tags: tags,
-      title: postText.isNotEmpty ? postText : 'Post sans contenu',
-      time: _buildTimeAgo(createdAt),
-      imageUrl: imageUrl,
-      onLike: () {},
-      onShare: () {},
+    String resolvedName = 'Utilisateur';
+    for (final candidate in nameCandidates) {
+      if (candidate == null) continue;
+      final value = candidate.toString().trim();
+      if (value.isNotEmpty) {
+        resolvedName = value;
+        break;
+      }
+    }
+
+    if (_currentUserId != null &&
+        authorId != null &&
+        authorId == _currentUserId) {
+      resolvedName = 'Vous';
+    }
+
+    final rawType =
+        (feedAuthor?['account_type'] ??
+                authorMap?['account_type'] ??
+                authorMap?['profiletype'] ??
+                raw['author_account_type'])
+            ?.toString()
+            .toLowerCase() ??
+        '';
+    final accountType =
+        rawType.contains('pro') || rawType.contains('professionnel')
+        ? 'Professionnel'
+        : 'Particulier';
+
+    final particulierProfile =
+        authorMap?['particulier_profile'] as Map<String, dynamic>?;
+    final proProfile = authorMap?['pro_profile'] as Map<String, dynamic>?;
+
+    final avatarCandidates = [
+      feedAuthor?['avatar_url'],
+      particulierProfile?['avatar_url'],
+      proProfile?['avatar_url'],
+      proProfile?['logo_url'],
+      authorMap?['avatar_url'],
+      authorMap?['avatar'],
+      authorMap?['photo'],
+      authorMap?['photoprofilurl'],
+      raw['author_avatar'],
+      raw['authorAvatar'],
+    ];
+    String avatar = _defaultAvatar;
+    for (final candidate in avatarCandidates) {
+      if (candidate == null) continue;
+      final resolved = _buildStorageUrl(candidate.toString());
+      if (resolved != null && resolved.isNotEmpty) {
+        avatar = resolved;
+        break;
+      }
+    }
+
+    return _PostAuthorInfo(
+      id: authorId,
+      displayName: resolvedName,
+      accountType: accountType,
+      avatar: avatar,
+    );
+  }
+
+  List<String> _extractAllMediaUrls(Map<String, dynamic> resource) {
+    final urls = <String>[];
+    final media = resource['media'] ?? resource['media_files'];
+    if (media is List) {
+      for (final item in media) {
+        if (item is Map<String, dynamic>) {
+          final url = item['url']?.toString();
+          if (url != null && url.isNotEmpty) {
+            // If URL is already complete (http/https), use it as-is
+            if (url.startsWith('http')) {
+              urls.add(url);
+            } else {
+              // Otherwise prepend the server base URL
+              urls.add("${ApiConfig.baseUrl.replaceFirst('/api', '')}$url");
+            }
+          }
+        }
+      }
+    }
+    if (urls.isEmpty) {
+      final cover = resource['cover_url']?.toString();
+      if (cover != null && cover.isNotEmpty) {
+        if (cover.startsWith('http')) {
+          urls.add(cover);
+        } else {
+          urls.add("${ApiConfig.baseUrl.replaceFirst('/api', '')}$cover");
+        }
+      }
+    }
+    return urls;
+  }
+
+  void _seedReactionFromFeed(
+    String apiSlug,
+    String entityId,
+    Map<String, dynamic> resource,
+  ) {
+    final key = _reactionKey(apiSlug, entityId);
+    if (!_reactions.containsKey(key)) {
+      final apiReaction = resource['user_reaction']?.toString();
+      final userReaction = ReactionCacheService.isCached(apiSlug, entityId)
+          ? ReactionCacheService.load(apiSlug, entityId)
+          : apiReaction;
+      final apiCount = _asInt(resource['likes_count']);
+      final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
+      _reactions[key] = _ReactionData(
+        likesCount: (cachedCount != null && cachedCount > apiCount)
+            ? cachedCount
+            : apiCount,
+        commentsCount: _asInt(resource['comments_count']),
+        userReaction: userReaction,
+      );
+    }
+  }
+
+  Widget _buildPostCard(Map<String, dynamic> raw) {
+    final postId = raw['id']?.toString() ?? '';
+
+    // Détecter si c'est un repost
+    final isRepost = raw['original_post_id'] != null;
+
+    // Si c'est un repost, utiliser les données du post original
+    final originalPost = isRepost
+        ? (raw['original_post'] as Map<String, dynamic>? ?? {})
+        : raw;
+
+    // L'auteur du repost (celui qui a republié)
+    final reposter = _extractPostAuthorInfo(raw);
+
+    // L'auteur du post original
+    final author = isRepost ? _extractPostAuthorInfo(originalPost) : reposter;
+
+    final content = originalPost['content']?.toString() ?? '';
+    final createdAt = originalPost['created_at']?.toString();
+    final timeAgo = _buildTimeAgo(createdAt);
+    final allMediaUrls = _extractAllMediaUrls(originalPost);
+
+    if (postId.isNotEmpty) {
+      _seedReactionFromFeed('posts', postId, raw);
+    }
+
+    return _PostCardWidget(
+      postId: postId,
+      isRepost: isRepost,
+      reposter: reposter,
+      author: author,
+      content: content,
+      timeAgo: timeAgo,
+      mediaUrls: allMediaUrls,
+      onToggleReaction: (type) => _toggleReaction('posts', postId, type),
+      buildReactionBar: () => _buildReactionBar('posts', postId),
+      buildTypeTag: _buildTypeTag,
     );
   }
 
@@ -3780,32 +5441,41 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     });
 
     try {
-      final currentUserId = _profileResponse?['user']?['id']?.toString();
+      // Determine which user's announcements to fetch
+      // widget.userId is set when viewing another user's profile
+      final targetUserId = widget.userId;
 
       final results = await Future.wait([
-        ApiClient().authenticatedGet('/bonplans'),
-        ApiClient().authenticatedGet('/job-offers'),
-        ApiClient().authenticatedGet('/trainings'),
-        ApiClient().authenticatedGet('/events'),
-        ApiClient().authenticatedGet('/demandes'),
+        ApiClient().authenticatedGet(
+          targetUserId != null
+              ? '/bonplans?user_id=$targetUserId'
+              : '/bonplans',
+        ),
+        ApiClient().authenticatedGet(
+          targetUserId != null
+              ? '/job-offers?user_id=$targetUserId'
+              : '/job-offers',
+        ),
+        ApiClient().authenticatedGet(
+          targetUserId != null
+              ? '/trainings?user_id=$targetUserId'
+              : '/trainings',
+        ),
+        ApiClient().authenticatedGet(
+          targetUserId != null ? '/events?user_id=$targetUserId' : '/events',
+        ),
+        ApiClient().authenticatedGet(
+          targetUserId != null
+              ? '/demandes?user_id=$targetUserId'
+              : '/demandes',
+        ),
       ]);
 
-      List<Map<String, dynamic>> filterByUser(
-        List<Map<String, dynamic>> items,
-      ) {
-        if (currentUserId == null || currentUserId.isEmpty) return items;
-        return items.where((m) {
-          final userId =
-              m['user_id']?.toString() ?? m['user']?['id']?.toString();
-          return userId == currentUserId;
-        }).toList();
-      }
-
-      final bonPlans = filterByUser(_extractList(results[0]));
-      final jobOffers = filterByUser(_extractList(results[1]));
-      final trainings = filterByUser(_extractList(results[2]));
-      final events = filterByUser(_extractList(results[3]));
-      final demandes = filterByUser(_extractList(results[4]));
+      final bonPlans = _extractList(results[0]);
+      final jobOffers = _extractList(results[1]);
+      final trainings = _extractList(results[2]);
+      final events = _extractList(results[3]);
+      final demandes = _extractList(results[4]);
 
       if (!mounted) return;
       // Seed reactions BEFORE setState to prevent _getReaction pre-populating with empty data
@@ -3899,8 +5569,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     final facebookUrl = socialLinks['facebook']?.toString();
     final instagramUrl = socialLinks['instagram']?.toString();
     final youtubeUrl = socialLinks['youtube']?.toString();
-    // final linkedinUrl = socialLinks['linkedin']?.toString();
-    // final snapchatUrl = socialLinks['snapchat']?.toString();
+    final linkedinUrl = socialLinks['linkedin']?.toString();
+    final snapchatUrl = socialLinks['snapchat']?.toString();
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -3964,7 +5634,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         margin: const EdgeInsets.only(
                           left: 16,
                           right: 16,
-                          bottom: 25,
+                          bottom: 10,
                           top: 40,
                         ),
                         padding: const EdgeInsets.only(
@@ -4237,10 +5907,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   // Message and Suivre buttons - only show when viewing other users' profiles
                   if (!_isViewingOwnProfile)
                     Container(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.only(bottom: 10, top: 4),
                       child: Row(
                         children: [
                           Expanded(
@@ -4310,6 +5978,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       left: 14,
                       right: 14,
                       bottom: 4,
+                      top: 8,
                     ),
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                     height: 44,
@@ -4453,127 +6122,191 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Banner Image
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 16, 10, 0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: bannerUrl != null && bannerUrl.isNotEmpty
-                        ? Image.network(
-                            buildImageUrl(bannerUrl),
-                            width: double.infinity,
-                            height: 150,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const SizedBox.shrink();
-                            },
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ),
-
-                // Presentation Section
-                if (presentation?.trim().isNotEmpty == true) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 20, 18, 0),
-                    child: Text(
-                      'Présentation',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black.withOpacity(0.5),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 20),
-                    child: Text(
-                      presentation!,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF666666),
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-
-                // Social Links Section
-                if (facebookUrl != null ||
-                    instagramUrl != null ||
-                    youtubeUrl != null ||
-                    linkedinUrl != null ||
-                    tiktokUrl != null ||
-                    snapchatUrl != null ||
-                    xUrl != null) ...[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
-                    child: Divider(color: Colors.grey[200]),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
-                    child: Text(
-                      'Réseaux sociaux',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black.withOpacity(0.5),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 8, 18, 20),
-                    child: Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
+            child:
+                _isViewingOwnProfile &&
+                    (bannerUrl == null ||
+                        (presentation?.trim().isEmpty ?? true))
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 18, 10, 16),
+                    child: Column(
                       children: [
-                        if (facebookUrl != null && facebookUrl.isNotEmpty)
-                          _buildSocialIcon(
-                            Icons.facebook,
-                            const Color(0xFF1877F2),
-                            facebookUrl,
-                          ),
-                        if (instagramUrl != null && instagramUrl.isNotEmpty)
-                          _buildSocialIcon(
-                            Icons.camera_alt,
-                            const Color(0xFFE1306C),
-                            instagramUrl,
-                          ),
-                        if (youtubeUrl != null && youtubeUrl.isNotEmpty)
-                          _buildSocialIcon(
-                            Icons.play_circle_filled,
-                            const Color(0xFFFF0000),
-                            youtubeUrl,
-                          ),
-                        if (linkedinUrl != null && linkedinUrl.isNotEmpty)
-                          _buildSocialIcon(
-                            Icons.business,
-                            const Color(0xFF0A66C2),
-                            linkedinUrl,
-                          ),
-                        if (tiktokUrl != null && tiktokUrl.isNotEmpty)
-                          _buildSocialIcon(
-                            Icons.music_note,
-                            Colors.black,
-                            tiktokUrl,
-                          ),
-                        if (snapchatUrl != null && snapchatUrl.isNotEmpty)
-                          _buildSocialIcon(
-                            Icons.screenshot,
-                            const Color(0xFFFFFC00),
-                            snapchatUrl,
-                          ),
-                        if (xUrl != null && xUrl.isNotEmpty)
-                          _buildSocialIcon(Icons.tag, Colors.black, xUrl),
+                        Text(
+                          "Ajoutez une banniere et une presentation pour attirer plus de clients",
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const ProProfileEntrepriseScreen(),
+                              ),
+                            );
+                          },
+                          child: Text("Modifier"),
+                        ),
                       ],
                     ),
-                  ),
-                ],
-              ],
-            ),
+                  )
+                : (!_isViewingOwnProfile &&
+                          (bannerUrl == null ||
+                              (presentation?.trim().isEmpty ?? true))
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 18, 10, 16),
+                          child: Column(
+                            children: [
+                              Text(
+                                "Aucune presentation",
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Banner Image
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(10, 16, 10, 0),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: bannerUrl != null && bannerUrl.isNotEmpty
+                                    ? Image.network(
+                                        buildImageUrl(bannerUrl),
+                                        width: double.infinity,
+                                        height: 150,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                              return const SizedBox.shrink();
+                                            },
+                                      )
+                                    : const SizedBox.shrink(),
+                              ),
+                            ),
+
+                            // Presentation Section
+                            if (presentation?.trim().isNotEmpty == true) ...[
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  18,
+                                  20,
+                                  18,
+                                  0,
+                                ),
+                                child: Text(
+                                  'Présentation',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black.withOpacity(0.5),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  18,
+                                  12,
+                                  18,
+                                  20,
+                                ),
+                                child: Text(
+                                  presentation!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF666666),
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+
+                            // Social Links Section
+                            if (facebookUrl != null ||
+                                instagramUrl != null ||
+                                youtubeUrl != null ||
+                                linkedinUrl != null ||
+                                snapchatUrl != null ||
+                                xUrl != null) ...[
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  18,
+                                  0,
+                                  18,
+                                  0,
+                                ),
+                                child: Divider(color: Colors.grey[200]),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  18,
+                                  16,
+                                  18,
+                                  8,
+                                ),
+                                child: Text(
+                                  'Réseaux sociaux',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black.withOpacity(0.5),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  18,
+                                  8,
+                                  18,
+                                  20,
+                                ),
+                                child: Wrap(
+                                  spacing: 12,
+                                  runSpacing: 12,
+                                  children: [
+                                    if (facebookUrl != null &&
+                                        facebookUrl.isNotEmpty)
+                                      _buildSocialIcon(
+                                        Icons.facebook,
+                                        const Color(0xFF1877F2),
+                                        facebookUrl,
+                                      ),
+                                    if (instagramUrl != null &&
+                                        instagramUrl.isNotEmpty)
+                                      _buildSocialIcon(
+                                        Icons.camera_alt,
+                                        const Color(0xFFE1306C),
+                                        instagramUrl,
+                                      ),
+                                    if (youtubeUrl != null &&
+                                        youtubeUrl.isNotEmpty)
+                                      _buildSocialIcon(
+                                        Icons.play_circle_filled,
+                                        const Color(0xFFFF0000),
+                                        youtubeUrl,
+                                      ),
+                                    if (linkedinUrl != null &&
+                                        linkedinUrl.isNotEmpty)
+                                      _buildSocialIcon(
+                                        Icons.business,
+                                        const Color(0xFF0A66C2),
+                                        linkedinUrl,
+                                      ),
+                                    if (snapchatUrl != null &&
+                                        snapchatUrl.isNotEmpty)
+                                      _buildSocialIcon(
+                                        Icons.screenshot,
+                                        const Color(0xFFFFFC00),
+                                        snapchatUrl,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        )),
           ),
           const SizedBox(height: 24),
           // Media Gallery Card
@@ -4839,9 +6572,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     _trainings.isEmpty &&
                     _events.isEmpty &&
                     _demandes.isEmpty)
-                  const Text(
-                    'Aucune annonce',
-                    style: TextStyle(color: Color(0xFF666666)),
+                  Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 60),
+                        child: Center(
+                          child: const Text(
+                            'Aucune annonce',
+                            style: TextStyle(color: Color(0xFF666666)),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
               ],
             )
@@ -4889,11 +6632,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               ),
             )
           else if (_myPosts.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Text(
-                "Vous n'avez pas encore publié de post.",
-                style: TextStyle(color: Colors.grey),
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 70),
+              child: Center(
+                child: Text(
+                  _isViewingOwnProfile
+                      ? "Vous n'avez pas encore publié de post."
+                      : "Aucun post disponible pour l'instant.",
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
             )
           else
@@ -4960,7 +6707,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             else
               const Center(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
+                  padding: EdgeInsets.symmetric(vertical: 60),
                   child: Text(
                     'Aucun avis pour le moment.',
                     style: TextStyle(color: Colors.grey),
