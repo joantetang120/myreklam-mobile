@@ -689,7 +689,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
 
                   // Title
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 100, 0),
+                    padding: EdgeInsets.fromLTRB(16, imageUrls.isNotEmpty ? 16 : 56, 100, 0),
                     child: Text(
                       title,
                       style: const TextStyle(

@@ -630,7 +630,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 children: [
                   if (imageUrls.isNotEmpty) _buildImageCarousel(imageUrls),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 100, 0),
+                    padding: EdgeInsets.fromLTRB(16, imageUrls.isNotEmpty ? 16 : 56, 100, 0),
                     child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF333333)), maxLines: 2, overflow: TextOverflow.ellipsis),
                   ),
                   const SizedBox(height: 8),
