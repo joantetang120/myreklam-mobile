@@ -121,6 +121,35 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   List<Map<String, dynamic>> _similarEvents = [];
   bool _isLoadingSimilar = true;
 
+  /// Check if edit option should be shown
+  /// Hide edit if: 1) post is older than 2 hours OR 2) people have participated
+  bool get _canEdit {
+    if (!widget.isOwner) return false;
+
+    final data = widget.eventData;
+    if (data == null) return true; // Allow edit if no data (fallback)
+
+    // Check if post is older than 2 hours
+    final createdAtStr = data['created_at']?.toString();
+    if (createdAtStr != null && createdAtStr.isNotEmpty) {
+      final createdAt = DateTime.tryParse(createdAtStr);
+      if (createdAt != null) {
+        final twoHoursAgo = DateTime.now().subtract(const Duration(hours: 2));
+        if (createdAt.isBefore(twoHoursAgo)) {
+          return false; // Post is older than 2 hours
+        }
+      }
+    }
+
+    // Check if people have participated in this event
+    final participantsCount = data['participants_count'] ?? 0;
+    if (participantsCount is int && participantsCount > 0) {
+      return false; // People have participated
+    }
+
+    return true;
+  }
+
   /// Translates English category codes to French labels
   String _translateCategory(String code) {
     const Map<String, String> translations = {
@@ -1311,7 +1340,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          if (widget.isOwner)
+          if (_canEdit)
             PopupMenuButton<String>(
               icon: const Icon(
                 Icons.more_vert,

@@ -96,6 +96,35 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   List<Map<String, dynamic>> _similarJobOffers = [];
   bool _isLoadingSimilar = false;
 
+  /// Check if edit option should be shown
+  /// Hide edit if: 1) post is older than 2 hours OR 2) people have applied
+  bool get _canEdit {
+    if (!widget.isOwner) return false;
+
+    final data = widget.jobOfferData;
+    if (data == null) return true; // Allow edit if no data (fallback)
+
+    // Check if post is older than 2 hours
+    final createdAtStr = data['created_at']?.toString();
+    if (createdAtStr != null && createdAtStr.isNotEmpty) {
+      final createdAt = DateTime.tryParse(createdAtStr);
+      if (createdAt != null) {
+        final twoHoursAgo = DateTime.now().subtract(const Duration(hours: 2));
+        if (createdAt.isBefore(twoHoursAgo)) {
+          return false; // Post is older than 2 hours
+        }
+      }
+    }
+
+    // Check if people have applied to this job offer
+    final applicationsCount = data['applications_count'] ?? 0;
+    if (applicationsCount is int && applicationsCount > 0) {
+      return false; // People have applied
+    }
+
+    return true;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1271,7 +1300,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          if (widget.isOwner)
+          if (_canEdit)
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(

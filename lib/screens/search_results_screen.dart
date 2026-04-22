@@ -772,7 +772,6 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   Widget _buildJobOfferCard(Map<String, dynamic> job) {
     final jobId = job['id']?.toString() ?? '';
-    final companyName = job['company_name']?.toString() ?? 'Entreprise';
     final jobTitle = job['title']?.toString() ?? 'Offre d\'emploi';
     final description = _stripHtml(job['description']?.toString() ?? '');
     final location = job['location']?.toString() ?? job['city']?.toString() ?? 'Non spécifié';
@@ -793,6 +792,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
     final user = job['user'] as Map<String, dynamic>?;
     final avatarUrl = _resolveUserAvatar(user);
+    // Use resolved user name from profile (company_name for pro users)
+    final companyName = _resolveUserName(user, fallback: job['company_name']?.toString() ?? 'Entreprise');
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -1123,17 +1124,43 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
 
   String _resolveUserAvatar(Map<String, dynamic>? user, {String fallback = 'assets/images/default_avatar.png'}) {
     if (user == null) return fallback;
+    // Server-computed avatar_url (logo_url for pro, avatar_url for particulier)
+    final serverAvatarUrl = user['avatar_url']?.toString();
+    if (serverAvatarUrl != null && serverAvatarUrl.isNotEmpty) {
+      final resolved = _resolveUrl(serverAvatarUrl);
+      if (resolved.isNotEmpty) return resolved;
+    }
+    // Fallback to nested profile data
     final proProfile = user['pro_profile'] as Map<String, dynamic>?;
     final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
-    final avatarUrl = proProfile?['logo_url']?.toString() ?? proProfile?['avatar_url']?.toString() ?? particulierProfile?['avatar_url']?.toString() ?? user['avatar']?.toString() ?? '';
-    return avatarUrl.isNotEmpty ? _resolveUrl(avatarUrl) : fallback;
+    final avatarUrl = proProfile?['logo_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        particulierProfile?['avatar_url']?.toString() ??
+        user['avatar']?.toString() ??
+        user['author_avatar']?.toString() ??
+        '';
+    if (avatarUrl.isEmpty) return fallback;
+    final resolved = _resolveUrl(avatarUrl);
+    return resolved.isNotEmpty ? resolved : fallback;
   }
 
   String _resolveUserName(Map<String, dynamic>? user, {String fallback = 'Utilisateur'}) {
     if (user == null) return fallback;
+    // Server-computed display_name (company_name for pro, pseudo for particulier)
+    final serverDisplayName = user['display_name']?.toString();
+    if (serverDisplayName != null && serverDisplayName.isNotEmpty) {
+      return serverDisplayName;
+    }
+    // Fallback to nested profile data and flat fields
     final proProfile = user['pro_profile'] as Map<String, dynamic>?;
     final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
-    return proProfile?['company_name']?.toString() ?? proProfile?['first_name']?.toString() ?? particulierProfile?['pseudo']?.toString() ?? particulierProfile?['first_name']?.toString() ?? user['name']?.toString() ?? fallback;
+    return proProfile?['company_name']?.toString() ??
+        proProfile?['first_name']?.toString() ??
+        particulierProfile?['pseudo']?.toString() ??
+        particulierProfile?['first_name']?.toString() ??
+        user['name']?.toString() ??
+        user['author_name']?.toString() ??
+        fallback;
   }
 
   void _navigateToUserProfile(Map<String, dynamic>? user) {

@@ -509,6 +509,37 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
   bool _isExpanded = false;
   static const int _collapsedMaxLength = 150;
 
+  /// Build author avatar - shows icon if no avatar, otherwise shows image
+  Widget _buildAuthorAvatar(String avatarUrl, String accountType) {
+    final hasAvatar = avatarUrl.isNotEmpty &&
+        avatarUrl != 'null' &&
+        avatarUrl != 'assets/images/dashboard_particulier/Ellipse 10.png';
+
+    if (!hasAvatar) {
+      return CircleAvatar(
+        radius: 20,
+        backgroundColor: Colors.grey[300],
+        child: Icon(
+          accountType == 'pro' ? Icons.business : Icons.person,
+          color: Colors.grey[600],
+          size: 20,
+        ),
+      );
+    }
+
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: Colors.grey[300],
+      backgroundImage: avatarUrl.startsWith('http')
+          ? NetworkImage(avatarUrl) as ImageProvider
+          : avatarUrl.startsWith('assets/')
+              ? AssetImage(avatarUrl)
+              : NetworkImage(
+                  ApiConfig.resolveMediaUrl(avatarUrl) ?? '',
+                ) as ImageProvider,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final needsCollapse = widget.content.length > _collapsedMaxLength;
@@ -616,22 +647,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                 );
                               }
                             },
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundImage:
-                                  widget.author.avatar.startsWith('http')
-                                  ? NetworkImage(widget.author.avatar)
-                                        as ImageProvider
-                                  : widget.author.avatar.startsWith('assets/')
-                                  ? AssetImage(widget.author.avatar)
-                                  : NetworkImage(
-                                          ApiConfig.resolveMediaUrl(
-                                                widget.author.avatar,
-                                              ) ??
-                                              '',
-                                        )
-                                        as ImageProvider,
-                            ),
+                            child: _buildAuthorAvatar(widget.author.avatar, widget.author.accountType),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -948,6 +964,33 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     'event': 'events',
     'demande': 'demandes',
   };
+
+  /// Build small avatar widget - shows icon if no avatar
+  Widget _buildSmallAvatar(String avatarUrl, double radius) {
+    final hasAvatar = avatarUrl.isNotEmpty &&
+        avatarUrl != 'null' &&
+        avatarUrl != _defaultAvatar;
+
+    if (!hasAvatar) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: Colors.grey[300],
+        child: Icon(
+          Icons.person,
+          size: radius,
+          color: Colors.grey[600],
+        ),
+      );
+    }
+
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: Colors.grey[300],
+      backgroundImage: avatarUrl.startsWith('http')
+          ? NetworkImage(avatarUrl) as ImageProvider
+          : AssetImage(avatarUrl),
+    );
+  }
 
   /// Translates English sub-category codes to French labels
   String _translateSubCategory(String code) {
@@ -1309,15 +1352,28 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                         children: [
                           CircleAvatar(
                             radius: 24,
-                            backgroundImage: avatarUrl.startsWith('http')
-                                ? NetworkImage(avatarUrl)
-                                : avatarUrl.startsWith('assets/')
-                                ? AssetImage(avatarUrl) as ImageProvider
-                                : NetworkImage(
-                                        ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                            '',
-                                      )
-                                      as ImageProvider,
+                            backgroundColor: Colors.grey[300],
+                            backgroundImage: avatarUrl.isNotEmpty &&
+                                    avatarUrl != _defaultAvatar
+                                ? (avatarUrl.startsWith('http')
+                                    ? NetworkImage(avatarUrl)
+                                    : avatarUrl.startsWith('assets/')
+                                        ? AssetImage(avatarUrl) as ImageProvider
+                                        : NetworkImage(
+                                            ApiConfig.resolveMediaUrl(
+                                                  avatarUrl,
+                                                ) ??
+                                                '',
+                                          ) as ImageProvider)
+                                : null,
+                            child: avatarUrl.isEmpty ||
+                                    avatarUrl == _defaultAvatar
+                                ? Icon(
+                                    isPro ? Icons.business : Icons.person,
+                                    size: 24,
+                                    color: Colors.grey[600],
+                                  )
+                                : null,
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -4367,7 +4423,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       children: [
                         CircleAvatar(
                           radius: isReply ? 14 : 18,
-                          backgroundColor: const Color(0xFFE6F7EF),
+                          backgroundColor: Colors.grey[300],
                           backgroundImage:
                               avatarUrl != null && avatarUrl.isNotEmpty
                               ? NetworkImage(
@@ -4376,15 +4432,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                 )
                               : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Text(
-                                  displayName.isNotEmpty
-                                      ? displayName[0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    fontSize: isReply ? 11 : 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2A8143),
-                                  ),
+                              ? Icon(
+                                  Icons.person,
+                                  size: isReply ? 12 : 16,
+                                  color: Colors.grey[600],
                                 )
                               : null,
                         ),
@@ -4805,12 +4856,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                     if (isRepost) ...[
                       Row(
                         children: [
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundImage: reposter.avatar.startsWith('http')
-                                ? NetworkImage(reposter.avatar) as ImageProvider
-                                : AssetImage(reposter.avatar),
-                          ),
+                          _buildSmallAvatar(reposter.avatar, 12),
                           const SizedBox(width: 6),
                           Expanded(
                             child: RichText(
@@ -4839,12 +4885,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                     ],
                     Row(
                       children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundImage: author.avatar.startsWith('http')
-                              ? NetworkImage(author.avatar) as ImageProvider
-                              : AssetImage(author.avatar),
-                        ),
+                        _buildSmallAvatar(author.avatar, 18),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(

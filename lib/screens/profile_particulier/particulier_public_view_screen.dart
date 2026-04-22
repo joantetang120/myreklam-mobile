@@ -89,6 +89,37 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
   bool _isExpanded = false;
   static const int _collapsedMaxLength = 150;
 
+  /// Build author avatar - shows icon if no avatar, otherwise shows image
+  Widget _buildAuthorAvatar(String avatarUrl) {
+    final hasAvatar = avatarUrl.isNotEmpty &&
+        avatarUrl != 'null' &&
+        avatarUrl != 'assets/images/dashboard_particulier/Ellipse 10.png';
+
+    if (!hasAvatar) {
+      return CircleAvatar(
+        radius: 20,
+        backgroundColor: Colors.grey[300],
+        child: Icon(
+          widget.author.accountType == 'pro' ? Icons.business : Icons.person,
+          color: Colors.grey[600],
+          size: 20,
+        ),
+      );
+    }
+
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: Colors.grey[300],
+      backgroundImage: avatarUrl.startsWith('http')
+          ? NetworkImage(avatarUrl) as ImageProvider
+          : avatarUrl.startsWith('assets/')
+              ? AssetImage(avatarUrl)
+              : NetworkImage(
+                  ApiConfig.resolveMediaUrl(avatarUrl) ?? '',
+                ) as ImageProvider,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final needsCollapse = widget.content.length > _collapsedMaxLength;
@@ -165,22 +196,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                         children: [
                           GestureDetector(
                             onTap: () {},
-                            child: CircleAvatar(
-                              radius: 20,
-                              backgroundImage:
-                                  widget.author.avatar.startsWith('http')
-                                  ? NetworkImage(widget.author.avatar)
-                                        as ImageProvider
-                                  : widget.author.avatar.startsWith('assets/')
-                                  ? AssetImage(widget.author.avatar)
-                                  : NetworkImage(
-                                          ApiConfig.resolveMediaUrl(
-                                                widget.author.avatar,
-                                              ) ??
-                                              '',
-                                        )
-                                        as ImageProvider,
-                            ),
+                            child: _buildAuthorAvatar(widget.author.avatar),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -1611,18 +1627,25 @@ class _ParticulierPublicViewScreenState
                             ),
                             child: CircleAvatar(
                               radius: 50,
-                              backgroundImage: avatarUrl != null
+                              backgroundColor: Colors.grey[300],
+                              backgroundImage: avatarUrl != null &&
+                                      avatarUrl.isNotEmpty
                                   ? (avatarUrl.startsWith('http')
-                                        ? NetworkImage(avatarUrl)
-                                        : NetworkImage(
-                                            ApiConfig.resolveMediaUrl(
-                                                  avatarUrl,
-                                                ) ??
-                                                '',
-                                          ))
-                                  : const AssetImage(
-                                      'assets/images/dashboard_particulier/Ellipse 10.png',
-                                    ),
+                                      ? NetworkImage(avatarUrl)
+                                      : NetworkImage(
+                                          ApiConfig.resolveMediaUrl(
+                                                avatarUrl,
+                                              ) ??
+                                              '',
+                                        ))
+                                  : null,
+                              child: avatarUrl == null || avatarUrl.isEmpty
+                                  ? Icon(
+                                      Icons.person,
+                                      size: 50,
+                                      color: Colors.grey[600],
+                                    )
+                                  : null,
                             ),
                           ),
                         ),
@@ -2989,7 +3012,7 @@ class _ParticulierPublicViewScreenState
                       children: [
                         CircleAvatar(
                           radius: isReply ? 14 : 18,
-                          backgroundColor: const Color(0xFFE6F7EF),
+                          backgroundColor: Colors.grey[300],
                           backgroundImage:
                               avatarUrl != null && avatarUrl.isNotEmpty
                               ? NetworkImage(
@@ -2998,15 +3021,10 @@ class _ParticulierPublicViewScreenState
                                 )
                               : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Text(
-                                  displayName.isNotEmpty
-                                      ? displayName[0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    fontSize: isReply ? 11 : 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2A8143),
-                                  ),
+                              ? Icon(
+                                  Icons.person,
+                                  size: isReply ? 12 : 16,
+                                  color: Colors.grey[600],
                                 )
                               : null,
                         ),

@@ -1355,11 +1355,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         await _clearSavedProgress();
       }
 
-      // Show success dialog and wait for it to close
-      await _showSuccessDialog();
-
       // Award My's for creating a bon plan (only on create, not edit)
-      // This happens AFTER the success dialog is closed
+      // This happens BEFORE showing dialog so Mys are ready
       if (!_isEditMode && bonPlanId != null && mounted) {
         try {
           final mysResponse = await MysEarningService().awardMys(
@@ -1373,23 +1370,16 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             if (newBalance != null) {
               UserSession().updateMys(newBalance);
             }
-
-            // Show reward modal after dialog is closed - use microtask to avoid conflict
-            Future.microtask(() async {
-              if (mounted) {
-                await MysRewardModal.show(
-                  context,
-                  amount: mysResponse['earning']?['amount'] ?? 2,
-                  actionType: 'bon_plan',
-                );
-              }
-            });
           }
         } catch (e) {
           debugPrint("Error awarding My's for bon plan: $e");
-          // Don't block the user if awarding fails
+          // Don't block if API fails
         }
       }
+
+      // Show success dialog and reward modal
+      await _showSuccessDialog(withMysReward: !_isEditMode);
+
     } on ApiException catch (e) {
       if (!mounted) return;
       _showSnack(e.firstError, isError: true);
@@ -1406,7 +1396,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     }
   }
 
-  Future<void> _showSuccessDialog() async {
+  Future<void> _showSuccessDialog({bool withMysReward = false}) async {
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -1442,7 +1432,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               Text(
                 _isEditMode
                     ? 'Votre bon plan a été mis à jour avec succès'
-                    : 'Vous pouvez consulter cela au niveau de votre espace professionnel',
+                    : 'Bon plan publié avec succès',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -1456,6 +1446,15 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         ),
       ),
     );
+
+    // Show Mys reward modal if needed (before popping screen so context is valid)
+    if (withMysReward && mounted) {
+      await MysRewardModal.show(
+        context,
+        amount: 2,
+        actionType: 'bon_plan',
+      );
+    }
 
     // Pop the creation screen after dialog is closed
     if (mounted) {
@@ -2318,7 +2317,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               const SizedBox(height: 8),
               // Site web de l'enseigne
               _buildTextField(
-                label: 'ex: www.wwebsitepromo.fr/code-save-10',
+                label: 'ex: https://wwebsitepromo.fr/code-save-10',
                 controller: _siteWebController,
                 keyboardType: TextInputType.url,
                 fieldKey: 'site_web',
