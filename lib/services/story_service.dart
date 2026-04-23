@@ -187,6 +187,33 @@ class StoryService {
     }
   }
 
+  /// Get which users' stories have been fully viewed by current user.
+  Future<List<int>> getFullyViewedUserIds() async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http
+          .get(
+            Uri.parse('${ApiConfig.baseUrl}/stories/viewed-status'),
+            headers: headers,
+          )
+          .timeout(ApiConfig.connectTimeout);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        if (body['success'] == true && body['data'] != null) {
+          final userIds = body['data']['fully_viewed_user_ids'] as List;
+          return userIds
+              .map((id) => id is int ? id : int.tryParse(id.toString()) ?? 0)
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching viewed status: $e');
+      return [];
+    }
+  }
+
   /// Delete a story.
   Future<bool> deleteStory(int storyId) async {
     try {

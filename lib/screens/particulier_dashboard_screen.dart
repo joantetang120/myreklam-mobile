@@ -27,6 +27,7 @@ import 'package:myreklam/widgets/custom_bottom_bar.dart';
 import 'package:myreklam/models/story_model.dart';
 import 'package:myreklam/screens/my_stories_screen.dart';
 import 'package:myreklam/services/story_store.dart';
+import 'package:myreklam/services/story_service.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/screens/image_preview_screen.dart';
@@ -1081,6 +1082,11 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   static const _defaultAvatar =
       'assets/images/dashboard_particulier/Ellipse 10.png';
 
+  // Track which users' stories have been fully viewed
+  Set<int> _fullyViewedUserIds = {};
+  // Track if user has viewed their own stories (opened the story viewer)
+  bool _hasViewedOwnStories = false;
+
   List<Map<String, dynamic>> _feedItems = [];
   bool _isLoadingFeed = true;
   bool _isLoadingMoreFeed = false;
@@ -1181,6 +1187,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   void _openStory(BuildContext context, StoryUserGroup group) {
+    debugPrint('Opening story for user ${group.userId}, isOwn: ${group.isOwn}');
     final storyMaps = group.stories.map((s) {
       final resolvedImage = ApiConfig.resolveMediaUrl(s.mediaUrl);
       final diff = DateTime.now().difference(s.timestamp);
@@ -1219,7 +1226,37 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           ownerId: group.userId,
         ),
       ),
-    );
+    ).then((_) {
+      // Reload viewed status after watching stories
+      debugPrint('Story viewer closed, reloading viewed status...');
+
+      // If it was own story, mark as viewed locally
+      if (group.isOwn) {
+        debugPrint('Own story viewed, marking as viewed locally');
+        setState(() {
+          _hasViewedOwnStories = true;
+        });
+      }
+
+      _loadViewedStatus();
+      // Also reload the feed to trigger UI update
+      _storyStore.loadFeed();
+    });
+  }
+
+  Future<void> _loadViewedStatus() async {
+    try {
+      debugPrint('Loading viewed status...');
+      final viewedIds = await StoryService().getFullyViewedUserIds();
+      debugPrint('Fully viewed user IDs: $viewedIds');
+      if (mounted) {
+        setState(() {
+          _fullyViewedUserIds = viewedIds.toSet();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading viewed status: $e');
+    }
   }
 
   @override
@@ -1237,6 +1274,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) _checkAndShowOnboarding();
     });
+
+    // Load viewed status for stories
+    _loadViewedStatus();
 
     // Listen for My's refresh requests
     ParticulierDashboardScreen.refreshMysNotifier.addListener(
@@ -3846,7 +3886,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       );
       final data = response['data'] as Map<String, dynamic>?;
       if (data != null && mounted) {
-        setState(() { 
+        setState(() {
           final key = _reactionKey(apiSlug, entityId);
           final apiLikesCount = _asInt(data['likes_count']);
           final apiCommentsCount = _asInt(data['comments_count']);
@@ -6576,12 +6616,40 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                         final ownGroup = feedGroups
                             .where((g) => g.isOwn)
                             .toList();
+
+                        // Separate viewed and unviewed groups
                         final otherGroups = feedGroups
                             .where((g) => !g.isOwn)
                             .toList();
+
+                        final unviewedGroups = otherGroups
+                            .where(
+                              (g) => !_fullyViewedUserIds.contains(g.userId),
+                            )
+                            .toList();
+                        final viewedGroups = otherGroups
+                            .where(
+                              (g) => _fullyViewedUserIds.contains(g.userId),
+                            )
+                            .toList();
+
+                        // Combine: unviewed first, then viewed (WhatsApp-like behavior)
+                        final sortedOtherGroups = [
+                          ...unviewedGroups,
+                          ...viewedGroups,
+                        ];
+
                         final hasOwnStories =
                             ownGroup.isNotEmpty &&
                             ownGroup.first.stories.isNotEmpty;
+
+                        // Check if current user's own stories have been fully viewed
+                        // For own stories, we track locally since backend doesn't record own views
+                        final currentUserId = _currentUserId;
+                        final ownStoriesViewed =
+                            currentUserId != null &&
+                            (_fullyViewedUserIds.contains(currentUserId) ||
+                                _hasViewedOwnStories);
 
                         return Align(
                           alignment: Alignment.centerLeft,
@@ -6607,14 +6675,20 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                               ),
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
-                                                color: const Color(0xFFE6F7EF),
+                                                color:
+                                                    hasOwnStories &&
+                                                        !ownStoriesViewed
+                                                    ? const Color(0xFFE6F7EF)
+                                                    : Colors.grey.shade200,
                                                 border: Border.all(
-                                                  color: const Color(
-                                                    0xFF3AAE5E,
-                                                  ),
+                                                  color:
+                                                      hasOwnStories &&
+                                                          !ownStoriesViewed
+                                                      ? const Color(0xFF3AAE5E)
+                                                      : Colors.grey.shade400,
                                                   width: hasOwnStories
                                                       ? 2.5
-                                                      : 1,
+                                                      : 1.5,
                                                 ),
                                               ),
                                               child: hasOwnStories
@@ -6705,7 +6779,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                 const SizedBox(width: 12),
 
                                 // Other users' stories from API feed
-                                ...otherGroups.map(
+                                ...sortedOtherGroups.map(
                                   (group) => Padding(
                                     padding: const EdgeInsets.only(left: 12),
                                     child: AvatarsStory(
@@ -6713,6 +6787,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                       imageName:
                                           group.userAvatar ?? _defaultAvatar,
                                       onTap: () => _openStory(context, group),
+                                      isViewed: _fullyViewedUserIds.contains(
+                                        group.userId,
+                                      ),
                                     ),
                                   ),
                                 ),
