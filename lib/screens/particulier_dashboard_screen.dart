@@ -3846,7 +3846,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       );
       final data = response['data'] as Map<String, dynamic>?;
       if (data != null && mounted) {
-        setState(() { 
+        setState(() {
           final key = _reactionKey(apiSlug, entityId);
           final apiLikesCount = _asInt(data['likes_count']);
           final apiCommentsCount = _asInt(data['comments_count']);

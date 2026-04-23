@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'dart:convert';
@@ -29,6 +30,73 @@ class _ReactionData {
     this.commentsCount = 0,
     this.userReaction,
   });
+}
+
+class _ExpandableDescriptionStateful extends StatefulWidget {
+  final String text;
+
+  const _ExpandableDescriptionStateful({required this.text});
+
+  @override
+  State<_ExpandableDescriptionStateful> createState() =>
+      _ExpandableDescriptionStatefulState();
+}
+
+class _ExpandableDescriptionStatefulState
+    extends State<_ExpandableDescriptionStateful> {
+  bool isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = widget.text;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isExpanded = !isExpanded;
+        });
+      },
+      child: AnimatedCrossFade(
+        firstChild: RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: text.length > 100
+                    ? '${text.substring(0, 100)}... '
+                    : text,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF666666),
+                  height: 1.4,
+                ),
+              ),
+              if (text.length > 100)
+                const TextSpan(
+                  text: 'voir plus',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF3AAE5E),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        secondChild: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 14,
+            color: Color(0xFF666666),
+            height: 1.4,
+          ),
+        ),
+        crossFadeState: isExpanded
+            ? CrossFadeState.showSecond
+            : CrossFadeState.showFirst,
+        duration: const Duration(milliseconds: 200),
+      ),
+    );
+  }
 }
 
 class ProPostDetailScreen extends StatefulWidget {
@@ -598,12 +666,18 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
   Widget _buildBonPlanDescription(Map<String, dynamic> item) {
     final descriptionPlain = item['description']?.toString() ?? '';
-    return Text(
-      _stripHtml(descriptionPlain),
-      style: const TextStyle(fontSize: 14, color: Color(0xFF666666)),
-      maxLines: 3,
-      overflow: TextOverflow.ellipsis,
-    );
+    final cleanText = _stripHtml(descriptionPlain);
+
+    if (cleanText.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return _ExpandableDescription(text: cleanText);
+  }
+
+  // Expandable description widget with "voir plus" functionality
+  Widget _ExpandableDescription({required String text}) {
+    return _ExpandableDescriptionStateful(text: text);
   }
 
   final Map<String, _ReactionData> _reactions = {};
@@ -631,11 +705,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
   ) {
     final key = _reactionKey(apiSlug, entityId);
     // Only seed if not already present to preserve locally incremented counts
-    _reactions.putIfAbsent(key, () => _ReactionData(
-      likesCount: _asInt(resource['likes_count']),
-      commentsCount: _asInt(resource['comments_count']),
-      userReaction: resource['user_reaction']?.toString(),
-    ));
+    _reactions.putIfAbsent(
+      key,
+      () => _ReactionData(
+        likesCount: _asInt(resource['likes_count']),
+        commentsCount: _asInt(resource['comments_count']),
+        userReaction: resource['user_reaction']?.toString(),
+      ),
+    );
   }
 
   String _buildTimeAgo(String? isoDate) {
@@ -688,40 +765,45 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     String type,
   ) async {
     final data = _getReaction(apiSlug, entityId);
-    final isLiked = data.userReaction == 'like';
+
+    // Optimistic update
+    final oldReaction = data.userReaction;
+    final oldLikes = data.likesCount;
 
     setState(() {
-      if (isLiked) {
+      if (oldReaction == type) {
         data.userReaction = null;
-        data.likesCount = (data.likesCount > 0) ? data.likesCount - 1 : 0;
+        if (type == 'like') data.likesCount--;
       } else {
-        data.userReaction = 'like';
-        data.likesCount = data.likesCount + 1;
+        if (oldReaction == 'like') data.likesCount--;
+        data.userReaction = type;
+        if (type == 'like') data.likesCount++;
       }
     });
 
     try {
-      if (isLiked) {
-        await ApiClient().authenticatedDelete('/$apiSlug/$entityId/reactions');
-      } else {
-        await ApiClient().authenticatedPost(
-          '/$apiSlug/$entityId/reactions',
-          body: {'type': type},
-        );
+      final response = await ApiClient().authenticatedPost(
+        '/$apiSlug/$entityId/reactions',
+        body: {'type': type},
+      );
+      final respData = response['data'] as Map<String, dynamic>?;
+      if (respData != null && mounted) {
+        final newReaction = respData['user_reaction']?.toString();
+        setState(() {
+          data.likesCount = _asInt(respData['likes_count']);
+          data.userReaction = newReaction;
+        });
+        ReactionCacheService.save(apiSlug, entityId, newReaction);
+        ReactionCacheService.saveCount(apiSlug, entityId, data.likesCount);
       }
-      // Refresh to ensure counts are accurate
-      await _refreshReactionFromApi(apiSlug, entityId);
     } catch (e) {
-      debugPrint('Reaction toggle error: $e');
-      setState(() {
-        if (isLiked) {
-          data.userReaction = 'like';
-          data.likesCount = data.likesCount + 1;
-        } else {
-          data.userReaction = null;
-          data.likesCount = (data.likesCount > 0) ? data.likesCount - 1 : 0;
-        }
-      });
+      debugPrint('Reaction error: $e');
+      if (mounted) {
+        setState(() {
+          data.likesCount = oldLikes;
+          data.userReaction = oldReaction;
+        });
+      }
     }
   }
 
@@ -811,15 +893,18 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     data.commentsCount++;
-                    _localCommentsCount = (_localCommentsCount ?? _comments.length) + 1;
+                    ReactionCacheService.saveCommentsCount(
+                      apiSlug,
+                      entityId,
+                      data.commentsCount,
+                    );
                   });
                 }
                 commentCtrl.clear();
                 FocusScope.of(ctx).unfocus();
 
-                // Refresh reaction counts and comments from API to ensure accuracy
+                // Refresh reaction counts from API to ensure accuracy
                 await _refreshReactionFromApi(apiSlug, entityId);
-                await _fetchComments();
 
                 // Award 1 My for posting a comment (silently, no modal)
                 try {
@@ -1040,20 +1125,27 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               bool isReply = false,
             }) {
               final user = comment['user'] as Map<String, dynamic>? ?? {};
-              final userId = user['id']?.toString();
+              final userId = user['id']?.toString(); // Convertir en String
               final email = user['email']?.toString() ?? '';
               final displayName = (userId != null && userId == _currentUserId)
                   ? 'Vous'
                   : (user['display_name']?.toString() ??
                         user['name']?.toString() ??
-                        (user['particulier_profile'] as Map<String, dynamic>?)?['pseudo']?.toString() ??
-                        (user['pro_profile'] as Map<String, dynamic>?)?['company_name']?.toString() ??
+                        (user['particulier_profile']
+                                as Map<String, dynamic>?)?['pseudo']
+                            ?.toString() ??
+                        (user['pro_profile']
+                                as Map<String, dynamic>?)?['company_name']
+                            ?.toString() ??
                         email.split('@').first);
               final body = comment['body']?.toString() ?? '';
               final createdAt = comment['created_at']?.toString();
               final likes = _asInt(comment['likes_count']);
               final userReaction = comment['user_reaction']?.toString();
               final isOwner = userId != null && userId == _currentUserId;
+              print("UserId: $userId");
+              print("_currentUserId: $_currentUserId");
+              print("isOwner: $isOwner");
               final replies =
                   (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
@@ -1079,7 +1171,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       children: [
                         CircleAvatar(
                           radius: isReply ? 14 : 18,
-                          backgroundColor: const Color(0xFFE6F7EF),
+                          backgroundColor: Colors.grey[300],
                           backgroundImage:
                               avatarUrl != null && avatarUrl.isNotEmpty
                               ? NetworkImage(
@@ -1088,15 +1180,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 )
                               : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Text(
-                                  displayName.isNotEmpty
-                                      ? displayName[0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    fontSize: isReply ? 11 : 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2A8143),
-                                  ),
+                              ? Icon(
+                                  Icons.person,
+                                  size: isReply ? 12 : 16,
+                                  color: Colors.grey[600],
                                 )
                               : null,
                         ),
@@ -1475,39 +1562,166 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     }
   }
 
+  void _shareBonPlan(String bonPlanId) {
+    // Share functionality for bon plans
+    final String shareUrl =
+        '${ApiConfig.baseUrl.replaceAll('/api', '')}/bon-plans/$bonPlanId';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Partager ce bon plan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
+                title: const Text('Copier le lien'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lien copié dans le presse-papiers'),
+                      backgroundColor: Color(0xFF3AAE5E),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
+                title: const Text('Partager via...'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement native share
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAuthorInfo(Map<String, dynamic> authorData) {
+    // Extract profile data based on account type
+    final accountType = authorData['account_type']?.toString();
+    final proProfile = authorData['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile =
+        authorData['particulier_profile'] as Map<String, dynamic>?;
+
+    // Get the appropriate profile
+    final profile = accountType == 'pro' ? proProfile : particulierProfile;
+
+    // Extract name from profile or fallback to direct fields
+    final name =
+        profile?['company_name']?.toString() ??
+        profile?['pseudo']?.toString() ??
+        '${profile?['first_name']?.toString() ?? ''} ${profile?['last_name']?.toString() ?? ''}'
+            .trim();
+
+    // Extract avatar from profile or fallback to direct fields
+    final avatarUrl =
+        profile?['avatar_url']?.toString() ?? profile?['avatar']?.toString();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.grey[300],
+            image:
+                avatarUrl != null &&
+                    avatarUrl.isNotEmpty &&
+                    (avatarUrl.startsWith("https") ||
+                        avatarUrl.startsWith("http"))
+                ? DecorationImage(
+                    image: NetworkImage(avatarUrl),
+                    fit: BoxFit.cover,
+                  )
+                : (avatarUrl != null && avatarUrl.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(
+                            "${ApiConfig.baseUrl.replaceAll("/api", "")}/storage/$avatarUrl",
+                          ),
+                          fit: BoxFit.cover,
+                        )
+                      : null),
+          ),
+          child: avatarUrl == null || avatarUrl.isEmpty
+              ? Icon(Icons.person, size: 16, color: Colors.grey[600])
+              : null,
+        ),
+        const SizedBox(width: 8),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              name.isNotEmpty ? name : 'Utilisateur',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (accountType == 'pro')
+              Container(
+                margin: const EdgeInsets.only(top: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3AAE5E),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'PRO',
+                  style: TextStyle(
+                    fontSize: 7,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildReactionBar(
     String apiSlug,
     String entityId, {
     bool? acceptedMessages,
     Map<String, dynamic>? authorData,
+    Map<String, dynamic>? postData,
   }) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
     final isPost = apiSlug == 'posts';
     final isBonPlan = apiSlug == 'bon-plans';
-
-    // Extract owner info for bon plan cards
-    String? ownerId;
-    String ownerName = 'Utilisateur';
-    String ownerAvatar = '';
-    bool isPro = false;
-    if (isBonPlan && authorData != null) {
-      final proProfile = authorData['pro_profile'] as Map<String, dynamic>?;
-      final particulierProfile = authorData['particulier_profile'] as Map<String, dynamic>?;
-      ownerId = authorData['id']?.toString();
-      ownerName = authorData['display_name']?.toString() ??
-          proProfile?['company_name']?.toString() ??
-          proProfile?['pseudo']?.toString() ??
-          particulierProfile?['pseudo']?.toString() ??
-          authorData['name']?.toString() ??
-          'Utilisateur';
-      ownerAvatar = authorData['avatar_url']?.toString() ??
-          proProfile?['avatar_url']?.toString() ??
-          proProfile?['logo_url']?.toString() ??
-          particulierProfile?['avatar_url']?.toString() ??
-          '';
-      isPro = (authorData['account_type']?.toString() ?? '').toLowerCase() == 'pro';
-    }
 
     return Row(
       children: [
@@ -1552,63 +1766,31 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             ],
           ),
         ),
-        // Owner info for bon plan cards
+        // Share icon
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: () => _shareBonPlan(entityId),
+          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
+        ),
+        // For bon plans: show author avatar and name on the left
         if (isBonPlan && authorData != null) ...[
           const Spacer(),
           GestureDetector(
             onTap: () {
-              if (ownerId != null) {
+              final userId = authorData['id']?.toString();
+              final accountType = authorData['account_type']?.toString();
+              if (userId != null && userId.isNotEmpty) {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => isPro
-                        ? ProPublicViewScreen(userId: ownerId!)
-                        : ParticulierPublicViewScreen(userId: ownerId!),
+                    builder: (context) => accountType?.toLowerCase() == 'pro'
+                        ? ProPublicViewScreen(userId: userId)
+                        : ParticulierPublicViewScreen(userId: userId),
                   ),
                 );
               }
             },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: Colors.grey[300],
-                  backgroundImage: ownerAvatar.isNotEmpty
-                      ? (ownerAvatar.startsWith('http')
-                          ? NetworkImage(ownerAvatar)
-                          : NetworkImage(ApiConfig.resolveMediaUrl(ownerAvatar) ?? ''))
-                      : null,
-                  child: ownerAvatar.isEmpty
-                      ? Icon(isPro ? Icons.business : Icons.person, size: 14, color: Colors.white)
-                      : null,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  ownerName,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF333333)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-        if (isPost) ...[
-          const SizedBox(width: 10),
-          // Repost
-          GestureDetector(
-            onTap: () => _repostPost(entityId),
-            child: Row(
-              children: [
-                Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Text(
-                  'Republier',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
+            child: _buildAuthorInfo(authorData),
           ),
         ],
       ],
@@ -1690,6 +1872,16 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     return images;
   }
 
+  /// Like _asInt but returns null instead of 0 for null/invalid values
+  int? _tryAsInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) {
+      return int.tryParse(value);
+    }
+    return null;
+  }
+
   Future<void> _navigateToBonPlanDetail(Map<String, dynamic> bp) async {
     final bonPlanId = bp['id']?.toString();
     if (bonPlanId == null || bonPlanId.isEmpty) {
@@ -1746,19 +1938,15 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       final validityType = data['validity_type']?.toString() ?? 'permanent';
       final validFrom = data['valid_from']?.toString();
       final validUntil = data['valid_until']?.toString();
-      final link = data['link']?.toString();
+      final link = data['brand_website']?.toString();
       final pickupMethods = data['pickup_methods'] as Map<String, dynamic>?;
       final deliveryInfo = _buildDeliveryInfo(pickupMethods);
-      final shippingOption = data['shipping_option']?.toString();
-      final shippingCost = data['shipping_cost']?.toString();
-      final availableLocationType = data['available_location_type']?.toString();
-      final conditions = data['conditions']?.toString();
       final locationCity = data['location_city']?.toString();
       final locationPostalCode = data['location_postal_code']?.toString();
       final location = locationCity != null
           ? (locationPostalCode != null
-              ? '$locationCity ($locationPostalCode)'
-              : locationCity)
+                ? '$locationCity ($locationPostalCode)'
+                : locationCity)
           : locationPostalCode;
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
@@ -1766,6 +1954,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       // Extract price fields from API response (French field names)
       final price = data['prix_final']?.toString();
       final originalPrice = data['prix_avant_reduction']?.toString();
+      final shippingOption = data['shipping_option']?.toString();
+      final shippingCost = data['shipping_cost']?.toString();
+      final availableLocationType = data['available_location_type']?.toString();
+      final conditions = data['conditions']?.toString();
 
       final tags = <PostTag>[
         if (category.isNotEmpty)
@@ -1791,7 +1983,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       if (!mounted) return;
       final acceptMessages = data['accept_messages'] == true;
 
-      final result = await Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => ProPostDetailScreen(
@@ -1810,11 +2002,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             validFrom: validFrom,
             validUntil: validUntil,
             deliveryInfo: deliveryInfo,
-            shippingOption: shippingOption,
-            shippingCost: shippingCost,
-            availableLocationType: availableLocationType,
-            conditions: conditions,
             location: location,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
             link: link,
             isOwner: isOwner,
             bonPlanId: bonPlanId,
@@ -1824,10 +2014,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             promo_code: bp['promo_code'],
             price: price,
             originalPrice: originalPrice,
+            shippingOption: shippingOption,
+            shippingCost: shippingCost,
+            availableLocationType: availableLocationType,
+            conditions: conditions,
+            commentsCount: _tryAsInt(data['comments_count']),
           ),
         ),
       );
-      if (result == 'deleted' && mounted) return;
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context); // dismiss loading
@@ -2111,7 +2305,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 color: Color(0xFF2E9B5B),
                               ),
                             )
-                          : (widget.tags.length > 2 && widget.tags[2].title == 'Infos pouvoir d\'achat'
+                          : (widget.tags.length > 2 &&
+                                    widget.tags[2].title ==
+                                        'Infos pouvoir d\'achat'
                                 ? SizedBox.shrink()
                                 : Text(
                                     widget.price != null &&
@@ -2686,7 +2882,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     )
-                  else if (_comments.isEmpty && (_localCommentsCount == null || _localCommentsCount == 0))
+                  else if (_comments.isEmpty &&
+                      (_localCommentsCount == null || _localCommentsCount == 0))
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -2790,24 +2987,34 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     bp['available_location_type']?.toString() ?? '';
                 final createdAt = bp['created_at']?.toString();
                 // Support both media_files (from BonPlanController) and media (from FeedController)
-                final mediaFiles = (bp['media_files'] as List? ?? [])
-                  ..addAll(bp['media'] as List? ?? []);
+                final mediaFilesFromFiles = bp['media_files'] as List? ?? [];
+                final mediaFromMedia = bp['media'] as List? ?? [];
+                final mediaFiles = [...mediaFilesFromFiles, ...mediaFromMedia];
+
+                // Debug logging for image URLs
+                debugPrint('=== BON PLAN #$bpId MEDIA DEBUG ===');
+                debugPrint('media_files count: ${mediaFilesFromFiles.length}');
+                debugPrint('media count: ${mediaFromMedia.length}');
+                for (final m in mediaFiles) {
+                  debugPrint('Media item: $m');
+                }
+
                 final imageUrls = mediaFiles
                     .where((m) => m['type'] == 'image' || m['type'] == null)
                     .map((m) {
-                      final url = m['url']?.toString() ?? '';
-                      if (url.isEmpty) return '';
-                      // If URL is already complete (http/https), use it as-is
-                      if (url.startsWith('http')) return url;
-                      // Otherwise use the storage URL builder
-                      return _buildStorageUrl(url) ?? '';
+                      final rawUrl = m['url']?.toString() ?? '';
+                      final resolvedUrl = _buildStorageUrl(rawUrl) ?? '';
+                      debugPrint('Raw URL: $rawUrl -> Resolved: $resolvedUrl');
+                      return resolvedUrl;
                     })
                     .where((url) => url.isNotEmpty)
                     .toList();
+                debugPrint('Final imageUrls: $imageUrls');
+                debugPrint('=====================================');
                 // Check if already favorited by current user
                 final favoris = bp['bon_plan_favorites'] as List? ?? [];
                 final currentUserId = UserSession().id;
-                bool _isFavorited =
+                final bool initialIsFavorited =
                     currentUserId != null &&
                     favoris.any(
                       (f) =>
@@ -2816,30 +3023,54 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                               f['user']?['id']?.toString() == currentUserId),
                     );
 
+                // Use ValueNotifier for state that persists across rebuilds
+                final isFavoritedNotifier = ValueNotifier<bool>(
+                  initialIsFavorited,
+                );
+
                 return StatefulBuilder(
                   builder: (context, setState) {
                     bool _isLoading = false;
 
                     Future<void> _toggleFavorite() async {
-                      if (_isLoading || bpId.isEmpty) return;
+                      if (_isLoading) return;
 
+                      // Toggle immediately for responsive UI
+                      isFavoritedNotifier.value = !isFavoritedNotifier.value;
                       setState(() => _isLoading = true);
 
                       try {
-                        if (_isFavorited) {
+                        if (!isFavoritedNotifier.value) {
                           // Remove from favorites
                           await ApiClient().authenticatedDelete(
                             '/bonplans/$bpId/favorite',
                           );
+                          // Update underlying data to persist state across rebuilds
+                          if (bp['bon_plan_favorites'] is List) {
+                            (bp['bon_plan_favorites'] as List).removeWhere(
+                              (f) =>
+                                  f is Map &&
+                                  (f['user_id']?.toString() == currentUserId ||
+                                      f['user']?['id']?.toString() ==
+                                          currentUserId),
+                            );
+                          }
                         } else {
                           // Add to favorites
                           await ApiClient().authenticatedPost(
                             '/bonplans/$bpId/favorite',
                           );
+                          // Update underlying data to persist state across rebuilds
+                          if (bp['bon_plan_favorites'] is! List) {
+                            bp['bon_plan_favorites'] = [];
+                          }
+                          (bp['bon_plan_favorites'] as List).add({
+                            'user_id': currentUserId,
+                            'user': {'id': currentUserId},
+                          });
                         }
 
                         setState(() {
-                          _isFavorited = !_isFavorited;
                           _isLoading = false;
                         });
 
@@ -2847,10 +3078,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
-                                _isFavorited
+                                isFavoritedNotifier.value
                                     ? 'Ajouté aux favoris'
                                     : 'Retiré des favoris',
-                                style: const TextStyle(color: Colors.white),
+                                style: TextStyle(color: Colors.white),
                               ),
                               duration: const Duration(seconds: 2),
                               backgroundColor: Colors.green,
@@ -2859,7 +3090,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         }
                       } catch (e) {
                         debugPrint('Favorite toggle error: $e');
-                        setState(() => _isLoading = false);
+                        // Revert on error
+                        isFavoritedNotifier.value = !isFavoritedNotifier.value;
+                        setState(() {
+                          _isLoading = false;
+                        });
 
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -2897,9 +3132,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
                               // Title
                               Padding(
-                                padding: const EdgeInsets.fromLTRB(
+                                padding: EdgeInsets.fromLTRB(
                                   16,
-                                  16,
+                                  imageUrls.isNotEmpty ? 16 : 56,
                                   100,
                                   0,
                                 ),
@@ -2932,18 +3167,33 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 ),
                                 child: Row(
                                   children: [
-                                    Text(
-                                      bp['price'] != null &&
-                                              bp['price'].toString().isNotEmpty
-                                          ? '${bp['price']}€'
-                                          : 'Gratuit',
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2E9B5B),
-                                      ),
-                                    ),
-                                    if (bp['original_price'] != null &&
+                                    bp['original_price'] != null &&
+                                            bp['price'] == null
+                                        ? Text(
+                                            '${bp['original_price']}€',
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF2E9B5B),
+                                            ),
+                                          )
+                                        : (type == 'Infos pouvoir d\'achat'
+                                              ? SizedBox.shrink()
+                                              : Text(
+                                                  bp['price'] != null &&
+                                                          bp['price']
+                                                              .toString()
+                                                              .isNotEmpty
+                                                      ? '${bp['price']}€'
+                                                      : 'Gratuit',
+                                                  style: const TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Color(0xFF2E9B5B),
+                                                  ),
+                                                )),
+                                    if (bp['price'] != null &&
+                                        bp['original_price'] != null &&
                                         bp['original_price']
                                             .toString()
                                             .isNotEmpty) ...[
@@ -2957,6 +3207,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                               TextDecoration.lineThrough,
                                         ),
                                       ),
+                                      // Discount badge
                                       if (bp['price'] != null &&
                                           bp['price']
                                               .toString()
@@ -2991,13 +3242,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                             .isNotEmpty) ...[
                                       Spacer(),
                                       Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
+                                        padding: const EdgeInsets.only(
+                                          left: 16,
                                         ),
                                         child: Container(
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
+                                            horizontal: 8,
+                                            vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
                                             color: const Color(
@@ -3023,7 +3274,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                               Text(
                                                 'Code promo: ${bp['promo_code']}',
                                                 style: const TextStyle(
-                                                  fontSize: 12,
+                                                  fontSize: 10,
                                                   fontWeight: FontWeight.w600,
                                                   color: Color(0xFF2E9B5B),
                                                 ),
@@ -3088,30 +3339,29 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 child: Divider(height: 1),
                               ),
                               const SizedBox(height: 10),
-                              if (bpId.isNotEmpty) ...[
-                                Builder(
-                                  builder: (context) {
-                                    _seedReactionFromResource(
-                                      'bon-plans',
-                                      bpId,
-                                      bp,
-                                    );
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                      ),
-                                      child: _buildReactionBar(
+                              if (bpId.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  child: Builder(
+                                    builder: (ctx) {
+                                      _seedReactionFromResource(
+                                        'bon-plans',
+                                        bpId,
+                                        bp,
+                                      );
+                                      return _buildReactionBar(
                                         'bon-plans',
                                         bpId,
                                         acceptedMessages:
                                             bp['accept_messages'] == true,
                                         authorData:
                                             bp['user'] as Map<String, dynamic>?,
-                                      ),
-                                    );
-                                  },
+                                      );
+                                    },
+                                  ),
                                 ),
-                              ],
                               const SizedBox(height: 10),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 16),
@@ -3181,10 +3431,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                         ),
                                       )
                                     : Icon(
-                                        _isFavorited
+                                        isFavoritedNotifier.value
                                             ? Icons.favorite
                                             : Icons.favorite_border,
-                                        color: _isFavorited
+                                        color: isFavoritedNotifier.value
                                             ? Colors.red
                                             : Colors.grey[600],
                                         size: 20,

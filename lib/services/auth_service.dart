@@ -1,4 +1,5 @@
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/utils/user_session.dart';
 
@@ -66,6 +67,7 @@ class AuthService {
       return response;
     } finally {
       await TokenStorage.clearTokens();
+      await ReactionCacheService.clearCurrentUserCache();
       UserSession().clear();
       // Note: We do NOT clear onboarding flags here
       // Onboarding modal should only show once for new users
