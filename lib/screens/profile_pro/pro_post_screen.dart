@@ -405,6 +405,9 @@ class _PostCardWidget extends StatefulWidget {
   final Function(String) onToggleReaction;
   final Widget Function() buildReactionBar;
   final Widget Function(String, Color, IconData) buildTypeTag;
+  final bool isOwner;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const _PostCardWidget({
     required this.postId,
@@ -419,6 +422,9 @@ class _PostCardWidget extends StatefulWidget {
     required this.onToggleReaction,
     required this.buildReactionBar,
     required this.buildTypeTag,
+    this.isOwner = false,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -428,6 +434,9 @@ class _PostCardWidget extends StatefulWidget {
 class _PostCardWidgetState extends State<_PostCardWidget> {
   bool _isExpanded = false;
   static const int _collapsedMaxLength = 150;
+  double _dragOffset = 0.0;
+  static const double _maxDrag = 120.0;
+  static const double _actionWidth = 60.0;
 
   Widget _buildAuthorRow(_PostAuthorInfo authorInfo) {
     return Row(
@@ -491,7 +500,8 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
         ? widget.reposter
         : widget.author;
 
-    return InkWell(
+    // Build the card content
+    final cardContent = InkWell(
       onTap: () {
         Navigator.push(
           context,
@@ -753,6 +763,123 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
           ],
         ),
       ),
+    );
+
+    // Wrap with draggable functionality if owner
+    if (!widget.isOwner) {
+      return cardContent;
+    }
+
+    return Stack(
+      children: [
+        // Background actions
+        Positioned.fill(
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Edit button (only if onEdit is provided)
+                if (widget.onEdit != null)
+                  GestureDetector(
+                    onTap: () {
+                      setState(() => _dragOffset = 0);
+                      widget.onEdit?.call();
+                    },
+                    child: Container(
+                      width: _actionWidth,
+                      height: double.infinity,
+                      decoration: const BoxDecoration(color: Colors.green),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.edit, color: Colors.white, size: 24),
+                          SizedBox(height: 4),
+                          Text(
+                            'Modifier',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                // Delete button (only if onDelete is provided)
+                if (widget.onDelete != null)
+                  GestureDetector(
+                    onTap: () {
+                      setState(() => _dragOffset = 0);
+                      widget.onDelete?.call();
+                    },
+                    child: Container(
+                      width: _actionWidth,
+                      height: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(12),
+                          bottomRight: Radius.circular(12),
+                        ),
+                      ),
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.delete, color: Colors.white, size: 24),
+                          SizedBox(height: 4),
+                          Text(
+                            'Suppr.',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        // Draggable card foreground
+        GestureDetector(
+          onHorizontalDragUpdate: (details) {
+            if (!widget.isOwner) return;
+            setState(() {
+              _dragOffset += details.delta.dx;
+              _dragOffset = _dragOffset.clamp(-_maxDrag, 0.0);
+            });
+          },
+          onHorizontalDragEnd: (details) {
+            if (!widget.isOwner) return;
+            final hasEdit = widget.onEdit != null;
+            final hasDelete = widget.onDelete != null;
+            final actionCount = (hasEdit ? 1 : 0) + (hasDelete ? 1 : 0);
+            setState(() {
+              // Snap to open or closed based on available actions
+              if (_dragOffset < -_actionWidth / 2) {
+                _dragOffset = -(_actionWidth * actionCount); // Show actions
+              } else {
+                _dragOffset = 0.0; // Snap back
+              }
+            });
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            transform: Matrix4.translationValues(_dragOffset, 0, 0),
+            child: cardContent,
+          ),
+        ),
+      ],
     );
   }
 
@@ -1056,7 +1183,7 @@ class _ProPostScreenState extends State<ProPostScreen>
     if (url == null || url.isEmpty) return null;
     final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
     if (url.startsWith('http')) return url;
-    return '$serverBase$url';
+    return '$serverBase/storage/$url';
   }
 
   void _showPostMenu(Map<String, dynamic> post) {
@@ -1166,7 +1293,7 @@ class _ProPostScreenState extends State<ProPostScreen>
             backgroundColor: Color(0xFF3AAE5E),
           ),
         );
-        _loadPosts();
+        _refreshPosts();
       }
     } catch (e) {
       if (mounted) {
@@ -1308,16 +1435,6 @@ class _ProPostScreenState extends State<ProPostScreen>
         },
       ),
     );
-  }
-
-  Future<void> _createNewPost() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const CreatePostScreen()),
-    );
-    if (result == 'updated' && mounted) {
-      _loadPosts();
-    }
   }
 
   bool _isRepost(Map<String, dynamic> post) {
@@ -1483,11 +1600,13 @@ class _ProPostScreenState extends State<ProPostScreen>
               : null);
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
+      final apiRepostsCount = _asInt(resource['reposts_count']);
       _reactions[key] = _ReactionData(
         likesCount: (cachedCount != null && cachedCount > apiCount)
             ? cachedCount
             : apiCount,
         commentsCount: _asInt(resource['comments_count']),
+        repostsCount: apiRepostsCount,
         userReaction: userReaction,
       );
     }
@@ -1602,6 +1721,7 @@ class _ProPostScreenState extends State<ProPostScreen>
           final key = _reactionKey(apiSlug, entityId);
           final apiLikesCount = _asInt(data['likes_count']);
           final apiCommentsCount = _asInt(data['comments_count']);
+          final apiRepostsCount = _asInt(data['reposts_count']);
           final apiReaction = data['user_reaction']?.toString();
           final currentData = _getReaction(apiSlug, entityId);
           final preservedLikesCount = apiLikesCount > currentData.likesCount
@@ -1611,12 +1731,17 @@ class _ProPostScreenState extends State<ProPostScreen>
               apiCommentsCount > currentData.commentsCount
               ? apiCommentsCount
               : currentData.commentsCount;
+          final preservedRepostsCount =
+              apiRepostsCount > currentData.repostsCount
+              ? apiRepostsCount
+              : currentData.repostsCount;
           final cachedReaction = ReactionCacheService.load(apiSlug, entityId);
           final preservedReaction =
               currentData.userReaction ?? cachedReaction ?? apiReaction;
           _reactions[key] = _ReactionData(
             likesCount: preservedLikesCount,
             commentsCount: preservedCommentsCount,
+            repostsCount: preservedRepostsCount,
             userReaction: preservedReaction,
           );
           ReactionCacheService.saveCount(
@@ -1735,6 +1860,9 @@ class _ProPostScreenState extends State<ProPostScreen>
 
                 // Refresh reaction counts from API to ensure accuracy
                 await _refreshReactionFromApi(apiSlug, entityId);
+
+                // Refresh posts to update comment count in feed
+                await _refreshPosts();
 
                 // Award 1 My for posting a comment (silently, no modal)
                 try {
@@ -1919,8 +2047,8 @@ class _ProPostScreenState extends State<ProPostScreen>
                 // Refresh reaction counts from API to ensure accuracy
                 await _refreshReactionFromApi(apiSlug, entityId);
 
-                // Recharger le feed pour actualiser les commentaires
-                // await _loadUnifiedFeed(reset: true);
+                // Refresh posts to update comment count in feed
+                await _refreshPosts();
 
                 modalSetState(() {
                   if (isReply) {
@@ -2378,8 +2506,10 @@ class _ProPostScreenState extends State<ProPostScreen>
   Future<void> _repostPost(
     String postId, {
     Map<String, dynamic>? originalPostData,
+    String? initialText,
+    bool isEditing = false,
   }) async {
-    final textController = TextEditingController();
+    final textController = TextEditingController(text: initialText);
     bool isSubmitting = false;
 
     // Fetch current user info for the modal header
@@ -2452,10 +2582,12 @@ class _ProPostScreenState extends State<ProPostScreen>
                     padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
                     child: Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Republier cette publication',
-                            style: TextStyle(
+                            isEditing
+                                ? 'Modifier la republication'
+                                : 'Republier cette publication',
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF333333),
@@ -2526,8 +2658,9 @@ class _ProPostScreenState extends State<ProPostScreen>
                               minLines: 2,
                               maxLength: 300,
                               decoration: InputDecoration(
-                                hintText:
-                                    'Ajoutez un commentaire à votre republication...',
+                                hintText: isEditing
+                                    ? 'Modifiez votre commentaire...'
+                                    : 'Ajoutez un commentaire à votre republication...',
                                 hintStyle: TextStyle(
                                   color: Colors.grey[400],
                                   fontSize: 14,
@@ -2673,10 +2806,21 @@ class _ProPostScreenState extends State<ProPostScreen>
                                   if (text.isNotEmpty) {
                                     body['repost_content'] = text;
                                   }
-                                  await ApiClient().authenticatedPost(
-                                    '/posts/$postId/repost',
-                                    body: body,
-                                  );
+                                  if (isEditing) {
+                                    // Update existing repost
+                                    await ApiClient().authenticatedPut(
+                                      '/posts/$postId/repost',
+                                      body: body,
+                                    );
+                                    _refreshPosts();
+                                  } else {
+                                    // Create new repost
+                                    await ApiClient().authenticatedPost(
+                                      '/posts/$postId/repost',
+                                      body: body,
+                                    );
+                                    _refreshPosts();
+                                  }
                                   if (ctx.mounted) {
                                     Navigator.pop(ctx, 'success');
                                   }
@@ -2709,9 +2853,9 @@ class _ProPostScreenState extends State<ProPostScreen>
                                   color: Colors.white,
                                 ),
                               )
-                            : const Text(
-                                'Republier',
-                                style: TextStyle(
+                            : Text(
+                                isEditing ? 'Enregistrer' : 'Republier',
+                                style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.white,
@@ -2731,10 +2875,14 @@ class _ProPostScreenState extends State<ProPostScreen>
     if (result == 'success') {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Publication republiée avec succès'),
-            backgroundColor: Color(0xFF3AAE5E),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text(
+              isEditing
+                  ? 'Republication modifiée avec succès'
+                  : 'Publication republiée avec succès',
+            ),
+            backgroundColor: const Color(0xFF3AAE5E),
+            duration: const Duration(seconds: 2),
           ),
         );
       }
@@ -2907,6 +3055,17 @@ class _ProPostScreenState extends State<ProPostScreen>
     // L'auteur du post original
     final author = isRepost ? _extractPostAuthorInfo(originalPost) : reposter;
 
+    // Déterminer si l'utilisateur courant est le propriétaire du post
+    // Pour un repost, c'est le reposter qui peut modifier/supprimer son repost
+    final isOwner =
+        _currentUserId != null &&
+        (reposter.id == _currentUserId ||
+            (!isRepost && author.id == _currentUserId));
+
+    // Can edit: owner AND (not a repost OR is a quote repost with text)
+    // Simple reposts (without text) cannot be edited
+    final canEdit = isOwner && (!isRepost || isQuoteRepost);
+
     final content = originalPost['content']?.toString() ?? '';
     final createdAt = originalPost['created_at']?.toString();
     final timeAgo = _buildTimeAgo(createdAt);
@@ -2948,6 +3107,98 @@ class _ProPostScreenState extends State<ProPostScreen>
       buildReactionBar: () =>
           _buildReactionBar('posts', reactionEntityId, postData: raw),
       buildTypeTag: _buildTypeTag,
+      isOwner: isOwner,
+      onEdit: canEdit
+          ? () {
+              // Navigate to edit post screen
+              _navigateToEditPost(context, raw);
+            }
+          : null,
+      onDelete: isOwner
+          ? () {
+              // Show delete confirmation dialog
+              _showDeletePostConfirmation(context, postId, isRepost);
+            }
+          : null,
+    );
+  }
+
+  void _navigateToEditPost(
+    BuildContext context,
+    Map<String, dynamic> postData,
+  ) async {
+    final postId = postData['id']?.toString();
+    if (postId == null) return;
+
+    // Check if it's a repost (quote repost with content)
+    final isRepost = postData['original_post_id'] != null;
+    final repostContent = postData['repost_content']?.toString();
+    final isQuoteRepost =
+        isRepost && repostContent != null && repostContent.trim().isNotEmpty;
+
+    if (isQuoteRepost) {
+      // For quote reposts, open the repost modal with pre-filled content
+      await _repostPost(
+        postId,
+        originalPostData: postData,
+        initialText: repostContent,
+        isEditing: true,
+      );
+      _refreshPosts();
+    } else if (isRepost) {
+      // Simple repost - no content to edit, show message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Les republications simples ne peuvent pas être modifiées',
+            ),
+          ),
+        );
+      }
+    } else {
+      // Regular post - navigate to CreatePostScreen
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              CreatePostScreen(postId: postId, initialData: postData),
+        ),
+      );
+      if (result == 'updated' && mounted) {
+        _refreshPosts();
+      }
+    }
+  }
+
+  void _showDeletePostConfirmation(
+    BuildContext context,
+    String postId,
+    bool isRepost,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(isRepost ? 'Supprimer le repost?' : 'Supprimer le post?'),
+        content: Text(
+          isRepost
+              ? 'Voulez-vous vraiment supprimer ce repost? Cette action est irréversible.'
+              : 'Voulez-vous vraiment supprimer ce post? Cette action est irréversible.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _deletePost(postId);
+            },
+            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 }
