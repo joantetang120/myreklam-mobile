@@ -126,10 +126,11 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         _bonPlans = [];
       }
       debugPrint('Pro: Loaded ${_bonPlans.length} bon plans');
-      // Seed reactions
+      // Seed reactions (force=true to ensure fresh data from API)
       for (final bp in _bonPlans) {
         final bpId = bp['id']?.toString() ?? '';
-        if (bpId.isNotEmpty) _seedReactionFromResource('bon-plans', bpId, bp);
+        if (bpId.isNotEmpty)
+          _seedReactionFromResource('bon-plans', bpId, bp, force: true);
       }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading bon plans: ${e.message}');
@@ -167,11 +168,11 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         _jobOffers = [];
       }
       debugPrint('Pro: Loaded ${_jobOffers.length} job offers');
-      // Seed reactions
+      // Seed reactions (force=true to ensure fresh data from API)
       for (final job in _jobOffers) {
         final jobId = job['id']?.toString() ?? '';
         if (jobId.isNotEmpty)
-          _seedReactionFromResource('job-offers', jobId, job);
+          _seedReactionFromResource('job-offers', jobId, job, force: true);
       }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading job offers: ${e.message}');
@@ -203,10 +204,11 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         _demandes = [];
       }
       debugPrint('Pro: Loaded ${_demandes.length} demandes');
-      // Seed reactions
+      // Seed reactions (force=true to ensure fresh data from API)
       for (final d in _demandes) {
         final dId = d['id']?.toString() ?? '';
-        if (dId.isNotEmpty) _seedReactionFromResource('demandes', dId, d);
+        if (dId.isNotEmpty)
+          _seedReactionFromResource('demandes', dId, d, force: true);
       }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading demandes: ${e.message}');
@@ -238,10 +240,11 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         _events = [];
       }
       debugPrint('Pro: Loaded ${_events.length} events');
-      // Seed reactions
+      // Seed reactions (force=true to ensure fresh data from API)
       for (final evt in _events) {
         final evtId = evt['id']?.toString() ?? '';
-        if (evtId.isNotEmpty) _seedReactionFromResource('events', evtId, evt);
+        if (evtId.isNotEmpty)
+          _seedReactionFromResource('events', evtId, evt, force: true);
       }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading events: ${e.message}');
@@ -275,10 +278,11 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         _trainings = [];
       }
       debugPrint('Pro: Loaded ${_trainings.length} trainings');
-      // Seed reactions
+      // Seed reactions (force=true to ensure fresh data from API)
       for (final tr in _trainings) {
         final trId = tr['id']?.toString() ?? '';
-        if (trId.isNotEmpty) _seedReactionFromResource('trainings', trId, tr);
+        if (trId.isNotEmpty)
+          _seedReactionFromResource('trainings', trId, tr, force: true);
       }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading trainings: ${e.message}');
@@ -811,14 +815,18 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
   void _seedReactionFromResource(
     String apiSlug,
     String entityId,
-    Map<String, dynamic> resource,
-  ) {
+    Map<String, dynamic> resource, {
+    bool force = false,
+  }) {
     final key = _reactionKey(apiSlug, entityId);
-    if (!_reactions.containsKey(key)) {
+    if (!_reactions.containsKey(key) || force) {
       final apiReaction = resource['user_reaction']?.toString();
-      final userReaction = ReactionCacheService.isCached(apiSlug, entityId)
-          ? ReactionCacheService.load(apiSlug, entityId)
-          : apiReaction;
+      // Prefer API value over cache - cache is for offline fallback only
+      final userReaction =
+          apiReaction ??
+          (ReactionCacheService.isCached(apiSlug, entityId)
+              ? ReactionCacheService.load(apiSlug, entityId)
+              : null);
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
       final apiCommentsCount = _asInt(resource['comments_count']);
@@ -1739,11 +1747,12 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         authorData['particulier_profile'] as Map<String, dynamic>?;
 
     // Get the appropriate profile
-    final profile = proProfile != null ? proProfile : particulierProfile;
+    final profile = accountType == 'pro' ? proProfile : particulierProfile;
 
     // Extract name from profile or fallback to direct fields
     final name =
         profile?['company_name']?.toString() ??
+        profile?['pseudo']?.toString() ??
         '${profile?['first_name']?.toString() ?? ''} ${profile?['last_name']?.toString() ?? ''}'
             .trim();
 
@@ -3483,7 +3492,12 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
                   // Title
                   Padding(
-                    padding: EdgeInsets.fromLTRB(16, imageUrls.isNotEmpty ? 16 : 56, 100, 0),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      imageUrls.isNotEmpty ? 16 : 56,
+                      100,
+                      0,
+                    ),
                     child: Text(
                       title,
                       style: const TextStyle(

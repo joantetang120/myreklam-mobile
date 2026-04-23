@@ -93,7 +93,9 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
     const MessageScreen(),
     const Scaffold(body: Center(child: Text('Publier Screen'))),
     const SearchScreen(),
-    UserSession().isPro ? ProfileProScreen(key: ValueKey(_profileRefreshKey)) : ProfileScreen(key: ValueKey(_profileRefreshKey)),
+    UserSession().isPro
+        ? ProfileProScreen(key: ValueKey(_profileRefreshKey))
+        : ProfileScreen(key: ValueKey(_profileRefreshKey)),
   ];
 
   void _handleTabTapped(int index) {
@@ -106,9 +108,18 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
         ),
       );
     } else if (index == 0 && _currentIndex == 0) {
-      // Refresh dashboard when Accueil is tapped again
+      // Refresh dashboard when Accueil is tapped again (visible refresh)
       setState(() {
         _dashboardRefreshKey++;
+      });
+    } else if (index == 0 && _currentIndex != 0) {
+      // Silent refresh dashboard when switching back from another tab
+      ParticulierDashboardScreen.refreshFeedNotifier.value = true;
+      setState(() {
+        _currentIndex = index;
+        _showPublishOptions = false;
+        _showCreatePost = false;
+        _showSearchResults = false;
       });
     } else if (index == 4 && _currentIndex == 4) {
       // Refresh profile when Profile is tapped again

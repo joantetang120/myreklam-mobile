@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
+import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
+import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -56,6 +59,13 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
         fetched = List<Map<String, dynamic>>.from(data['items'] as List);
       }
       if (mounted) {
+        // Seed reactions BEFORE setState to prevent _getReaction pre-populating with empty data
+        for (final item in fetched) {
+          final itemId = item['id']?.toString() ?? '';
+          if (itemId.isNotEmpty) {
+            _seedReactionFromResource('bon-plans', itemId, item, force: true);
+          }
+        }
         setState(() {
           _items = fetched;
           _isLoading = false;
@@ -213,8 +223,8 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
       final locationPostalCode = data['location_postal_code']?.toString();
       final location = locationCity != null
           ? (locationPostalCode != null
-              ? '$locationCity ($locationPostalCode)'
-              : locationCity)
+                ? '$locationCity ($locationPostalCode)'
+                : locationCity)
           : locationPostalCode;
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
@@ -580,6 +590,14 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
     );
   }
 
+  int _calculateDiscount(dynamic originalPrice, dynamic finalPrice) {
+    final original = double.tryParse(originalPrice.toString()) ?? 0;
+    final finalP = double.tryParse(finalPrice.toString()) ?? 0;
+    if (original <= 0 || finalP <= 0 || finalP >= original) return 0;
+    final discount = ((original - finalP) / original * 100).round();
+    return discount;
+  }
+
   Widget _buildBonPlanCard(Map<String, dynamic> bp) {
     final bpId = bp['id']?.toString() ?? '';
     final title = bp['title']?.toString() ?? '';
@@ -590,24 +608,34 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
     final locationType = bp['available_location_type']?.toString() ?? '';
     final createdAt = bp['created_at']?.toString();
     // Support both media_files (from BonPlanController) and media (from FeedController)
-    final mediaFiles = (bp['media_files'] as List? ?? [])
-      ..addAll(bp['media'] as List? ?? []);
+    final mediaFilesFromFiles = bp['media_files'] as List? ?? [];
+    final mediaFromMedia = bp['media'] as List? ?? [];
+    final mediaFiles = [...mediaFilesFromFiles, ...mediaFromMedia];
+
+    // Debug logging for image URLs
+    debugPrint('=== BON PLAN #$bpId MEDIA DEBUG ===');
+    debugPrint('media_files count: ${mediaFilesFromFiles.length}');
+    debugPrint('media count: ${mediaFromMedia.length}');
+    for (final m in mediaFiles) {
+      debugPrint('Media item: $m');
+    }
+
     final imageUrls = mediaFiles
         .where((m) => m['type'] == 'image' || m['type'] == null)
         .map((m) {
-          final url = m['url']?.toString() ?? '';
-          if (url.isEmpty) return '';
-          // If URL is already complete (http/https), use it as-is
-          if (url.startsWith('http')) return url;
-          // Otherwise use the storage URL builder
-          return _buildStorageUrl(url) ?? '';
+          final rawUrl = m['url']?.toString() ?? '';
+          final resolvedUrl = _buildStorageUrl(rawUrl) ?? '';
+          debugPrint('Raw URL: $rawUrl -> Resolved: $resolvedUrl');
+          return resolvedUrl;
         })
         .where((url) => url.isNotEmpty)
         .toList();
+    debugPrint('Final imageUrls: $imageUrls');
+    debugPrint('=====================================');
     // Check if already favorited by current user
     final favoris = bp['bon_plan_favorites'] as List? ?? [];
     final currentUserId = UserSession().id;
-    bool _isFavorited =
+    final bool initialIsFavorited =
         currentUserId != null &&
         favoris.any(
           (f) =>
@@ -616,26 +644,47 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                   f['user']?['id']?.toString() == currentUserId),
         );
 
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
+
     return StatefulBuilder(
       builder: (context, setState) {
         bool _isLoading = false;
 
         Future<void> _toggleFavorite() async {
-          if (_isLoading || bpId.isEmpty) return;
+          if (_isLoading) return;
 
+          // Toggle immediately for responsive UI
+          isFavoritedNotifier.value = !isFavoritedNotifier.value;
           setState(() => _isLoading = true);
 
           try {
-            if (_isFavorited) {
+            if (!isFavoritedNotifier.value) {
               // Remove from favorites
               await ApiClient().authenticatedDelete('/bonplans/$bpId/favorite');
+              // Update underlying data to persist state across rebuilds
+              if (bp['bon_plan_favorites'] is List) {
+                (bp['bon_plan_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost('/bonplans/$bpId/favorite');
+              // Update underlying data to persist state across rebuilds
+              if (bp['bon_plan_favorites'] is! List) {
+                bp['bon_plan_favorites'] = [];
+              }
+              (bp['bon_plan_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
             }
 
             setState(() {
-              _isFavorited = !_isFavorited;
               _isLoading = false;
             });
 
@@ -643,8 +692,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: const TextStyle(color: Colors.white),
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
+                    style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
                   backgroundColor: Colors.green,
@@ -653,7 +704,11 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
             }
           } catch (e) {
             debugPrint('Favorite toggle error: $e');
-            setState(() => _isLoading = false);
+            // Revert on error
+            isFavoritedNotifier.value = !isFavoritedNotifier.value;
+            setState(() {
+              _isLoading = false;
+            });
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -689,7 +744,12 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
 
                   // Title
                   Padding(
-                    padding: EdgeInsets.fromLTRB(16, imageUrls.isNotEmpty ? 16 : 56, 100, 0),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      imageUrls.isNotEmpty ? 16 : 56,
+                      100,
+                      0,
+                    ),
                     child: Text(
                       title,
                       style: const TextStyle(
@@ -715,18 +775,30 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        Text(
-                          bp['price'] != null &&
-                                  bp['price'].toString().isNotEmpty
-                              ? '${bp['price']}€'
-                              : 'Gratuit',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2E9B5B),
-                          ),
-                        ),
-                        if (bp['original_price'] != null &&
+                        bp['original_price'] != null && bp['price'] == null
+                            ? Text(
+                                '${bp['original_price']}€',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E9B5B),
+                                ),
+                              )
+                            : (type == 'Infos pouvoir d\'achat'
+                                  ? SizedBox.shrink()
+                                  : Text(
+                                      bp['price'] != null &&
+                                              bp['price'].toString().isNotEmpty
+                                          ? '${bp['price']}€'
+                                          : 'Gratuit',
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF2E9B5B),
+                                      ),
+                                    )),
+                        if (bp['price'] != null &&
+                            bp['original_price'] != null &&
                             bp['original_price'].toString().isNotEmpty) ...[
                           const SizedBox(width: 8),
                           Text(
@@ -737,17 +809,40 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                               decoration: TextDecoration.lineThrough,
                             ),
                           ),
+                          // Discount badge
+                          if (bp['price'] != null &&
+                              bp['price'].toString().isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF5722),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '-${_calculateDiscount(bp['original_price'], bp['price'])}%',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                         // Promo code as tag
                         if (bp['promo_code'] != null &&
                             bp['promo_code'].toString().isNotEmpty) ...[
                           Spacer(),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.only(left: 16),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
+                                horizontal: 8,
+                                vertical: 4,
                               ),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF2E9B5B).withOpacity(0.1),
@@ -769,7 +864,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                   Text(
                                     'Code promo: ${bp['promo_code']}',
                                     style: const TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF2E9B5B),
                                     ),
@@ -832,22 +927,16 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                     child: Divider(height: 1),
                   ),
                   const SizedBox(height: 10),
-                  if (bpId.isNotEmpty) ...[
-                    Builder(
-                      builder: (context) {
-                        _seedReactionFromResource('bon-plans', bpId, bp);
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: _buildReactionBar(
-                            'bon-plans',
-                            bpId,
-                            acceptedMessages: bp['accept_messages'] == true,
-                            authorData: bp['user'] as Map<String, dynamic>?,
-                          ),
-                        );
-                      },
+                  if (bpId.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _buildReactionBar(
+                        'bon-plans',
+                        bpId,
+                        acceptedMessages: bp['accept_messages'] == true,
+                        authorData: bp['user'] as Map<String, dynamic>?,
+                      ),
                     ),
-                  ],
                   const SizedBox(height: 10),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
@@ -906,10 +995,12 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                             ),
                           )
                         : Icon(
-                            _isFavorited
+                            isFavoritedNotifier.value
                                 ? Icons.favorite
                                 : Icons.favorite_border,
-                            color: _isFavorited ? Colors.red : Colors.grey[600],
+                            color: isFavoritedNotifier.value
+                                ? Colors.red
+                                : Colors.grey[600],
                             size: 20,
                           ),
                   ),
@@ -1101,15 +1192,37 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
   void _seedReactionFromResource(
     String apiSlug,
     String entityId,
-    Map<String, dynamic> resource,
-  ) {
+    Map<String, dynamic> resource, {
+    bool force = false,
+  }) {
     final key = _reactionKey(apiSlug, entityId);
-    // Always update from resource data to ensure fresh counts
-    _reactions[key] = _ReactionData(
-      likesCount: _asInt(resource['likes_count']),
-      commentsCount: _asInt(resource['comments_count']),
-      userReaction: resource['user_reaction']?.toString(),
-    );
+    if (!_reactions.containsKey(key) || force) {
+      final apiReaction = resource['user_reaction']?.toString();
+      // Prefer API value over cache - cache is for offline fallback only
+      final userReaction =
+          apiReaction ??
+          (ReactionCacheService.isCached(apiSlug, entityId)
+              ? ReactionCacheService.load(apiSlug, entityId)
+              : null);
+      final apiCount = _asInt(resource['likes_count']);
+      final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
+      final apiCommentsCount = _asInt(resource['comments_count']);
+      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(
+        apiSlug,
+        entityId,
+      );
+      _reactions[key] = _ReactionData(
+        likesCount: (cachedCount != null && cachedCount > apiCount)
+            ? cachedCount
+            : apiCount,
+        commentsCount:
+            (cachedCommentsCount != null &&
+                cachedCommentsCount > apiCommentsCount)
+            ? cachedCommentsCount
+            : apiCommentsCount,
+        userReaction: userReaction,
+      );
+    }
   }
 
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
@@ -1139,40 +1252,45 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
     String type,
   ) async {
     final data = _getReaction(apiSlug, entityId);
-    final isLiked = data.userReaction == 'like';
+
+    // Optimistic update
+    final oldReaction = data.userReaction;
+    final oldLikes = data.likesCount;
 
     setState(() {
-      if (isLiked) {
+      if (oldReaction == type) {
         data.userReaction = null;
-        data.likesCount = (data.likesCount > 0) ? data.likesCount - 1 : 0;
+        if (type == 'like') data.likesCount--;
       } else {
-        data.userReaction = 'like';
-        data.likesCount = data.likesCount + 1;
+        if (oldReaction == 'like') data.likesCount--;
+        data.userReaction = type;
+        if (type == 'like') data.likesCount++;
       }
     });
 
     try {
-      if (isLiked) {
-        await ApiClient().authenticatedDelete('/$apiSlug/$entityId/reactions');
-      } else {
-        await ApiClient().authenticatedPost(
-          '/$apiSlug/$entityId/reactions',
-          body: {'type': type},
-        );
+      final response = await ApiClient().authenticatedPost(
+        '/$apiSlug/$entityId/reactions',
+        body: {'type': type},
+      );
+      final respData = response['data'] as Map<String, dynamic>?;
+      if (respData != null && mounted) {
+        final newReaction = respData['user_reaction']?.toString();
+        setState(() {
+          data.likesCount = _asInt(respData['likes_count']);
+          data.userReaction = newReaction;
+        });
+        ReactionCacheService.save(apiSlug, entityId, newReaction);
+        ReactionCacheService.saveCount(apiSlug, entityId, data.likesCount);
       }
-      // Refresh to ensure counts are accurate
-      await _refreshReactionFromApi(apiSlug, entityId);
     } catch (e) {
-      debugPrint('Reaction toggle error: $e');
-      setState(() {
-        if (isLiked) {
-          data.userReaction = 'like';
-          data.likesCount = data.likesCount + 1;
-        } else {
-          data.userReaction = null;
-          data.likesCount = (data.likesCount > 0) ? data.likesCount - 1 : 0;
-        }
-      });
+      debugPrint('Reaction error: $e');
+      if (mounted) {
+        setState(() {
+          data.likesCount = oldLikes;
+          data.userReaction = oldReaction;
+        });
+      }
     }
   }
 
@@ -1262,6 +1380,11 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     data.commentsCount++;
+                    ReactionCacheService.saveCommentsCount(
+                      apiSlug,
+                      entityId,
+                      data.commentsCount,
+                    );
                   });
                 }
                 commentCtrl.clear();
@@ -1379,9 +1502,6 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                     comment['body'] = updatedComment['body'];
                     comment['updated_at'] = updatedComment['updated_at'];
                   });
-
-                  // Recharger le feed pour actualiser les commentaires
-                  await _loadData();
                 }
               } catch (e) {
                 if (mounted) {
@@ -1453,9 +1573,6 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                 // Refresh reaction counts from API to ensure accuracy
                 await _refreshReactionFromApi(apiSlug, entityId);
 
-                // Recharger le feed pour actualiser les commentaires
-                await _loadData();
-
                 modalSetState(() {
                   if (isReply) {
                     final parentId =
@@ -1495,18 +1612,27 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
               bool isReply = false,
             }) {
               final user = comment['user'] as Map<String, dynamic>? ?? {};
-              final userId = user['id']?.toString();
+              final userId = user['id']?.toString(); // Convertir en String
               final email = user['email']?.toString() ?? '';
               final displayName = (userId != null && userId == _currentUserId)
                   ? 'Vous'
                   : (user['display_name']?.toString() ??
                         user['name']?.toString() ??
+                        (user['particulier_profile']
+                                as Map<String, dynamic>?)?['pseudo']
+                            ?.toString() ??
+                        (user['pro_profile']
+                                as Map<String, dynamic>?)?['company_name']
+                            ?.toString() ??
                         email.split('@').first);
               final body = comment['body']?.toString() ?? '';
               final createdAt = comment['created_at']?.toString();
               final likes = _asInt(comment['likes_count']);
               final userReaction = comment['user_reaction']?.toString();
               final isOwner = userId != null && userId == _currentUserId;
+              print("UserId: $userId");
+              print("_currentUserId: $_currentUserId");
+              print("isOwner: $isOwner");
               final replies =
                   (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
@@ -1532,7 +1658,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                       children: [
                         CircleAvatar(
                           radius: isReply ? 14 : 18,
-                          backgroundColor: const Color(0xFFE6F7EF),
+                          backgroundColor: Colors.grey[300],
                           backgroundImage:
                               avatarUrl != null && avatarUrl.isNotEmpty
                               ? NetworkImage(
@@ -1541,15 +1667,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                 )
                               : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Text(
-                                  displayName.isNotEmpty
-                                      ? displayName[0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    fontSize: isReply ? 11 : 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2A8143),
-                                  ),
+                              ? Icon(
+                                  Icons.person,
+                                  size: isReply ? 12 : 16,
+                                  color: Colors.grey[600],
                                 )
                               : null,
                         ),
@@ -1901,39 +2022,12 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
     );
   }
 
-  Future<void> _repostPost(String postId) async {
-    try {
-      await ApiClient().authenticatedPost('/posts/$postId/repost', body: {});
-      await _loadData();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Publication republiée avec succès'),
-            backgroundColor: Color(0xFF3AAE5E),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('Repost error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur lors de la republication: ${e.toString()}'),
-            backgroundColor: Colors.redAccent,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
   Widget _buildReactionBar(
     String apiSlug,
     String entityId, {
     bool? acceptedMessages,
     Map<String, dynamic>? authorData,
+    Map<String, dynamic>? postData,
   }) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
@@ -1983,23 +2077,6 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
             ],
           ),
         ),
-        if (isPost) ...[
-          const SizedBox(width: 10),
-          // Repost
-          GestureDetector(
-            onTap: () => _repostPost(entityId),
-            child: Row(
-              children: [
-                Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Text(
-                  'Republier',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-        ],
         // Share icon
         const SizedBox(width: 14),
         GestureDetector(
@@ -2009,7 +2086,23 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
         // For bon plans: show author avatar and name on the left
         if (isBonPlan && authorData != null) ...[
           const Spacer(),
-          _buildAuthorInfo(authorData),
+          GestureDetector(
+            onTap: () {
+              final userId = authorData['id']?.toString();
+              final accountType = authorData['account_type']?.toString();
+              if (userId != null && userId.isNotEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => accountType?.toLowerCase() == 'pro'
+                        ? ProPublicViewScreen(userId: userId)
+                        : ParticulierPublicViewScreen(userId: userId),
+                  ),
+                );
+              }
+            },
+            child: _buildAuthorInfo(authorData),
+          ),
         ],
       ],
     );
@@ -2045,12 +2138,23 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.grey[300],
-            image: avatarUrl != null && avatarUrl.isNotEmpty
+            image:
+                avatarUrl != null &&
+                    avatarUrl.isNotEmpty &&
+                    (avatarUrl.startsWith("https") ||
+                        avatarUrl.startsWith("http"))
                 ? DecorationImage(
                     image: NetworkImage(avatarUrl),
                     fit: BoxFit.cover,
                   )
-                : null,
+                : (avatarUrl != null && avatarUrl.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(
+                            "${ApiConfig.baseUrl.replaceAll("/api", "")}/storage/$avatarUrl",
+                          ),
+                          fit: BoxFit.cover,
+                        )
+                      : null),
           ),
           child: avatarUrl == null || avatarUrl.isEmpty
               ? Icon(Icons.person, size: 16, color: Colors.grey[600])

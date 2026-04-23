@@ -1,4 +1,5 @@
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/utils/user_session.dart';
 
@@ -15,10 +16,7 @@ class AuthService {
     required String password,
     String? parrainageCode,
   }) async {
-    final body = <String, dynamic>{
-      'email': email,
-      'password': password,
-    };
+    final body = <String, dynamic>{'email': email, 'password': password};
     if (parrainageCode != null && parrainageCode.isNotEmpty) {
       body['parrainage_code'] = parrainageCode;
     }
@@ -31,9 +29,10 @@ class AuthService {
   Future<Map<String, dynamic>> validateParrainageCode({
     required String parrainageCode,
   }) async {
-    final response = await _api.post('/referral/validate', body: {
-      'parrainage_code': parrainageCode,
-    });
+    final response = await _api.post(
+      '/referral/validate',
+      body: {'parrainage_code': parrainageCode},
+    );
     return response;
   }
 
@@ -42,10 +41,10 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final response = await _api.post('/auth/login', body: {
-      'email': email,
-      'password': password,
-    });
+    final response = await _api.post(
+      '/auth/login',
+      body: {'email': email, 'password': password},
+    );
 
     if (response['token'] != null) {
       await TokenStorage.saveTokens(
@@ -68,6 +67,7 @@ class AuthService {
       return response;
     } finally {
       await TokenStorage.clearTokens();
+      await ReactionCacheService.clearCurrentUserCache();
       UserSession().clear();
       // Note: We do NOT clear onboarding flags here
       // Onboarding modal should only show once for new users
@@ -79,10 +79,10 @@ class AuthService {
     required String email,
     required String purpose,
   }) async {
-    return await _api.post('/auth/otp/send', body: {
-      'email': email,
-      'purpose': purpose,
-    });
+    return await _api.post(
+      '/auth/otp/send',
+      body: {'email': email, 'purpose': purpose},
+    );
   }
 
   /// POST /api/auth/otp/verify
@@ -91,11 +91,10 @@ class AuthService {
     required String code,
     required String purpose,
   }) async {
-    final response = await _api.post('/auth/otp/verify', body: {
-      'email': email,
-      'code': code,
-      'purpose': purpose,
-    });
+    final response = await _api.post(
+      '/auth/otp/verify',
+      body: {'email': email, 'code': code, 'purpose': purpose},
+    );
 
     if (response['token'] != null) {
       await TokenStorage.saveTokens(
@@ -116,19 +115,15 @@ class AuthService {
     required String email,
     required String purpose,
   }) async {
-    return await _api.post('/auth/otp/resend', body: {
-      'email': email,
-      'purpose': purpose,
-    });
+    return await _api.post(
+      '/auth/otp/resend',
+      body: {'email': email, 'purpose': purpose},
+    );
   }
 
   /// POST /api/auth/forgot-password
-  Future<Map<String, dynamic>> forgotPassword({
-    required String email,
-  }) async {
-    return await _api.post('/auth/forgot-password', body: {
-      'email': email,
-    });
+  Future<Map<String, dynamic>> forgotPassword({required String email}) async {
+    return await _api.post('/auth/forgot-password', body: {'email': email});
   }
 
   /// POST /api/auth/reset-password
@@ -137,11 +132,10 @@ class AuthService {
     required String otpCode,
     required String newPassword,
   }) async {
-    return await _api.post('/auth/reset-password', body: {
-      'email': email,
-      'otp_code': otpCode,
-      'new_password': newPassword,
-    });
+    return await _api.post(
+      '/auth/reset-password',
+      body: {'email': email, 'otp_code': otpCode, 'new_password': newPassword},
+    );
   }
 
   /// POST /api/auth/social/google
@@ -150,10 +144,7 @@ class AuthService {
     required String token,
     String? email,
   }) async {
-    final body = <String, dynamic>{
-      'provider': provider,
-      'token': token,
-    };
+    final body = <String, dynamic>{'provider': provider, 'token': token};
     if (email != null) body['email'] = email;
 
     final response = await _api.post('/auth/social/$provider', body: body);
@@ -176,9 +167,10 @@ class AuthService {
   Future<Map<String, dynamic>> setAccountType({
     required String accountType,
   }) async {
-    final response = await _api.authenticatedPut('/auth/account-type', body: {
-      'account_type': accountType,
-    });
+    final response = await _api.authenticatedPut(
+      '/auth/account-type',
+      body: {'account_type': accountType},
+    );
 
     UserSession().setUserType(accountType);
     return response;
@@ -195,7 +187,9 @@ class AuthService {
 
       final user = Map<String, dynamic>.from(response['user']);
       if (response['subscription'] is Map) {
-        user['subscription'] = Map<String, dynamic>.from(response['subscription']);
+        user['subscription'] = Map<String, dynamic>.from(
+          response['subscription'],
+        );
       }
 
       _updateSessionFromUser(user);

@@ -3,6 +3,7 @@ import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -18,7 +19,11 @@ class _ReactionData {
   int commentsCount;
   String? userReaction;
 
-  _ReactionData({this.likesCount = 0, this.commentsCount = 0, this.userReaction});
+  _ReactionData({
+    this.likesCount = 0,
+    this.commentsCount = 0,
+    this.userReaction,
+  });
 }
 
 class EvenementsScreen extends StatefulWidget {
@@ -60,7 +65,7 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
         for (final item in fetched) {
           final itemId = item['id']?.toString() ?? '';
           if (itemId.isNotEmpty) {
-            _seedReactionFromResource('events', itemId, item);
+            _seedReactionFromResource('events', itemId, item, force: true);
           }
         }
         setState(() {
@@ -104,28 +109,61 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
     }
   }
 
-  String _formatEventDate(String? dateStr) {
-    if (dateStr == null) return 'Date à confirmer';
-    try {
-      final date = DateTime.parse(dateStr);
-      final months = [
-        'Janvier',
-        'Février',
-        'Mars',
-        'Avril',
-        'Mai',
-        'Juin',
-        'Juillet',
-        'Août',
-        'Septembre',
-        'Octobre',
-        'Novembre',
-        'Décembre',
-      ];
-      return '${date.day.toString().padLeft(2, '0')} ${months[date.month - 1]} ${date.year}';
-    } catch (_) {
-      return dateStr;
+  String _formatEventDate(Map<String, dynamic> event) {
+    final durationType = event['duration_type']?.toString();
+    final eventDate = event['event_date']?.toString();
+    final startDate = event['start_date']?.toString();
+    final endDate = event['end_date']?.toString();
+
+    String formatDate(String? iso) {
+      if (iso == null) return '';
+      try {
+        final date = DateTime.parse(iso);
+        const months = [
+          'janvier',
+          'février',
+          'mars',
+          'avril',
+          'mai',
+          'juin',
+          'juillet',
+          'août',
+          'septembre',
+          'octobre',
+          'novembre',
+          'décembre',
+        ];
+        return '${date.day} ${months[date.month - 1]} ${date.year}';
+      } catch (_) {
+        return iso;
+      }
     }
+
+    if (durationType == 'permanent') return 'Permanent';
+
+    // Handle multi_day with start/end dates like bon plan validity
+    if (durationType == 'multi_day') {
+      final hasStart = startDate != null && startDate.isNotEmpty;
+      final hasEnd = endDate != null && endDate.isNotEmpty;
+
+      if (hasStart && hasEnd) {
+        final formattedStart = formatDate(startDate);
+        final formattedEnd = formatDate(endDate);
+        return 'Du $formattedStart Au $formattedEnd';
+      } else if (hasStart) {
+        final formatted = formatDate(startDate);
+        return 'À partir du $formatted';
+      } else if (hasEnd) {
+        final formatted = formatDate(endDate);
+        return 'Jusqu\'au $formatted';
+      }
+      return 'À partir de bientôt';
+    }
+
+    final formatted = formatDate(eventDate);
+    return formatted.isNotEmpty
+        ? 'A lieu, $formatted'
+        : 'Date annoncée prochainement';
   }
 
   String _stripHtml(String html) {
@@ -702,52 +740,111 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
     }
   }
 
+  String _formatPrice(Map<String, dynamic> event) {
+    final priceType = event['price_type']?.toString();
+
+    // If price_type is gratuit or null, return "Gratuit"
+    if (priceType == null || priceType == 'gratuit') {
+      return 'Gratuit';
+    }
+
+    // If price_type is payant, check pricing_mode
+    if (priceType == 'payant') {
+      final pricingMode = event['pricing_mode']?.toString();
+
+      // If pricing_mode is categories, get first price from price_categories
+      if (pricingMode == 'categories') {
+        final priceCategories = event['price_categories'] as List?;
+        if (priceCategories != null && priceCategories.isNotEmpty) {
+          final firstCategory = priceCategories[0] as Map<String, dynamic>?;
+          if (firstCategory != null) {
+            final price = firstCategory['price']?.toString();
+            if (price != null && price.isNotEmpty) {
+              return 'À partir de $price €';
+            }
+          }
+        }
+        return 'Payant';
+      }
+
+      // If pricing_mode is unique, get price_amount
+      if (pricingMode == 'unique') {
+        final priceAmount = event['price_amount']?.toString();
+        if (priceAmount != null && priceAmount.isNotEmpty) {
+          return '$priceAmount €';
+        }
+        return 'Payant';
+      }
+
+      return 'Payant';
+    }
+
+    return 'Gratuit';
+  }
+
   Widget _buildEventCard(Map<String, dynamic> event) {
-    final title = event['title']?.toString() ?? '';
-    final description = _stripHtml(event['description']?.toString() ?? '');
-    final location =
-        event['location']?.toString() ?? event['city']?.toString() ?? '';
-    final eventDate =
-        event['event_date']?.toString() ?? event['start_date']?.toString();
-    final endDate =
-        event['end_date']?.toString() ?? event['event_end_date']?.toString();
-    final createdAt = event['created_at']?.toString();
-    final price =
-        event['price']?.toString() ?? event['ticket_price']?.toString();
-    final isPaid = event['is_paid'] == true || event['is_paid'] == 1;
-    final category = event['category']?.toString() ?? '';
-    final subCategory = event['sub_category']?.toString() ?? '';
-    final tags = (event['tags'] as List? ?? [])
-        .map((t) => t?.toString() ?? '')
-        .where((s) => s.isNotEmpty)
-        .toList();
-    final eventId = event['id']?.toString() ?? '';
-
-    // Media
-    final mediaFiles = event['media'] as List? ?? [];
-    final imageUrl = _extractMediaUrl(event);
-
-    // User info
     final user = event['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
     final particulierProfile =
         user?['particulier_profile'] as Map<String, dynamic>?;
-    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+
     final avatarUrl =
-        particulierProfile?['avatar_url']?.toString() ??
+        proProfile?['logo_url']?.toString() ??
         proProfile?['avatar_url']?.toString() ??
-        proProfile?['logo_url']?.toString();
+        particulierProfile?['avatar_url']?.toString() ??
+        user?['avatar']?.toString();
+
     final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
-    final username =
-        particulierProfile?['pseudo']?.toString() ??
+
+    // Extract owner name from profiles
+    final ownerName =
         proProfile?['company_name']?.toString() ??
-        user?['email']?.toString() ??
+        proProfile?['first_name']?.toString() ??
+        particulierProfile?['pseudo']?.toString() ??
+        particulierProfile?['first_name']?.toString() ??
+        user?['name']?.toString() ??
         'Organisateur';
-    final accountType = user?['account_type']?.toString() ?? 'particulier';
+    final eventTitle = event['title']?.toString() ?? 'Évènement';
+    final eventImage = _extractMediaUrl(event) ?? '';
+    final categories = <String>[
+      if (event['category_label']?.toString().isNotEmpty ?? false)
+        event['category_label'].toString(),
+      if (event['sub_category_label']?.toString().isNotEmpty ?? false)
+        event['sub_category_label'].toString(),
+    ];
+    final price = _formatPrice(event);
+    final coverageArea =
+        event['coverage_area']?.toString() ??
+        event['location']?.toString() ??
+        'Non spécifié';
+
+    final eventId = event['id']?.toString() ?? '';
+
+    // Build tags for display
+    final tags = <String>[];
+
+    // Add sub_category_code if available (and translate to French)
+    final subCategoryCode = event['sub_category_code']?.toString();
+    if (subCategoryCode != null && subCategoryCode.isNotEmpty) {
+      tags.add(_translateSubCategory(subCategoryCode));
+    }
+
+    // Add format_type if available
+    final formatType = event['format_type']?.toString();
+    if (formatType != null && formatType.isNotEmpty) {
+      const formatTranslations = {
+        'Présentiel': 'Présentiel',
+        'En ligne': 'En ligne',
+        'Hybride': 'Hybride',
+      };
+      tags.add(formatTranslations[formatType] ?? formatType);
+    }
 
     // Check if already favorited by current user
     final favoris = event['event_favorites'] as List? ?? [];
+
     final currentUserId = UserSession().id;
-    bool isFavorited =
+    final bool initialIsFavorited =
         currentUserId != null &&
         favoris.any(
           (f) =>
@@ -756,110 +853,137 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
                   f['user']?['id']?.toString() == currentUserId),
         );
 
-    // Prepare display values
-    final allCategories = <String>[
-      if (category.isNotEmpty) category,
-      if (subCategory.isNotEmpty) subCategory,
-      ...tags.take(2),
-    ];
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
 
-    return StatefulBuilder(
-      builder: (context, setState) {
-        bool isLoadingFavorite = false;
-        bool localIsFavorited = isFavorited;
+    Future<void> _toggleFavorite() async {
+      // Toggle immediately for responsive UI
+      final newValue = !isFavoritedNotifier.value;
+      isFavoritedNotifier.value = newValue;
 
-        Future<void> toggleFavorite() async {
-          if (isLoadingFavorite || eventId.isEmpty) return;
+      // Update underlying data immediately for persistence across rebuilds
+      if (newValue) {
+        // Add to favorites
+        if (event['event_favorites'] is! List) {
+          event['event_favorites'] = [];
+        }
+        // Check if already exists to avoid duplicates
+        final alreadyExists = (event['event_favorites'] as List).any(
+          (f) =>
+              f is Map &&
+              (f['user_id']?.toString() == currentUserId ||
+                  f['user']?['id']?.toString() == currentUserId),
+        );
+        if (!alreadyExists) {
+          (event['event_favorites'] as List).add({
+            'user_id': currentUserId,
+            'user': {'id': currentUserId},
+          });
+        }
+      } else {
+        // Remove from favorites
+        if (event['event_favorites'] is List) {
+          (event['event_favorites'] as List).removeWhere(
+            (f) =>
+                f is Map &&
+                (f['user_id']?.toString() == currentUserId ||
+                    f['user']?['id']?.toString() == currentUserId),
+          );
+        }
+      }
 
-          setState(() => isLoadingFavorite = true);
+      try {
+        if (!newValue) {
+          // Remove from favorites (API call)
+          await ApiClient().authenticatedDelete('/events/$eventId/favorite');
+        } else {
+          // Add to favorites (API call)
+          await ApiClient().authenticatedPost('/events/$eventId/favorite');
+        }
 
-          try {
-            if (localIsFavorited) {
-              // Remove from favorites
-              await ApiClient().authenticatedDelete(
-                '/events/$eventId/favorite',
-              );
-            } else {
-              // Add to favorites
-              await ApiClient().authenticatedPost('/events/$eventId/favorite');
-            }
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                newValue ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                style: TextStyle(color: Colors.white),
+              ),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Favorite toggle error: $e');
 
-            setState(() {
-              localIsFavorited = !localIsFavorited;
-              isLoadingFavorite = false;
-              isFavorited = !isFavorited;
-            });
+        // Revert on error
+        isFavoritedNotifier.value = !newValue;
 
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            }
-          } catch (e) {
-            setState(() => isLoadingFavorite = false);
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Erreur: ${e.toString()}'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
+        // Revert underlying data
+        if (!newValue) {
+          // Was removing, so add back
+          if (event['event_favorites'] is! List) {
+            event['event_favorites'] = [];
+          }
+          (event['event_favorites'] as List).add({
+            'user_id': currentUserId,
+            'user': {'id': currentUserId},
+          });
+        } else {
+          // Was adding, so remove
+          if (event['event_favorites'] is List) {
+            (event['event_favorites'] as List).removeWhere(
+              (f) =>
+                  f is Map &&
+                  (f['user_id']?.toString() == currentUserId ||
+                      f['user']?['id']?.toString() == currentUserId),
+            );
           }
         }
 
-        return EvenementCard(
-          profileImage: profileImage,
-          username: username,
-          userType: accountType == 'pro' ? 'Pro' : 'Particulier',
-          eventTitle: title.isNotEmpty ? title : 'Évènement',
-          eventImage:
-              _buildStorageUrl(imageUrl) ??
-              'assets/images/dashboard_particulier/Rectangle 12 (4).png',
-          badge: _formatEventStatus(eventDate, endDate),
-          categories: allCategories.isNotEmpty ? allCategories : ['Évènement'],
-          eventDate: _formatEventDate(eventDate),
-          location: location.isNotEmpty ? location : 'Lieu à confirmer',
-          timeAgo: _buildTimeAgo(createdAt),
-          price: isPaid && price != null && price.isNotEmpty
-              ? '${price}€'
-              : 'Gratuit',
-          likesCount: _asInt(event['likes_count']),
-          commentsCount: _asInt(event['comments_count']),
-          isFavorite: localIsFavorited,
-          onFavoriteToggle: toggleFavorite,
-          onTapCTA: () => _navigateToEventDetail(event),
-          onAvatarTap: () {
-            if (user?['id'] != null) {
-              final isProUser =
-                  user?['account_type']?.toString().toLowerCase() == 'pro';
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => isProUser
-                      ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
-                ),
-              );
-            }
-          },
-          reactionBar: eventId.isNotEmpty
-              ? _buildReactionBar(
-                  'events',
-                  eventId,
-                  acceptedMessages: event['accept_messages'] == true,
-                  authorData: user,
-                )
-              : null,
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+
+    return EvenementCard(
+      profileImage: profileImage,
+      username: ownerName,
+      userType: user?['account_type']?.toString() ?? 'particulier',
+      eventTitle: eventTitle,
+      eventImage: eventImage,
+      badge: event['status']?.toString(),
+      categories: categories.isNotEmpty ? categories : ['Général'],
+      eventDate: _formatEventDate(event),
+      location: coverageArea,
+      timeAgo: _buildTimeAgo(event['created_at']?.toString()),
+      price: price,
+      likesCount: _asInt(event['likes_count']),
+      commentsCount: _asInt(event['comments_count']),
+      onTapCTA: () => _navigateToEventDetail(event),
+      tags: tags.isNotEmpty ? tags : null,
+      onAvatarTap: () {
+        if (user?['id'] != null) {
+          final isProUser =
+              user?['account_type']?.toString().toLowerCase() == 'pro';
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => isProUser
+                  ? ProPublicViewScreen(userId: user!['id'].toString())
+                  : ParticulierPublicViewScreen(userId: user!['id'].toString()),
+            ),
+          );
+        }
       },
+      reactionBar: eventId.isNotEmpty
+          ? _buildReactionBar('events', eventId)
+          : null,
+      isFavoriteNotifier: isFavoritedNotifier,
+      onFavoriteToggle: _toggleFavorite,
     );
   }
 
@@ -879,21 +1003,34 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
   void _seedReactionFromResource(
     String apiSlug,
     String entityId,
-    Map<String, dynamic> resource,
-  ) {
+    Map<String, dynamic> resource, {
+    bool force = false,
+  }) {
     final key = _reactionKey(apiSlug, entityId);
-    if (!_reactions.containsKey(key)) {
+    if (!_reactions.containsKey(key) || force) {
       final apiReaction = resource['user_reaction']?.toString();
-      final userReaction = ReactionCacheService.isCached(apiSlug, entityId)
-          ? ReactionCacheService.load(apiSlug, entityId)
-          : apiReaction;
+      // Prefer API value over cache - cache is for offline fallback only
+      final userReaction =
+          apiReaction ??
+          (ReactionCacheService.isCached(apiSlug, entityId)
+              ? ReactionCacheService.load(apiSlug, entityId)
+              : null);
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
       final apiCommentsCount = _asInt(resource['comments_count']);
-      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(apiSlug, entityId);
+      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(
+        apiSlug,
+        entityId,
+      );
       _reactions[key] = _ReactionData(
-        likesCount: (cachedCount != null && cachedCount > apiCount) ? cachedCount : apiCount,
-        commentsCount: (cachedCommentsCount != null && cachedCommentsCount > apiCommentsCount) ? cachedCommentsCount : apiCommentsCount,
+        likesCount: (cachedCount != null && cachedCount > apiCount)
+            ? cachedCount
+            : apiCount,
+        commentsCount:
+            (cachedCommentsCount != null &&
+                cachedCommentsCount > apiCommentsCount)
+            ? cachedCommentsCount
+            : apiCommentsCount,
         userReaction: userReaction,
       );
     }
@@ -1009,6 +1146,65 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
     }
   }
 
+  void _shareBonPlan(String bonPlanId) {
+    // Share functionality for bon plans
+    final String shareUrl =
+        '${ApiConfig.baseUrl.replaceAll('/api', '')}/bon-plans/$bonPlanId';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Partager ce bon plan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
+                title: const Text('Copier le lien'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lien copié dans le presse-papiers'),
+                      backgroundColor: Color(0xFF3AAE5E),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
+                title: const Text('Partager via...'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement native share
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildReactionBar(
     String apiSlug,
     String entityId, {
@@ -1064,106 +1260,794 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
               const SizedBox(width: 4),
               Text(
                 reaction.commentsCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ],
           ),
         ),
-        const Spacer(),
-        // Repost button
-        if (isPost) ...[
-          const SizedBox(width: 10),
-          // Repost
-          GestureDetector(
-            onTap: () => _repostPost(entityId),
-            child: Row(
-              children: [
-                Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Text(
-                  'Republier',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-        ],
+        // Share icon
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: () => _shareBonPlan(entityId),
+          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
+        ),
       ],
     );
   }
 
+  Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
+    try {
+      final response = await ApiClient().authenticatedGet(
+        '/$apiSlug/$entityId',
+      );
+      final data = response['data'] as Map<String, dynamic>?;
+      if (data != null && mounted) {
+        setState(() {
+          final key = _reactionKey(apiSlug, entityId);
+          final apiLikesCount = _asInt(data['likes_count']);
+          final apiCommentsCount = _asInt(data['comments_count']);
+          final apiReaction = data['user_reaction']?.toString();
+          // Get current in-memory data (may have local optimistic updates)
+          final currentData = _getReaction(apiSlug, entityId);
+          // Use max of API count and current count (don't let stale API overwrite local)
+          final preservedLikesCount = apiLikesCount > currentData.likesCount
+              ? apiLikesCount
+              : currentData.likesCount;
+          final preservedCommentsCount =
+              apiCommentsCount > currentData.commentsCount
+              ? apiCommentsCount
+              : currentData.commentsCount;
+          // Preserve local reaction state if set, otherwise use API value
+          final cachedReaction = ReactionCacheService.load(apiSlug, entityId);
+          final preservedReaction =
+              currentData.userReaction ?? cachedReaction ?? apiReaction;
+          _reactions[key] = _ReactionData(
+            likesCount: preservedLikesCount,
+            commentsCount: preservedCommentsCount,
+            userReaction: preservedReaction,
+          );
+          // Save the preserved values to cache
+          ReactionCacheService.saveCount(
+            apiSlug,
+            entityId,
+            preservedLikesCount,
+          );
+          ReactionCacheService.saveCommentsCount(
+            apiSlug,
+            entityId,
+            preservedCommentsCount,
+          );
+          ReactionCacheService.save(apiSlug, entityId, preservedReaction);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error refreshing reaction: $e');
+    }
+  }
+
   void _showEntityCommentsSheet(String apiSlug, String entityId) {
-    // Simplified comments sheet
+    List<Map<String, dynamic>> comments = [];
+    bool isLoading = true;
+    String? error;
+    final commentCtrl = TextEditingController();
+    int? replyingToId;
+    String? replyingToName;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.75,
-          ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
-            ),
-          ),
-          child: Column(
-            children: [
-              const SizedBox(height: 10),
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(50),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
-                child: Row(
-                  children: [
-                    const Expanded(
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (ctx, modalSetState) {
+            // Load on first build
+            if (isLoading && comments.isEmpty && error == null) {
+              ApiClient()
+                  .authenticatedGet('/$apiSlug/$entityId/comments?per_page=50')
+                  .then((response) {
+                    final data = response['data'];
+                    List<Map<String, dynamic>> fetched = [];
+                    if (data is Map && data['data'] is List) {
+                      fetched = List<Map<String, dynamic>>.from(
+                        data['data'] as List,
+                      );
+                    } else if (data is List) {
+                      fetched = List<Map<String, dynamic>>.from(data);
+                    }
+                    modalSetState(() {
+                      comments = fetched;
+                      isLoading = false;
+                    });
+                  })
+                  .catchError((e) {
+                    modalSetState(() {
+                      error = e.toString();
+                      isLoading = false;
+                    });
+                  });
+            }
+
+            Future<void> submitComment() async {
+              final text = commentCtrl.text.trim();
+              if (text.isEmpty) return;
+
+              try {
+                Map<String, dynamic> response;
+                if (replyingToId != null) {
+                  response = await ApiClient().authenticatedPost(
+                    '/$apiSlug/$entityId/comments/$replyingToId/reply',
+                    body: {'body': text},
+                  );
+                } else {
+                  response = await ApiClient().authenticatedPost(
+                    '/$apiSlug/$entityId/comments',
+                    body: {'body': text},
+                  );
+                }
+                final newComment = response['data'] as Map<String, dynamic>?;
+                if (newComment != null) {
+                  modalSetState(() {
+                    if (replyingToId != null) {
+                      final parent = comments.firstWhere(
+                        (c) => c['id'] == replyingToId,
+                        orElse: () => <String, dynamic>{},
+                      );
+                      if (parent.isNotEmpty) {
+                        final replies = List<Map<String, dynamic>>.from(
+                          (parent['replies'] as List?) ?? [],
+                        );
+                        replies.add(newComment);
+                        parent['replies'] = replies;
+                        parent['replies_count'] =
+                            (parent['replies_count'] as int? ?? 0) + 1;
+                      }
+                    } else {
+                      comments.insert(0, newComment);
+                    }
+                    replyingToId = null;
+                    replyingToName = null;
+                  });
+                  // Update local comments count in feed
+                  setState(() {
+                    final data = _getReaction(apiSlug, entityId);
+                    data.commentsCount++;
+                    ReactionCacheService.saveCommentsCount(
+                      apiSlug,
+                      entityId,
+                      data.commentsCount,
+                    );
+                  });
+                }
+                commentCtrl.clear();
+                FocusScope.of(ctx).unfocus();
+
+                // Refresh reaction counts from API to ensure accuracy
+                await _refreshReactionFromApi(apiSlug, entityId);
+
+                // Award 1 My for posting a comment (silently, no modal)
+                try {
+                  final mysResponse = await MysEarningService().awardMys(
+                    actionType: 'comment',
+                    referenceId: newComment?['id']?.toString(),
+                  );
+                  if (mysResponse['success'] == true) {
+                    final newBalance = mysResponse['earning']?['new_balance'];
+                    if (newBalance != null) {
+                      UserSession().updateMys(newBalance);
+                    }
+                  }
+                } catch (e) {
+                  debugPrint("Error awarding My's for comment: $e");
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+                }
+              }
+            }
+
+            Future<void> toggleCommentReaction(
+              Map<String, dynamic> comment,
+              String type,
+            ) async {
+              final commentId = comment['id'];
+              try {
+                final response = await ApiClient().authenticatedPost(
+                  '/comments/$commentId/reactions',
+                  body: {'type': type},
+                );
+                final respData = response['data'] as Map<String, dynamic>?;
+                if (respData != null) {
+                  modalSetState(() {
+                    comment['likes_count'] = respData['likes_count'];
+                    comment['user_reaction'] = respData['user_reaction'];
+                  });
+                }
+              } catch (e) {
+                debugPrint('Comment reaction error: $e');
+              }
+            }
+
+            Future<void> editComment(Map<String, dynamic> comment) async {
+              final commentId = comment['id'];
+              final currentBody = comment['body']?.toString() ?? '';
+              final editController = TextEditingController(text: currentBody);
+
+              final newText = await showDialog<String>(
+                context: ctx,
+                builder: (context) => AlertDialog(
+                  title: const Text('Modifier le commentaire'),
+                  content: TextField(
+                    controller: editController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Votre commentaire...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
                       child: Text(
-                        'Commentaires',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF2A2A2A),
-                        ),
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(
-                        Icons.close,
-                        color: Colors.grey,
-                        size: 22,
+                    ElevatedButton(
+                      onPressed: () =>
+                          Navigator.pop(context, editController.text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3AAE5E),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Enregistrer',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (newText == null ||
+                  newText.trim().isEmpty ||
+                  newText == currentBody)
+                return;
+
+              try {
+                final response = await ApiClient().authenticatedPut(
+                  '/comments/$commentId',
+                  body: {'body': newText.trim()},
+                );
+                final updatedComment =
+                    response['data'] as Map<String, dynamic>?;
+                if (updatedComment != null) {
+                  modalSetState(() {
+                    comment['body'] = updatedComment['body'];
+                    comment['updated_at'] = updatedComment['updated_at'];
+                  });
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Erreur lors de la modification: ${e.toString()}',
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
+            Future<void> deleteComment(
+              Map<String, dynamic> comment,
+              bool isReply,
+            ) async {
+              final commentId = comment['id'];
+              final confirmed = await showDialog<bool>(
+                context: ctx,
+                builder: (context) => AlertDialog(
+                  title: const Text('Supprimer le commentaire'),
+                  content: const Text(
+                    'Êtes-vous sûr de vouloir supprimer ce commentaire ?',
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        'Supprimer',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed != true) return;
+
+              try {
+                await ApiClient().authenticatedDelete('/comments/$commentId');
+
+                // Update local comments count in feed
+                if (!isReply) {
+                  setState(() {
+                    final data = _getReaction(apiSlug, entityId);
+                    if (data.commentsCount > 0) data.commentsCount--;
+                  });
+                }
+
+                // Refresh reaction counts from API to ensure accuracy
+                await _refreshReactionFromApi(apiSlug, entityId);
+
+                modalSetState(() {
+                  if (isReply) {
+                    final parentId =
+                        comment['parent_id'] ?? comment['comment_id'];
+                    final parent = comments.firstWhere(
+                      (c) => c['id'] == parentId,
+                      orElse: () => <String, dynamic>{},
+                    );
+                    if (parent.isNotEmpty) {
+                      final replies = List<Map<String, dynamic>>.from(
+                        (parent['replies'] as List?) ?? [],
+                      );
+                      replies.removeWhere((r) => r['id'] == commentId);
+                      parent['replies'] = replies;
+                      parent['replies_count'] = replies.length;
+                    }
+                  } else {
+                    comments.removeWhere((c) => c['id'] == commentId);
+                  }
+                });
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Erreur lors de la suppression: ${e.toString()}',
+                      ),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
+            Widget buildCommentItem(
+              Map<String, dynamic> comment, {
+              bool isReply = false,
+            }) {
+              final user = comment['user'] as Map<String, dynamic>? ?? {};
+              final userId = user['id']?.toString(); // Convertir en String
+              final email = user['email']?.toString() ?? '';
+              final displayName = (userId != null && userId == _currentUserId)
+                  ? 'Vous'
+                  : (user['display_name']?.toString() ??
+                        user['name']?.toString() ??
+                        (user['particulier_profile']
+                                as Map<String, dynamic>?)?['pseudo']
+                            ?.toString() ??
+                        (user['pro_profile']
+                                as Map<String, dynamic>?)?['company_name']
+                            ?.toString() ??
+                        email.split('@').first);
+              final body = comment['body']?.toString() ?? '';
+              final createdAt = comment['created_at']?.toString();
+              final likes = _asInt(comment['likes_count']);
+              final userReaction = comment['user_reaction']?.toString();
+              final isOwner = userId != null && userId == _currentUserId;
+              print("UserId: $userId");
+              print("_currentUserId: $_currentUserId");
+              print("isOwner: $isOwner");
+              final replies =
+                  (comment['replies'] as List?)
+                      ?.map((r) => Map<String, dynamic>.from(r as Map))
+                      .toList() ??
+                  [];
+              // Get avatar URL from user data - check nested profiles
+              final particulierProfile =
+                  user['particulier_profile'] as Map<String, dynamic>?;
+              final proProfile = user['pro_profile'] as Map<String, dynamic>?;
+              final avatarUrl =
+                  particulierProfile?['avatar_url']?.toString() ??
+                  proProfile?['avatar_url']?.toString() ??
+                  proProfile?['logo_url']?.toString() ??
+                  user['avatar_url']?.toString();
+
+              return Padding(
+                padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: isReply ? 14 : 18,
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage:
+                              avatarUrl != null && avatarUrl.isNotEmpty
+                              ? NetworkImage(
+                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
+                                      avatarUrl,
+                                )
+                              : null,
+                          child: avatarUrl == null || avatarUrl.isEmpty
+                              ? Icon(
+                                  Icons.person,
+                                  size: isReply ? 12 : 16,
+                                  color: Colors.grey[600],
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    displayName,
+                                    style: TextStyle(
+                                      fontSize: isReply ? 12 : 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF333333),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _buildTimeAgo(createdAt),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                  if (isOwner) ...[
+                                    const Spacer(),
+                                    GestureDetector(
+                                      onTapDown: (TapDownDetails details) {
+                                        showMenu<String>(
+                                          context: context,
+                                          position: RelativeRect.fromLTRB(
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                          ),
+                                          items: [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit, size: 18),
+                                                  SizedBox(width: 8),
+                                                  Text('Modifier'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.delete,
+                                                    size: 18,
+                                                    color: Colors.redAccent,
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'Supprimer',
+                                                    style: TextStyle(
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ).then((value) {
+                                          if (value == 'edit') {
+                                            editComment(comment);
+                                          } else if (value == 'delete') {
+                                            deleteComment(comment, isReply);
+                                          }
+                                        });
+                                      },
+                                      child: Icon(
+                                        Icons.more_horiz,
+                                        size: 18,
+                                        color: Colors.grey[400],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                body,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF4F4F4F),
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () =>
+                                        toggleCommentReaction(comment, 'like'),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          userReaction == 'like'
+                                              ? Icons.thumb_up_alt
+                                              : Icons.thumb_up_alt_outlined,
+                                          size: 14,
+                                          color: userReaction == 'like'
+                                              ? const Color(0xFF3AAE5E)
+                                              : Colors.grey[400],
+                                        ),
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          '$likes',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: userReaction == 'like'
+                                                ? const Color(0xFF3AAE5E)
+                                                : Colors.grey[500],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (!isReply) ...[
+                                    const SizedBox(width: 14),
+                                    GestureDetector(
+                                      onTap: () {
+                                        modalSetState(() {
+                                          replyingToId = comment['id'] as int?;
+                                          replyingToName = displayName;
+                                        });
+                                        FocusScope.of(
+                                          ctx,
+                                        ).requestFocus(FocusNode());
+                                      },
+                                      child: Text(
+                                        'Répondre',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: const Color(0xFF2E9B5B),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Nested replies
+                    if (!isReply && replies.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      ...replies.map(
+                        (r) => Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: buildCommentItem(r, isReply: true),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.75,
+                ),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Commentaires',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF2A2A2A),
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(ctx),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.grey,
+                              size: 22,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Divider(height: 1, color: Colors.grey[200]),
+                    // Comment list
+                    Expanded(
+                      child: isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : error != null
+                          ? Center(
+                              child: Text(
+                                'Erreur: $error',
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            )
+                          : comments.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              itemCount: comments.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 16),
+                              itemBuilder: (_, i) =>
+                                  buildCommentItem(comments[i]),
+                            ),
+                    ),
+                    Divider(height: 1, color: Colors.grey[200]),
+                    // Reply indicator
+                    if (replyingToId != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        color: const Color(0xFFF5F5F5),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Répondre à $replyingToName',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () => modalSetState(() {
+                                replyingToId = null;
+                                replyingToName = null;
+                              }),
+                              child: const Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    // Input
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5F5F5),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: TextField(
+                                controller: commentCtrl,
+                                decoration: const InputDecoration(
+                                  isCollapsed: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  border: InputBorder.none,
+                                  hintText: 'Écrire un commentaire...',
+                                  hintStyle: TextStyle(
+                                    color: Color(0xFF9E9E9E),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                textInputAction: TextInputAction.send,
+                                onSubmitted: (_) => submitComment(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: submitComment,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF3AAE5E),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.send,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 1),
-              const Expanded(
-                child: Center(
-                  child: Text(
-                    'Chargement des commentaires...',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

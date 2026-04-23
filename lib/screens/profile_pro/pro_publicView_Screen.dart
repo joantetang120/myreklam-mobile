@@ -750,7 +750,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                           ),
                           const SizedBox(width: 6),
                           CircleAvatar(
-                            radius: 10,
+                            radius: 14,
                             backgroundImage:
                                 widget.reposter.avatar.startsWith('http')
                                 ? NetworkImage(widget.reposter.avatar)
