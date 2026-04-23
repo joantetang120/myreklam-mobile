@@ -82,6 +82,15 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     return 0;
   }
 
+  /// Like _asInt but returns null instead of 0 for null/invalid values
+  int? _tryAsInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   void _seedReactionFromFeed(String apiSlug, String entityId, Map<String, dynamic> resource) {
     final key = _reactionKey(apiSlug, entityId);
     if (!_reactions.containsKey(key)) {
@@ -277,7 +286,9 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     final resp = await ApiClient().get('/search?$qs');
 
     final data = resp['data'] as Map<String, dynamic>? ?? {};
-    final items = List<Map<String, dynamic>>.from(data['items'] ?? []);
+    final allItems = List<Map<String, dynamic>>.from(data['items'] ?? []);
+    // Filter out posts from search results
+    final items = allItems.where((item) => item['feed_type']?.toString() != 'post').toList();
     final total = data['meta']?['total'] ?? 0;
 
     // Seed reactions BEFORE setState to prevent _getReaction pre-populating with empty data
@@ -305,7 +316,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     'training': 'trainings',
     'event': 'events',
     'demande': 'demandes',
-    'post': 'posts',
+    // Note: 'post' is intentionally excluded from search results
   };
 
   Future<void> _fetchUsers() async {
@@ -1213,6 +1224,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         originalPrice: data['prix_avant_reduction']?.toString(), shippingOption: data['shipping_option']?.toString(),
         shippingCost: data['shipping_cost']?.toString(), availableLocationType: data['available_location_type']?.toString(),
         conditions: data['conditions']?.toString(),
+        commentsCount: _tryAsInt(data['comments_count']),
       )));
     } catch (e) {
       if (!mounted) return;
@@ -1267,6 +1279,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         jobOfferData: data,
         acceptMessages: data['accept_messages'] == true,
         authorData: user,
+        commentsCount: _tryAsInt(data['comments_count']),
       )));
     } catch (e) {
       if (!mounted) return;
@@ -1320,6 +1333,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         isOwner: tr['user_id']?.toString() == UserSession().id,
         trainingData: data,
         authorData: user,
+        commentsCount: _tryAsInt(data['comments_count']),
       )));
     } catch (e) {
       if (!mounted) return;
@@ -1369,6 +1383,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         eventData: data,
         acceptMessages: data['accept_messages'] == true,
         authorData: user,
+        commentsCount: _tryAsInt(data['comments_count']),
       )));
     } catch (e) {
       if (!mounted) return;
@@ -1415,6 +1430,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         isOwner: demande['user_id']?.toString() == UserSession().id,
         demandeData: data,
         acceptMessages: data['accept_messages'] == true,
+        commentsCount: _tryAsInt(data['comments_count']),
       )));
     } catch (e) {
       if (!mounted) return;

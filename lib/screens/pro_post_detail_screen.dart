@@ -63,6 +63,7 @@ class ProPostDetailScreen extends StatefulWidget {
   final String? shippingCost;
   final String? availableLocationType;
   final String? conditions;
+  final int? commentsCount;
 
   const ProPostDetailScreen({
     super.key,
@@ -97,6 +98,7 @@ class ProPostDetailScreen extends StatefulWidget {
     this.shippingCost,
     this.availableLocationType,
     this.conditions,
+    this.commentsCount,
   });
 
   @override
@@ -106,6 +108,7 @@ class ProPostDetailScreen extends StatefulWidget {
 class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
   List<Map<String, dynamic>> _comments = [];
   bool _isLoadingComments = false;
+  int? _localCommentsCount;
   List<Map<String, dynamic>> _relatedBonPlans = [];
   bool _isLoadingRelated = false;
   bool _isFollowing = false;
@@ -146,6 +149,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _localCommentsCount = widget.commentsCount;
     _checkFavoriteStatus();
     _fetchComments();
     _fetchRelatedBonPlans();
@@ -807,13 +811,15 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     data.commentsCount++;
+                    _localCommentsCount = (_localCommentsCount ?? _comments.length) + 1;
                   });
                 }
                 commentCtrl.clear();
                 FocusScope.of(ctx).unfocus();
 
-                // Refresh reaction counts from API to ensure accuracy
+                // Refresh reaction counts and comments from API to ensure accuracy
                 await _refreshReactionFromApi(apiSlug, entityId);
+                await _fetchComments();
 
                 // Award 1 My for posting a comment (silently, no modal)
                 try {
@@ -2664,11 +2670,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           color: Colors.grey[600],
                         ),
                       ),
-                      // const Spacer(),
-                      // Text(
-                      //   '${_comments.length}',
-                      //   style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-                      // ),
+                      const Spacer(),
+                      Text(
+                        '${_localCommentsCount ?? _comments.length}',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -2680,7 +2686,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     )
-                  else if (_comments.isEmpty)
+                  else if (_comments.isEmpty && (_localCommentsCount == null || _localCommentsCount == 0))
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 20),
