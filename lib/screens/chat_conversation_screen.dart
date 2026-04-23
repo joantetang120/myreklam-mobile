@@ -157,6 +157,36 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     return DateFormat('HH:mm').format(dateTime);
   }
 
+  String _formatDateHeader(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final messageDate = DateTime(date.year, date.month, date.day);
+
+    if (messageDate == today) {
+      return 'Aujourd\'hui';
+    } else if (messageDate == yesterday) {
+      return 'Hier';
+    } else {
+      return DateFormat('dd/MM/yyyy').format(date);
+    }
+  }
+
+  bool _shouldShowDateHeader(int index, List<dynamic> messages) {
+    if (index == 0) return true;
+    final currentDate = DateTime(
+      messages[index].createdAt.year,
+      messages[index].createdAt.month,
+      messages[index].createdAt.day,
+    );
+    final previousDate = DateTime(
+      messages[index - 1].createdAt.year,
+      messages[index - 1].createdAt.month,
+      messages[index - 1].createdAt.day,
+    );
+    return currentDate != previousDate;
+  }
+
   void _showMessageOptions(ChatMessage message) {
     final conversationId = int.tryParse(widget.conversationId);
     if (conversationId == null) return;
@@ -458,56 +488,6 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           //   ),
           // ),
 
-          // Date Divider - Dynamique basé sur les messages
-          Consumer<ConversationProvider>(
-            builder: (context, chatProvider, child) {
-              final messages = chatProvider.getMessages(
-                int.tryParse(widget.conversationId) ?? 0,
-              );
-
-              String dateText = "Aujourd'hui";
-              if (messages.isNotEmpty) {
-                final firstMessage = messages.first;
-                final now = DateTime.now();
-                final messageDate = firstMessage.createdAt;
-
-                if (messageDate.year == now.year &&
-                    messageDate.month == now.month &&
-                    messageDate.day == now.day) {
-                  dateText = "Aujourd'hui";
-                } else if (messageDate.year == now.year &&
-                    messageDate.month == now.month &&
-                    messageDate.day == now.day - 1) {
-                  dateText = "Hier";
-                } else {
-                  dateText = DateFormat('dd MMM yyyy').format(messageDate);
-                }
-              }
-
-              return Center(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    dateText,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF616161),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 16),
-
           // Messages List with ChatProvider
           Expanded(
             child: _isLoading || _currentUserId == null
@@ -559,17 +539,51 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                               ? message.deletedForSender
                               : message.deletedForReceiver;
 
-                          // Afficher le message texte
-                          return MessageBubble(
-                            message: message.text,
-                            time: _formatMessageTime(message.createdAt),
-                            isSent: isSent,
-                            isRead: message.isRead,
-                            attachments: message.attachments,
-                            isEdited: message.isEdited,
-                            deletedForEveryone: message.deletedForEveryone,
-                            isDeletedForMe: isDeletedForMe,
-                            onLongPress: () => _showMessageOptions(message),
+                          // Vérifier si on doit afficher l'en-tête de date
+                          final showDateHeader = _shouldShowDateHeader(
+                            index,
+                            messages,
+                          );
+
+                          // Afficher le message avec en-tête de date si nécessaire
+                          return Column(
+                            children: [
+                              if (showDateHeader)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      _formatDateHeader(message.createdAt),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[700],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              MessageBubble(
+                                message: message.text,
+                                time: _formatMessageTime(message.createdAt),
+                                isSent: isSent,
+                                isRead: message.isRead,
+                                attachments: message.attachments,
+                                isEdited: message.isEdited,
+                                deletedForEveryone: message.deletedForEveryone,
+                                isDeletedForMe: isDeletedForMe,
+                                onLongPress: () => _showMessageOptions(message),
+                              ),
+                            ],
                           );
                         },
                       );
