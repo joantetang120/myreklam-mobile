@@ -457,6 +457,11 @@ class ParticulierDashboardScreen extends StatefulWidget {
     false,
   );
 
+  /// Global notifier to trigger silent feed refresh (no visible loader)
+  static final ValueNotifier<bool> refreshFeedNotifier = ValueNotifier<bool>(
+    false,
+  );
+
   @override
   State<ParticulierDashboardScreen> createState() =>
       _ParticulierDashboardScreenState();
@@ -680,16 +685,14 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       padding: EdgeInsets.only(bottom: 4),
                       child: Row(
                         children: [
-                          GestureDetector(
-                            onTap: () {},
-                            child: _buildAuthorAvatar(
-                              widget.author.avatar,
-                              widget.author.accountType,
-                            ),
+                          Icon(
+                            Icons.repeat_rounded,
+                            size: 14,
+                            color: Colors.grey[600],
                           ),
                           const SizedBox(width: 6),
                           CircleAvatar(
-                            radius: 10,
+                            radius: 14,
                             backgroundImage:
                                 widget.reposter.avatar.startsWith('http')
                                 ? NetworkImage(widget.reposter.avatar)
@@ -1239,6 +1242,11 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     ParticulierDashboardScreen.refreshMysNotifier.addListener(
       _onRefreshMysRequested,
     );
+
+    // Listen for feed refresh requests
+    ParticulierDashboardScreen.refreshFeedNotifier.addListener(
+      _onRefreshFeedRequested,
+    );
   }
 
   Future<void> _checkAndShowWelcomeBonus() async {
@@ -1613,6 +1621,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     ParticulierDashboardScreen.refreshMysNotifier.removeListener(
       _onRefreshMysRequested,
     );
+    ParticulierDashboardScreen.refreshFeedNotifier.removeListener(
+      _onRefreshFeedRequested,
+    );
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_onFeedScroll);
     _scrollController.dispose();
@@ -1622,8 +1633,25 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   @override
   void didPopNext() {
     // Called when returning to this screen from another route
-    debugPrint('Dashboard didPopNext - syncing reactions from cache');
+    debugPrint('Dashboard didPopNext - refreshing data after navigation');
+    // Clear reactions to force re-seeding from fresh feed data
+    _reactions.clear();
     _syncReactionsFromCache();
+    // Refresh feed and stories silently (no visible loader) to show updated likes, comments, reposts, etc.
+    _loadUnifiedFeed(reset: true, silent: true);
+    _storyStore.loadFeed();
+  }
+
+  void _onRefreshFeedRequested() {
+    if (ParticulierDashboardScreen.refreshFeedNotifier.value) {
+      debugPrint('Feed refresh requested - silent refresh');
+      // Clear reactions to force re-seeding from fresh feed data
+      _reactions.clear();
+      _syncReactionsFromCache();
+      _loadUnifiedFeed(reset: true, silent: true);
+      _storyStore.loadFeed();
+      ParticulierDashboardScreen.refreshFeedNotifier.value = false;
+    }
   }
 
   Future<void> _handleStoryEntryTap() async {
@@ -1698,15 +1726,23 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     }
   }
 
-  Future<void> _loadUnifiedFeed({bool reset = false}) async {
+  Future<void> _loadUnifiedFeed({
+    bool reset = false,
+    bool silent = false,
+  }) async {
     if (_isLoadingMoreFeed || (!_feedHasMore && !reset)) return;
 
     if (reset) {
       _feedPage = 1;
       _feedHasMore = true;
       _loadedItemIds.clear();
+
+      if (!silent) {
+        setState(() {
+          _isLoadingFeed = true;
+        });
+      }
       setState(() {
-        _isLoadingFeed = true;
         _feedError = null;
       });
     } else {
@@ -3729,10 +3765,11 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   void _seedReactionFromFeed(
     String apiSlug,
     String entityId,
-    Map<String, dynamic> resource,
-  ) {
+    Map<String, dynamic> resource, {
+    bool force = false,
+  }) {
     final key = _reactionKey(apiSlug, entityId);
-    if (!_reactions.containsKey(key)) {
+    if (!_reactions.containsKey(key) || force) {
       final apiReaction = resource['user_reaction']?.toString();
       final userReaction = ReactionCacheService.isCached(apiSlug, entityId)
           ? ReactionCacheService.load(apiSlug, entityId)
@@ -4724,7 +4761,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   });
 
                   // Recharger le feed pour actualiser les commentaires
-                  await _loadUnifiedFeed(reset: true);
+                  _syncReactionsFromCache();
                 }
               } catch (e) {
                 if (mounted) {
@@ -4797,7 +4834,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 await _refreshReactionFromApi(apiSlug, entityId);
 
                 // Recharger le feed pour actualiser les commentaires
-                await _loadUnifiedFeed(reset: true);
+                _syncReactionsFromCache();
 
                 modalSetState(() {
                   if (isReply) {

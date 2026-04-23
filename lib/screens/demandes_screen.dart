@@ -18,7 +18,11 @@ class _ReactionData {
   int commentsCount;
   String? userReaction; // 'like' or null
 
-  _ReactionData({this.likesCount = 0, this.commentsCount = 0, this.userReaction});
+  _ReactionData({
+    this.likesCount = 0,
+    this.commentsCount = 0,
+    this.userReaction,
+  });
 }
 
 class DemandesScreen extends StatefulWidget {
@@ -77,7 +81,7 @@ class _DemandesScreenState extends State<DemandesScreen> {
         for (final item in fetched) {
           final itemId = item['id']?.toString() ?? '';
           if (itemId.isNotEmpty) {
-            _seedReactionFromResource('demandes', itemId, item);
+            _seedReactionFromResource('demandes', itemId, item, force: true);
           }
         }
         setState(() {
@@ -510,7 +514,7 @@ class _DemandesScreenState extends State<DemandesScreen> {
     // Check if already favorited by current user
     final favoris = demande['demande_favorites'] as List? ?? [];
     final currentUserId = UserSession().id;
-    bool isFavorited =
+    final bool initialIsFavorited =
         currentUserId != null &&
         favoris.any(
           (f) =>
@@ -519,40 +523,61 @@ class _DemandesScreenState extends State<DemandesScreen> {
                   f['user']?['id']?.toString() == currentUserId),
         );
 
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
+
     return StatefulBuilder(
       builder: (context, setState) {
         bool isLoadingFavorite = false;
-        bool localIsFavorited = isFavorited;
 
         Future<void> toggleFavorite() async {
           if (isLoadingFavorite || demandeId.isEmpty) return;
 
+          // Toggle immediately for responsive UI
+          isFavoritedNotifier.value = !isFavoritedNotifier.value;
           setState(() => isLoadingFavorite = true);
 
           try {
-            if (localIsFavorited) {
+            if (!isFavoritedNotifier.value) {
               // Remove from favorites
               await ApiClient().authenticatedDelete(
                 '/demandes/$demandeId/favorite',
               );
+              // Update underlying data to persist state across rebuilds
+              if (demande['demande_favorites'] is List) {
+                (demande['demande_favorites'] as List).removeWhere(
+                  (f) =>
+                      f is Map &&
+                      (f['user_id']?.toString() == currentUserId ||
+                          f['user']?['id']?.toString() == currentUserId),
+                );
+              }
             } else {
               // Add to favorites
               await ApiClient().authenticatedPost(
                 '/demandes/$demandeId/favorite',
               );
+              // Update underlying data to persist state across rebuilds
+              if (demande['demande_favorites'] is! List) {
+                demande['demande_favorites'] = [];
+              }
+              (demande['demande_favorites'] as List).add({
+                'user_id': currentUserId,
+                'user': {'id': currentUserId},
+              });
             }
 
             setState(() {
-              localIsFavorited = !localIsFavorited;
               isLoadingFavorite = false;
-              isFavorited = !isFavorited;
             });
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                    isFavoritedNotifier.value
+                        ? 'Ajouté aux favoris'
+                        : 'Retiré des favoris',
                     style: TextStyle(color: Colors.white),
                   ),
                   duration: const Duration(seconds: 2),
@@ -561,6 +586,9 @@ class _DemandesScreenState extends State<DemandesScreen> {
               );
             }
           } catch (e) {
+            debugPrint('Favorite toggle error: $e');
+            // Revert on error
+            isFavoritedNotifier.value = !isFavoritedNotifier.value;
             setState(() => isLoadingFavorite = false);
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -577,6 +605,9 @@ class _DemandesScreenState extends State<DemandesScreen> {
           profileImage: profileImage,
           username: username,
           categoryLabel: categoryLabel,
+          accountType: proProfile != null && proProfile!.isNotEmpty
+              ? 'pro'
+              : 'particulier',
           categoryColor: _categoryColor(categoryLabel),
           title: title,
           description: description.isNotEmpty
@@ -597,12 +628,14 @@ class _DemandesScreenState extends State<DemandesScreen> {
                 MaterialPageRoute(
                   builder: (context) => isProUser
                       ? ProPublicViewScreen(userId: user!['id'].toString())
-                      : ParticulierPublicViewScreen(userId: user!['id'].toString()),
+                      : ParticulierPublicViewScreen(
+                          userId: user!['id'].toString(),
+                        ),
                 ),
               );
             }
           },
-          isFavorited: localIsFavorited,
+          isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
           reactionBar: demandeId.isNotEmpty
@@ -610,7 +643,7 @@ class _DemandesScreenState extends State<DemandesScreen> {
                   'demandes',
                   demandeId,
                   acceptedMessages: demande['accept_messages'] == true,
-                  authorData: demande['user'] as Map<String, dynamic>?,
+                  authorData: demande['user'],
                 )
               : null,
         );
@@ -630,21 +663,34 @@ class _DemandesScreenState extends State<DemandesScreen> {
   void _seedReactionFromResource(
     String apiSlug,
     String entityId,
-    Map<String, dynamic> resource,
-  ) {
+    Map<String, dynamic> resource, {
+    bool force = false,
+  }) {
     final key = _reactionKey(apiSlug, entityId);
-    if (!_reactions.containsKey(key)) {
+    if (!_reactions.containsKey(key) || force) {
       final apiReaction = resource['user_reaction']?.toString();
-      final userReaction = ReactionCacheService.isCached(apiSlug, entityId)
-          ? ReactionCacheService.load(apiSlug, entityId)
-          : apiReaction;
+      // Prefer API value over cache - cache is for offline fallback only
+      final userReaction =
+          apiReaction ??
+          (ReactionCacheService.isCached(apiSlug, entityId)
+              ? ReactionCacheService.load(apiSlug, entityId)
+              : null);
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
       final apiCommentsCount = _asInt(resource['comments_count']);
-      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(apiSlug, entityId);
+      final cachedCommentsCount = ReactionCacheService.loadCommentsCount(
+        apiSlug,
+        entityId,
+      );
       _reactions[key] = _ReactionData(
-        likesCount: (cachedCount != null && cachedCount > apiCount) ? cachedCount : apiCount,
-        commentsCount: (cachedCommentsCount != null && cachedCommentsCount > apiCommentsCount) ? cachedCommentsCount : apiCommentsCount,
+        likesCount: (cachedCount != null && cachedCount > apiCount)
+            ? cachedCount
+            : apiCount,
+        commentsCount:
+            (cachedCommentsCount != null &&
+                cachedCommentsCount > apiCommentsCount)
+            ? cachedCommentsCount
+            : apiCommentsCount,
         userReaction: userReaction,
       );
     }
@@ -652,7 +698,9 @@ class _DemandesScreenState extends State<DemandesScreen> {
 
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
     try {
-      final response = await ApiClient().authenticatedGet('/$apiSlug/$entityId');
+      final response = await ApiClient().authenticatedGet(
+        '/$apiSlug/$entityId',
+      );
       final data = response['data'] as Map<String, dynamic>?;
       if (data != null && mounted) {
         setState(() {
@@ -661,17 +709,31 @@ class _DemandesScreenState extends State<DemandesScreen> {
           final apiCommentsCount = _asInt(data['comments_count']);
           final apiReaction = data['user_reaction']?.toString();
           final currentData = _getReaction(apiSlug, entityId);
-          final preservedLikesCount = apiLikesCount > currentData.likesCount ? apiLikesCount : currentData.likesCount;
-          final preservedCommentsCount = apiCommentsCount > currentData.commentsCount ? apiCommentsCount : currentData.commentsCount;
+          final preservedLikesCount = apiLikesCount > currentData.likesCount
+              ? apiLikesCount
+              : currentData.likesCount;
+          final preservedCommentsCount =
+              apiCommentsCount > currentData.commentsCount
+              ? apiCommentsCount
+              : currentData.commentsCount;
           final cachedReaction = ReactionCacheService.load(apiSlug, entityId);
-          final preservedReaction = currentData.userReaction ?? cachedReaction ?? apiReaction;
+          final preservedReaction =
+              currentData.userReaction ?? cachedReaction ?? apiReaction;
           _reactions[key] = _ReactionData(
             likesCount: preservedLikesCount,
             commentsCount: preservedCommentsCount,
             userReaction: preservedReaction,
           );
-          ReactionCacheService.saveCount(apiSlug, entityId, preservedLikesCount);
-          ReactionCacheService.saveCommentsCount(apiSlug, entityId, preservedCommentsCount);
+          ReactionCacheService.saveCount(
+            apiSlug,
+            entityId,
+            preservedLikesCount,
+          );
+          ReactionCacheService.saveCommentsCount(
+            apiSlug,
+            entityId,
+            preservedCommentsCount,
+          );
           ReactionCacheService.save(apiSlug, entityId, preservedReaction);
         });
       }
@@ -812,11 +874,15 @@ class _DemandesScreenState extends State<DemandesScreen> {
                     replyingToId = null;
                     replyingToName = null;
                   });
-                  // Update local comments count
+                  // Update local comments count in feed
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     data.commentsCount++;
-                    ReactionCacheService.saveCommentsCount(apiSlug, entityId, data.commentsCount);
+                    ReactionCacheService.saveCommentsCount(
+                      apiSlug,
+                      entityId,
+                      data.commentsCount,
+                    );
                   });
                 }
                 commentCtrl.clear();
@@ -934,9 +1000,6 @@ class _DemandesScreenState extends State<DemandesScreen> {
                     comment['body'] = updatedComment['body'];
                     comment['updated_at'] = updatedComment['updated_at'];
                   });
-
-                  // Recharger le feed pour actualiser les commentaires
-                  await _loadData();
                 }
               } catch (e) {
                 if (mounted) {
@@ -997,17 +1060,16 @@ class _DemandesScreenState extends State<DemandesScreen> {
               try {
                 await ApiClient().authenticatedDelete('/comments/$commentId');
 
-                // Refresh reaction counts from API to ensure accuracy
+                // Update local comments count in feed
                 if (!isReply) {
                   setState(() {
                     final data = _getReaction(apiSlug, entityId);
                     if (data.commentsCount > 0) data.commentsCount--;
                   });
                 }
-                await _refreshReactionFromApi(apiSlug, entityId);
 
-                // Recharger le feed pour actualiser les commentaires
-                await _loadData();
+                // Refresh reaction counts from API to ensure accuracy
+                await _refreshReactionFromApi(apiSlug, entityId);
 
                 modalSetState(() {
                   if (isReply) {
@@ -1054,6 +1116,12 @@ class _DemandesScreenState extends State<DemandesScreen> {
                   ? 'Vous'
                   : (user['display_name']?.toString() ??
                         user['name']?.toString() ??
+                        (user['particulier_profile']
+                                as Map<String, dynamic>?)?['pseudo']
+                            ?.toString() ??
+                        (user['pro_profile']
+                                as Map<String, dynamic>?)?['company_name']
+                            ?.toString() ??
                         email.split('@').first);
               final body = comment['body']?.toString() ?? '';
               final createdAt = comment['created_at']?.toString();
@@ -1069,12 +1137,14 @@ class _DemandesScreenState extends State<DemandesScreen> {
                       .toList() ??
                   [];
               // Get avatar URL from user data - check nested profiles
-              final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
+              final particulierProfile =
+                  user['particulier_profile'] as Map<String, dynamic>?;
               final proProfile = user['pro_profile'] as Map<String, dynamic>?;
-              final avatarUrl = particulierProfile?['avatar_url']?.toString()
-                  ?? proProfile?['avatar_url']?.toString()
-                  ?? proProfile?['logo_url']?.toString()
-                  ?? user['avatar_url']?.toString();
+              final avatarUrl =
+                  particulierProfile?['avatar_url']?.toString() ??
+                  proProfile?['avatar_url']?.toString() ??
+                  proProfile?['logo_url']?.toString() ??
+                  user['avatar_url']?.toString();
 
               return Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
@@ -1086,20 +1156,19 @@ class _DemandesScreenState extends State<DemandesScreen> {
                       children: [
                         CircleAvatar(
                           radius: isReply ? 14 : 18,
-                          backgroundColor: const Color(0xFFE6F7EF),
-                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? avatarUrl)
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage:
+                              avatarUrl != null && avatarUrl.isNotEmpty
+                              ? NetworkImage(
+                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
+                                      avatarUrl,
+                                )
                               : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Text(
-                                  displayName.isNotEmpty
-                                      ? displayName[0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    fontSize: isReply ? 11 : 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2A8143),
-                                  ),
+                              ? Icon(
+                                  Icons.person,
+                                  size: isReply ? 12 : 16,
+                                  color: Colors.grey[600],
                                 )
                               : null,
                         ),
@@ -1513,15 +1582,76 @@ class _DemandesScreenState extends State<DemandesScreen> {
     }
   }
 
+  void _shareBonPlan(String bonPlanId) {
+    // Share functionality for bon plans
+    final String shareUrl =
+        '${ApiConfig.baseUrl.replaceAll('/api', '')}/bon-plans/$bonPlanId';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Partager ce bon plan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
+                title: const Text('Copier le lien'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lien copié dans le presse-papiers'),
+                      backgroundColor: Color(0xFF3AAE5E),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
+                title: const Text('Partager via...'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement native share
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildReactionBar(
     String apiSlug,
     String entityId, {
     bool? acceptedMessages,
     Map<String, dynamic>? authorData,
+    Map<String, dynamic>? postData,
   }) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
     final isPost = apiSlug == 'posts';
+    final isBonPlan = apiSlug == 'bon-plans';
 
     return Row(
       children: [
@@ -1566,23 +1696,12 @@ class _DemandesScreenState extends State<DemandesScreen> {
             ],
           ),
         ),
-        if (isPost) ...[
-          const SizedBox(width: 10),
-          // Repost
-          GestureDetector(
-            onTap: () => _repostPost(entityId),
-            child: Row(
-              children: [
-                Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Text(
-                  'Republier',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-        ],
+        // Share icon
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: () => _shareBonPlan(entityId),
+          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
+        ),
       ],
     );
   }

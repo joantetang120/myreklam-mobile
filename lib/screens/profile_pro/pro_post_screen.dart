@@ -552,7 +552,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                           ),
                           const SizedBox(width: 6),
                           CircleAvatar(
-                            radius: 10,
+                            radius: 14,
                             backgroundImage:
                                 widget.reposter.avatar.startsWith('http')
                                 ? NetworkImage(widget.reposter.avatar)
@@ -1006,6 +1006,29 @@ class _ProPostScreenState extends State<ProPostScreen>
       } else if (data is Map<String, dynamic> && data['data'] is List) {
         posts = List<Map<String, dynamic>>.from(data['data'] as List);
       }
+      // Seed reactions from fresh API data (force=true)
+      for (final post in posts) {
+        final postId = post['id']?.toString() ?? '';
+        final originalPostId = post['original_post_id']?.toString();
+        if (postId.isNotEmpty) {
+          // For original posts and quote reposts, seed from the post itself
+          if (originalPostId == null || originalPostId.isEmpty) {
+            _seedReactionFromFeed('posts', postId, post, force: true);
+          }
+          // For simple reposts, also seed the original post's reactions
+          if (originalPostId != null && originalPostId.isNotEmpty) {
+            final originalPost = post['original_post'] as Map<String, dynamic>?;
+            if (originalPost != null) {
+              _seedReactionFromFeed(
+                'posts',
+                originalPostId,
+                originalPost,
+                force: true,
+              );
+            }
+          }
+        }
+      }
       if (mounted) {
         setState(() {
           _myPosts = posts;
@@ -1222,11 +1245,11 @@ class _ProPostScreenState extends State<ProPostScreen>
           _buildBody(postsOverride: repostsOnly),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF3AAE5E),
-        onPressed: _createNewPost,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   backgroundColor: const Color(0xFF3AAE5E),
+      //   onPressed: _createNewPost,
+      //   child: const Icon(Icons.add, color: Colors.white),
+      // ),
     );
   }
 
@@ -1446,14 +1469,18 @@ class _ProPostScreenState extends State<ProPostScreen>
   void _seedReactionFromFeed(
     String apiSlug,
     String entityId,
-    Map<String, dynamic> resource,
-  ) {
+    Map<String, dynamic> resource, {
+    bool force = false,
+  }) {
     final key = _reactionKey(apiSlug, entityId);
-    if (!_reactions.containsKey(key)) {
+    if (!_reactions.containsKey(key) || force) {
       final apiReaction = resource['user_reaction']?.toString();
-      final userReaction = ReactionCacheService.isCached(apiSlug, entityId)
-          ? ReactionCacheService.load(apiSlug, entityId)
-          : apiReaction;
+      // Prefer API value over cache - cache is for offline fallback only
+      final userReaction =
+          apiReaction ??
+          (ReactionCacheService.isCached(apiSlug, entityId)
+              ? ReactionCacheService.load(apiSlug, entityId)
+              : null);
       final apiCount = _asInt(resource['likes_count']);
       final cachedCount = ReactionCacheService.loadCount(apiSlug, entityId);
       _reactions[key] = _ReactionData(
@@ -2892,12 +2919,17 @@ class _ProPostScreenState extends State<ProPostScreen>
     if (isRepost && !isQuoteRepost && originalPostId.isNotEmpty) {
       // Simple repost: reactions go to original post
       reactionEntityId = originalPostId;
-      _seedReactionFromFeed('posts', originalPostId, originalPost);
+      _seedReactionFromFeed('posts', originalPostId, originalPost, force: true);
     } else {
       // Original post or quote repost: reactions are on this post itself
       reactionEntityId = postId;
       if (postId.isNotEmpty) {
-        _seedReactionFromFeed('posts', postId, isQuoteRepost ? raw : raw);
+        _seedReactionFromFeed(
+          'posts',
+          postId,
+          isQuoteRepost ? raw : raw,
+          force: true,
+        );
       }
     }
 

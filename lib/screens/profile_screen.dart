@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:myreklam/screens/profile_pro/pro_annonces_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_favoris_screen.dart';
+import 'package:myreklam/screens/profile_pro/pro_post_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
@@ -676,7 +677,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const MyPostsScreen(),
+                            builder: (context) => const ProPostScreen(),
                           ),
                         );
                       },
