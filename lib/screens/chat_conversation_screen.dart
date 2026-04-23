@@ -342,18 +342,16 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     widget.avatar != null &&
                         (widget.avatar!.startsWith('https') ||
                             (widget.avatar!.startsWith('http')))
-                    ? (widget.avatar != null
-                          ? DecorationImage(
-                              image: NetworkImage("${widget.avatar}"),
-                              fit: BoxFit.cover,
-                            )
-                          : DecorationImage(
-                              image: NetworkImage(
-                                "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${widget.avatar!}",
-                              ),
-                              fit: BoxFit.cover,
-                            ))
-                    : null,
+                    ? DecorationImage(
+                        image: NetworkImage("${widget.avatar}"),
+                        fit: BoxFit.cover,
+                      )
+                    : DecorationImage(
+                        image: NetworkImage(
+                          "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${widget.avatar}",
+                        ),
+                        fit: BoxFit.cover,
+                      ),
               ),
               child: widget.avatar == null
                   ? Image.asset(
@@ -488,6 +486,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
               return Center(
                 child: Container(
+                  margin: const EdgeInsets.only(top: 12),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 6,
