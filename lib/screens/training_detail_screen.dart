@@ -68,6 +68,7 @@ class TrainingDetailScreen extends StatefulWidget {
   final bool returnToListingOnEdit;
   // Author data for follow functionality
   final Map<String, dynamic>? authorData;
+  final int? commentsCount;
 
   const TrainingDetailScreen({
     super.key,
@@ -109,6 +110,7 @@ class TrainingDetailScreen extends StatefulWidget {
     this.trainingData,
     this.returnToListingOnEdit = false,
     this.authorData,
+    this.commentsCount,
   });
 
   @override
@@ -125,6 +127,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   List<Map<String, dynamic>> _comments = [];
   bool _isLoadingComments = false;
   int _commentsCount = 0;
+  int? _localCommentsCount;
   bool _isLiked = false;
   int _likesCount = 0;
   List<Map<String, dynamic>> _similarTrainings = [];
@@ -162,6 +165,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _localCommentsCount = widget.commentsCount;
+    _commentsCount = widget.commentsCount ?? 0;
     _checkFollowStatus();
     _checkSubscriptionStatus();
     _checkFavoriteStatus();
@@ -1335,7 +1340,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       ),
                       const Spacer(),
                       Text(
-                        '${_comments.length}',
+                        '${_localCommentsCount ?? _comments.length}',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[500],
@@ -1351,7 +1356,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     )
-                  else if (_comments.isEmpty)
+                  else if (_comments.isEmpty && (_localCommentsCount == null || _localCommentsCount == 0))
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -1913,11 +1918,16 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       _comments.insert(0, newComment);
                       _commentsCount++;
                     });
-                    setState(() {});
+                    setState(() {
+                      _localCommentsCount = (_localCommentsCount ?? _comments.length) + 1;
+                    });
                   }
                   commentCtrl.clear();
                   FocusScope.of(ctx).unfocus();
-                  
+
+                  // Refresh comments from API to ensure count is accurate
+                  await _fetchComments();
+
                   // Award 1 My for posting a comment (silently, no modal)
                   try {
                     final mysResponse = await MysEarningService().awardMys(
@@ -2140,6 +2150,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     List<Map<String, dynamic>> comments = [];
     bool isLoading = true;
     final ctrl = TextEditingController();
+    int? replyingToId;
+    String? replyingToName;
+    
     showModalBottomSheet(
       context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
       builder: (sheetCtx) => StatefulBuilder(builder: (ctx, ms) {
@@ -2152,6 +2165,230 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             ms(() { comments = fetched; isLoading = false; });
           }).catchError((_) { ms(() => isLoading = false); });
         }
+        
+        Future<void> submitComment() async {
+          final text = ctrl.text.trim();
+          if (text.isEmpty) return;
+          
+          try {
+            Map<String, dynamic> res;
+            if (replyingToId != null) {
+              res = await ApiClient().authenticatedPost('/$s/$id/comments/$replyingToId/reply', body: {'body': text});
+            } else {
+              res = await ApiClient().authenticatedPost('/$s/$id/comments', body: {'body': text});
+            }
+            
+            final nc = res['data'] as Map<String, dynamic>?;
+            if (nc != null) {
+              ms(() {
+                if (replyingToId != null) {
+                  final parent = comments.firstWhere(
+                    (c) => c['id'] == replyingToId,
+                    orElse: () => <String, dynamic>{},
+                  );
+                  if (parent.isNotEmpty) {
+                    final replies = List<Map<String, dynamic>>.from(
+                      (parent['replies'] as List?) ?? [],
+                    );
+                    replies.add(nc);
+                    parent['replies'] = replies;
+                    parent['replies_count'] = (parent['replies_count'] as int? ?? 0) + 1;
+                  }
+                } else {
+                  comments.insert(0, nc);
+                }
+                replyingToId = null;
+                replyingToName = null;
+              });
+              setState(() {
+                _getReaction(s, id).commentsCount++;
+              });
+            }
+            ctrl.clear();
+            FocusScope.of(ctx).unfocus();
+          } catch (e) {
+            if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+          }
+        }
+        
+        Widget buildCommentItem(Map<String, dynamic> comment, {bool isReply = false}) {
+          final user = comment['user'] as Map<String, dynamic>?;
+          final commentId = comment['id'];
+          final commentIdInt = commentId is int ? commentId : int.tryParse(commentId?.toString() ?? '');
+          
+          String displayName = 'Utilisateur';
+          if (user != null) {
+            if (user['particulier_profile'] != null) {
+              final profile = user['particulier_profile'] as Map<String, dynamic>;
+              displayName = profile['pseudo']?.toString() ?? user['name']?.toString() ?? 'Utilisateur';
+            } else if (user['pro_profile'] != null) {
+              final profile = user['pro_profile'] as Map<String, dynamic>;
+              displayName = profile['company_name']?.toString() ?? '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'.trim();
+              if (displayName.isEmpty) displayName = user['name']?.toString() ?? 'Utilisateur';
+            } else {
+              displayName = user['name']?.toString() ?? 'Utilisateur';
+            }
+          }
+          
+          String? rawAvatarUrl;
+          if (user != null) {
+            if (user['particulier_profile'] != null) {
+              rawAvatarUrl = user['particulier_profile']['avatar_url']?.toString();
+            } else if (user['pro_profile'] != null) {
+              rawAvatarUrl = user['pro_profile']['avatar_url']?.toString();
+            }
+          }
+          final avatarUrl = ApiConfig.resolveMediaUrl(rawAvatarUrl);
+          
+          final body = comment['body']?.toString() ?? '';
+          final createdAt = comment['created_at'];
+          String timeAgo = 'à l\'instant';
+          if (createdAt != null) {
+            try {
+              final date = DateTime.parse(createdAt.toString());
+              final diff = DateTime.now().difference(date);
+              if (diff.inDays > 0) {
+                timeAgo = 'Il y a ${diff.inDays}j';
+              } else if (diff.inHours > 0) {
+                timeAgo = 'Il y a ${diff.inHours}h';
+              } else if (diff.inMinutes > 0) {
+                timeAgo = 'Il y a ${diff.inMinutes}min';
+              } else {
+                timeAgo = 'à l\'instant';
+              }
+            } catch (_) {}
+          }
+          
+          final replies = List<Map<String, dynamic>>.from((comment['replies'] as List?) ?? []);
+          final likesCount = comment['likes_count'] as int? ?? 0;
+          final isLiked = comment['user_reaction']?.toString() == 'like';
+          
+          return Padding(
+            padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      radius: isReply ? 14 : 18,
+                      backgroundImage: avatarUrl != null && avatarUrl.toString().startsWith('http')
+                          ? NetworkImage(avatarUrl)
+                          : const AssetImage('assets/images/dashboard_particulier/Ellipse 10.png') as ImageProvider,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                displayName,
+                                style: TextStyle(
+                                  fontSize: isReply ? 12 : 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF333333),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                timeAgo,
+                                style: TextStyle(
+                                  fontSize: isReply ? 10 : 11,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            body,
+                            style: TextStyle(
+                              fontSize: isReply ? 12 : 13,
+                              color: Colors.grey[700],
+                              height: 1.4,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              // Like button
+                              GestureDetector(
+                                onTap: () async {
+                                  try {
+                                    final cid = comment['id'];
+                                    if (cid == null) return;
+                                    final currentLiked = comment['user_reaction']?.toString() == 'like';
+                                    final currentCount = comment['likes_count'] as int? ?? 0;
+                                    ms(() {
+                                      comment['user_reaction'] = currentLiked ? null : 'like';
+                                      comment['likes_count'] = currentLiked ? (currentCount > 0 ? currentCount - 1 : 0) : currentCount + 1;
+                                    });
+                                    if (currentLiked) {
+                                      await ApiClient().authenticatedDelete('/comments/$cid/reactions');
+                                    } else {
+                                      await ApiClient().authenticatedPost('/comments/$cid/reactions', body: {'type': 'like'});
+                                    }
+                                  } catch (e) {
+                                    debugPrint('Error liking comment: $e');
+                                  }
+                                },
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+                                      size: isReply ? 12 : 14,
+                                      color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      likesCount.toString(),
+                                      style: TextStyle(
+                                        fontSize: isReply ? 11 : 12,
+                                        color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                                        fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              // Reply button
+                              if (!isReply && commentIdInt != null)
+                                GestureDetector(
+                                  onTap: () {
+                                    ms(() {
+                                      replyingToId = commentIdInt;
+                                      replyingToName = displayName;
+                                    });
+                                  },
+                                  child: Text(
+                                    'Répondre',
+                                    style: TextStyle(
+                                      fontSize: isReply ? 11 : 12,
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (!isReply && replies.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  ...replies.map((r) => buildCommentItem(r, isReply: true)),
+                ],
+              ],
+            ),
+          );
+        }
+        
         return DraggableScrollableSheet(
           initialChildSize: 0.7, maxChildSize: 0.95, minChildSize: 0.3,
           builder: (_, sc) => Container(
@@ -2160,27 +2397,65 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               const SizedBox(height: 12),
               Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
               const SizedBox(height: 8),
-              const Text('Commentaires', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('Commentaires (${comments.length})', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const Divider(),
               Expanded(child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : comments.isEmpty
                   ? const Center(child: Text('Aucun commentaire.'))
-                  : ListView.builder(controller: sc, itemCount: comments.length, itemBuilder: (_, i) => _buildCommentItem(comments[i]))),
+                  : ListView.builder(
+                      controller: sc,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: comments.length,
+                      itemBuilder: (_, i) => buildCommentItem(comments[i]),
+                    )),
+              // Reply indicator
+              if (replyingToName != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: Colors.grey[100],
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Répondre à $replyingToName',
+                          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => ms(() { replyingToId = null; replyingToName = null; }),
+                        child: const Icon(Icons.close, size: 18, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+              // Input area
               Padding(
                 padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 8, left: 12, right: 12, top: 8),
                 child: Row(children: [
-                  Expanded(child: TextField(controller: ctrl, decoration: InputDecoration(hintText: 'Ajouter un commentaire...', border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8)))),
+                  Expanded(child: TextField(
+                    controller: ctrl,
+                    decoration: InputDecoration(
+                      hintText: replyingToName != null ? 'Écrire une réponse...' : 'Écrire un commentaire...',
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                  )),
                   const SizedBox(width: 8),
-                  IconButton(icon: const Icon(Icons.send, color: Color(0xFF3AAE5E)), onPressed: () async {
-                    final text = ctrl.text.trim(); if (text.isEmpty) return;
-                    try {
-                      final res = await ApiClient().authenticatedPost('/$s/$id/comments', body: {'body': text});
-                      final nc = res['data'] as Map<String, dynamic>?;
-                      if (nc != null) { ms(() => comments.insert(0, nc)); setState(() => _getReaction(s, id).commentsCount++); }
-                      ctrl.clear(); FocusScope.of(ctx).unfocus();
-                    } catch (e) { if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Erreur: $e'))); }
-                  }),
+                  GestureDetector(
+                    onTap: submitComment,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF3AAE5E),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.send, color: Colors.white, size: 20),
+                    ),
+                  ),
                 ]),
               ),
             ]),

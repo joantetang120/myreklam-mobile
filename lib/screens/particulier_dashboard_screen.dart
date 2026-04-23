@@ -3508,6 +3508,16 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     return 0;
   }
 
+  /// Like _asInt but returns null instead of 0 for null/invalid values
+  int? _tryAsInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) {
+      return int.tryParse(value);
+    }
+    return null;
+  }
+
   String _stripHtml(String text) {
     final exp = RegExp(r'<[^>]*>', multiLine: true, caseSensitive: false);
     return text.replaceAll(exp, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -5548,7 +5558,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       if (!mounted) return;
       final acceptMessages = data['accept_messages'] == true;
 
-      final result = await Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => ProPostDetailScreen(
@@ -5583,10 +5593,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             shippingCost: shippingCost,
             availableLocationType: availableLocationType,
             conditions: conditions,
+            commentsCount: _tryAsInt(data['comments_count']),
           ),
         ),
       );
-      if (result == 'deleted' && mounted) _loadUnifiedFeed(reset: true);
+      // Refresh feed when returning from detail (to update comment counts, etc.)
+      if (mounted) _loadUnifiedFeed();
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context); // dismiss loading
@@ -5772,7 +5784,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           'assets/images/dashboard_particulier/Rectangle 13.png';
 
       // Navigate to detail screen
-      final result = await Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => JobDetailScreen(
@@ -5811,10 +5823,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             jobOfferData: data,
             acceptMessages: acceptMessages,
             authorData: user,
+            commentsCount: _tryAsInt(data['comments_count']),
           ),
         ),
       );
-      if (result == 'deleted' && mounted) _loadUnifiedFeed(reset: true);
+      // Refresh feed when returning from detail (to update comment counts, etc.)
+      if (mounted) _loadUnifiedFeed();
     } catch (e) {
       Navigator.pop(context); // Dismiss loading
       debugPrint('Error fetching job offer detail: $e');
@@ -5936,7 +5950,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       // Extract user data for owner card
       final userData = data['user'] as Map<String, dynamic>?;
 
-      final result = await Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => TrainingDetailScreen(
@@ -5976,10 +5990,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             trainingData: data,
             returnToListingOnEdit: false,
             authorData: userData,
+            commentsCount: _tryAsInt(data['comments_count']),
           ),
         ),
       );
-      if (result == 'deleted' && mounted) _loadUnifiedFeed(reset: true);
+      // Refresh feed when returning from detail (to update comment counts, etc.)
+      if (mounted) _loadUnifiedFeed();
     } catch (e) {
       Navigator.pop(context);
       debugPrint('Error fetching training detail: $e');
@@ -6091,7 +6107,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           currentUserId != null &&
           eventUserId == currentUserId;
 
-      final result = await Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => EventDetailScreen(
@@ -6134,10 +6150,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             eventData: data,
             returnToListingOnEdit: false,
             authorData: user,
+            commentsCount: _tryAsInt(data['comments_count']),
           ),
         ),
       );
-      if (result == 'deleted' && mounted) _loadUnifiedFeed(reset: true);
+      // Refresh feed when returning from detail (to update comment counts, etc.)
+      if (mounted) _loadUnifiedFeed();
     } catch (e) {
       Navigator.pop(context);
       debugPrint('Error fetching event detail: $e');
@@ -6233,7 +6251,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           currentUserId != null &&
           demandeUserId == currentUserId;
 
-      final result = await Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => DemandeDetailScreen(
@@ -6257,10 +6275,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             demandeId: demandeId,
             demandeData: data,
             userType: userType,
+            commentsCount: _tryAsInt(data['comments_count']),
           ),
         ),
       );
-      if (result == 'deleted' && mounted) _loadUnifiedFeed(reset: true);
+      // Refresh feed when returning from detail (to update comment counts, etc.)
+      if (mounted) _loadUnifiedFeed();
     } catch (e) {
       Navigator.pop(context);
       debugPrint('Error fetching demande detail: $e');
