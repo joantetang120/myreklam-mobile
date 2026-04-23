@@ -12,6 +12,7 @@ import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/models/story_model.dart';
 import 'package:myreklam/models/chat_conversation.dart';
 import 'package:myreklam/services/story_store.dart';
+import 'package:myreklam/services/story_service.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/providers/conversation_provider.dart';
@@ -40,6 +41,11 @@ class _MessageScreenState extends State<MessageScreen> {
   bool _isLoading = true;
   String _searchQuery = '';
 
+  // Track which users' stories have been fully viewed
+  Set<int> _fullyViewedUserIds = {};
+  // Track if user has viewed their own stories (opened the story viewer)
+  bool _hasViewedOwnStories = false;
+
   String _buildAvatarUrl(String? avatarUrl) {
     if (avatarUrl == null || avatarUrl.isEmpty) return '';
     if (avatarUrl.startsWith('http')) return avatarUrl;
@@ -53,6 +59,7 @@ class _MessageScreenState extends State<MessageScreen> {
     super.initState();
     _loadCurrentUser();
     _storyStore.loadFeed();
+    _loadViewedStatus();
 
     // Écouter les mises à jour du ConversationProvider
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -252,6 +259,7 @@ class _MessageScreenState extends State<MessageScreen> {
       'assets/images/dashboard_particulier/Ellipse 10.png';
 
   void _openStory(BuildContext context, StoryUserGroup group) {
+    debugPrint('Opening story for user ${group.userId}, isOwn: ${group.isOwn}');
     final storyMaps = group.stories.map((s) {
       final resolvedImage = ApiConfig.resolveMediaUrl(s.mediaUrl);
       final diff = DateTime.now().difference(s.timestamp);
@@ -287,7 +295,35 @@ class _MessageScreenState extends State<MessageScreen> {
           ownerId: group.userId,
         ),
       ),
-    );
+    ).then((_) {
+      // Reload viewed status after watching stories
+      debugPrint('Story viewer closed, reloading viewed status...');
+
+      // If it was own story, mark as viewed locally
+      if (group.isOwn) {
+        debugPrint('Own story viewed, marking as viewed locally');
+        setState(() {
+          _hasViewedOwnStories = true;
+        });
+      }
+
+      _loadViewedStatus();
+    });
+  }
+
+  Future<void> _loadViewedStatus() async {
+    try {
+      debugPrint('Loading viewed status...');
+      final viewedIds = await StoryService().getFullyViewedUserIds();
+      debugPrint('Fully viewed user IDs: $viewedIds');
+      if (mounted) {
+        setState(() {
+          _fullyViewedUserIds = viewedIds.toSet();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading viewed status: $e');
+    }
   }
 
   @override
@@ -367,12 +403,36 @@ class _MessageScreenState extends State<MessageScreen> {
                       final ownGroup = feedGroups
                           .where((g) => g.isOwn)
                           .toList();
+
+                      // Separate viewed and unviewed groups
                       final otherGroups = feedGroups
                           .where((g) => !g.isOwn)
                           .toList();
+
+                      final unviewedGroups = otherGroups
+                          .where((g) => !_fullyViewedUserIds.contains(g.userId))
+                          .toList();
+                      final viewedGroups = otherGroups
+                          .where((g) => _fullyViewedUserIds.contains(g.userId))
+                          .toList();
+
+                      // Combine: unviewed first, then viewed (WhatsApp-like behavior)
+                      final sortedOtherGroups = [
+                        ...unviewedGroups,
+                        ...viewedGroups,
+                      ];
+
                       final hasOwnStories =
                           ownGroup.isNotEmpty &&
                           ownGroup.first.stories.isNotEmpty;
+
+                      // Check if current user's own stories have been fully viewed
+                      // For own stories, we track locally since backend doesn't record own views
+                      final currentUserId = _currentUserId;
+                      final ownStoriesViewed =
+                          currentUserId != null &&
+                          (_fullyViewedUserIds.contains(currentUserId) ||
+                              _hasViewedOwnStories);
 
                       return SizedBox(
                         width: MediaQuery.of(context).size.width,
@@ -395,10 +455,18 @@ class _MessageScreenState extends State<MessageScreen> {
                                           ),
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            color: const Color(0xFFE6F7EF),
+                                            color:
+                                                hasOwnStories &&
+                                                    !ownStoriesViewed
+                                                ? const Color(0xFFE6F7EF)
+                                                : Colors.grey.shade200,
                                             border: Border.all(
-                                              color: const Color(0xFF3AAE5E),
-                                              width: hasOwnStories ? 2.5 : 1,
+                                              color:
+                                                  hasOwnStories &&
+                                                      !ownStoriesViewed
+                                                  ? const Color(0xFF3AAE5E)
+                                                  : Colors.grey.shade400,
+                                              width: hasOwnStories ? 2.5 : 1.5,
                                             ),
                                           ),
                                           child: hasOwnStories
@@ -475,13 +543,16 @@ class _MessageScreenState extends State<MessageScreen> {
                             ),
                             const SizedBox(width: 12),
                             // Other users' stories from API feed
-                            ...otherGroups.map(
+                            ...sortedOtherGroups.map(
                               (group) => Padding(
                                 padding: const EdgeInsets.only(left: 12),
                                 child: AvatarsStory(
                                   name: group.userName.split(' ').first,
                                   imageName: group.userAvatar ?? _defaultAvatar,
                                   onTap: () => _openStory(context, group),
+                                  isViewed: _fullyViewedUserIds.contains(
+                                    group.userId,
+                                  ),
                                 ),
                               ),
                             ),
