@@ -5,12 +5,14 @@ class AvatarsStory extends StatelessWidget {
   final String name;
   final String imageName;
   final VoidCallback? onTap;
+  final bool isViewed;
 
   const AvatarsStory({
     super.key,
     required this.name,
     required this.imageName,
     this.onTap,
+    this.isViewed = false,
   });
 
   ImageProvider _getImageProvider() {
@@ -43,8 +45,13 @@ class AvatarsStory extends StatelessWidget {
             padding: EdgeInsets.all(0.5),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFFE6F7EF),
-              border: Border.all(color: Color(0xFF3AAE5E)),
+              color: isViewed ? Colors.grey.shade200 : const Color(0xFFE6F7EF),
+              border: Border.all(
+                color: isViewed
+                    ? Colors.grey.shade400
+                    : const Color(0xFF3AAE5E),
+                width: isViewed ? 1.5 : 2,
+              ),
             ),
             child: Padding(
               padding: EdgeInsets.all(4),
