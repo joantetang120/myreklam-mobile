@@ -20,12 +20,17 @@ import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:myreklam/widgets/custom_bottom_bar.dart' show CustomBottomBar;
 
 class _ReactionData {
   int likesCount;
   int commentsCount;
   String? userReaction;
-  _ReactionData({this.likesCount = 0, this.commentsCount = 0, this.userReaction});
+  _ReactionData({
+    this.likesCount = 0,
+    this.commentsCount = 0,
+    this.userReaction,
+  });
 }
 
 class TrainingDetailScreen extends StatefulWidget {
@@ -178,17 +183,19 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Future<void> _fetchComments() async {
     if (widget.trainingId == null) return;
-    
+
     setState(() => _isLoadingComments = true);
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/comments?per_page=50'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/trainings/${widget.trainingId}/comments?per_page=50',
+        ),
         headers: {
           'Authorization': 'Bearer ${await TokenStorage.getAccessToken()}',
           'Accept': 'application/json',
         },
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         List<Map<String, dynamic>> fetched = [];
@@ -211,7 +218,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Future<void> _fetchLikes() async {
     if (widget.trainingId == null) return;
-    
+
     try {
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}'),
@@ -220,7 +227,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           'Accept': 'application/json',
         },
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
@@ -239,7 +246,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     setState(() => _isLoadingSimilar = true);
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/similar?limit=3'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/trainings/${widget.trainingId}/similar?limit=3',
+        ),
         headers: {
           'Authorization': 'Bearer ${await TokenStorage.getAccessToken()}',
           'Accept': 'application/json',
@@ -263,7 +272,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Future<void> _toggleLike() async {
     if (widget.trainingId == null) return;
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) {
@@ -272,9 +281,11 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         );
         return;
       }
-      
+
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/reactions'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/trainings/${widget.trainingId}/reactions',
+        ),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -282,13 +293,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         },
         body: jsonEncode({'type': 'like'}),
       );
-      
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         setState(() {
           _isLiked = data['data']?['user_has_liked'] ?? !_isLiked;
-          _likesCount = data['data']?['likes_count'] ?? 
-            (_isLiked ? _likesCount + 1 : _likesCount - 1);
+          _likesCount =
+              data['data']?['likes_count'] ??
+              (_isLiked ? _likesCount + 1 : _likesCount - 1);
         });
       }
     } catch (e) {
@@ -298,14 +310,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Future<void> _checkFollowStatus() async {
     if (widget.isOwner || widget.authorData == null) return;
-    
+
     final authorId = widget.authorData!['id']?.toString();
     if (authorId == null) return;
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) return;
-      
+
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/profile/$authorId'),
         headers: {
@@ -313,7 +325,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           'Accept': 'application/json',
         },
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['is_following'] == true) {
@@ -327,12 +339,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Future<void> _toggleFollow() async {
     if (widget.isOwner || widget.authorData == null) return;
-    
+
     final authorId = widget.authorData!['id']?.toString();
     if (authorId == null) return;
-    
+
     setState(() => _isLoadingFollow = true);
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) {
@@ -341,7 +353,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         );
         return;
       }
-      
+
       if (_isFollowing) {
         // Unfollow
         final response = await http.delete(
@@ -351,11 +363,13 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             'Accept': 'application/json',
           },
         );
-        
+
         if (response.statusCode == 200) {
           setState(() => _isFollowing = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Vous ne suivez plus cet utilisateur')),
+            const SnackBar(
+              content: Text('Vous ne suivez plus cet utilisateur'),
+            ),
           );
         }
       } else {
@@ -367,18 +381,20 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             'Accept': 'application/json',
           },
         );
-        
+
         if (response.statusCode == 200) {
           setState(() => _isFollowing = true);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Vous suivez maintenant cet utilisateur')),
+            const SnackBar(
+              content: Text('Vous suivez maintenant cet utilisateur'),
+            ),
           );
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     } finally {
       setState(() => _isLoadingFollow = false);
     }
@@ -386,19 +402,21 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Future<void> _checkSubscriptionStatus() async {
     if (widget.isOwner || widget.trainingId == null) return;
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) return;
-      
+
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/subscription'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/trainings/${widget.trainingId}/subscription',
+        ),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['data']?['is_subscribed'] == true) {
@@ -412,9 +430,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Future<void> _subscribe() async {
     if (widget.isOwner || widget.trainingId == null) return;
-    
+
     setState(() => _isLoadingSubscription = true);
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) {
@@ -423,16 +441,18 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         );
         return;
       }
-      
+
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/subscribe'),
+        Uri.parse(
+          '${ApiConfig.baseUrl}/trainings/${widget.trainingId}/subscribe',
+        ),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
       );
-      
+
       if (response.statusCode == 201) {
         setState(() => _isSubscribed = true);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -441,7 +461,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             backgroundColor: Color(0xFF3AAE5E),
           ),
         );
-        
+
         // Award 1 My for subscribing to training and show modal
         try {
           final mysResponse = await MysEarningService().awardMys(
@@ -472,9 +492,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         throw Exception('Erreur ${response.statusCode}');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     } finally {
       setState(() => _isLoadingSubscription = false);
     }
@@ -483,16 +503,20 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   void _showSubscriptionDialog() {
     if (widget.trainingId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible de s\'inscrire à cette formation')),
+        const SnackBar(
+          content: Text('Impossible de s\'inscrire à cette formation'),
+        ),
       );
       return;
     }
-    
+
     showDialog(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             'Confirmer l\'inscription',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -541,7 +565,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   ? const SizedBox(
                       height: 18,
                       width: 18,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
                     )
                   : const Text('Confirmer'),
             ),
@@ -553,11 +580,11 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Future<void> _checkFavoriteStatus() async {
     if (widget.trainingId == null) return;
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) return;
-      
+
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}'),
         headers: {
@@ -565,7 +592,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           'Accept': 'application/json',
         },
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['data']?['is_favorited'] == true) {
@@ -579,9 +606,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   Future<void> _toggleFavorite() async {
     if (widget.trainingId == null) return;
-    
+
     setState(() => _isLoadingFavorite = true);
-    
+
     try {
       final token = await TokenStorage.getAccessToken();
       if (token == null) {
@@ -590,52 +617,56 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         );
         return;
       }
-      
+
       if (_isFavorite) {
         // Unfavorite
         debugPrint('=== REMOVE FAVORITE ===');
         debugPrint('trainingId: ${widget.trainingId}');
         final response = await http.delete(
-          Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/favorite'),
+          Uri.parse(
+            '${ApiConfig.baseUrl}/trainings/${widget.trainingId}/favorite',
+          ),
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
           },
         );
         debugPrint('Response status: ${response.statusCode}');
-        
+
         if (response.statusCode == 200 || response.statusCode == 204) {
           setState(() => _isFavorite = false);
           debugPrint('Removed from favorites');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Retiré des favoris')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Retiré des favoris')));
         }
       } else {
         // Favorite
         debugPrint('=== ADD FAVORITE ===');
         debugPrint('trainingId: ${widget.trainingId}');
         final response = await http.post(
-          Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/favorite'),
+          Uri.parse(
+            '${ApiConfig.baseUrl}/trainings/${widget.trainingId}/favorite',
+          ),
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
           },
         );
         debugPrint('Response status: ${response.statusCode}');
-        
+
         if (response.statusCode == 200 || response.statusCode == 201) {
           setState(() => _isFavorite = true);
           debugPrint('Added to favorites');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ajouté aux favoris')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Ajouté aux favoris')));
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     } finally {
       setState(() => _isLoadingFavorite = false);
     }
@@ -646,19 +677,20 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     if (widget.authorData != null) {
       final user = widget.authorData!;
       String? rawUrl;
-      
+
       if (user['particulier_profile'] != null) {
         rawUrl = user['particulier_profile']['avatar_url']?.toString();
       } else if (user['pro_profile'] != null) {
-        rawUrl = user['pro_profile']['avatar_url']?.toString() ?? 
-                 user['pro_profile']['logo_url']?.toString();
+        rawUrl =
+            user['pro_profile']['avatar_url']?.toString() ??
+            user['pro_profile']['logo_url']?.toString();
       }
-      
+
       if (rawUrl != null && rawUrl.isNotEmpty) {
         return ApiConfig.resolveMediaUrl(rawUrl);
       }
     }
-    
+
     // Fall back to companyLogo parameter
     if (widget.companyLogo.startsWith('http')) {
       return widget.companyLogo;
@@ -670,13 +702,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     if (widget.authorData != null) {
       final user = widget.authorData!;
       final proProfile = user['pro_profile'] as Map<String, dynamic>?;
-      final particulierProfile = user['particulier_profile'] as Map<String, dynamic>?;
-      
+      final particulierProfile =
+          user['particulier_profile'] as Map<String, dynamic>?;
+
       // Try pro profile first
       if (proProfile != null) {
         final companyName = proProfile['company_name']?.toString();
         if (companyName != null && companyName.isNotEmpty) return companyName;
-        
+
         final firstName = proProfile['first_name']?.toString() ?? '';
         final lastName = proProfile['last_name']?.toString() ?? '';
         final fullName = '$firstName $lastName'.trim();
@@ -686,7 +719,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       if (particulierProfile != null) {
         final pseudo = particulierProfile['pseudo']?.toString();
         if (pseudo != null && pseudo.isNotEmpty) return pseudo;
-        
+
         final firstName = particulierProfile['first_name']?.toString() ?? '';
         final lastName = particulierProfile['last_name']?.toString() ?? '';
         final fullName = '$firstName $lastName'.trim();
@@ -695,7 +728,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       // Fallback to user name/email
       final name = user['name']?.toString();
       if (name != null && name.isNotEmpty) return name;
-      
+
       final email = user['email']?.toString();
       if (email != null && email.isNotEmpty) return email.split('@').first;
     }
@@ -709,6 +742,265 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       if (accountType == 'particulier') return 'Particulier';
     }
     return 'Pro';
+  }
+
+  String _buildTimeAgo(String? isoDate) {
+    if (isoDate == null) return '';
+    try {
+      final created = DateTime.parse(isoDate).toLocal();
+      final diff = DateTime.now().difference(created);
+      if (diff.inMinutes < 1) return "à l'instant";
+      if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes} min';
+      if (diff.inHours < 24) return 'il y a ${diff.inHours} h';
+      if (diff.inDays < 7) return 'il y a ${diff.inDays} j';
+      final weeks = (diff.inDays / 7).floor();
+      if (weeks < 4) return 'il y a $weeks sem';
+      final months = (diff.inDays / 30).floor();
+      return 'il y a $months mois';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _stripHtml(String text) {
+    final exp = RegExp(r'<[^>]*>', multiLine: true, caseSensitive: false);
+    return text.replaceAll(exp, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  String? _buildStorageUrl(String? url) {
+    if (url == null || url.isEmpty) return null;
+    // Handle already complete URLs (both http:// and https://)
+    if (url.toLowerCase().startsWith('http://') ||
+        url.toLowerCase().startsWith('https://')) {
+      return url;
+    }
+    // Handle URLs that might incorrectly start with /storage/ followed by http
+    if (url.startsWith('/storage/http')) {
+      // Extract the actual URL after /storage/
+      final actualUrl = url.substring(9); // Remove '/storage/'
+      if (actualUrl.toLowerCase().startsWith('http://') ||
+          actualUrl.toLowerCase().startsWith('https://')) {
+        return actualUrl;
+      }
+    }
+    final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+    // Remove leading slash if present to avoid double slashes
+    final cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    return '$serverBase/storage/$cleanUrl';
+  }
+
+  /// Like _asInt but returns null instead of 0 for null/invalid values
+  int? _tryAsInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) {
+      return int.tryParse(value);
+    }
+    return null;
+  }
+
+  String? _currentUserId;
+
+  Future<String?> _getCurrentUserId({bool forceRefresh = false}) async {
+    if (!forceRefresh && _currentUserId != null) {
+      return _currentUserId;
+    }
+    try {
+      final response = await ApiClient().authenticatedGet('/profile/me');
+      final data = response['user'] as Map<String, dynamic>?;
+      final id = data?['id']?.toString();
+
+      // Sync mys and parrainage_code to UserSession
+      if (data != null) {
+        final mys = data['mys'];
+        final parrainageCode = data['parrainage_code'];
+        if (mys != null) {
+          UserSession().updateMys(mys);
+        }
+        if (parrainageCode != null) {
+          UserSession().updateParrainageCode(parrainageCode);
+        }
+      }
+
+      if (mounted) {
+        setState(() => _currentUserId = id);
+      } else {
+        _currentUserId = id;
+      }
+
+      // Refresh bottom bar avatar when user data is fetched
+      CustomBottomBar.refreshAvatarNotifier.value = true;
+
+      return id;
+    } catch (e) {
+      debugPrint('Error fetching current user ID: $e');
+      return _currentUserId;
+    }
+  }
+
+  Future<void> _navigateToTrainingDetail(Map<String, dynamic> tr) async {
+    final trainingId = tr['id']?.toString();
+    if (trainingId == null || trainingId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir cette formation')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedGet(
+        '/trainings/$trainingId',
+      );
+      Navigator.pop(context);
+
+      final data = response['data'] as Map<String, dynamic>? ?? response;
+
+      final title = data['title']?.toString() ?? '';
+      final description = _stripHtml(data['description']?.toString() ?? '');
+      final descriptionDelta = data['description_delta'];
+      final companyName =
+          data['company_name']?.toString() ??
+          data['provider_name']?.toString() ??
+          'Organisme';
+      final website = data['website']?.toString();
+      final trainingType = data['training_type']?.toString();
+      final trainingCategory = data['training_category']?.toString();
+      final trainingSubCategory = data['training_sub_category']?.toString();
+      final trainingStyleRaw = data['training_style'];
+      final trainingStyle = trainingStyleRaw is List
+          ? trainingStyleRaw.map((e) => e.toString()).toList()
+          : <String>[];
+      final trainingPublicRaw = data['training_public'];
+      final trainingPublic = trainingPublicRaw is List
+          ? trainingPublicRaw.map((e) => e.toString()).toList()
+          : <String>[];
+      final requiredLevelsRaw = data['required_levels'];
+      final requiredLevels = requiredLevelsRaw is List
+          ? requiredLevelsRaw.map((e) => e.toString()).toList()
+          : <String>[];
+      final price = data['price']?.toString();
+      final priceType = data['price_type']?.toString();
+      final publicType = data['public_type']?.toString();
+      final tempo = data['tempo']?.toString();
+      final trainingFundingRaw = data['training_funding'];
+      final trainingFunding = trainingFundingRaw is List
+          ? trainingFundingRaw.map((e) => e.toString()).toList()
+          : <String>[];
+      final durationInH = data['duration_in_h'] is int
+          ? data['duration_in_h'] as int
+          : int.tryParse(data['duration_in_h']?.toString() ?? '');
+      final durationUnit = data['duration_unit']?.toString();
+      final startDate = data['start_date']?.toString();
+      final endDate = data['end_date']?.toString();
+      final dateToDefine = data['date_to_define'] == true;
+      final addressCity = data['address_city']?.toString();
+      final addressZipcode = data['address_zipcode']?.toString();
+      final addressLine1 = data['address_line1']?.toString();
+      final showLocation = data['show_location'] == true;
+      final certificationRaw = data['certification'];
+      final certification = certificationRaw is List
+          ? certificationRaw.map((e) => e.toString()).toList()
+          : <String>[];
+      final documentFilesRaw = data['document_files'] as List? ?? [];
+      final documents = documentFilesRaw
+          .where((d) => d is Map)
+          .map((d) => Map<String, dynamic>.from(d as Map))
+          .toList();
+      final createdAt = data['created_at']?.toString();
+      final mediaFiles =
+          data['media_files'] as List? ?? data['media'] as List? ?? [];
+
+      final images = mediaFiles
+          .where((m) => m is Map && m['url'] != null)
+          .map((m) => _buildStorageUrl(m['url']?.toString()) ?? '')
+          .where((url) => url.isNotEmpty)
+          .toList();
+
+      final tags = <FormationTag>[
+        if (trainingCategory != null && trainingCategory.isNotEmpty)
+          FormationTag(icon: Icons.category_outlined, text: trainingCategory),
+        if (trainingSubCategory != null && trainingSubCategory.isNotEmpty)
+          FormationTag(
+            icon: Icons.subdirectory_arrow_right,
+            text: trainingSubCategory,
+          ),
+        if (trainingType != null && trainingType.isNotEmpty)
+          FormationTag(icon: Icons.school_outlined, text: trainingType),
+        if (durationInH != null)
+          FormationTag(icon: Icons.timer_outlined, text: '$durationInH h'),
+        if (price != null)
+          FormationTag(icon: Icons.euro, text: '$price €', isSpecial: true),
+      ];
+
+      // Check ownership
+      final trainingUserId =
+          tr['user_id']?.toString() ?? data['user_id']?.toString();
+      final currentUserId = await _getCurrentUserId();
+      final isOwner =
+          trainingUserId != null &&
+          currentUserId != null &&
+          trainingUserId == currentUserId;
+
+      // Extract user data for owner card
+      final userData = data['user'] as Map<String, dynamic>?;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TrainingDetailScreen(
+            images: images,
+            companyLogo: 'assets/images/Formation.png',
+            companyName: companyName,
+            trainingTitle: title,
+            description: description,
+            descriptionDelta: descriptionDelta,
+            tags: tags,
+            timeAgo: createdAt != null ? _buildTimeAgo(createdAt) : '',
+            website: website,
+            trainingType: trainingType,
+            trainingCategory: trainingCategory,
+            trainingSubCategory: trainingSubCategory,
+            trainingStyle: trainingStyle,
+            trainingPublic: trainingPublic,
+            requiredLevels: requiredLevels,
+            price: price,
+            priceType: priceType,
+            publicType: publicType,
+            tempo: tempo,
+            trainingFunding: trainingFunding,
+            durationInH: durationInH,
+            durationUnit: durationUnit,
+            startDate: startDate,
+            endDate: endDate,
+            dateToDefine: dateToDefine,
+            addressCity: addressCity,
+            addressZipcode: addressZipcode,
+            addressLine1: addressLine1,
+            showLocation: showLocation,
+            certification: certification,
+            documents: documents,
+            isOwner: isOwner,
+            trainingId: trainingId,
+            trainingData: data,
+            returnToListingOnEdit: false,
+            authorData: userData,
+            commentsCount: _tryAsInt(data['comments_count']),
+          ),
+        ),
+      );
+    } catch (e) {
+      Navigator.pop(context);
+      debugPrint('Error fetching training detail: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du chargement: ${e.toString()}')),
+      );
+    }
   }
 
   @override
@@ -736,7 +1028,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Detail de la formation',
+          'Details de la formation',
           style: TextStyle(
             color: Color(0xFF616161),
             fontFamily: 'Manjari',
@@ -749,9 +1041,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Color(0xFF616161), size: 24),
+                icon: const Icon(
+                  Icons.more_vert,
+                  color: Color(0xFF616161),
+                  size: 24,
+                ),
                 offset: const Offset(0, 45),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 onSelected: (value) {
                   if (value == 'edit') {
                     Navigator.push(
@@ -760,7 +1058,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         builder: (_) => CreerFormationScreen(
                           trainingId: widget.trainingId,
                           initialData: widget.trainingData,
-                          shouldReturnToListingOnSuccess: widget.returnToListingOnEdit,
+                          shouldReturnToListingOnSuccess:
+                              widget.returnToListingOnEdit,
                         ),
                       ),
                     );
@@ -773,7 +1072,11 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, size: 20, color: Color(0xFF616161)),
+                        Icon(
+                          Icons.edit_outlined,
+                          size: 20,
+                          color: Color(0xFF616161),
+                        ),
                         SizedBox(width: 12),
                         Text('Modifier'),
                       ],
@@ -807,9 +1110,16 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: const Color(0xFFE6F7EF),
-                    border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
+                    border: Border.all(
+                      color: const Color(0xFF2A8143),
+                      width: 1.5,
+                    ),
                   ),
-                  child: const Icon(Icons.notifications, color: Color(0xFF2A8143), size: 18),
+                  child: const Icon(
+                    Icons.notifications,
+                    color: Color(0xFF2A8143),
+                    size: 18,
+                  ),
                 ),
               ),
             ),
@@ -820,8 +1130,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Image Carousel - full width
-            if (widget.images.isNotEmpty)
-              ImageCarousel(images: widget.images),
+            if (widget.images.isNotEmpty) ImageCarousel(images: widget.images),
 
             // 2. Main content section - no card, edge to edge
             Padding(
@@ -830,7 +1139,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Category tags
-                  if (widget.trainingCategory != null || widget.trainingType != null)
+                  if (widget.trainingCategory != null ||
+                      widget.trainingType != null)
                     Wrap(
                       spacing: 8,
                       runSpacing: 6,
@@ -849,7 +1159,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           ),
                       ],
                     ),
-                  if (widget.trainingCategory != null || widget.trainingType != null)
+                  if (widget.trainingCategory != null ||
+                      widget.trainingType != null)
                     const SizedBox(height: 12),
 
                   // Title - big and bold
@@ -939,7 +1250,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       iconColor: Colors.orange,
                       bgColor: Colors.orange.withOpacity(0.1),
                       label: 'Type d\'enseignement',
-                      value: widget.trainingStyle.map(_formatEnumLabel).join(', '),
+                      value: widget.trainingStyle
+                          .map(_formatEnumLabel)
+                          .join(', '),
                     ),
                   if (widget.trainingStyle.isNotEmpty)
                     const SizedBox(height: 12),
@@ -950,7 +1263,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       iconColor: Colors.teal,
                       bgColor: Colors.teal.withOpacity(0.1),
                       label: 'Public cible',
-                      value: widget.trainingPublic.map(_formatEnumLabel).join(', '),
+                      value: widget.trainingPublic
+                          .map(_formatEnumLabel)
+                          .join(', '),
                     ),
                   if (widget.trainingPublic.isNotEmpty)
                     const SizedBox(height: 12),
@@ -972,12 +1287,13 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       iconColor: const Color(0xFF3AAE5E),
                       bgColor: const Color(0xFFE6F7EF),
                       label: 'Durée',
-                      value: '${widget.durationInH} ${_durationUnitLabel(widget.durationUnit)}',
+                      value:
+                          '${widget.durationInH} ${_durationUnitLabel(widget.durationUnit)}',
                     ),
-                  if (widget.durationInH != null)
-                    const SizedBox(height: 12),
+                  if (widget.durationInH != null) const SizedBox(height: 12),
                   // 5. Dates
-                  if (!widget.dateToDefine && (widget.startDate != null || widget.endDate != null))
+                  if (!widget.dateToDefine &&
+                      (widget.startDate != null || widget.endDate != null))
                     _buildDetailItem(
                       icon: Icons.calendar_today_outlined,
                       iconColor: Colors.blue,
@@ -993,7 +1309,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       label: 'Dates',
                       value: 'À définir',
                     ),
-                  if (widget.startDate != null || widget.endDate != null || widget.dateToDefine)
+                  if (widget.startDate != null ||
+                      widget.endDate != null ||
+                      widget.dateToDefine)
                     const SizedBox(height: 12),
                   // 6. Certifications
                   if (widget.certification.isNotEmpty)
@@ -1053,8 +1371,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   ),
                 ),
               ),
-            if (widget.documents.isNotEmpty)
-              const SizedBox(height: 16),
+            if (widget.documents.isNotEmpty) const SizedBox(height: 16),
 
             // 5. Apply buttons - full width
             Padding(
@@ -1069,7 +1386,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                             ? null
                             : () => _showSubscriptionDialog(),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _isSubscribed ? Colors.grey : const Color(0xFFFF9800),
+                          backgroundColor: _isSubscribed
+                              ? Colors.grey
+                              : const Color(0xFFFF9800),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
@@ -1081,14 +1400,24 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                             ? const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.check_circle, color: Colors.white, size: 18),
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
                                   SizedBox(width: 6),
-                                  Text('Inscrit', style: TextStyle(fontSize: 14)),
+                                  Text(
+                                    'Inscrit',
+                                    style: TextStyle(fontSize: 14),
+                                  ),
                                 ],
                               )
                             : const Text(
                                 "S'inscrire",
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                       ),
                     ),
@@ -1097,7 +1426,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   Expanded(
                     flex: 2,
                     child: OutlinedButton.icon(
-                      onPressed: widget.website != null && widget.website!.isNotEmpty
+                      onPressed:
+                          widget.website != null && widget.website!.isNotEmpty
                           ? () => _openWebsite(context)
                           : null,
                       icon: const Icon(Icons.language, size: 18),
@@ -1119,7 +1449,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
             // 6. Action buttons row (Favoris - Share button commented out)
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 // Favoris button
                 Column(
@@ -1134,8 +1464,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : Icon(
-                              _isFavorite ? Icons.favorite : Icons.favorite_outline,
-                              color: _isFavorite ? Colors.red : Colors.grey[600],
+                              _isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_outline,
+                              color: _isFavorite
+                                  ? Colors.red
+                                  : Colors.grey[600],
                               size: 24,
                             ),
                     ),
@@ -1175,19 +1509,28 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 children: [
                   // Avatar
                   GestureDetector(
-                    onTap: widget.authorData != null ? () => _navigateToUserProfile(context) : null,
+                    onTap: widget.authorData != null
+                        ? () => _navigateToUserProfile(context)
+                        : null,
                     child: CircleAvatar(
                       radius: 24,
-                      backgroundImage: (_resolveAvatarUrl() ?? '').startsWith('http')
+                      backgroundImage:
+                          (_resolveAvatarUrl() ?? '').startsWith('http')
                           ? NetworkImage(_resolveAvatarUrl()!)
-                          : AssetImage(_resolveAvatarUrl() ?? 'assets/images/Formation.png') as ImageProvider,
+                          : AssetImage(
+                                  _resolveAvatarUrl() ??
+                                      'assets/images/Formation.png',
+                                )
+                                as ImageProvider,
                     ),
                   ),
                   const SizedBox(width: 12),
                   // Name and user type
                   Expanded(
                     child: GestureDetector(
-                      onTap: widget.authorData != null ? () => _navigateToUserProfile(context) : null,
+                      onTap: widget.authorData != null
+                          ? () => _navigateToUserProfile(context)
+                          : null,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1224,7 +1567,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                               foregroundColor: _isFollowing
                                   ? Colors.grey[600]
                                   : const Color(0xFF3AAE5E),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
                                 side: BorderSide(
@@ -1236,7 +1582,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                             ),
                             child: Text(
                               _isFollowing ? 'Suivis' : 'Suivre',
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                 ],
@@ -1249,16 +1597,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 widget.timeAgo.isNotEmpty ? widget.timeAgo : 'Posté récemment',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
               ),
             ),
             const SizedBox(height: 16),
 
             // 9. Localisation - no card
-            if (widget.showLocation && (widget.addressCity != null || widget.addressLine1 != null))
+            if (widget.showLocation &&
+                (widget.addressCity != null || widget.addressLine1 != null))
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
@@ -1294,7 +1640,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   ],
                 ),
               ),
-            if (widget.showLocation && (widget.addressCity != null || widget.addressLine1 != null))
+            if (widget.showLocation &&
+                (widget.addressCity != null || widget.addressLine1 != null))
               const SizedBox(height: 16),
 
             // 10. Comments Card
@@ -1335,10 +1682,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       const Spacer(),
                       Text(
                         '${_localCommentsCount ?? _comments.length}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                       ),
                     ],
                   ),
@@ -1350,7 +1694,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     )
-                  else if (_comments.isEmpty && (_localCommentsCount == null || _localCommentsCount == 0))
+                  else if (_comments.isEmpty &&
+                      (_localCommentsCount == null || _localCommentsCount == 0))
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -1400,7 +1745,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             if (_similarTrainings.isNotEmpty || _isLoadingSimilar) ...[
               const Center(
                 child: Text(
-                  'Autres formations similaires',
+                  'Autres formations qui pourraient vous intéresser',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -1410,11 +1755,11 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Container(
-                  height: 1,
-                  color: Colors.grey[300],
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
                 ),
+                child: Container(height: 1, color: Colors.grey[300]),
               ),
               const SizedBox(height: 16),
               // Similar formations cards
@@ -1428,54 +1773,375 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               else
                 Column(
                   children: _similarTrainings.map((training) {
-                      final mediaFiles = training['media_files'] as List? ?? [];
-                      final images = mediaFiles
-                          .where((m) => m is Map && m['url'] != null)
-                          .map((m) {
-                            final url = m['url']?.toString() ?? '';
-                            if (url.startsWith('http')) return url;
-                            final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
-                            return '$serverBase/storage/$url';
+                    final trainingId = training['id']?.toString() ?? '';
+                    final title = training['title']?.toString() ?? 'Formation';
+                    final description = _stripHtml(
+                      training['description']?.toString() ?? '',
+                    );
+                    final provider =
+                        training['provider_name']?.toString() ?? 'Organisme';
+                    final duration = training['duration_in_h'];
+                    final durationUnit = training['duration_unit']?.toString();
+                    final price = training['price'];
+                    final category =
+                        training['training_category']?.toString() ?? '';
+                    final subCategory =
+                        training['training_sub_category']?.toString() ?? '';
+                    final trainingType =
+                        training['training_type']?.toString() ?? '';
+
+                    final addressCity =
+                        training['address_city']?.toString() ?? '';
+
+                    // Helper to extract array values
+                    String _extractArrayValues(dynamic field) {
+                      if (field is List) {
+                        return field
+                            .map((item) {
+                              if (item is Map)
+                                return item['value']?.toString() ??
+                                    item['name']?.toString() ??
+                                    '';
+                              return item.toString();
+                            })
+                            .where((s) => s.isNotEmpty)
+                            .join(' · ');
+                      }
+                      return field?.toString() ?? '';
+                    }
+
+                    // Translation for training_style
+                    String _translateTrainingStyle(String value) {
+                      switch (value.trim()) {
+                        case 'Remote':
+                          return 'En ligne';
+                        case 'OnSite':
+                          return 'Présentiel';
+                        case 'Hybrid':
+                          return 'Hybride';
+                        default:
+                          return value;
+                      }
+                    }
+
+                    // Extract and translate training_style values
+                    String trainingStyleText = '';
+                    final trainingStyleRaw = training['training_style'];
+                    if (trainingStyleRaw is List) {
+                      final translated = trainingStyleRaw
+                          .map((item) {
+                            final value = item is Map
+                                ? (item['value']?.toString() ?? item.toString())
+                                : item.toString();
+                            return _translateTrainingStyle(value);
                           })
-                          .where((url) => url.isNotEmpty)
-                          .toList();
-
-                      final trainingCategory = training['training_category']?.toString();
-                      final trainingType = training['training_type']?.toString();
-                      final durationInH = training['duration_in_h'] is int
-                          ? training['duration_in_h'] as int
-                          : int.tryParse(training['duration_in_h']?.toString() ?? '');
-                      final price = training['price']?.toString();
-
-                      final tags = <FormationTag>[
-                        if (trainingCategory != null && trainingCategory.isNotEmpty)
-                          FormationTag(icon: Icons.category_outlined, text: trainingCategory),
-                        if (trainingType != null && trainingType.isNotEmpty)
-                          FormationTag(icon: Icons.school_outlined, text: trainingType),
-                        if (durationInH != null)
-                          FormationTag(icon: Icons.timer_outlined, text: '$durationInH h'),
-                        if (price != null)
-                          FormationTag(icon: Icons.euro, text: '$price €', isSpecial: true),
-                      ];
-
-                      final tid = training['id']?.toString() ?? '';
-                      return FormationCard(
-                        companyLogo: training['company_logo']?.toString() ?? 'assets/images/Formation.png',
-                        companyName: training['owner_name']?.toString() ?? 'Organisme',
-                        formationTitle: training['title']?.toString() ?? '',
-                        description: training['description']?.toString() ?? '',
-                        tags: tags,
-                        timeAgo: _timeAgo(training['created_at']?.toString() ?? ''),
-                        onApply: () => _navigateToSimilarTraining(training),
-                        reactionBar: tid.isNotEmpty
-                            ? Builder(builder: (ctx) {
-                                _seedReaction('trainings', tid, training);
-                                return _buildSimilarReactionBar('trainings', tid);
-                              })
-                            : null,
+                          .where((s) => s.isNotEmpty)
+                          .join(' · ');
+                      trainingStyleText = translated;
+                    } else if (trainingStyleRaw != null) {
+                      trainingStyleText = _translateTrainingStyle(
+                        trainingStyleRaw.toString(),
                       );
-                    }).toList(),
-                  ),
+                    }
+
+                    // Translation for training_public
+                    String _translateTrainingPublic(String value) {
+                      switch (value.trim()) {
+                        case 'AllPublic':
+                          return 'Tout public';
+                        case 'Employed':
+                          return 'Salarié en poste';
+                        case 'JobSeeker':
+                          return 'Demandeurs d\'emploi';
+                        case 'Company':
+                          return 'Entreprise';
+                        case 'Student':
+                          return 'Étudiant';
+                        default:
+                          return value;
+                      }
+                    }
+
+                    // Extract and translate training_public values
+                    String trainingPublicText = '';
+                    final trainingPublicRaw = training['training_public'];
+                    if (trainingPublicRaw is List) {
+                      final translated = trainingPublicRaw
+                          .map((item) {
+                            final value = item is Map
+                                ? (item['value']?.toString() ?? item.toString())
+                                : item.toString();
+                            return _translateTrainingPublic(value);
+                          })
+                          .where((s) => s.isNotEmpty)
+                          .join(' · ');
+                      trainingPublicText = translated;
+                    } else if (trainingPublicRaw != null) {
+                      trainingPublicText = _translateTrainingPublic(
+                        trainingPublicRaw.toString(),
+                      );
+                    }
+
+                    final certification = _extractArrayValues(
+                      training['certification'],
+                    );
+
+                    // Check if CPF is in training_funding array
+                    final trainingFunding = training['training_funding'];
+                    bool hasCpf = false;
+                    if (trainingFunding is List) {
+                      hasCpf = trainingFunding.any(
+                        (funding) =>
+                            funding.toString().toUpperCase() == 'CPF' ||
+                            (funding is Map &&
+                                funding['type']?.toString().toUpperCase() ==
+                                    'CPF'),
+                      );
+                    }
+
+                    final tags = <FormationTag>[
+                      // 1st: Address city (location)
+                      if (addressCity.isNotEmpty)
+                        FormationTag(
+                          icon: Icons.location_on_outlined,
+                          text: addressCity,
+                        ),
+                      // 2nd: Training public (translated)
+                      if (trainingPublicText.isNotEmpty)
+                        FormationTag(
+                          icon: Icons.people_outline,
+                          text: trainingPublicText,
+                        ),
+                      // 3rd: Training style (translated)
+                      if (trainingStyleText.isNotEmpty)
+                        FormationTag(
+                          icon: Icons.style_outlined,
+                          text: trainingStyleText,
+                        ),
+                      // 4th: Certification
+                      if (certification.isNotEmpty)
+                        FormationTag(
+                          icon: Icons.verified_outlined,
+                          text: certification,
+                        ),
+                      // 5th: CPF eligibility
+                      if (hasCpf)
+                        FormationTag(
+                          icon: Icons.account_balance_wallet_outlined,
+                          text: 'Eligible CPF',
+                        ),
+                      // 6th: Training type
+                      if (trainingType.isNotEmpty)
+                        FormationTag(
+                          icon: Icons.school_outlined,
+                          text: trainingType,
+                        ),
+                      // 7th: Duration
+                      if (duration != null)
+                        FormationTag(
+                          icon: Icons.timer_outlined,
+                          text:
+                              '$duration h${durationUnit != null ? ' / $durationUnit' : ''}',
+                        ),
+                      // 8th: Price (special/green) - LAST
+                      if (price != null) ...[
+                        () {
+                          final publicType =
+                              training['public_type']?.toString() ?? '';
+                          String priceText = '$price €';
+                          if (publicType == 'personne') {
+                            priceText += ' - Par personne';
+                          } else if (publicType == 'groupe') {
+                            priceText += ' - Par groupe';
+                          }
+                          return FormationTag(
+                            icon: Icons.euro,
+                            text: priceText,
+                            isSpecial: true,
+                          );
+                        }(),
+                      ],
+                    ];
+
+                    final user = training['user'] as Map<String, dynamic>?;
+                    final proProfile =
+                        user?['pro_profile'] as Map<String, dynamic>?;
+                    final particulierProfile =
+                        user?['particulier_profile'] as Map<String, dynamic>?;
+
+                    final avatarUrl =
+                        proProfile?['logo_url']?.toString() ??
+                        proProfile?['avatar_url']?.toString() ??
+                        particulierProfile?['avatar_url']?.toString() ??
+                        user?['avatar']?.toString();
+
+                    final companyLogoUrl =
+                        _buildStorageUrl(avatarUrl) ??
+                        'assets/images/Formation.png';
+
+                    // Extract owner name from profiles
+                    final ownerName =
+                        proProfile?['company_name']?.toString() ??
+                        proProfile?['first_name']?.toString() ??
+                        particulierProfile?['pseudo']?.toString() ??
+                        particulierProfile?['first_name']?.toString() ??
+                        training['provider_name']?.toString() ??
+                        'Organisme';
+
+                    // Check if already favorited by current user
+                    final favoris =
+                        training['training_favorites'] as List? ?? [];
+                    final currentUserId = UserSession().id;
+                    final bool initialIsFavorited =
+                        currentUserId != null &&
+                        favoris.any(
+                          (f) =>
+                              f is Map &&
+                              (f['user_id']?.toString() == currentUserId ||
+                                  f['user']?['id']?.toString() ==
+                                      currentUserId),
+                        );
+
+                    // Use ValueNotifier for state that persists across rebuilds
+                    final isFavoritedNotifier = ValueNotifier<bool>(
+                      initialIsFavorited,
+                    );
+
+                    return StatefulBuilder(
+                      builder: (context, setState) {
+                        bool isLoading = false;
+
+                        Future<void> _toggleFavorite() async {
+                          if (isLoading || trainingId.isEmpty) return;
+
+                          // Toggle immediately for responsive UI
+                          isFavoritedNotifier.value =
+                              !isFavoritedNotifier.value;
+                          setState(() => isLoading = true);
+
+                          try {
+                            if (!isFavoritedNotifier.value) {
+                              // Remove from favorites
+                              await ApiClient().authenticatedDelete(
+                                '/trainings/$trainingId/favorite',
+                              );
+                              // Update the underlying data to persist state across rebuilds
+                              if (training['training_favorites'] is List) {
+                                (training['training_favorites'] as List)
+                                    .removeWhere(
+                                      (f) =>
+                                          f is Map &&
+                                          (f['user_id']?.toString() ==
+                                                  currentUserId ||
+                                              f['user']?['id']?.toString() ==
+                                                  currentUserId),
+                                    );
+                              }
+                            } else {
+                              // Add to favorites
+                              await ApiClient().authenticatedPost(
+                                '/trainings/$trainingId/favorite',
+                              );
+                              // Update the underlying data to persist state across rebuilds
+                              if (training['training_favorites'] is! List) {
+                                training['training_favorites'] = [];
+                              }
+                              (training['training_favorites'] as List).add({
+                                'user_id': currentUserId,
+                                'user': {'id': currentUserId},
+                              });
+                            }
+
+                            setState(() {
+                              isLoading = false;
+                            });
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isFavoritedNotifier.value
+                                        ? 'Ajouté aux favoris'
+                                        : 'Retiré des favoris',
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            debugPrint('Favorite toggle error: $e');
+                            setState(() => isLoading = false);
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Erreur lors de la mise à jour des favoris',
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        }
+
+                        return FormationCard(
+                          companyLogo: companyLogoUrl,
+                          companyName: ownerName,
+                          formationTitle: title,
+                          description: description.isNotEmpty
+                              ? description
+                              : 'Description non disponible.',
+                          tags: tags,
+                          timeAgo: _buildTimeAgo(
+                            training['created_at']?.toString(),
+                          ),
+                          isFavorited: isFavoritedNotifier.value,
+                          isLoadingFavorite: isLoading,
+                          onFavoriteToggle: _toggleFavorite,
+                          onApply: () => _navigateToTrainingDetail(training),
+                          onAvatarTap: () {
+                            if (user?['id'] != null) {
+                              final isProUser =
+                                  user?['account_type']
+                                      ?.toString()
+                                      .toLowerCase() ==
+                                  'pro';
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => isProUser
+                                      ? ProPublicViewScreen(
+                                          userId: user!['id'].toString(),
+                                        )
+                                      : ParticulierPublicViewScreen(
+                                          userId: user!['id'].toString(),
+                                        ),
+                                ),
+                              );
+                            }
+                          },
+                          reactionBar: trainingId.isNotEmpty
+                              ? Builder(
+                                  builder: (ctx) {
+                                    _seedReaction(
+                                      'trainings',
+                                      trainingId,
+                                      training,
+                                    );
+                                    return _buildReactionBar(
+                                      'trainings',
+                                      trainingId,
+                                    );
+                                  },
+                                )
+                              : null,
+                        );
+                      },
+                    );
+                  }).toList(),
+                ),
               const SizedBox(height: 30),
             ],
           ],
@@ -1484,21 +2150,142 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     );
   }
 
+  Widget _buildReactionBar(
+    String apiSlug,
+    String entityId, {
+    bool? acceptedMessages,
+    Map<String, dynamic>? authorData,
+    Map<String, dynamic>? postData,
+  }) {
+    final data = _getReaction(apiSlug, entityId);
+    final isLiked = data.userReaction == 'like';
+    final isPost = apiSlug == 'posts';
+    final isBonPlan = apiSlug == 'bon-plans';
+
+    return Row(
+      children: [
+        // Like
+        GestureDetector(
+          onTap: () => _toggleReaction(apiSlug, entityId, 'like'),
+          child: Row(
+            children: [
+              Icon(
+                isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+                size: 18,
+                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                data.likesCount.toString(),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 18),
+        // Comments
+        GestureDetector(
+          onTap: () => _showEntityCommentsSheet(apiSlug, entityId),
+          child: Row(
+            children: [
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 17,
+                color: Colors.grey[500],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                data.commentsCount.toString(),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+        // Share icon
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: () => _shareBonPlan(entityId),
+          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
+        ),
+      ],
+    );
+  }
+
+  void _shareBonPlan(String bonPlanId) {
+    // Share functionality for bon plans
+    final String shareUrl =
+        '${ApiConfig.baseUrl.replaceAll('/api', '')}/bon-plans/$bonPlanId';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Partager ce bon plan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
+                title: const Text('Copier le lien'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lien copié dans le presse-papiers'),
+                      backgroundColor: Color(0xFF3AAE5E),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
+                title: const Text('Partager via...'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement native share
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildDescription() {
     // Show plain text description instead of delta
     if (widget.description.isNotEmpty) {
       return Text(
         widget.description,
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.grey[600],
-          height: 1.5,
-        ),
+        style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
       );
     }
 
     // Fallback: try to render delta if description is empty
-    if (widget.descriptionDelta != null && widget.descriptionDelta.toString().isNotEmpty) {
+    if (widget.descriptionDelta != null &&
+        widget.descriptionDelta.toString().isNotEmpty) {
       try {
         dynamic rawData;
         if (widget.descriptionDelta is List) {
@@ -1571,11 +2358,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
     return Text(
       'Aucune description disponible.',
-      style: TextStyle(
-        fontSize: 14,
-        color: Colors.grey[600],
-        height: 1.5,
-      ),
+      style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
     );
   }
 
@@ -1616,7 +2399,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   void _showDeleteDialog(BuildContext context) {
     if (widget.trainingId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossible de supprimer cette formation')),
+        const SnackBar(
+          content: Text('Impossible de supprimer cette formation'),
+        ),
       );
       return;
     }
@@ -1627,7 +2412,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         bool isDeleting = false;
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Text(
               'Supprimer la formation',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -1637,7 +2424,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: isDeleting ? null : () => Navigator.pop(dialogContext),
+                onPressed: isDeleting
+                    ? null
+                    : () => Navigator.pop(dialogContext),
                 child: const Text('Annuler'),
               ),
               ElevatedButton(
@@ -1649,17 +2438,22 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           final token = await TokenStorage.getAccessToken();
                           if (token == null) throw Exception('Session expirée');
                           final response = await http.delete(
-                            Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}'),
+                            Uri.parse(
+                              '${ApiConfig.baseUrl}/trainings/${widget.trainingId}',
+                            ),
                             headers: {
                               'Authorization': 'Bearer $token',
                               'Accept': 'application/json',
                             },
                           );
-                          if (response.statusCode >= 200 && response.statusCode < 300) {
+                          if (response.statusCode >= 200 &&
+                              response.statusCode < 300) {
                             Navigator.pop(dialogContext);
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Formation supprimée avec succès'),
+                                content: Text(
+                                  'Formation supprimée avec succès',
+                                ),
                                 backgroundColor: Color(0xFF3AAE5E),
                               ),
                             );
@@ -1671,7 +2465,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           setDialogState(() => isDeleting = false);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Erreur: ${e.toString().replaceFirst("Exception: ", "")}'),
+                              content: Text(
+                                'Erreur: ${e.toString().replaceFirst("Exception: ", "")}',
+                              ),
                               backgroundColor: Colors.red,
                             ),
                           );
@@ -1685,7 +2481,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     ? const SizedBox(
                         height: 18,
                         width: 18,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
                     : const Text('Supprimer'),
               ),
@@ -1698,12 +2497,18 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   String _durationUnitLabel(String? unit) {
     switch (unit) {
-      case '0': return 'heures';
-      case '1': return 'jours';
-      case '2': return 'semaines';
-      case '3': return 'mois';
-      case '4': return 'années';
-      default: return 'heures';
+      case '0':
+        return 'heures';
+      case '1':
+        return 'jours';
+      case '2':
+        return 'semaines';
+      case '3':
+        return 'mois';
+      case '4':
+        return 'années';
+      default:
+        return 'heures';
     }
   }
 
@@ -1713,8 +2518,18 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       try {
         final date = DateTime.parse(dateStr);
         final months = [
-          'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-          'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+          'janvier',
+          'février',
+          'mars',
+          'avril',
+          'mai',
+          'juin',
+          'juillet',
+          'août',
+          'septembre',
+          'octobre',
+          'novembre',
+          'décembre',
         ];
         return '${date.day} ${months[date.month - 1]} ${date.year}';
       } catch (e) {
@@ -1747,38 +2562,55 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   String _priceTypeLabel(String? type) {
     switch (type) {
-      case '1': return 'NET';
-      case '2': return 'HT';
-      case '3': return 'TTC';
-      default: return '';
+      case '1':
+        return 'NET';
+      case '2':
+        return 'HT';
+      case '3':
+        return 'TTC';
+      default:
+        return '';
     }
   }
 
   String _tempoLabel(String? t) {
     switch (t) {
-      case 'heure': return 'par heure(s)';
-      case 'jour': return 'par jour(s)';
-      case 'semaine': return 'par semaine(s)';
-      case 'mois': return 'par mois(s)';
-      case 'an': return 'par an(s)';
-      case 'all': return 'pour toute la formation';
-      default: return '';
+      case 'heure':
+        return 'par heure(s)';
+      case 'jour':
+        return 'par jour(s)';
+      case 'semaine':
+        return 'par semaine(s)';
+      case 'mois':
+        return 'par mois(s)';
+      case 'an':
+        return 'par an(s)';
+      case 'all':
+        return 'pour toute la formation';
+      default:
+        return '';
     }
   }
 
   String _publicTypeLabel(String? type) {
     switch (type) {
-      case 'personne': return '/ personne';
-      case 'groupe': return '/ groupe';
-      default: return '';
+      case 'personne':
+        return '/ personne';
+      case 'groupe':
+        return '/ groupe';
+      default:
+        return '';
     }
   }
 
   String _buildLocationString() {
     final parts = <String>[];
-    if (widget.addressLine1 != null && widget.addressLine1!.isNotEmpty) parts.add(widget.addressLine1!);
-    if (widget.addressZipcode != null && widget.addressZipcode!.isNotEmpty) parts.add(widget.addressZipcode!);
-    if (widget.addressCity != null && widget.addressCity!.isNotEmpty) parts.add(widget.addressCity!);
+    if (widget.addressLine1 != null && widget.addressLine1!.isNotEmpty)
+      parts.add(widget.addressLine1!);
+    if (widget.addressZipcode != null && widget.addressZipcode!.isNotEmpty)
+      parts.add(widget.addressZipcode!);
+    if (widget.addressCity != null && widget.addressCity!.isNotEmpty)
+      parts.add(widget.addressCity!);
     return parts.isNotEmpty ? parts.join(', ') : 'Localisation non spécifiée';
   }
 
@@ -1786,25 +2618,29 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     final user = comment['user'] as Map<String, dynamic>?;
     final body = comment['body']?.toString() ?? '';
     final createdAt = comment['created_at']?.toString() ?? '';
-    
+
     // Extract user name from nested profiles
     String displayName = 'Utilisateur';
     if (user != null) {
       if (user['particulier_profile'] != null) {
         final profile = user['particulier_profile'] as Map<String, dynamic>;
-        displayName = profile['pseudo']?.toString() ?? 
-                     user['name']?.toString() ?? 
-                     'Utilisateur';
+        displayName =
+            profile['pseudo']?.toString() ??
+            user['name']?.toString() ??
+            'Utilisateur';
       } else if (user['pro_profile'] != null) {
         final profile = user['pro_profile'] as Map<String, dynamic>;
-        displayName = profile['company_name']?.toString() ?? 
-                     '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'.trim();
-        if (displayName.isEmpty) displayName = user['name']?.toString() ?? 'Utilisateur';
+        displayName =
+            profile['company_name']?.toString() ??
+            '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'
+                .trim();
+        if (displayName.isEmpty)
+          displayName = user['name']?.toString() ?? 'Utilisateur';
       } else {
         displayName = user['name']?.toString() ?? 'Utilisateur';
       }
     }
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -1837,20 +2673,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 const SizedBox(height: 2),
                 Text(
                   body,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[700],
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                 ),
                 if (createdAt.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       createdAt,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                     ),
                   ),
               ],
@@ -1868,7 +2698,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       );
       return;
     }
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1880,11 +2710,11 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         return StatefulBuilder(
           builder: (context, modalSetState) {
             final commentCtrl = TextEditingController();
-            
+
             Future<void> submitComment() async {
               final text = commentCtrl.text.trim();
               if (text.isEmpty) return;
-              
+
               try {
                 final token = await TokenStorage.getAccessToken();
                 if (token == null) {
@@ -1893,9 +2723,11 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   );
                   return;
                 }
-                
+
                 final response = await http.post(
-                  Uri.parse('${ApiConfig.baseUrl}/trainings/${widget.trainingId}/comments'),
+                  Uri.parse(
+                    '${ApiConfig.baseUrl}/trainings/${widget.trainingId}/comments',
+                  ),
                   headers: {
                     'Authorization': 'Bearer $token',
                     'Accept': 'application/json',
@@ -1903,7 +2735,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   },
                   body: jsonEncode({'body': text}),
                 );
-                
+
                 if (response.statusCode == 201 || response.statusCode == 200) {
                   final data = jsonDecode(response.body);
                   final newComment = data['data'] as Map<String, dynamic>?;
@@ -1913,7 +2745,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       _commentsCount++;
                     });
                     setState(() {
-                      _localCommentsCount = (_localCommentsCount ?? _comments.length) + 1;
+                      _localCommentsCount =
+                          (_localCommentsCount ?? _comments.length) + 1;
                     });
                   }
                   commentCtrl.clear();
@@ -1945,7 +2778,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 );
               }
             }
-            
+
             return DraggableScrollableSheet(
               expand: false,
               initialChildSize: 0.7,
@@ -1984,23 +2817,23 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       child: _isLoadingComments
                           ? const Center(child: CircularProgressIndicator())
                           : _comments.isEmpty
-                              ? Center(
-                                  child: Text(
-                                    'Aucun commentaire',
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                )
-                              : ListView.builder(
-                                  controller: scrollController,
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: _comments.length,
-                                  itemBuilder: (context, index) {
-                                    return _buildCommentItem(_comments[index]);
-                                  },
+                          ? Center(
+                              child: Text(
+                                'Aucun commentaire',
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 14,
                                 ),
+                              ),
+                            )
+                          : ListView.builder(
+                              controller: scrollController,
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _comments.length,
+                              itemBuilder: (context, index) {
+                                return _buildCommentItem(_comments[index]);
+                              },
+                            ),
                     ),
                     // Input field
                     Container(
@@ -2038,7 +2871,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           const SizedBox(width: 8),
                           IconButton(
                             onPressed: submitComment,
-                            icon: const Icon(Icons.send, color: Color(0xFF3AAE5E)),
+                            icon: const Icon(
+                              Icons.send,
+                              color: Color(0xFF3AAE5E),
+                            ),
                           ),
                         ],
                       ),
@@ -2115,395 +2951,563 @@ $deepLink'''
     );
   }
 
-  // Helper method for gray detail tags (like job detail)
-  Widget _buildDetailTag(FormationTag tag) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: tag.isSpecial ? const Color(0xFFE6F7EF) : Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: tag.isSpecial ? const Color(0xFF3AAE5E).withOpacity(0.3) : Colors.grey[300]!,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            tag.icon,
-            size: 14,
-            color: tag.isSpecial ? const Color(0xFF3AAE5E) : Colors.grey[600],
-          ),
-          const SizedBox(width: 6),
-          Text(
-            tag.text,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: tag.isSpecial ? FontWeight.w600 : FontWeight.w500,
-              color: tag.isSpecial ? const Color(0xFF3AAE5E) : Colors.grey[700],
-            ),
-          ),
-        ],
+  // --- Reaction infrastructure for similar items ---
+  final Map<String, _ReactionData> _reactions = {};
+  String _rKey(String s, String id) => '${s}_$id';
+  int _asInt(dynamic v) {
+    if (v is int) return v;
+    if (v is double) return v.toInt();
+    return int.tryParse(v?.toString() ?? '') ?? 0;
+  }
+
+  _ReactionData _getReaction(String s, String id) =>
+      _reactions.putIfAbsent(_rKey(s, id), () => _ReactionData());
+  void _seedReaction(String s, String id, Map<String, dynamic> r) {
+    _reactions.putIfAbsent(
+      _rKey(s, id),
+      () => _ReactionData(
+        likesCount: _asInt(r['likes_count']),
+        commentsCount: _asInt(r['comments_count']),
+        userReaction: r['user_reaction']?.toString(),
       ),
     );
   }
 
-  // --- Reaction infrastructure for similar items ---
-  final Map<String, _ReactionData> _reactions = {};
-  String _rKey(String s, String id) => '${s}_$id';
-  int _asInt(dynamic v) { if (v is int) return v; if (v is double) return v.toInt(); return int.tryParse(v?.toString() ?? '') ?? 0; }
-  _ReactionData _getReaction(String s, String id) => _reactions.putIfAbsent(_rKey(s, id), () => _ReactionData());
-  void _seedReaction(String s, String id, Map<String, dynamic> r) {
-    _reactions.putIfAbsent(_rKey(s, id), () => _ReactionData(likesCount: _asInt(r['likes_count']), commentsCount: _asInt(r['comments_count']), userReaction: r['user_reaction']?.toString()));
-  }
   Future<void> _toggleReaction(String s, String id, String type) async {
     final d = _getReaction(s, id);
     final wasLiked = d.userReaction == 'like';
-    setState(() { if (wasLiked) { d.userReaction = null; if (d.likesCount > 0) d.likesCount--; } else { d.userReaction = 'like'; d.likesCount++; } });
+    setState(() {
+      if (wasLiked) {
+        d.userReaction = null;
+        if (d.likesCount > 0) d.likesCount--;
+      } else {
+        d.userReaction = 'like';
+        d.likesCount++;
+      }
+    });
     try {
-      if (wasLiked) await ApiClient().authenticatedDelete('/$s/$id/reactions');
-      else await ApiClient().authenticatedPost('/$s/$id/reactions', body: {'type': type});
+      if (wasLiked)
+        await ApiClient().authenticatedDelete('/$s/$id/reactions');
+      else
+        await ApiClient().authenticatedPost(
+          '/$s/$id/reactions',
+          body: {'type': type},
+        );
       final res = await ApiClient().authenticatedGet('/$s/$id');
       final data = res['data'] as Map<String, dynamic>?;
-      if (data != null && mounted) setState(() { _reactions[_rKey(s, id)] = _ReactionData(likesCount: _asInt(data['likes_count']), commentsCount: _asInt(data['comments_count']), userReaction: data['user_reaction']?.toString()); });
-    } catch (_) { setState(() { if (wasLiked) { d.userReaction = 'like'; d.likesCount++; } else { d.userReaction = null; if (d.likesCount > 0) d.likesCount--; } }); }
+      if (data != null && mounted)
+        setState(() {
+          _reactions[_rKey(s, id)] = _ReactionData(
+            likesCount: _asInt(data['likes_count']),
+            commentsCount: _asInt(data['comments_count']),
+            userReaction: data['user_reaction']?.toString(),
+          );
+        });
+    } catch (_) {
+      setState(() {
+        if (wasLiked) {
+          d.userReaction = 'like';
+          d.likesCount++;
+        } else {
+          d.userReaction = null;
+          if (d.likesCount > 0) d.likesCount--;
+        }
+      });
+    }
   }
+
   void _showEntityCommentsSheet(String s, String id) {
     List<Map<String, dynamic>> comments = [];
     bool isLoading = true;
     final ctrl = TextEditingController();
     int? replyingToId;
     String? replyingToName;
-    
+
     showModalBottomSheet(
-      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-      builder: (sheetCtx) => StatefulBuilder(builder: (ctx, ms) {
-        if (isLoading && comments.isEmpty) {
-          ApiClient().authenticatedGet('/$s/$id/comments?per_page=50').then((res) {
-            final data = res['data'];
-            List<Map<String, dynamic>> fetched = [];
-            if (data is Map && data['data'] is List) fetched = List<Map<String, dynamic>>.from(data['data']);
-            else if (data is List) fetched = List<Map<String, dynamic>>.from(data);
-            ms(() { comments = fetched; isLoading = false; });
-          }).catchError((_) { ms(() => isLoading = false); });
-        }
-        
-        Future<void> submitComment() async {
-          final text = ctrl.text.trim();
-          if (text.isEmpty) return;
-          
-          try {
-            Map<String, dynamic> res;
-            if (replyingToId != null) {
-              res = await ApiClient().authenticatedPost('/$s/$id/comments/$replyingToId/reply', body: {'body': text});
-            } else {
-              res = await ApiClient().authenticatedPost('/$s/$id/comments', body: {'body': text});
-            }
-            
-            final nc = res['data'] as Map<String, dynamic>?;
-            if (nc != null) {
-              ms(() {
-                if (replyingToId != null) {
-                  final parent = comments.firstWhere(
-                    (c) => c['id'] == replyingToId,
-                    orElse: () => <String, dynamic>{},
-                  );
-                  if (parent.isNotEmpty) {
-                    final replies = List<Map<String, dynamic>>.from(
-                      (parent['replies'] as List?) ?? [],
-                    );
-                    replies.add(nc);
-                    parent['replies'] = replies;
-                    parent['replies_count'] = (parent['replies_count'] as int? ?? 0) + 1;
-                  }
-                } else {
-                  comments.insert(0, nc);
-                }
-                replyingToId = null;
-                replyingToName = null;
-              });
-              setState(() {
-                _getReaction(s, id).commentsCount++;
-              });
-            }
-            ctrl.clear();
-            FocusScope.of(ctx).unfocus();
-          } catch (e) {
-            if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (ctx, ms) {
+          if (isLoading && comments.isEmpty) {
+            ApiClient()
+                .authenticatedGet('/$s/$id/comments?per_page=50')
+                .then((res) {
+                  final data = res['data'];
+                  List<Map<String, dynamic>> fetched = [];
+                  if (data is Map && data['data'] is List)
+                    fetched = List<Map<String, dynamic>>.from(data['data']);
+                  else if (data is List)
+                    fetched = List<Map<String, dynamic>>.from(data);
+                  ms(() {
+                    comments = fetched;
+                    isLoading = false;
+                  });
+                })
+                .catchError((_) {
+                  ms(() => isLoading = false);
+                });
           }
-        }
-        
-        Widget buildCommentItem(Map<String, dynamic> comment, {bool isReply = false}) {
-          final user = comment['user'] as Map<String, dynamic>?;
-          final commentId = comment['id'];
-          final commentIdInt = commentId is int ? commentId : int.tryParse(commentId?.toString() ?? '');
-          
-          String displayName = 'Utilisateur';
-          if (user != null) {
-            if (user['particulier_profile'] != null) {
-              final profile = user['particulier_profile'] as Map<String, dynamic>;
-              displayName = profile['pseudo']?.toString() ?? user['name']?.toString() ?? 'Utilisateur';
-            } else if (user['pro_profile'] != null) {
-              final profile = user['pro_profile'] as Map<String, dynamic>;
-              displayName = profile['company_name']?.toString() ?? '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'.trim();
-              if (displayName.isEmpty) displayName = user['name']?.toString() ?? 'Utilisateur';
-            } else {
-              displayName = user['name']?.toString() ?? 'Utilisateur';
-            }
-          }
-          
-          String? rawAvatarUrl;
-          if (user != null) {
-            if (user['particulier_profile'] != null) {
-              rawAvatarUrl = user['particulier_profile']['avatar_url']?.toString();
-            } else if (user['pro_profile'] != null) {
-              rawAvatarUrl = user['pro_profile']['avatar_url']?.toString();
-            }
-          }
-          final avatarUrl = ApiConfig.resolveMediaUrl(rawAvatarUrl);
-          
-          final body = comment['body']?.toString() ?? '';
-          final createdAt = comment['created_at'];
-          String timeAgo = 'à l\'instant';
-          if (createdAt != null) {
+
+          Future<void> submitComment() async {
+            final text = ctrl.text.trim();
+            if (text.isEmpty) return;
+
             try {
-              final date = DateTime.parse(createdAt.toString());
-              final diff = DateTime.now().difference(date);
-              if (diff.inDays > 0) {
-                timeAgo = 'Il y a ${diff.inDays}j';
-              } else if (diff.inHours > 0) {
-                timeAgo = 'Il y a ${diff.inHours}h';
-              } else if (diff.inMinutes > 0) {
-                timeAgo = 'Il y a ${diff.inMinutes}min';
+              Map<String, dynamic> res;
+              if (replyingToId != null) {
+                res = await ApiClient().authenticatedPost(
+                  '/$s/$id/comments/$replyingToId/reply',
+                  body: {'body': text},
+                );
               } else {
-                timeAgo = 'à l\'instant';
+                res = await ApiClient().authenticatedPost(
+                  '/$s/$id/comments',
+                  body: {'body': text},
+                );
               }
-            } catch (_) {}
+
+              final nc = res['data'] as Map<String, dynamic>?;
+              if (nc != null) {
+                ms(() {
+                  if (replyingToId != null) {
+                    final parent = comments.firstWhere(
+                      (c) => c['id'] == replyingToId,
+                      orElse: () => <String, dynamic>{},
+                    );
+                    if (parent.isNotEmpty) {
+                      final replies = List<Map<String, dynamic>>.from(
+                        (parent['replies'] as List?) ?? [],
+                      );
+                      replies.add(nc);
+                      parent['replies'] = replies;
+                      parent['replies_count'] =
+                          (parent['replies_count'] as int? ?? 0) + 1;
+                    }
+                  } else {
+                    comments.insert(0, nc);
+                  }
+                  replyingToId = null;
+                  replyingToName = null;
+                });
+                setState(() {
+                  _getReaction(s, id).commentsCount++;
+                });
+              }
+              ctrl.clear();
+              FocusScope.of(ctx).unfocus();
+            } catch (e) {
+              if (ctx.mounted)
+                ScaffoldMessenger.of(
+                  ctx,
+                ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+            }
           }
-          
-          final replies = List<Map<String, dynamic>>.from((comment['replies'] as List?) ?? []);
-          final likesCount = comment['likes_count'] as int? ?? 0;
-          final isLiked = comment['user_reaction']?.toString() == 'like';
-          
-          return Padding(
-            padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      radius: isReply ? 14 : 18,
-                      backgroundImage: avatarUrl != null && avatarUrl.toString().startsWith('http')
-                          ? NetworkImage(avatarUrl)
-                          : const AssetImage('assets/images/dashboard_particulier/Ellipse 10.png') as ImageProvider,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                displayName,
-                                style: TextStyle(
-                                  fontSize: isReply ? 12 : 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF333333),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                timeAgo,
-                                style: TextStyle(
-                                  fontSize: isReply ? 10 : 11,
-                                  color: Colors.grey[500],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            body,
-                            style: TextStyle(
-                              fontSize: isReply ? 12 : 13,
-                              color: Colors.grey[700],
-                              height: 1.4,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              // Like button
-                              GestureDetector(
-                                onTap: () async {
-                                  try {
-                                    final cid = comment['id'];
-                                    if (cid == null) return;
-                                    final currentLiked = comment['user_reaction']?.toString() == 'like';
-                                    final currentCount = comment['likes_count'] as int? ?? 0;
-                                    ms(() {
-                                      comment['user_reaction'] = currentLiked ? null : 'like';
-                                      comment['likes_count'] = currentLiked ? (currentCount > 0 ? currentCount - 1 : 0) : currentCount + 1;
-                                    });
-                                    if (currentLiked) {
-                                      await ApiClient().authenticatedDelete('/comments/$cid/reactions');
-                                    } else {
-                                      await ApiClient().authenticatedPost('/comments/$cid/reactions', body: {'type': 'like'});
-                                    }
-                                  } catch (e) {
-                                    debugPrint('Error liking comment: $e');
-                                  }
-                                },
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
-                                      size: isReply ? 12 : 14,
-                                      color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      likesCount.toString(),
-                                      style: TextStyle(
-                                        fontSize: isReply ? 11 : 12,
-                                        color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                                        fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              // Reply button
-                              if (!isReply && commentIdInt != null)
-                                GestureDetector(
-                                  onTap: () {
-                                    ms(() {
-                                      replyingToId = commentIdInt;
-                                      replyingToName = displayName;
-                                    });
-                                  },
-                                  child: Text(
-                                    'Répondre',
-                                    style: TextStyle(
-                                      fontSize: isReply ? 11 : 12,
-                                      color: Colors.grey[600],
-                                      fontWeight: FontWeight.w500,
-                                    ),
+
+          Widget buildCommentItem(
+            Map<String, dynamic> comment, {
+            bool isReply = false,
+          }) {
+            final user = comment['user'] as Map<String, dynamic>?;
+            final commentId = comment['id'];
+            final commentIdInt = commentId is int
+                ? commentId
+                : int.tryParse(commentId?.toString() ?? '');
+
+            String displayName = 'Utilisateur';
+            if (user != null) {
+              if (user['particulier_profile'] != null) {
+                final profile =
+                    user['particulier_profile'] as Map<String, dynamic>;
+                displayName =
+                    profile['pseudo']?.toString() ??
+                    user['name']?.toString() ??
+                    'Utilisateur';
+              } else if (user['pro_profile'] != null) {
+                final profile = user['pro_profile'] as Map<String, dynamic>;
+                displayName =
+                    profile['company_name']?.toString() ??
+                    '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'
+                        .trim();
+                if (displayName.isEmpty)
+                  displayName = user['name']?.toString() ?? 'Utilisateur';
+              } else {
+                displayName = user['name']?.toString() ?? 'Utilisateur';
+              }
+            }
+
+            String? rawAvatarUrl;
+            if (user != null) {
+              if (user['particulier_profile'] != null) {
+                rawAvatarUrl = user['particulier_profile']['avatar_url']
+                    ?.toString();
+              } else if (user['pro_profile'] != null) {
+                rawAvatarUrl = user['pro_profile']['avatar_url']?.toString();
+              }
+            }
+            final avatarUrl = ApiConfig.resolveMediaUrl(rawAvatarUrl);
+
+            final body = comment['body']?.toString() ?? '';
+            final createdAt = comment['created_at'];
+            String timeAgo = 'à l\'instant';
+            if (createdAt != null) {
+              try {
+                final date = DateTime.parse(createdAt.toString());
+                final diff = DateTime.now().difference(date);
+                if (diff.inDays > 0) {
+                  timeAgo = 'Il y a ${diff.inDays}j';
+                } else if (diff.inHours > 0) {
+                  timeAgo = 'Il y a ${diff.inHours}h';
+                } else if (diff.inMinutes > 0) {
+                  timeAgo = 'Il y a ${diff.inMinutes}min';
+                } else {
+                  timeAgo = 'à l\'instant';
+                }
+              } catch (_) {}
+            }
+
+            final replies = List<Map<String, dynamic>>.from(
+              (comment['replies'] as List?) ?? [],
+            );
+            final likesCount = comment['likes_count'] as int? ?? 0;
+            final isLiked = comment['user_reaction']?.toString() == 'like';
+
+            return Padding(
+              padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: isReply ? 14 : 18,
+                        backgroundImage:
+                            avatarUrl != null &&
+                                avatarUrl.toString().startsWith('http')
+                            ? NetworkImage(avatarUrl)
+                            : const AssetImage(
+                                    'assets/images/dashboard_particulier/Ellipse 10.png',
+                                  )
+                                  as ImageProvider,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  displayName,
+                                  style: TextStyle(
+                                    fontSize: isReply ? 12 : 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF333333),
                                   ),
                                 ),
-                            ],
+                                const SizedBox(width: 6),
+                                Text(
+                                  timeAgo,
+                                  style: TextStyle(
+                                    fontSize: isReply ? 10 : 11,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              body,
+                              style: TextStyle(
+                                fontSize: isReply ? 12 : 13,
+                                color: Colors.grey[700],
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                // Like button
+                                GestureDetector(
+                                  onTap: () async {
+                                    try {
+                                      final cid = comment['id'];
+                                      if (cid == null) return;
+                                      final currentLiked =
+                                          comment['user_reaction']
+                                              ?.toString() ==
+                                          'like';
+                                      final currentCount =
+                                          comment['likes_count'] as int? ?? 0;
+                                      ms(() {
+                                        comment['user_reaction'] = currentLiked
+                                            ? null
+                                            : 'like';
+                                        comment['likes_count'] = currentLiked
+                                            ? (currentCount > 0
+                                                  ? currentCount - 1
+                                                  : 0)
+                                            : currentCount + 1;
+                                      });
+                                      if (currentLiked) {
+                                        await ApiClient().authenticatedDelete(
+                                          '/comments/$cid/reactions',
+                                        );
+                                      } else {
+                                        await ApiClient().authenticatedPost(
+                                          '/comments/$cid/reactions',
+                                          body: {'type': 'like'},
+                                        );
+                                      }
+                                    } catch (e) {
+                                      debugPrint('Error liking comment: $e');
+                                    }
+                                  },
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        isLiked
+                                            ? Icons.thumb_up_alt
+                                            : Icons.thumb_up_alt_outlined,
+                                        size: isReply ? 12 : 14,
+                                        color: isLiked
+                                            ? const Color(0xFF3AAE5E)
+                                            : Colors.grey[500],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        likesCount.toString(),
+                                        style: TextStyle(
+                                          fontSize: isReply ? 11 : 12,
+                                          color: isLiked
+                                              ? const Color(0xFF3AAE5E)
+                                              : Colors.grey[600],
+                                          fontWeight: isLiked
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                // Reply button
+                                if (!isReply && commentIdInt != null)
+                                  GestureDetector(
+                                    onTap: () {
+                                      ms(() {
+                                        replyingToId = commentIdInt;
+                                        replyingToName = displayName;
+                                      });
+                                    },
+                                    child: Text(
+                                      'Répondre',
+                                      style: TextStyle(
+                                        fontSize: isReply ? 11 : 12,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (!isReply && replies.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    ...replies.map((r) => buildCommentItem(r, isReply: true)),
+                  ],
+                ],
+              ),
+            );
+          }
+
+          return DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            maxChildSize: 0.95,
+            minChildSize: 0.3,
+            builder: (_, sc) => Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Commentaires (${comments.length})',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : comments.isEmpty
+                        ? const Center(child: Text('Aucun commentaire.'))
+                        : ListView.builder(
+                            controller: sc,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: comments.length,
+                            itemBuilder: (_, i) =>
+                                buildCommentItem(comments[i]),
+                          ),
+                  ),
+                  // Reply indicator
+                  if (replyingToName != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      color: Colors.grey[100],
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Répondre à $replyingToName',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => ms(() {
+                              replyingToId = null;
+                              replyingToName = null;
+                            }),
+                            child: const Icon(
+                              Icons.close,
+                              size: 18,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-                if (!isReply && replies.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  ...replies.map((r) => buildCommentItem(r, isReply: true)),
+                  // Input area
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(ctx).viewInsets.bottom + 8,
+                      left: 12,
+                      right: 12,
+                      top: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: ctrl,
+                            decoration: InputDecoration(
+                              hintText: replyingToName != null
+                                  ? 'Écrire une réponse...'
+                                  : 'Écrire un commentaire...',
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: submitComment,
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF3AAE5E),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.send,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
-              ],
+              ),
             ),
           );
-        }
-        
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7, maxChildSize: 0.95, minChildSize: 0.3,
-          builder: (_, sc) => Container(
-            decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-            child: Column(children: [
-              const SizedBox(height: 12),
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 8),
-              Text('Commentaires (${comments.length})', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const Divider(),
-              Expanded(child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : comments.isEmpty
-                  ? const Center(child: Text('Aucun commentaire.'))
-                  : ListView.builder(
-                      controller: sc,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: comments.length,
-                      itemBuilder: (_, i) => buildCommentItem(comments[i]),
-                    )),
-              // Reply indicator
-              if (replyingToName != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  color: Colors.grey[100],
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Répondre à $replyingToName',
-                          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => ms(() { replyingToId = null; replyingToName = null; }),
-                        child: const Icon(Icons.close, size: 18, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              // Input area
-              Padding(
-                padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 8, left: 12, right: 12, top: 8),
-                child: Row(children: [
-                  Expanded(child: TextField(
-                    controller: ctrl,
-                    decoration: InputDecoration(
-                      hintText: replyingToName != null ? 'Écrire une réponse...' : 'Écrire un commentaire...',
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                  )),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: submitComment,
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF3AAE5E),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.send, color: Colors.white, size: 20),
-                    ),
-                  ),
-                ]),
-              ),
-            ]),
-          ),
-        );
-      }),
+        },
+      ),
     );
   }
+
   Widget _buildSimilarReactionBar(String s, String id) {
     final d = _getReaction(s, id);
     final isLiked = d.userReaction == 'like';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(children: [
-        GestureDetector(onTap: () => _toggleReaction(s, id, 'like'), child: Row(children: [
-          Icon(isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined, size: 18, color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500]),
-          const SizedBox(width: 4),
-          Text(d.likesCount.toString(), style: TextStyle(fontSize: 12, color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600], fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal)),
-        ])),
-        const SizedBox(width: 18),
-        GestureDetector(onTap: () => _showEntityCommentsSheet(s, id), child: Row(children: [
-          Icon(Icons.chat_bubble_outline, size: 17, color: Colors.grey[500]),
-          const SizedBox(width: 4),
-          Text(d.commentsCount.toString(), style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-        ])),
-      ]),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => _toggleReaction(s, id, 'like'),
+            child: Row(
+              children: [
+                Icon(
+                  isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+                  size: 18,
+                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  d.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 18),
+          GestureDetector(
+            onTap: () => _showEntityCommentsSheet(s, id),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.chat_bubble_outline,
+                  size: 17,
+                  color: Colors.grey[500],
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  d.commentsCount.toString(),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -2539,20 +3543,40 @@ $deepLink'''
         final title = trainingData['title']?.toString() ?? '';
         final description = trainingData['description']?.toString() ?? '';
         final descriptionDelta = trainingData['description_delta'];
-        final companyName = trainingData['company_name']?.toString() ?? 'Organisme';
+        final companyName =
+            trainingData['company_name']?.toString() ?? 'Organisme';
         final website = trainingData['website']?.toString();
         final trainingType = trainingData['training_type']?.toString();
         final trainingCategory = trainingData['training_category']?.toString();
-        final trainingSubCategory = trainingData['training_sub_category']?.toString();
-        final trainingStyle = (trainingData['training_style'] as List?)?.map((e) => e.toString()).toList() ?? [];
-        final trainingPublic = (trainingData['training_public'] as List?)?.map((e) => e.toString()).toList() ?? [];
-        final requiredLevels = (trainingData['required_levels'] as List?)?.map((e) => e.toString()).toList() ?? [];
+        final trainingSubCategory = trainingData['training_sub_category']
+            ?.toString();
+        final trainingStyle =
+            (trainingData['training_style'] as List?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [];
+        final trainingPublic =
+            (trainingData['training_public'] as List?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [];
+        final requiredLevels =
+            (trainingData['required_levels'] as List?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [];
         final price = trainingData['price']?.toString();
         final priceType = trainingData['price_type']?.toString();
         final publicType = trainingData['public_type']?.toString();
         final tempo = trainingData['tempo']?.toString();
-        final trainingFunding = (trainingData['training_funding'] as List?)?.map((e) => e.toString()).toList() ?? [];
-        final durationInH = trainingData['duration_in_h'] is int ? trainingData['duration_in_h'] as int : int.tryParse(trainingData['duration_in_h']?.toString() ?? '');
+        final trainingFunding =
+            (trainingData['training_funding'] as List?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [];
+        final durationInH = trainingData['duration_in_h'] is int
+            ? trainingData['duration_in_h'] as int
+            : int.tryParse(trainingData['duration_in_h']?.toString() ?? '');
         final durationUnit = trainingData['duration_unit']?.toString();
         final startDate = trainingData['start_date']?.toString();
         final endDate = trainingData['end_date']?.toString();
@@ -2561,9 +3585,19 @@ $deepLink'''
         final addressZipcode = trainingData['address_zipcode']?.toString();
         final addressLine1 = trainingData['address_line1']?.toString();
         final showLocation = trainingData['show_location'] == true;
-        final certification = (trainingData['certification'] as List?)?.map((e) => e.toString()).toList() ?? [];
-        final mediaFiles = trainingData['media_files'] as List? ?? trainingData['media'] as List? ?? [];
-        final documentFiles = trainingData['document_files'] as List? ?? trainingData['documents'] as List? ?? [];
+        final certification =
+            (trainingData['certification'] as List?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [];
+        final mediaFiles =
+            trainingData['media_files'] as List? ??
+            trainingData['media'] as List? ??
+            [];
+        final documentFiles =
+            trainingData['document_files'] as List? ??
+            trainingData['documents'] as List? ??
+            [];
         final createdAt = trainingData['created_at']?.toString();
         final userData = trainingData['user'] as Map<String, dynamic>?;
 
@@ -2584,7 +3618,10 @@ $deepLink'''
           if (trainingCategory != null && trainingCategory.isNotEmpty)
             FormationTag(icon: Icons.category_outlined, text: trainingCategory),
           if (trainingSubCategory != null && trainingSubCategory.isNotEmpty)
-            FormationTag(icon: Icons.subdirectory_arrow_right, text: trainingSubCategory),
+            FormationTag(
+              icon: Icons.subdirectory_arrow_right,
+              text: trainingSubCategory,
+            ),
           if (trainingType != null && trainingType.isNotEmpty)
             FormationTag(icon: Icons.school_outlined, text: trainingType),
           if (durationInH != null)
@@ -2628,7 +3665,9 @@ $deepLink'''
               addressLine1: addressLine1,
               showLocation: showLocation,
               certification: certification,
-              documents: documentFiles.whereType<Map<String, dynamic>>().toList(),
+              documents: documentFiles
+                  .whereType<Map<String, dynamic>>()
+                  .toList(),
               isOwner: false,
               trainingId: trainingId,
               trainingData: trainingData,
@@ -2641,9 +3680,9 @@ $deepLink'''
     } catch (e) {
       Navigator.pop(context);
       debugPrint('Error navigating to similar training: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
     }
   }
 
@@ -2722,13 +3761,16 @@ $deepLink'''
   // Navigate to user profile
   void _navigateToUserProfile(BuildContext context) {
     if (widget.authorData != null && widget.authorData!['id'] != null) {
-      final isPro = widget.authorData!['account_type']?.toString().toLowerCase() == 'pro';
+      final isPro =
+          widget.authorData!['account_type']?.toString().toLowerCase() == 'pro';
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => isPro
               ? ProPublicViewScreen(userId: widget.authorData!['id'].toString())
-              : ParticulierPublicViewScreen(userId: widget.authorData!['id'].toString()),
+              : ParticulierPublicViewScreen(
+                  userId: widget.authorData!['id'].toString(),
+                ),
         ),
       );
     }
@@ -2740,12 +3782,13 @@ $deepLink'''
 
     final document = widget.documents.first;
     final String? url = document['url']?.toString();
-    final String? fileName = document['file_name']?.toString() ?? 'programme.pdf';
+    final String? fileName =
+        document['file_name']?.toString() ?? 'programme.pdf';
 
     if (url == null || url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Document non disponible')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Document non disponible')));
       return;
     }
 
@@ -2776,14 +3819,16 @@ $deepLink'''
 
       // Create unique filename
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final String safeFileName = fileName?.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_') ?? 'programme.pdf';
+      final String safeFileName =
+          fileName?.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_') ??
+          'programme.pdf';
       final String finalFileName = '${timestamp}_$safeFileName';
       final String savePath = '${downloadsDir.path}/$finalFileName';
 
       // Download file using Dio
       final dio = Dio();
       final token = await TokenStorage.getAccessToken();
-      
+
       await dio.download(
         url,
         savePath,

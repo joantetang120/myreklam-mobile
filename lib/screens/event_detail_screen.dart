@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
+import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
@@ -19,12 +20,17 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:myreklam/widgets/custom_bottom_bar.dart';
 
 class _ReactionData {
   int likesCount;
   int commentsCount;
   String? userReaction;
-  _ReactionData({this.likesCount = 0, this.commentsCount = 0, this.userReaction});
+  _ReactionData({
+    this.likesCount = 0,
+    this.commentsCount = 0,
+    this.userReaction,
+  });
 }
 
 class EventDetailScreen extends StatefulWidget {
@@ -428,82 +434,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  Widget _buildSimilarEventCard(Map<String, dynamic> event) {
-    // Extract user data
-    final user = event['user'] as Map<String, dynamic>?;
-    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
-    final particulierProfile =
-        user?['particulier_profile'] as Map<String, dynamic>?;
+  String _formatEventDate(Map<String, dynamic> event) {
+    final durationType = event['duration_type']?.toString();
+    final eventDate = event['event_date']?.toString();
+    final startDate = event['start_date']?.toString();
+    final endDate = event['end_date']?.toString();
 
-    final avatarUrl =
-        proProfile?['logo_url']?.toString() ??
-        proProfile?['avatar_url']?.toString() ??
-        particulierProfile?['avatar_url']?.toString() ??
-        user?['avatar']?.toString();
-
-    final profileImage = avatarUrl?.isNotEmpty == true
-        ? (avatarUrl!.startsWith('http')
-              ? avatarUrl
-              : '${ApiConfig.baseUrl.replaceAll('/api', '')}/storage/$avatarUrl')
-        : 'assets/images/dashboard_particulier/Ellipse 12.png';
-
-    // Extract owner name from profiles
-    final ownerName =
-        proProfile?['company_name']?.toString() ??
-        proProfile?['first_name']?.toString() ??
-        particulierProfile?['pseudo']?.toString() ??
-        particulierProfile?['first_name']?.toString() ??
-        user?['name']?.toString() ??
-        'Organisateur';
-
-    final eventTitle = event['title']?.toString() ?? 'Évènement';
-
-    // Extract media
-    final mediaFiles = event['media_files'] as List? ?? [];
-    final images = mediaFiles
-        .where((m) => m is Map && m['url'] != null)
-        .map((m) {
-          final url = m['url']?.toString() ?? '';
-          if (url.startsWith('http')) return url;
-          final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
-          return '$serverBase/storage/$url';
-        })
-        .where((url) => url.isNotEmpty)
-        .toList();
-    final eventImage = images.isNotEmpty
-        ? images.first
-        : 'assets/images/dashboard_particulier/Rectangle 12 (4).png';
-
-    // Categories
-    final categories = <String>[
-      if (event['category_label']?.toString().isNotEmpty ?? false)
-        event['category_label'].toString(),
-      if (event['sub_category_label']?.toString().isNotEmpty ?? false)
-        event['sub_category_label'].toString(),
-    ];
-
-    // Price
-    final priceType = event['price_type']?.toString();
-    final priceAmount = event['price_amount']?.toString();
-    final price = priceType == 'gratuit'
-        ? 'Gratuit'
-        : (priceAmount?.isNotEmpty == true ? '$priceAmount €' : 'Gratuit');
-
-    // Location
-    final coverageArea =
-        event['coverage_area']?.toString() ??
-        event['location']?.toString() ??
-        'Non spécifié';
-
-    // Date
-    String eventDate = '';
-    final rawDate =
-        event['event_date']?.toString() ??
-        event['start_date']?.toString() ??
-        '';
-    if (rawDate.isNotEmpty) {
+    String formatDate(String? iso) {
+      if (iso == null) return '';
       try {
-        final d = DateTime.parse(rawDate);
+        final date = DateTime.parse(iso);
         const months = [
           'janvier',
           'février',
@@ -518,22 +458,648 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           'novembre',
           'décembre',
         ];
-        eventDate = '${d.day} ${months[d.month - 1]} ${d.year}';
+        return '${date.day} ${months[date.month - 1]} ${date.year}';
       } catch (_) {
-        eventDate = rawDate;
+        return iso;
       }
     }
 
-    // Tags
-    final subCategoryCode = event['sub_category_code']?.toString();
-    final tags = <String>[
-      if (subCategoryCode != null && subCategoryCode.isNotEmpty)
-        _translateSubCategory(subCategoryCode),
-      if (event['format_type']?.toString().isNotEmpty ?? false)
-        event['format_type'].toString(),
+    if (durationType == 'permanent') return 'Permanent';
+
+    // Handle multi_day with start/end dates like bon plan validity
+    if (durationType == 'multi_day') {
+      final hasStart = startDate != null && startDate.isNotEmpty;
+      final hasEnd = endDate != null && endDate.isNotEmpty;
+
+      if (hasStart && hasEnd) {
+        final formattedStart = formatDate(startDate);
+        final formattedEnd = formatDate(endDate);
+        return 'Du $formattedStart Au $formattedEnd';
+      } else if (hasStart) {
+        final formatted = formatDate(startDate);
+        return 'À partir du $formatted';
+      } else if (hasEnd) {
+        final formatted = formatDate(endDate);
+        return 'Jusqu\'au $formatted';
+      }
+      return 'À partir de bientôt';
+    }
+
+    final formatted = formatDate(eventDate);
+    return formatted.isNotEmpty
+        ? 'A lieu, $formatted'
+        : 'Date annoncée prochainement';
+  }
+
+  String _buildTimeAgo(String? isoDate) {
+    if (isoDate == null) return '';
+    try {
+      final created = DateTime.parse(isoDate).toLocal();
+      final diff = DateTime.now().difference(created);
+      if (diff.inMinutes < 1) return "à l'instant";
+      if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes} min';
+      if (diff.inHours < 24) return 'il y a ${diff.inHours} h';
+      if (diff.inDays < 7) return 'il y a ${diff.inDays} j';
+      final weeks = (diff.inDays / 7).floor();
+      if (weeks < 4) return 'il y a $weeks sem';
+      final months = (diff.inDays / 30).floor();
+      return 'il y a $months mois';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String? _buildStorageUrl(String? url) {
+    if (url == null || url.isEmpty) return null;
+    // Handle already complete URLs (both http:// and https://)
+    if (url.toLowerCase().startsWith('http://') ||
+        url.toLowerCase().startsWith('https://')) {
+      return url;
+    }
+    // Handle URLs that might incorrectly start with /storage/ followed by http
+    if (url.startsWith('/storage/http')) {
+      // Extract the actual URL after /storage/
+      final actualUrl = url.substring(9); // Remove '/storage/'
+      if (actualUrl.toLowerCase().startsWith('http://') ||
+          actualUrl.toLowerCase().startsWith('https://')) {
+        return actualUrl;
+      }
+    }
+    final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+    // Remove leading slash if present to avoid double slashes
+    final cleanUrl = url.startsWith('/') ? url.substring(1) : url;
+    return '$serverBase/storage/$cleanUrl';
+  }
+
+  static const _defaultAvatar =
+      'assets/images/dashboard_particulier/Ellipse 10.png';
+
+  String _formatPrice(Map<String, dynamic> event) {
+    final priceType = event['price_type']?.toString();
+
+    // If price_type is gratuit or null, return "Gratuit"
+    if (priceType == null || priceType == 'gratuit') {
+      return 'Gratuit';
+    }
+
+    // If price_type is payant, check pricing_mode
+    if (priceType == 'payant') {
+      final pricingMode = event['pricing_mode']?.toString();
+
+      // If pricing_mode is categories, get first price from price_categories
+      if (pricingMode == 'categories') {
+        final priceCategories = event['price_categories'] as List?;
+        if (priceCategories != null && priceCategories.isNotEmpty) {
+          final firstCategory = priceCategories[0] as Map<String, dynamic>?;
+          if (firstCategory != null) {
+            final price = firstCategory['price']?.toString();
+            if (price != null && price.isNotEmpty) {
+              return 'À partir de $price €';
+            }
+          }
+        }
+        return 'Payant';
+      }
+
+      // If pricing_mode is unique, get price_amount
+      if (pricingMode == 'unique') {
+        final priceAmount = event['price_amount']?.toString();
+        if (priceAmount != null && priceAmount.isNotEmpty) {
+          return '$priceAmount €';
+        }
+        return 'Payant';
+      }
+
+      return 'Payant';
+    }
+
+    return 'Gratuit';
+  }
+
+  String? _extractMediaUrl(Map<String, dynamic> resource) {
+    final media = resource['media'] ?? resource['media_files'];
+    if (media is List && media.isNotEmpty) {
+      final first = media.first;
+      if (first is Map<String, dynamic>) {
+        final url = first['url']?.toString();
+        if (url != null && url.isNotEmpty) {
+          // If URL is already complete (http/https), return it as-is
+          if (url.startsWith('http')) return url;
+          // Otherwise prepend the server base URL
+          return "${ApiConfig.baseUrl.replaceFirst('/api', '')}$url";
+        }
+      }
+    }
+    final cover = resource['cover_url']?.toString();
+    if (cover != null && cover.isNotEmpty) {
+      if (cover.startsWith('http')) return cover;
+      return "${ApiConfig.baseUrl.replaceFirst('/api', '')}$cover";
+    }
+    return null;
+  }
+
+  Widget _buildReactionBar(
+    String apiSlug,
+    String entityId, {
+    bool? acceptedMessages,
+    Map<String, dynamic>? authorData,
+    Map<String, dynamic>? postData,
+  }) {
+    final data = _getReaction(apiSlug, entityId);
+    final isLiked = data.userReaction == 'like';
+    final isPost = apiSlug == 'posts';
+    final isBonPlan = apiSlug == 'bon-plans';
+
+    return Row(
+      children: [
+        // Like
+        GestureDetector(
+          onTap: () => _toggleReaction(apiSlug, entityId, 'like'),
+          child: Row(
+            children: [
+              Icon(
+                isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+                size: 18,
+                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                data.likesCount.toString(),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 18),
+        // Comments
+        GestureDetector(
+          onTap: () => _showEntityCommentsSheet(apiSlug, entityId),
+          child: Row(
+            children: [
+              Icon(
+                Icons.chat_bubble_outline,
+                size: 17,
+                color: Colors.grey[500],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                data.commentsCount.toString(),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+        // Share icon
+        const SizedBox(width: 14),
+        GestureDetector(
+          onTap: () => _shareBonPlan(entityId),
+          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
+        ),
+      ],
+    );
+  }
+
+  void _shareBonPlan(String bonPlanId) {
+    // Share functionality for bon plans
+    final String shareUrl =
+        '${ApiConfig.baseUrl.replaceAll('/api', '')}/bon-plans/$bonPlanId';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Partager ce bon plan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
+                title: const Text('Copier le lien'),
+                onTap: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lien copié dans le presse-papiers'),
+                      backgroundColor: Color(0xFF3AAE5E),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
+                title: const Text('Partager via...'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement native share
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Like _asInt but returns null instead of 0 for null/invalid values
+  int? _tryAsInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) {
+      return int.tryParse(value);
+    }
+    return null;
+  }
+
+  String _stripHtml(String text) {
+    final exp = RegExp(r'<[^>]*>', multiLine: true, caseSensitive: false);
+    return text.replaceAll(exp, ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  String? _currentUserId;
+
+  Future<String?> _getCurrentUserId({bool forceRefresh = false}) async {
+    if (!forceRefresh && _currentUserId != null) {
+      return _currentUserId;
+    }
+    try {
+      final response = await ApiClient().authenticatedGet('/profile/me');
+      final data = response['user'] as Map<String, dynamic>?;
+      final id = data?['id']?.toString();
+
+      // Sync mys and parrainage_code to UserSession
+      if (data != null) {
+        final mys = data['mys'];
+        final parrainageCode = data['parrainage_code'];
+        if (mys != null) {
+          UserSession().updateMys(mys);
+        }
+        if (parrainageCode != null) {
+          UserSession().updateParrainageCode(parrainageCode);
+        }
+      }
+
+      if (mounted) {
+        setState(() => _currentUserId = id);
+      } else {
+        _currentUserId = id;
+      }
+
+      // Refresh bottom bar avatar when user data is fetched
+      CustomBottomBar.refreshAvatarNotifier.value = true;
+
+      return id;
+    } catch (e) {
+      debugPrint('Error fetching current user ID: $e');
+      return _currentUserId;
+    }
+  }
+
+  Future<void> _navigateToEventDetail(Map<String, dynamic> ev) async {
+    final eventId = ev['id']?.toString();
+    if (eventId == null || eventId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir cet événement')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final response = await ApiClient().authenticatedGet('/events/$eventId');
+      Navigator.pop(context);
+
+      final data = response['data'] as Map<String, dynamic>? ?? response;
+      debugPrint('DASHBOARD NAV: data.keys = ${data.keys.toList()}');
+      debugPrint('DASHBOARD NAV: data[user] = ${data['user']}');
+      debugPrint(
+        'DASHBOARD NAV: data[user] runtimeType = ${data['user']?.runtimeType}',
+      );
+
+      final user = data['user'] as Map<String, dynamic>?;
+      final profileImage = _defaultAvatar;
+      final userName = user?['name']?.toString() ?? 'Organisateur';
+
+      final title = data['title']?.toString() ?? '';
+      final description = _stripHtml(data['description']?.toString() ?? '');
+      final descriptionDelta = data['description_delta'];
+      final categoryCode = data['category_code']?.toString();
+      final subCategoryCode = data['sub_category_code']?.toString();
+      final formatType = data['format_type']?.toString();
+      final durationType = data['duration_type']?.toString();
+      final eventDate = data['event_date']?.toString();
+      final startDate = data['start_date']?.toString();
+      final endDate = data['end_date']?.toString();
+      final startTime = data['start_time']?.toString();
+      final endTime = data['end_time']?.toString();
+      final priceType = data['price_type']?.toString();
+      final pricingMode = data['pricing_mode']?.toString();
+      final priceAmount = data['price_amount']?.toString();
+      final priceCategories =
+          (data['price_categories'] as List?)
+              ?.map<Map<String, dynamic>>(
+                (c) => Map<String, dynamic>.from(c as Map),
+              )
+              .toList() ??
+          <Map<String, dynamic>>[];
+      final reservationMode = data['reservation_mode']?.toString();
+      final coverageArea = data['coverage_area']?.toString();
+      final locationCity = data['location_city']?.toString();
+      final locationPostalCode = data['location_postal_code']?.toString();
+      final isNationwide = data['is_nationwide'] == true;
+      final organizerName = data['organizer_name']?.toString();
+      final isOrganizer = data['is_organizer'] != false;
+      final websiteUrl = data['website_url']?.toString();
+      final landingUrl = data['landing_url']?.toString();
+      final acceptMessages = data['accept_messages'] == true;
+      final createdAt = data['created_at']?.toString();
+      final mediaFiles =
+          data['media_files'] as List? ?? data['media'] as List? ?? [];
+
+      final images = mediaFiles
+          .where((m) => m is Map && m['url'] != null)
+          .map((m) => _buildStorageUrl(m['url']?.toString()) ?? '')
+          .where((url) => url.isNotEmpty)
+          .toList();
+
+      final tags = <PostTag>[
+        if (categoryCode != null && categoryCode.isNotEmpty)
+          PostTag(
+            title: categoryCode,
+            icon: Icons.local_offer_outlined,
+            color: Colors.green,
+          ),
+        if (subCategoryCode != null && subCategoryCode.isNotEmpty)
+          PostTag(
+            title: _translateSubCategory(subCategoryCode),
+            icon: Icons.grid_view_outlined,
+            color: Colors.grey,
+          ),
+        if (formatType != null && formatType.isNotEmpty)
+          PostTag(
+            title: formatType,
+            icon: Icons.videocam_outlined,
+            color: Colors.blue,
+          ),
+      ];
+
+      // Check ownership
+      final eventUserId =
+          ev['user_id']?.toString() ?? data['user_id']?.toString();
+      final currentUserId = await _getCurrentUserId();
+      final isOwner =
+          eventUserId != null &&
+          currentUserId != null &&
+          eventUserId == currentUserId;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EventDetailScreen(
+            images: images,
+            avatar: profileImage,
+            username: isOrganizer
+                ? userName
+                : (organizerName ?? 'Organisateur'),
+            userType: 'Évènement',
+            eventTitle: title,
+            description: description,
+            descriptionDelta: descriptionDelta,
+            tags: tags,
+            timeAgo: createdAt != null ? _buildTimeAgo(createdAt) : '',
+            categoryCode: categoryCode,
+            subCategoryCode: subCategoryCode,
+            formatType: formatType,
+            durationType: durationType,
+            eventDate: eventDate,
+            startDate: startDate,
+            endDate: endDate,
+            startTime: startTime,
+            endTime: endTime,
+            priceType: priceType,
+            pricingMode: pricingMode,
+            priceAmount: priceAmount,
+            priceCategories: priceCategories,
+            reservationMode: reservationMode,
+            coverageArea: coverageArea,
+            locationCity: locationCity,
+            locationPostalCode: locationPostalCode,
+            isNationwide: isNationwide,
+            organizerName: organizerName,
+            isOrganizer: isOrganizer,
+            websiteUrl: websiteUrl,
+            landingUrl: landingUrl,
+            acceptMessages: acceptMessages,
+            isOwner: isOwner,
+            eventId: eventId,
+            eventData: data,
+            returnToListingOnEdit: false,
+            authorData: user,
+            commentsCount: _tryAsInt(data['comments_count']),
+          ),
+        ),
+      );
+    } catch (e) {
+      Navigator.pop(context);
+      debugPrint('Error fetching event detail: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors du chargement: ${e.toString()}')),
+      );
+    }
+  }
+
+  Widget _buildSimilarEventCard(Map<String, dynamic> event) {
+    final user = event['user'] as Map<String, dynamic>?;
+    final proProfile = user?['pro_profile'] as Map<String, dynamic>?;
+    final particulierProfile =
+        user?['particulier_profile'] as Map<String, dynamic>?;
+
+    final avatarUrl =
+        proProfile?['logo_url']?.toString() ??
+        proProfile?['avatar_url']?.toString() ??
+        particulierProfile?['avatar_url']?.toString() ??
+        user?['avatar']?.toString();
+
+    final profileImage = _buildStorageUrl(avatarUrl) ?? _defaultAvatar;
+
+    // Extract owner name from profiles
+    final ownerName =
+        proProfile?['company_name']?.toString() ??
+        proProfile?['first_name']?.toString() ??
+        particulierProfile?['pseudo']?.toString() ??
+        particulierProfile?['first_name']?.toString() ??
+        user?['name']?.toString() ??
+        'Organisateur';
+    final eventTitle = event['title']?.toString() ?? 'Évènement';
+    final eventImage = _extractMediaUrl(event) ?? '';
+    final categories = <String>[
+      if (event['category_label']?.toString().isNotEmpty ?? false)
+        event['category_label'].toString(),
+      if (event['sub_category_label']?.toString().isNotEmpty ?? false)
+        event['sub_category_label'].toString(),
     ];
+    final price = _formatPrice(event);
+    final coverageArea =
+        event['coverage_area']?.toString() ??
+        event['location']?.toString() ??
+        'Non spécifié';
 
     final eventId = event['id']?.toString() ?? '';
+
+    // Build tags for display
+    final tags = <String>[];
+
+    // Add sub_category_code if available (and translate to French)
+    final subCategoryCode = event['sub_category_code']?.toString();
+    if (subCategoryCode != null && subCategoryCode.isNotEmpty) {
+      tags.add(_translateSubCategory(subCategoryCode));
+    }
+
+    // Add format_type if available
+    final formatType = event['format_type']?.toString();
+    if (formatType != null && formatType.isNotEmpty) {
+      const formatTranslations = {
+        'Présentiel': 'Présentiel',
+        'En ligne': 'En ligne',
+        'Hybride': 'Hybride',
+      };
+      tags.add(formatTranslations[formatType] ?? formatType);
+    }
+
+    // Check if already favorited by current user
+    final favoris = event['event_favorites'] as List? ?? [];
+
+    final currentUserId = UserSession().id;
+    final bool initialIsFavorited =
+        currentUserId != null &&
+        favoris.any(
+          (f) =>
+              f is Map &&
+              (f['user_id']?.toString() == currentUserId ||
+                  f['user']?['id']?.toString() == currentUserId),
+        );
+
+    // Use ValueNotifier for state that persists across rebuilds
+    final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
+
+    Future<void> _toggleFavorite() async {
+      // Toggle immediately for responsive UI
+      final newValue = !isFavoritedNotifier.value;
+      isFavoritedNotifier.value = newValue;
+
+      // Update underlying data immediately for persistence across rebuilds
+      if (newValue) {
+        // Add to favorites
+        if (event['event_favorites'] is! List) {
+          event['event_favorites'] = [];
+        }
+        // Check if already exists to avoid duplicates
+        final alreadyExists = (event['event_favorites'] as List).any(
+          (f) =>
+              f is Map &&
+              (f['user_id']?.toString() == currentUserId ||
+                  f['user']?['id']?.toString() == currentUserId),
+        );
+        if (!alreadyExists) {
+          (event['event_favorites'] as List).add({
+            'user_id': currentUserId,
+            'user': {'id': currentUserId},
+          });
+        }
+      } else {
+        // Remove from favorites
+        if (event['event_favorites'] is List) {
+          (event['event_favorites'] as List).removeWhere(
+            (f) =>
+                f is Map &&
+                (f['user_id']?.toString() == currentUserId ||
+                    f['user']?['id']?.toString() == currentUserId),
+          );
+        }
+      }
+
+      try {
+        if (!newValue) {
+          // Remove from favorites (API call)
+          await ApiClient().authenticatedDelete('/events/$eventId/favorite');
+        } else {
+          // Add to favorites (API call)
+          await ApiClient().authenticatedPost('/events/$eventId/favorite');
+        }
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                newValue ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                style: TextStyle(color: Colors.white),
+              ),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('Favorite toggle error: $e');
+
+        // Revert on error
+        isFavoritedNotifier.value = !newValue;
+
+        // Revert underlying data
+        if (!newValue) {
+          // Was removing, so add back
+          if (event['event_favorites'] is! List) {
+            event['event_favorites'] = [];
+          }
+          (event['event_favorites'] as List).add({
+            'user_id': currentUserId,
+            'user': {'id': currentUserId},
+          });
+        } else {
+          // Was adding, so remove
+          if (event['event_favorites'] is List) {
+            (event['event_favorites'] as List).removeWhere(
+              (f) =>
+                  f is Map &&
+                  (f['user_id']?.toString() == currentUserId ||
+                      f['user']?['id']?.toString() == currentUserId),
+            );
+          }
+        }
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
 
     return EvenementCard(
       profileImage: profileImage,
@@ -543,31 +1109,38 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       eventImage: eventImage,
       badge: event['status']?.toString(),
       categories: categories.isNotEmpty ? categories : ['Général'],
-      eventDate: eventDate.isNotEmpty ? eventDate : 'Date à définir',
+      eventDate: _formatEventDate(event),
       location: coverageArea,
-      timeAgo: event['created_at']?.toString() ?? '',
+      timeAgo: _buildTimeAgo(event['created_at']?.toString()),
       price: price,
-      likesCount: (event['likes_count'] as int?) ?? 0,
-      commentsCount: (event['comments_count'] as int?) ?? 0,
-      onTapCTA: () => _navigateToSimilarEvent(event),
+      likesCount: _asInt(event['likes_count']),
+      commentsCount: _asInt(event['comments_count']),
+      onTapCTA: () => _navigateToEventDetail(event),
       tags: tags.isNotEmpty ? tags : null,
       onAvatarTap: () {
         if (user?['id'] != null) {
+          final isProUser =
+              user?['account_type']?.toString().toLowerCase() == 'pro';
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  ParticulierPublicViewScreen(userId: user!['id'].toString()),
+              builder: (context) => isProUser
+                  ? ProPublicViewScreen(userId: user!['id'].toString())
+                  : ParticulierPublicViewScreen(userId: user!['id'].toString()),
             ),
           );
         }
       },
       reactionBar: eventId.isNotEmpty
-          ? Builder(builder: (ctx) {
-              _seedReaction('events', eventId, event);
-              return _buildSimilarReactionBar('events', eventId);
-            })
+          ? Builder(
+              builder: (ctx) {
+                _seedReaction('events', eventId, event);
+                return _buildReactionBar('events', eventId);
+              },
+            )
           : null,
+      isFavoriteNotifier: isFavoritedNotifier,
+      onFavoriteToggle: _toggleFavorite,
     );
   }
 
@@ -1088,7 +1661,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (widget.locationCity != null && widget.locationCity!.isNotEmpty) {
       parts.add(widget.locationCity!);
     }
-    if (widget.locationPostalCode != null && widget.locationPostalCode!.isNotEmpty) {
+    if (widget.locationPostalCode != null &&
+        widget.locationPostalCode!.isNotEmpty) {
       parts.add(widget.locationPostalCode!);
     }
 
@@ -1366,7 +1940,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Détail Évènement',
+          'Détails Évènement',
           style: TextStyle(
             color: Color(0xFF616161),
             fontFamily: 'Manjari',
@@ -1556,7 +2130,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   if (widget.startTime != null && widget.startTime!.isNotEmpty)
                     const SizedBox(height: 12),
                   // Organisateur - only show when user is not the organizer
-                  if (!widget.isOrganizer && widget.organizerName != null && widget.organizerName!.isNotEmpty)
+                  if (!widget.isOrganizer &&
+                      widget.organizerName != null &&
+                      widget.organizerName!.isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.person_outline,
                       iconColor: const Color(0xFF1976D2),
@@ -1564,7 +2140,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       label: 'Organisateur',
                       value: widget.organizerName!,
                     ),
-                  if (!widget.isOrganizer && widget.organizerName != null && widget.organizerName!.isNotEmpty)
+                  if (!widget.isOrganizer &&
+                      widget.organizerName != null &&
+                      widget.organizerName!.isNotEmpty)
                     const SizedBox(height: 12),
                   // Lieu
                   if (_buildLocationDisplay().isNotEmpty)
@@ -1684,7 +2262,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
             // 6. Action buttons row (Favoris - Share button commented out)
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 // Favoris button
                 Column(
@@ -1921,7 +2499,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     )
-                  else if (_comments.isEmpty && (_localCommentsCount == null || _localCommentsCount == 0))
+                  else if (_comments.isEmpty &&
+                      (_localCommentsCount == null || _localCommentsCount == 0))
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 20),
@@ -1946,7 +2525,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: widget.eventId != null ? () => _showEntityCommentsSheet('events', widget.eventId!) : null,
+                      onPressed: widget.eventId != null
+                          ? () => _showEntityCommentsSheet(
+                              'events',
+                              widget.eventId!,
+                            )
+                          : null,
                       icon: const Icon(Icons.chat_outlined, size: 18),
                       label: Text(
                         _comments.isEmpty
@@ -1970,7 +2554,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             // 11. Similar events header - always visible
             const Center(
               child: Text(
-                'Autres événements similaires',
+                'Autres événements similaires qui pourraient vous interesser',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -2399,384 +2983,552 @@ $deepLink'''
   // --- Reaction infrastructure for similar items ---
   final Map<String, _ReactionData> _reactions = {};
   String _rKey(String s, String id) => '${s}_$id';
-  int _asInt(dynamic v) { if (v is int) return v; if (v is double) return v.toInt(); return int.tryParse(v?.toString() ?? '') ?? 0; }
-  _ReactionData _getReaction(String s, String id) => _reactions.putIfAbsent(_rKey(s, id), () => _ReactionData());
+  int _asInt(dynamic v) {
+    if (v is int) return v;
+    if (v is double) return v.toInt();
+    return int.tryParse(v?.toString() ?? '') ?? 0;
+  }
+
+  _ReactionData _getReaction(String s, String id) =>
+      _reactions.putIfAbsent(_rKey(s, id), () => _ReactionData());
   void _seedReaction(String s, String id, Map<String, dynamic> r) {
-    _reactions.putIfAbsent(_rKey(s, id), () => _ReactionData(likesCount: _asInt(r['likes_count']), commentsCount: _asInt(r['comments_count']), userReaction: r['user_reaction']?.toString()));
+    _reactions.putIfAbsent(
+      _rKey(s, id),
+      () => _ReactionData(
+        likesCount: _asInt(r['likes_count']),
+        commentsCount: _asInt(r['comments_count']),
+        userReaction: r['user_reaction']?.toString(),
+      ),
+    );
   }
-  Future<void> _toggleReaction(String s, String id, String type) async {
-    final d = _getReaction(s, id);
-    final wasLiked = d.userReaction == 'like';
-    setState(() { if (wasLiked) { d.userReaction = null; if (d.likesCount > 0) d.likesCount--; } else { d.userReaction = 'like'; d.likesCount++; } });
+
+  Future<void> _toggleReaction(
+    String apiSlug,
+    String entityId,
+    String type,
+  ) async {
+    final data = _getReaction(apiSlug, entityId);
+
+    // Optimistic update
+    final oldReaction = data.userReaction;
+    final oldLikes = data.likesCount;
+
+    setState(() {
+      if (oldReaction == type) {
+        data.userReaction = null;
+        if (type == 'like') data.likesCount--;
+      } else {
+        if (oldReaction == 'like') data.likesCount--;
+        data.userReaction = type;
+        if (type == 'like') data.likesCount++;
+      }
+    });
+
     try {
-      if (wasLiked) await ApiClient().authenticatedDelete('/$s/$id/reactions');
-      else await ApiClient().authenticatedPost('/$s/$id/reactions', body: {'type': type});
-      final res = await ApiClient().authenticatedGet('/$s/$id');
-      final data = res['data'] as Map<String, dynamic>?;
-      if (data != null && mounted) setState(() { _reactions[_rKey(s, id)] = _ReactionData(likesCount: _asInt(data['likes_count']), commentsCount: _asInt(data['comments_count']), userReaction: data['user_reaction']?.toString()); });
-    } catch (_) { setState(() { if (wasLiked) { d.userReaction = 'like'; d.likesCount++; } else { d.userReaction = null; if (d.likesCount > 0) d.likesCount--; } }); }
+      final response = await ApiClient().authenticatedPost(
+        '/$apiSlug/$entityId/reactions',
+        body: {'type': type},
+      );
+      final respData = response['data'] as Map<String, dynamic>?;
+      if (respData != null && mounted) {
+        final newReaction = respData['user_reaction']?.toString();
+        setState(() {
+          data.likesCount = _asInt(respData['likes_count']);
+          data.userReaction = newReaction;
+        });
+        ReactionCacheService.save(apiSlug, entityId, newReaction);
+        ReactionCacheService.saveCount(apiSlug, entityId, data.likesCount);
+      }
+    } catch (e) {
+      debugPrint('Reaction error: $e');
+      if (mounted) {
+        setState(() {
+          data.likesCount = oldLikes;
+          data.userReaction = oldReaction;
+        });
+      }
+    }
   }
+
   void _showEntityCommentsSheet(String s, String id) {
     List<Map<String, dynamic>> comments = [];
     bool isLoading = true;
     final ctrl = TextEditingController();
     int? replyingToId;
     String? replyingToName;
-    
+
     showModalBottomSheet(
-      context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
-      builder: (sheetCtx) => StatefulBuilder(builder: (ctx, ms) {
-        if (isLoading && comments.isEmpty) {
-          ApiClient().authenticatedGet('/$s/$id/comments?per_page=50').then((res) {
-            final data = res['data'];
-            List<Map<String, dynamic>> fetched = [];
-            if (data is Map && data['data'] is List) fetched = List<Map<String, dynamic>>.from(data['data']);
-            else if (data is List) fetched = List<Map<String, dynamic>>.from(data);
-            ms(() { comments = fetched; isLoading = false; });
-          }).catchError((_) { ms(() => isLoading = false); });
-        }
-        
-        Future<void> submitComment() async {
-          final text = ctrl.text.trim();
-          if (text.isEmpty) return;
-          
-          try {
-            Map<String, dynamic> res;
-            if (replyingToId != null) {
-              res = await ApiClient().authenticatedPost('/$s/$id/comments/$replyingToId/reply', body: {'body': text});
-            } else {
-              res = await ApiClient().authenticatedPost('/$s/$id/comments', body: {'body': text});
-            }
-            
-            final nc = res['data'] as Map<String, dynamic>?;
-            if (nc != null) {
-              ms(() {
-                if (replyingToId != null) {
-                  final parent = comments.firstWhere(
-                    (c) => c['id'] == replyingToId,
-                    orElse: () => <String, dynamic>{},
-                  );
-                  if (parent.isNotEmpty) {
-                    final replies = List<Map<String, dynamic>>.from(
-                      (parent['replies'] as List?) ?? [],
-                    );
-                    replies.add(nc);
-                    parent['replies'] = replies;
-                    parent['replies_count'] = (parent['replies_count'] as int? ?? 0) + 1;
-                  }
-                } else {
-                  comments.insert(0, nc);
-                }
-                replyingToId = null;
-                replyingToName = null;
-              });
-              setState(() {
-                _getReaction(s, id).commentsCount++;
-                _localCommentsCount = (_localCommentsCount ?? _comments.length) + 1;
-                _fetchComments();
-              });
-            }
-            ctrl.clear();
-            FocusScope.of(ctx).unfocus();
-          } catch (e) {
-            if (ctx.mounted) ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => StatefulBuilder(
+        builder: (ctx, ms) {
+          if (isLoading && comments.isEmpty) {
+            ApiClient()
+                .authenticatedGet('/$s/$id/comments?per_page=50')
+                .then((res) {
+                  final data = res['data'];
+                  List<Map<String, dynamic>> fetched = [];
+                  if (data is Map && data['data'] is List)
+                    fetched = List<Map<String, dynamic>>.from(data['data']);
+                  else if (data is List)
+                    fetched = List<Map<String, dynamic>>.from(data);
+                  ms(() {
+                    comments = fetched;
+                    isLoading = false;
+                  });
+                })
+                .catchError((_) {
+                  ms(() => isLoading = false);
+                });
           }
-        }
-        
-        Widget buildCommentItem(Map<String, dynamic> comment, {bool isReply = false}) {
-          final user = comment['user'] as Map<String, dynamic>?;
-          final commentId = comment['id'];
-          final commentIdInt = commentId is int ? commentId : int.tryParse(commentId?.toString() ?? '');
-          
-          String displayName = 'Utilisateur';
-          if (user != null) {
-            if (user['particulier_profile'] != null) {
-              final profile = user['particulier_profile'] as Map<String, dynamic>;
-              displayName = profile['pseudo']?.toString() ?? user['name']?.toString() ?? 'Utilisateur';
-            } else if (user['pro_profile'] != null) {
-              final profile = user['pro_profile'] as Map<String, dynamic>;
-              displayName = profile['company_name']?.toString() ?? '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'.trim();
-              if (displayName.isEmpty) displayName = user['name']?.toString() ?? 'Utilisateur';
-            } else {
-              displayName = user['name']?.toString() ?? 'Utilisateur';
-            }
-          }
-          
-          String? rawAvatarUrl;
-          if (user != null) {
-            if (user['particulier_profile'] != null) {
-              rawAvatarUrl = user['particulier_profile']['avatar_url']?.toString();
-            } else if (user['pro_profile'] != null) {
-              rawAvatarUrl = user['pro_profile']['avatar_url']?.toString();
-            }
-          }
-          final avatarUrl = ApiConfig.resolveMediaUrl(rawAvatarUrl);
-          
-          final body = comment['body']?.toString() ?? '';
-          final createdAt = comment['created_at'];
-          String timeAgo = 'à l\'instant';
-          if (createdAt != null) {
+
+          Future<void> submitComment() async {
+            final text = ctrl.text.trim();
+            if (text.isEmpty) return;
+
             try {
-              final date = DateTime.parse(createdAt.toString());
-              final diff = DateTime.now().difference(date);
-              if (diff.inDays > 0) {
-                timeAgo = 'Il y a ${diff.inDays}j';
-              } else if (diff.inHours > 0) {
-                timeAgo = 'Il y a ${diff.inHours}h';
-              } else if (diff.inMinutes > 0) {
-                timeAgo = 'Il y a ${diff.inMinutes}min';
+              Map<String, dynamic> res;
+              if (replyingToId != null) {
+                res = await ApiClient().authenticatedPost(
+                  '/$s/$id/comments/$replyingToId/reply',
+                  body: {'body': text},
+                );
               } else {
-                timeAgo = 'à l\'instant';
+                res = await ApiClient().authenticatedPost(
+                  '/$s/$id/comments',
+                  body: {'body': text},
+                );
               }
-            } catch (_) {}
+
+              final nc = res['data'] as Map<String, dynamic>?;
+              if (nc != null) {
+                ms(() {
+                  if (replyingToId != null) {
+                    final parent = comments.firstWhere(
+                      (c) => c['id'] == replyingToId,
+                      orElse: () => <String, dynamic>{},
+                    );
+                    if (parent.isNotEmpty) {
+                      final replies = List<Map<String, dynamic>>.from(
+                        (parent['replies'] as List?) ?? [],
+                      );
+                      replies.add(nc);
+                      parent['replies'] = replies;
+                      parent['replies_count'] =
+                          (parent['replies_count'] as int? ?? 0) + 1;
+                    }
+                  } else {
+                    comments.insert(0, nc);
+                  }
+                  replyingToId = null;
+                  replyingToName = null;
+                });
+                setState(() {
+                  _getReaction(s, id).commentsCount++;
+                  _localCommentsCount =
+                      (_localCommentsCount ?? _comments.length) + 1;
+                  _fetchComments();
+                });
+              }
+              ctrl.clear();
+              FocusScope.of(ctx).unfocus();
+            } catch (e) {
+              if (ctx.mounted)
+                ScaffoldMessenger.of(
+                  ctx,
+                ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+            }
           }
-          
-          final replies = List<Map<String, dynamic>>.from((comment['replies'] as List?) ?? []);
-          final likesCount = comment['likes_count'] as int? ?? 0;
-          final isLiked = comment['user_reaction']?.toString() == 'like';
-          
-          return Padding(
-            padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      radius: isReply ? 14 : 18,
-                      backgroundImage: avatarUrl != null && avatarUrl.toString().startsWith('http')
-                          ? NetworkImage(avatarUrl)
-                          : const AssetImage('assets/images/dashboard_particulier/Ellipse 10.png') as ImageProvider,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                displayName,
-                                style: TextStyle(
-                                  fontSize: isReply ? 12 : 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF333333),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                timeAgo,
-                                style: TextStyle(
-                                  fontSize: isReply ? 10 : 11,
-                                  color: Colors.grey[500],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            body,
-                            style: TextStyle(
-                              fontSize: isReply ? 12 : 13,
-                              color: Colors.grey[700],
-                              height: 1.4,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              // Like button
-                              GestureDetector(
-                                onTap: () async {
-                                  try {
-                                    final cid = comment['id'];
-                                    if (cid == null) return;
-                                    final currentLiked = comment['user_reaction']?.toString() == 'like';
-                                    final currentCount = comment['likes_count'] as int? ?? 0;
-                                    ms(() {
-                                      comment['user_reaction'] = currentLiked ? null : 'like';
-                                      comment['likes_count'] = currentLiked ? (currentCount > 0 ? currentCount - 1 : 0) : currentCount + 1;
-                                    });
-                                    if (currentLiked) {
-                                      await ApiClient().authenticatedDelete('/comments/$cid/reactions');
-                                    } else {
-                                      await ApiClient().authenticatedPost('/comments/$cid/reactions', body: {'type': 'like'});
-                                    }
-                                  } catch (e) {
-                                    debugPrint('Error liking comment: $e');
-                                  }
-                                },
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
-                                      size: isReply ? 12 : 14,
-                                      color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      likesCount.toString(),
-                                      style: TextStyle(
-                                        fontSize: isReply ? 11 : 12,
-                                        color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                                        fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              // Reply button
-                              if (!isReply && commentIdInt != null)
-                                GestureDetector(
-                                  onTap: () {
-                                    ms(() {
-                                      replyingToId = commentIdInt;
-                                      replyingToName = displayName;
-                                    });
-                                  },
-                                  child: Text(
-                                    'Répondre',
-                                    style: TextStyle(
-                                      fontSize: isReply ? 11 : 12,
-                                      color: Colors.grey[600],
-                                      fontWeight: FontWeight.w500,
-                                    ),
+
+          Widget buildCommentItem(
+            Map<String, dynamic> comment, {
+            bool isReply = false,
+          }) {
+            final user = comment['user'] as Map<String, dynamic>?;
+            final commentId = comment['id'];
+            final commentIdInt = commentId is int
+                ? commentId
+                : int.tryParse(commentId?.toString() ?? '');
+
+            String displayName = 'Utilisateur';
+            if (user != null) {
+              if (user['particulier_profile'] != null) {
+                final profile =
+                    user['particulier_profile'] as Map<String, dynamic>;
+                displayName =
+                    profile['pseudo']?.toString() ??
+                    user['name']?.toString() ??
+                    'Utilisateur';
+              } else if (user['pro_profile'] != null) {
+                final profile = user['pro_profile'] as Map<String, dynamic>;
+                displayName =
+                    profile['company_name']?.toString() ??
+                    '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'
+                        .trim();
+                if (displayName.isEmpty)
+                  displayName = user['name']?.toString() ?? 'Utilisateur';
+              } else {
+                displayName = user['name']?.toString() ?? 'Utilisateur';
+              }
+            }
+
+            String? rawAvatarUrl;
+            if (user != null) {
+              if (user['particulier_profile'] != null) {
+                rawAvatarUrl = user['particulier_profile']['avatar_url']
+                    ?.toString();
+              } else if (user['pro_profile'] != null) {
+                rawAvatarUrl = user['pro_profile']['avatar_url']?.toString();
+              }
+            }
+            final avatarUrl = ApiConfig.resolveMediaUrl(rawAvatarUrl);
+
+            final body = comment['body']?.toString() ?? '';
+            final createdAt = comment['created_at'];
+            String timeAgo = 'à l\'instant';
+            if (createdAt != null) {
+              try {
+                final date = DateTime.parse(createdAt.toString());
+                final diff = DateTime.now().difference(date);
+                if (diff.inDays > 0) {
+                  timeAgo = 'Il y a ${diff.inDays}j';
+                } else if (diff.inHours > 0) {
+                  timeAgo = 'Il y a ${diff.inHours}h';
+                } else if (diff.inMinutes > 0) {
+                  timeAgo = 'Il y a ${diff.inMinutes}min';
+                } else {
+                  timeAgo = 'à l\'instant';
+                }
+              } catch (_) {}
+            }
+
+            final replies = List<Map<String, dynamic>>.from(
+              (comment['replies'] as List?) ?? [],
+            );
+            final likesCount = comment['likes_count'] as int? ?? 0;
+            final isLiked = comment['user_reaction']?.toString() == 'like';
+
+            return Padding(
+              padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CircleAvatar(
+                        radius: isReply ? 14 : 18,
+                        backgroundImage:
+                            avatarUrl != null &&
+                                avatarUrl.toString().startsWith('http')
+                            ? NetworkImage(avatarUrl)
+                            : const AssetImage(
+                                    'assets/images/dashboard_particulier/Ellipse 10.png',
+                                  )
+                                  as ImageProvider,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  displayName,
+                                  style: TextStyle(
+                                    fontSize: isReply ? 12 : 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF333333),
                                   ),
                                 ),
-                            ],
+                                const SizedBox(width: 6),
+                                Text(
+                                  timeAgo,
+                                  style: TextStyle(
+                                    fontSize: isReply ? 10 : 11,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              body,
+                              style: TextStyle(
+                                fontSize: isReply ? 12 : 13,
+                                color: Colors.grey[700],
+                                height: 1.4,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                // Like button
+                                GestureDetector(
+                                  onTap: () async {
+                                    try {
+                                      final cid = comment['id'];
+                                      if (cid == null) return;
+                                      final currentLiked =
+                                          comment['user_reaction']
+                                              ?.toString() ==
+                                          'like';
+                                      final currentCount =
+                                          comment['likes_count'] as int? ?? 0;
+                                      ms(() {
+                                        comment['user_reaction'] = currentLiked
+                                            ? null
+                                            : 'like';
+                                        comment['likes_count'] = currentLiked
+                                            ? (currentCount > 0
+                                                  ? currentCount - 1
+                                                  : 0)
+                                            : currentCount + 1;
+                                      });
+                                      if (currentLiked) {
+                                        await ApiClient().authenticatedDelete(
+                                          '/comments/$cid/reactions',
+                                        );
+                                      } else {
+                                        await ApiClient().authenticatedPost(
+                                          '/comments/$cid/reactions',
+                                          body: {'type': 'like'},
+                                        );
+                                      }
+                                    } catch (e) {
+                                      debugPrint('Error liking comment: $e');
+                                    }
+                                  },
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        isLiked
+                                            ? Icons.thumb_up_alt
+                                            : Icons.thumb_up_alt_outlined,
+                                        size: isReply ? 12 : 14,
+                                        color: isLiked
+                                            ? const Color(0xFF3AAE5E)
+                                            : Colors.grey[500],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        likesCount.toString(),
+                                        style: TextStyle(
+                                          fontSize: isReply ? 11 : 12,
+                                          color: isLiked
+                                              ? const Color(0xFF3AAE5E)
+                                              : Colors.grey[600],
+                                          fontWeight: isLiked
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                // Reply button
+                                if (!isReply && commentIdInt != null)
+                                  GestureDetector(
+                                    onTap: () {
+                                      ms(() {
+                                        replyingToId = commentIdInt;
+                                        replyingToName = displayName;
+                                      });
+                                    },
+                                    child: Text(
+                                      'Répondre',
+                                      style: TextStyle(
+                                        fontSize: isReply ? 11 : 12,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (!isReply && replies.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    ...replies.map((r) => buildCommentItem(r, isReply: true)),
+                  ],
+                ],
+              ),
+            );
+          }
+
+          return DraggableScrollableSheet(
+            initialChildSize: 0.7,
+            maxChildSize: 0.95,
+            minChildSize: 0.3,
+            builder: (_, sc) => Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Commentaires (${comments.length})',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : comments.isEmpty
+                        ? const Center(child: Text('Aucun commentaire.'))
+                        : ListView.builder(
+                            controller: sc,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: comments.length,
+                            itemBuilder: (_, i) =>
+                                buildCommentItem(comments[i]),
+                          ),
+                  ),
+                  // Reply indicator
+                  if (replyingToName != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      color: Colors.grey[100],
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Répondre à $replyingToName',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () => ms(() {
+                              replyingToId = null;
+                              replyingToName = null;
+                            }),
+                            child: const Icon(
+                              Icons.close,
+                              size: 18,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-                if (!isReply && replies.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  ...replies.map((r) => buildCommentItem(r, isReply: true)),
+                  // Input area
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(ctx).viewInsets.bottom + 8,
+                      left: 12,
+                      right: 12,
+                      top: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: ctrl,
+                            decoration: InputDecoration(
+                              hintText: replyingToName != null
+                                  ? 'Écrire une réponse...'
+                                  : 'Écrire un commentaire...',
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: submitComment,
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF3AAE5E),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.send,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
-              ],
+              ),
             ),
           );
-        }
-        
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7, maxChildSize: 0.95, minChildSize: 0.3,
-          builder: (_, sc) => Container(
-            decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-            child: Column(children: [
-              const SizedBox(height: 12),
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
-              const SizedBox(height: 8),
-              Text('Commentaires (${comments.length})', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const Divider(),
-              Expanded(child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : comments.isEmpty
-                  ? const Center(child: Text('Aucun commentaire.'))
-                  : ListView.builder(
-                      controller: sc,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: comments.length,
-                      itemBuilder: (_, i) => buildCommentItem(comments[i]),
-                    )),
-              // Reply indicator
-              if (replyingToName != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  color: Colors.grey[100],
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Répondre à $replyingToName',
-                          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => ms(() { replyingToId = null; replyingToName = null; }),
-                        child: const Icon(Icons.close, size: 18, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              // Input area
-              Padding(
-                padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 8, left: 12, right: 12, top: 8),
-                child: Row(children: [
-                  Expanded(child: TextField(
-                    controller: ctrl,
-                    decoration: InputDecoration(
-                      hintText: replyingToName != null ? 'Écrire une réponse...' : 'Écrire un commentaire...',
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                  )),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: submitComment,
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF3AAE5E),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.send, color: Colors.white, size: 20),
-                    ),
-                  ),
-                ]),
-              ),
-            ]),
-          ),
-        );
-      }),
-    );
-  }
-  Widget _buildSimilarReactionBar(String s, String id) {
-    final d = _getReaction(s, id);
-    final isLiked = d.userReaction == 'like';
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(children: [
-        GestureDetector(onTap: () => _toggleReaction(s, id, 'like'), child: Row(children: [
-          Icon(isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined, size: 18, color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500]),
-          const SizedBox(width: 4),
-          Text(d.likesCount.toString(), style: TextStyle(fontSize: 12, color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600], fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal)),
-        ])),
-        const SizedBox(width: 18),
-        GestureDetector(onTap: () => _showEntityCommentsSheet(s, id), child: Row(children: [
-          Icon(Icons.chat_bubble_outline, size: 17, color: Colors.grey[500]),
-          const SizedBox(width: 4),
-          Text(d.commentsCount.toString(), style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-        ])),
-      ]),
+        },
+      ),
     );
   }
 
-  Widget _buildCommentItem(Map<String, dynamic> comment, {bool isReply = false}) {
+  Widget _buildCommentItem(
+    Map<String, dynamic> comment, {
+    bool isReply = false,
+  }) {
     final user = comment['user'] as Map<String, dynamic>?;
     final body = comment['body']?.toString() ?? '';
     final commentId = comment['id'];
-    final commentIdInt = commentId is int ? commentId : int.tryParse(commentId?.toString() ?? '');
-    
+    final commentIdInt = commentId is int
+        ? commentId
+        : int.tryParse(commentId?.toString() ?? '');
+
     String displayName = 'Utilisateur';
     if (user != null) {
       if (user['particulier_profile'] != null) {
         final profile = user['particulier_profile'] as Map<String, dynamic>;
-        displayName = profile['pseudo']?.toString() ?? user['name']?.toString() ?? 'Utilisateur';
+        displayName =
+            profile['pseudo']?.toString() ??
+            user['name']?.toString() ??
+            'Utilisateur';
       } else if (user['pro_profile'] != null) {
         final profile = user['pro_profile'] as Map<String, dynamic>;
-        displayName = profile['company_name']?.toString() ?? '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'.trim();
-        if (displayName.isEmpty) displayName = user['name']?.toString() ?? 'Utilisateur';
+        displayName =
+            profile['company_name']?.toString() ??
+            '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'
+                .trim();
+        if (displayName.isEmpty)
+          displayName = user['name']?.toString() ?? 'Utilisateur';
       } else {
         displayName = user['name']?.toString() ?? 'Utilisateur';
       }
     }
-    
+
     String? rawAvatarUrl;
     if (user != null) {
       if (user['particulier_profile'] != null) {
@@ -2786,7 +3538,7 @@ $deepLink'''
       }
     }
     final avatarUrl = ApiConfig.resolveMediaUrl(rawAvatarUrl);
-    
+
     final createdAt = comment['created_at'];
     String timeAgo = 'à l\'instant';
     if (createdAt != null) {
@@ -2804,8 +3556,10 @@ $deepLink'''
         }
       } catch (_) {}
     }
-    
-    final replies = List<Map<String, dynamic>>.from((comment['replies'] as List?) ?? []);
+
+    final replies = List<Map<String, dynamic>>.from(
+      (comment['replies'] as List?) ?? [],
+    );
     final likesCount = comment['likes_count'] as int? ?? 0;
     final isLiked = comment['user_reaction']?.toString() == 'like';
 
@@ -2819,9 +3573,13 @@ $deepLink'''
             children: [
               CircleAvatar(
                 radius: isReply ? 14 : 18,
-                backgroundImage: avatarUrl != null && avatarUrl.toString().startsWith('http')
+                backgroundImage:
+                    avatarUrl != null && avatarUrl.toString().startsWith('http')
                     ? NetworkImage(avatarUrl)
-                    : const AssetImage('assets/images/dashboard_particulier/Ellipse 10.png') as ImageProvider,
+                    : const AssetImage(
+                            'assets/images/dashboard_particulier/Ellipse 10.png',
+                          )
+                          as ImageProvider,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -2865,16 +3623,28 @@ $deepLink'''
                           onTap: () async {
                             try {
                               if (commentId == null) return;
-                              final currentLiked = comment['user_reaction']?.toString() == 'like';
-                              final currentCount = comment['likes_count'] as int? ?? 0;
+                              final currentLiked =
+                                  comment['user_reaction']?.toString() ==
+                                  'like';
+                              final currentCount =
+                                  comment['likes_count'] as int? ?? 0;
                               setState(() {
-                                comment['user_reaction'] = currentLiked ? null : 'like';
-                                comment['likes_count'] = currentLiked ? (currentCount > 0 ? currentCount - 1 : 0) : currentCount + 1;
+                                comment['user_reaction'] = currentLiked
+                                    ? null
+                                    : 'like';
+                                comment['likes_count'] = currentLiked
+                                    ? (currentCount > 0 ? currentCount - 1 : 0)
+                                    : currentCount + 1;
                               });
                               if (currentLiked) {
-                                await ApiClient().authenticatedDelete('/comments/$commentId/reactions');
+                                await ApiClient().authenticatedDelete(
+                                  '/comments/$commentId/reactions',
+                                );
                               } else {
-                                await ApiClient().authenticatedPost('/comments/$commentId/reactions', body: {'type': 'like'});
+                                await ApiClient().authenticatedPost(
+                                  '/comments/$commentId/reactions',
+                                  body: {'type': 'like'},
+                                );
                               }
                             } catch (e) {
                               debugPrint('Error liking comment: $e');
@@ -2883,17 +3653,25 @@ $deepLink'''
                           child: Row(
                             children: [
                               Icon(
-                                isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
+                                isLiked
+                                    ? Icons.thumb_up_alt
+                                    : Icons.thumb_up_alt_outlined,
                                 size: isReply ? 12 : 14,
-                                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                                color: isLiked
+                                    ? const Color(0xFF3AAE5E)
+                                    : Colors.grey[500],
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 likesCount.toString(),
                                 style: TextStyle(
                                   fontSize: isReply ? 11 : 12,
-                                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                                  color: isLiked
+                                      ? const Color(0xFF3AAE5E)
+                                      : Colors.grey[600],
+                                  fontWeight: isLiked
+                                      ? FontWeight.w600
+                                      : FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -2934,26 +3712,35 @@ $deepLink'''
     String displayName = 'Utilisateur';
     if (user != null) {
       if (user['particulier_profile'] != null) {
-        displayName = user['particulier_profile']['pseudo']?.toString() ?? user['name']?.toString() ?? 'Utilisateur';
+        displayName =
+            user['particulier_profile']['pseudo']?.toString() ??
+            user['name']?.toString() ??
+            'Utilisateur';
       } else if (user['pro_profile'] != null) {
         final profile = user['pro_profile'] as Map<String, dynamic>;
-        displayName = profile['company_name']?.toString() ?? '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'.trim();
-        if (displayName.isEmpty) displayName = user['name']?.toString() ?? 'Utilisateur';
+        displayName =
+            profile['company_name']?.toString() ??
+            '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'
+                .trim();
+        if (displayName.isEmpty)
+          displayName = user['name']?.toString() ?? 'Utilisateur';
       } else {
         displayName = user['name']?.toString() ?? 'Utilisateur';
       }
     }
-    
+
     final ctrl = TextEditingController();
     final parentId = parentComment['id'];
-    
+
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: Container(
             decoration: const BoxDecoration(
               color: Colors.white,
@@ -2963,9 +3750,22 @@ $deepLink'''
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 12),
-                Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
                 const SizedBox(height: 16),
-                Text('Répondre à $displayName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                Text(
+                  'Répondre à $displayName',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -2976,8 +3776,14 @@ $deepLink'''
                       hintText: 'Écrire une réponse...',
                       filled: true,
                       fillColor: Colors.grey[100],
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                 ),
@@ -2989,25 +3795,31 @@ $deepLink'''
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Annuler', style: TextStyle(color: Colors.grey)),
+                        child: const Text(
+                          'Annuler',
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () async {
                           final text = ctrl.text.trim();
                           if (text.isEmpty || parentId == null) return;
-                          
+
                           try {
-                            final entityType = widget.eventId != null ? 'events' : 'events';
+                            final entityType = widget.eventId != null
+                                ? 'events'
+                                : 'events';
                             final entityId = widget.eventId;
                             if (entityId == null) return;
-                            
+
                             final res = await ApiClient().authenticatedPost(
                               '/$entityType/$entityId/comments/$parentId/reply',
                               body: {'body': text},
                             );
-                            
-                            final newReply = res['data'] as Map<String, dynamic>?;
+
+                            final newReply =
+                                res['data'] as Map<String, dynamic>?;
                             if (newReply != null) {
                               setState(() {
                                 final replies = List<Map<String, dynamic>>.from(
@@ -3015,24 +3827,33 @@ $deepLink'''
                                 );
                                 replies.add(newReply);
                                 parentComment['replies'] = replies;
-                                parentComment['replies_count'] = (parentComment['replies_count'] as int? ?? 0) + 1;
-                                _localCommentsCount = (_localCommentsCount ?? _comments.length) + 1;
+                                parentComment['replies_count'] =
+                                    (parentComment['replies_count'] as int? ??
+                                        0) +
+                                    1;
+                                _localCommentsCount =
+                                    (_localCommentsCount ?? _comments.length) +
+                                    1;
                                 _fetchComments();
                               });
                             }
-                            
+
                             ctrl.clear();
                             Navigator.pop(ctx);
                           } catch (e) {
                             if (ctx.mounted) {
-                              ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                SnackBar(content: Text('Erreur: $e')),
+                              );
                             }
                           }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF3AAE5E),
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
                         ),
                         child: const Text('Envoyer'),
                       ),
@@ -3275,13 +4096,16 @@ $deepLink'''
   // Navigate to user profile
   void _navigateToUserProfile(BuildContext context) {
     if (widget.authorData != null && widget.authorData!['id'] != null) {
-      final isPro = widget.authorData!['account_type']?.toString().toLowerCase() == 'pro';
+      final isPro =
+          widget.authorData!['account_type']?.toString().toLowerCase() == 'pro';
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => isPro
               ? ProPublicViewScreen(userId: widget.authorData!['id'].toString())
-              : ParticulierPublicViewScreen(userId: widget.authorData!['id'].toString()),
+              : ParticulierPublicViewScreen(
+                  userId: widget.authorData!['id'].toString(),
+                ),
         ),
       );
     }
