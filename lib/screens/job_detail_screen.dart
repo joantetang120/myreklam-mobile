@@ -17,6 +17,7 @@ import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
+import 'package:share_plus/share_plus.dart';
 
 class _ReactionData {
   int likesCount;
@@ -1967,24 +1968,17 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     ),
                   ],
                 ),
-                // Commented out: Partager (Share) button
-                // Column(
-                //   mainAxisSize: MainAxisSize.min,
-                //   children: [
-                //     IconButton(
-                //       onPressed: () {
-                //         // TODO: Implement share functionality
-                //       },
-                //       icon: Icon(
-                //         Icons.share_outlined,
-                //         color: Colors.grey[600],
-                //         size: 24,
-                //       ),
-                //     ),
-                //     Text(
-                //       'Partager',
-                //       style: TextStyle(
-                //         fontSize: 12,
+                // Partager (Share) button
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: _shareJob,
+                      icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
+                    ),
+                    Text('Partager', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  ],
+                ),
                 //         color: Colors.grey[600],
                 //       ),
                 //     ),
@@ -2296,6 +2290,29 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         ),
       ),
     );
+  }
+
+  void _shareJob() {
+    final title = widget.jobTitle;
+    final company = widget.companyName;
+    final location = widget.location;
+    final description = widget.description;
+    final jobId = widget.jobOfferId;
+
+    // Deep link URL
+    final String deepLink = 'https://myreklam.com/jobs/$jobId';
+
+    final String shareText = '''💼 $title
+
+🏢 $company
+📍 $location
+
+$description
+
+$deepLink'''
+        .trim();
+
+    Share.share(shareText, subject: title);
   }
 
   static Future<void> _startConversation(
