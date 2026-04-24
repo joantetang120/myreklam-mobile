@@ -19,6 +19,7 @@ import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart' show CustomBottomBar;
 
 class _ReactionData {
@@ -1481,26 +1482,22 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     ),
                   ],
                 ),
-                // Commented out: Partager (Share) button
+                // Partager (Share) button
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      onPressed: () {
-                        // TODO: Implement share functionality
-                      },
-                      icon: Icon(
-                        Icons.share_outlined,
-                        color: Colors.grey[600],
-                        size: 24,
-                      ),
+                      onPressed: _shareTraining,
+                      icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
                     ),
-                    Text(
-                      'Partager',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
+                    Text('Partager', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                   ],
                 ),
+                //         color: Colors.grey[600],
+                //       ),
+                //     ),
+                //   ],
+                // ),
               ],
             ),
             const SizedBox(height: 16),
@@ -2897,6 +2894,34 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
+  }
+
+  void _shareTraining() {
+    final title = widget.trainingTitle;
+    final company = widget.companyName;
+    final location = widget.locationCity ?? 'Lieu non précisé';
+    final trainingType = widget.trainingType;
+    final price = widget.price;
+    final description = widget.description;
+    final trainingId = widget.trainingId;
+
+    // Deep link URL
+    final String deepLink = 'https://myreklam.com/trainings/$trainingId';
+
+    final String priceText = price != null && price.isNotEmpty ? '\n💰 $price' : '';
+
+    final String shareText = '''📚 $title
+
+🏢 $company
+📍 $location
+🎯 $trainingType$priceText
+
+$description
+
+$deepLink'''
+        .trim();
+
+    Share.share(shareText, subject: title);
   }
 
   // Helper method for colored category tags (like job detail)

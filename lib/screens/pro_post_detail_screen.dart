@@ -19,6 +19,7 @@ import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
+import 'package:share_plus/share_plus.dart';
 
 class _ReactionData {
   int likesCount;
@@ -1562,7 +1563,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     }
   }
 
-  void _shareBonPlan(String bonPlanId) {
+  void _showShareBottomSheet(String bonPlanId) {
     // Share functionality for bon plans
     final String shareUrl =
         '${ApiConfig.baseUrl.replaceAll('/api', '')}/bon-plans/$bonPlanId';
@@ -1769,7 +1770,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         // Share icon
         const SizedBox(width: 14),
         GestureDetector(
-          onTap: () => _shareBonPlan(entityId),
+          onTap: () => _showShareBottomSheet(entityId),
           child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
         ),
         // For bon plans: show author avatar and name on the left
@@ -2537,14 +2538,12 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           ),
                         ],
                       ),
-                      // Share button
+                      // Partager (Share) button
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            onPressed: () {
-                              // TODO: Implement share functionality
-                            },
+                            onPressed: _shareBonPlan,
                             icon: Icon(
                               Icons.share_outlined,
                               color: Colors.grey[600],
@@ -4449,6 +4448,42 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         );
       },
     );
+  }
+
+  void _shareBonPlan() {
+    final title = widget.title;
+    final author = widget.name;
+    final location = widget.availability;
+    final price = widget.price;
+    final originalPrice = widget.originalPrice;
+    final description = widget.description;
+    final bonPlanId = widget.bonPlanId;
+    final discount = widget.discount;
+
+    // Deep link URL
+    final String deepLink = 'https://myreklam.com/bons-plans/$bonPlanId';
+
+    final String priceText = price != null && price.isNotEmpty
+        ? (originalPrice != null && originalPrice.isNotEmpty
+            ? '\n💰 ~~$originalPrice~~ → **$price**'
+            : '\n💰 $price')
+        : '';
+
+    final String discountText = discount != null && discount.isNotEmpty
+        ? '\n🏷️ Réduction: $discount'
+        : '';
+
+    final String shareText = '''🛍️ $title
+
+👤 $author
+📍 $location$priceText$discountText
+
+$description
+
+$deepLink'''
+        .trim();
+
+    Share.share(shareText, subject: title);
   }
 
   Widget _buildTag(String text, IconData icon, Color color) {

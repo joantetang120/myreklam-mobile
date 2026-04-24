@@ -19,6 +19,7 @@ import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
 
 class _ReactionData {
@@ -1634,17 +1635,12 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     ),
                   ],
                 ),
-                // Commented out: Partager (Share) button
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        Icons.share_outlined,
-                        color: Colors.grey[600],
-                        size: 24,
-                      ),
+                      onPressed: _shareDemande,
+                      icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
                     ),
                     Text(
                       'Partager',
@@ -1905,6 +1901,33 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         ),
       ),
     );
+  }
+
+  void _shareDemande() {
+    final title = widget.demandeTitle;
+    final nature = widget.nature ?? 'Général';
+    final type = widget.type ?? '';
+    final location = widget.locationCity ?? (widget.nationwide ? 'Toute la France' : 'Lieu non précisé');
+    final description = widget.description;
+    final demandeId = widget.demandeId;
+    final budget = widget.budgetMax;
+
+    // Deep link URL
+    final String deepLink = 'https://myreklam.com/demandes/$demandeId';
+
+    final String budgetText = budget != null && budget.isNotEmpty ? '\n💰 Budget max: $budget' : '';
+
+    final String shareText = '''📋 $title
+
+🏷️ $nature${type.isNotEmpty ? ' • $type' : ''}
+📍 $location$budgetText
+
+$description
+
+$deepLink'''
+        .trim();
+
+    Share.share(shareText, subject: title);
   }
 
   void _showDeleteDialog(BuildContext context) {

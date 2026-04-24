@@ -19,6 +19,7 @@ import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
 
 class _ReactionData {
@@ -1459,6 +1460,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 color: const Color(0xFF6001D2),
                 onTap: _addToYahooCalendar,
               ),
+              const SizedBox(height: 8),
+              _buildCalendarOption(
+                icon: Icons.share,
+                label: 'Partager l\'événement',
+                color: const Color(0xFF03A9F4),
+                onTap: _shareEvent,
+              ),
             ],
           ),
           actions: [
@@ -2287,22 +2295,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   ],
                 ),
-                // Commented out: Partager (Share) button
+                // Partager (Share) button
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        Icons.share_outlined,
-                        color: Colors.grey[600],
-                        size: 24,
-                      ),
+                      onPressed: _shareEvent,
+                      icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
                     ),
-                    Text(
-                      'Partager',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
+                    Text('Partager', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
                   ],
                 ),
               ],
@@ -2692,6 +2693,27 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     } finally {
       setState(() => _isLoadingFavorite = false);
     }
+  }
+
+  void _shareEvent() {
+    final title = widget.eventTitle;
+    final description = widget.description;
+    final location = widget.locationCity ?? 'Lieu non précisé';
+    final eventId = widget.eventId ?? '';
+
+    // Deep link URL - you can customize this based on your domain
+    final String deepLink = 'https://myreklam.com/events/$eventId';
+
+    final String shareText = '''🎉 $title
+
+📍 $location
+
+$description
+
+$deepLink'''
+        .trim();
+
+    Share.share(shareText, subject: title);
   }
 
   void _showDeleteDialog(BuildContext context) {
