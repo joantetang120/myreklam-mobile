@@ -13,6 +13,7 @@ class ChatConversationScreen extends StatefulWidget {
   final String name;
   final String? avatar;
   final String status;
+  final Map<String, dynamic>? linkedAnnonce;
 
   const ChatConversationScreen({
     super.key,
@@ -20,6 +21,7 @@ class ChatConversationScreen extends StatefulWidget {
     required this.name,
     this.avatar,
     this.status = 'En ligne',
+    this.linkedAnnonce,
   });
 
   @override
@@ -34,10 +36,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   bool _isLoading = true;
   bool _isSending = false;
   late ConversationProvider _conversationProvider;
+  Map<String, dynamic>? _pendingAnnonce;
 
   @override
   void initState() {
     super.initState();
+    _pendingAnnonce = widget.linkedAnnonce != null
+        ? Map<String, dynamic>.from(widget.linkedAnnonce!)
+        : null;
     _loadCurrentUser();
 
     // Écouter les changements de messages pour auto-scroll
@@ -101,14 +107,33 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     _isSending = true;
 
     final messageText = _messageController.text.trim();
+    final annonceToSend = _pendingAnnonce;
     _messageController.clear();
-    setState(() {});
+    setState(() {
+      _pendingAnnonce = null;
+    });
 
     try {
       final conversationId = int.tryParse(widget.conversationId);
 
       if (conversationId != null) {
-        await _conversationProvider.sendMessage(conversationId, messageText);
+        if (annonceToSend != null) {
+          await _conversationProvider.sendMessage(
+            conversationId,
+            messageText,
+            attachments: {
+              'type': 'annonce',
+              'annonce_type': annonceToSend['annonce_type'],
+              'annonce_id': annonceToSend['annonce_id'],
+              'title': annonceToSend['title'],
+              'description': annonceToSend['description'],
+              'image_url': annonceToSend['image_url'],
+              'author_name': annonceToSend['author_name'],
+            },
+          );
+        } else {
+          await _conversationProvider.sendMessage(conversationId, messageText);
+        }
         _scrollToBottom();
       }
     } catch (e) {
@@ -590,6 +615,91 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     },
                   ),
           ),
+
+          // Annonce Preview above input
+          if (_pendingAnnonce != null)
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0F0F0),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border(
+                    left: BorderSide(color: const Color(0xFF3AAE5E), width: 4),
+                  ),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _pendingAnnonce!['author_name']?.toString() ??
+                                'Annonce',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF3AAE5E),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _pendingAnnonce!['title']?.toString() ?? '',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[700],
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_pendingAnnonce!['image_url'] != null &&
+                        _pendingAnnonce!['image_url'].toString().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Image.network(
+                            _pendingAnnonce!['image_url'].toString(),
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 48,
+                              height: 48,
+                              color: Colors.grey[300],
+                              child: Icon(
+                                Icons.image,
+                                size: 20,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    GestureDetector(
+                      onTap: () => setState(() => _pendingAnnonce = null),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Icon(
+                          Icons.close,
+                          size: 18,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
           // Message Input
           Container(
