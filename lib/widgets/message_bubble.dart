@@ -42,15 +42,18 @@ class MessageBubble extends StatelessWidget {
             child: GestureDetector(
               onLongPress: deletedForEveryone ? null : onLongPress,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: deletedForEveryone
                       ? (isSent
-                          ? const Color(0xFFFFB74D).withOpacity(0.4)
-                          : const Color(0xFFF5F5F5).withOpacity(0.6))
+                            ? const Color(0xFFFFB74D).withOpacity(0.4)
+                            : const Color(0xFFF5F5F5).withOpacity(0.6))
                       : (isSent
-                          ? const Color(0xFFFFB74D)
-                          : const Color(0xFFF5F5F5)),
+                            ? const Color(0xFFFFB74D)
+                            : const Color(0xFFF5F5F5)),
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(16),
                     topRight: const Radius.circular(16),
@@ -95,16 +98,33 @@ class MessageBubble extends StatelessWidget {
                       if (attachments != null &&
                           attachments!['type'] == 'story_reply')
                         _StoryReplyPreview(
-                          storyImage: attachments!['story_image'] as String? ?? '',
+                          storyImage:
+                              attachments!['story_image'] as String? ?? '',
                           storyAuthor:
-                              attachments!['story_author'] as String? ?? 'Story',
+                              attachments!['story_author'] as String? ??
+                              'Story',
+                          isSent: isSent,
+                        ),
+                      if (attachments != null &&
+                          attachments!['type'] == 'annonce')
+                        _AnnoncePreview(
+                          title: attachments!['title'] as String? ?? '',
+                          description:
+                              attachments!['description'] as String? ?? '',
+                          imageUrl: attachments!['image_url'] as String? ?? '',
+                          authorName:
+                              attachments!['author_name'] as String? ?? '',
+                          annonceType:
+                              attachments!['annonce_type'] as String? ?? '',
                           isSent: isSent,
                         ),
                       Text(
                         message,
                         style: TextStyle(
                           fontSize: 14,
-                          color: isSent ? Colors.white : const Color(0xFF616161),
+                          color: isSent
+                              ? Colors.white
+                              : const Color(0xFF616161),
                           height: 1.4,
                         ),
                       ),
@@ -160,6 +180,102 @@ class MessageBubble extends StatelessWidget {
   }
 }
 
+class _AnnoncePreview extends StatelessWidget {
+  final String title;
+  final String description;
+  final String imageUrl;
+  final String authorName;
+  final String annonceType;
+  final bool isSent;
+
+  const _AnnoncePreview({
+    required this.title,
+    required this.description,
+    required this.imageUrl,
+    required this.authorName,
+    required this.annonceType,
+    required this.isSent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = isSent
+        ? Colors.white.withOpacity(0.4)
+        : const Color(0xFF3AAE5E).withOpacity(0.4);
+    final labelColor = isSent
+        ? Colors.white.withOpacity(0.85)
+        : const Color(0xFF3AAE5E);
+    final subtitleColor = isSent
+        ? Colors.white.withOpacity(0.7)
+        : Colors.grey[600];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: labelColor, width: 3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  authorName.isNotEmpty ? authorName : 'Annonce',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: labelColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (annonceType.isNotEmpty)
+                  Text(
+                    annonceType,
+                    style: TextStyle(fontSize: 10, color: subtitleColor),
+                  ),
+                const SizedBox(height: 2),
+                Text(
+                  title.isNotEmpty ? title : description,
+                  style: TextStyle(fontSize: 11, color: subtitleColor),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (imageUrl.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Image.network(
+                imageUrl,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 48,
+                  height: 48,
+                  color: borderColor,
+                  child: Icon(
+                    Icons.image_outlined,
+                    size: 20,
+                    color: isSent ? Colors.white54 : Colors.grey,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _StoryReplyPreview extends StatelessWidget {
   final String storyImage;
   final String storyAuthor;
@@ -176,15 +292,14 @@ class _StoryReplyPreview extends StatelessWidget {
     final borderColor = isSent
         ? Colors.white.withOpacity(0.4)
         : Colors.grey.withOpacity(0.4);
-    final labelColor =
-        isSent ? Colors.white.withOpacity(0.85) : const Color(0xFF3AAE5E);
+    final labelColor = isSent
+        ? Colors.white.withOpacity(0.85)
+        : const Color(0xFF3AAE5E);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(color: labelColor, width: 3),
-        ),
+        border: Border(left: BorderSide(color: labelColor, width: 3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -197,8 +312,11 @@ class _StoryReplyPreview extends StatelessWidget {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.motion_photos_on_outlined,
-                        size: 12, color: labelColor),
+                    Icon(
+                      Icons.motion_photos_on_outlined,
+                      size: 12,
+                      color: labelColor,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '$storyAuthor • Story',
@@ -236,9 +354,11 @@ class _StoryReplyPreview extends StatelessWidget {
                   width: 44,
                   height: 44,
                   color: borderColor,
-                  child: Icon(Icons.image_outlined,
-                      size: 20,
-                      color: isSent ? Colors.white54 : Colors.grey),
+                  child: Icon(
+                    Icons.image_outlined,
+                    size: 20,
+                    color: isSent ? Colors.white54 : Colors.grey,
+                  ),
                 ),
               ),
             ),

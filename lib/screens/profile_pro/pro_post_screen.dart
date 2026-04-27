@@ -794,16 +794,16 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                     child: Container(
                       width: _actionWidth,
                       height: double.infinity,
-                      decoration: const BoxDecoration(color: Colors.green),
+                      // decoration: const BoxDecoration(color: Colors.grey),
                       child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.edit, color: Colors.white, size: 24),
+                          Icon(Icons.edit, color: Colors.grey, size: 24),
                           SizedBox(height: 4),
                           Text(
                             'Modifier',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Colors.black45,
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
                             ),
@@ -822,22 +822,22 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                     child: Container(
                       width: _actionWidth,
                       height: double.infinity,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.only(
-                          topRight: Radius.circular(12),
-                          bottomRight: Radius.circular(12),
-                        ),
-                      ),
+                      // decoration: const BoxDecoration(
+                      //   color: Colors.red,
+                      //   borderRadius: BorderRadius.only(
+                      //     topRight: Radius.circular(12),
+                      //     bottomRight: Radius.circular(12),
+                      //   ),
+                      // ),
                       child: const Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.delete, color: Colors.white, size: 24),
+                          Icon(Icons.delete, color: Colors.red, size: 24),
                           SizedBox(height: 4),
                           Text(
                             'Suppr.',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Colors.black45,
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
                             ),
@@ -891,6 +891,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
       return _MediaItemWidget(
         url: urls[0],
         onTap: () => _openImagePreview(context, urls, 0),
+        height: 400,
       );
     }
 

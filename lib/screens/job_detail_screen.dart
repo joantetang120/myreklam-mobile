@@ -3058,9 +3058,16 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                   children: [
                     IconButton(
                       onPressed: _shareJob,
-                      icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
+                      icon: Icon(
+                        Icons.share_outlined,
+                        color: Colors.grey[600],
+                        size: 24,
+                      ),
                     ),
-                    Text('Partager', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    Text(
+                      'Partager',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
                   ],
                 ),
                 //         color: Colors.grey[600],
@@ -3176,8 +3183,20 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () =>
-                        _startConversation(context, widget.authorData!),
+                    onPressed: () => _startConversation(
+                      context,
+                      widget.authorData!,
+                      annonceData: {
+                        'annonce_type': 'Offre d\'emploi',
+                        'annonce_id': widget.jobOfferId ?? '',
+                        'title': widget.jobTitle,
+                        'description': widget.description,
+                        'image_url': widget.images.isNotEmpty
+                            ? widget.images.first
+                            : '',
+                        'author_name': widget.companyName,
+                      },
+                    ),
                     icon: const Icon(Icons.chat_outlined, size: 20),
                     label: const Text('Contacter'),
                     style: ElevatedButton.styleFrom(
@@ -3384,7 +3403,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     // Deep link URL
     final String deepLink = ShareService.buildUrl('job-offers', jobId ?? '');
 
-    final String shareText = '''💼 $title
+    final String shareText =
+        '''💼 $title
 
 🏢 $company
 📍 $location
@@ -3392,15 +3412,16 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 $description
 
 $deepLink'''
-        .trim();
+            .trim();
 
     Share.share(shareText, subject: title);
   }
 
   static Future<void> _startConversation(
     BuildContext context,
-    Map<String, dynamic> authorData,
-  ) async {
+    Map<String, dynamic> authorData, {
+    Map<String, dynamic>? annonceData,
+  }) async {
     try {
       final authorIdStr = authorData['id']?.toString();
       if (authorIdStr == null) {
@@ -3437,6 +3458,7 @@ $deepLink'''
             avatar:
                 authorData['avatar_url']?.toString() ??
                 authorData['avatar']?.toString(),
+            linkedAnnonce: annonceData,
           ),
         ),
       );

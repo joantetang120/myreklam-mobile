@@ -488,6 +488,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
       return _MediaItemWidget(
         url: urls[0],
         onTap: () => _openImagePreview(context, urls, 0),
+        height: 400,
       );
     }
 

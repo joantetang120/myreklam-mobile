@@ -2762,8 +2762,20 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () =>
-                        _startConversation(context, widget.authorData!),
+                    onPressed: () => _startConversation(
+                      context,
+                      widget.authorData!,
+                      annonceData: {
+                        'annonce_type': 'Bon Plan',
+                        'annonce_id': widget.bonPlanId ?? '',
+                        'title': widget.title,
+                        'description': widget.description,
+                        'image_url': widget.images.isNotEmpty
+                            ? widget.images.first
+                            : '',
+                        'author_name': widget.name,
+                      },
+                    ),
                     icon: const Icon(Icons.chat_outlined, size: 20),
                     label: const Text('Contacter'),
                     style: ElevatedButton.styleFrom(
@@ -3576,8 +3588,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
   static Future<void> _startConversation(
     BuildContext context,
-    Map<String, dynamic> authorData,
-  ) async {
+    Map<String, dynamic> authorData, {
+    Map<String, dynamic>? annonceData,
+  }) async {
     final authorId = authorData['id']?.toString();
 
     // Extraire le nom depuis le profil particulier
@@ -3661,6 +3674,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   authorAvatar ??
                   'assets/images/dashboard_particulier/Ellipse 10.png',
               status: 'En ligne',
+              linkedAnnonce: annonceData,
             ),
           ),
         );
@@ -4633,15 +4647,16 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
     final String priceText = price != null && price.isNotEmpty
         ? (originalPrice != null && originalPrice.isNotEmpty
-            ? '\n💰 ~~$originalPrice~~ → **$price**'
-            : '\n💰 $price')
+              ? '\n💰 ~~$originalPrice~~ → **$price**'
+              : '\n💰 $price')
         : '';
 
     final String discountText = discount != null && discount.isNotEmpty
         ? '\n🏷️ Réduction: $discount'
         : '';
 
-    final String shareText = '''🛍️ $title
+    final String shareText =
+        '''🛍️ $title
 
 👤 $author
 📍 $location$priceText$discountText
@@ -4649,7 +4664,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 $description
 
 $deepLink'''
-        .trim();
+            .trim();
 
     Share.share(shareText, subject: title);
   }
