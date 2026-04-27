@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/services/share_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
@@ -808,7 +809,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     }
   }
 
-  void _showEntityCommentsSheet(String apiSlug, String entityId) {
+  void _showEntityCommentsSheet(String apiSlug, String entityId) async {
+    await _getCurrentUserId();
     List<Map<String, dynamic>> comments = [];
     bool isLoading = true;
     String? error;
@@ -1770,7 +1772,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         // Share icon
         const SizedBox(width: 14),
         GestureDetector(
-          onTap: () => _showShareBottomSheet(entityId),
+          onTap: () => ShareService.shareEntity(apiSlug, entityId),
           child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
         ),
         // For bon plans: show author avatar and name on the left
@@ -4075,9 +4077,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     );
   }
 
-  void _showCommentsSheet(BuildContext context) {
+  void _showCommentsSheet(BuildContext context) async {
     if (widget.bonPlanId == null) return;
-
+    await _getCurrentUserId();
     int? replyingToId;
     String? replyingToName;
 
@@ -4167,6 +4169,132 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               }
             }
 
+            Future<void> editComment(Map<String, dynamic> comment) async {
+              final commentId = comment['id'];
+              final currentBody = comment['body']?.toString() ?? '';
+              final editController = TextEditingController(text: currentBody);
+
+              final newText = await showDialog<String>(
+                context: context,
+                builder: (dialogCtx) => AlertDialog(
+                  title: const Text('Modifier le commentaire'),
+                  content: TextField(
+                    controller: editController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Votre commentaire...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogCtx),
+                      child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(dialogCtx, editController.text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3AAE5E),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Enregistrer', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              );
+
+              if (newText == null || newText.trim().isEmpty || newText == currentBody) return;
+
+              try {
+                final response = await ApiClient().authenticatedPut(
+                  '/comments/$commentId',
+                  body: {'body': newText.trim()},
+                );
+                final updatedComment = response['data'] as Map<String, dynamic>?;
+                if (updatedComment != null) {
+                  setState(() {
+                    comment['body'] = updatedComment['body'];
+                    comment['updated_at'] = updatedComment['updated_at'];
+                  });
+                  modalSetState(() {});
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erreur lors de la modification: ${e.toString()}'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
+            Future<void> deleteComment(Map<String, dynamic> comment, bool isReply) async {
+              final commentId = comment['id'];
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (dialogCtx) => AlertDialog(
+                  title: const Text('Supprimer le commentaire'),
+                  content: const Text('Êtes-vous sûr de vouloir supprimer ce commentaire ?'),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogCtx, false),
+                      child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(dialogCtx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed != true) return;
+
+              try {
+                await ApiClient().authenticatedDelete('/comments/$commentId');
+                setState(() {
+                  if (isReply) {
+                    final parentId = comment['parent_id'] ?? comment['comment_id'];
+                    final parent = _comments.firstWhere(
+                      (c) => c['id'] == parentId,
+                      orElse: () => <String, dynamic>{},
+                    );
+                    if (parent.isNotEmpty) {
+                      final replies = List<Map<String, dynamic>>.from(
+                        (parent['replies'] as List?) ?? [],
+                      );
+                      replies.removeWhere((r) => r['id'] == commentId);
+                      parent['replies'] = replies;
+                      parent['replies_count'] = replies.length;
+                    }
+                  } else {
+                    _comments.removeWhere((c) => c['id'] == commentId);
+                    if (_localCommentsCount != null && _localCommentsCount! > 0) {
+                      _localCommentsCount = _localCommentsCount! - 1;
+                    }
+                  }
+                });
+                modalSetState(() {});
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erreur lors de la suppression: ${e.toString()}'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
             Widget buildCommentItem(
               Map<String, dynamic> comment, {
               bool isReply = false,
@@ -4226,6 +4354,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               final replies = List<Map<String, dynamic>>.from(
                 (comment['replies'] as List?) ?? [],
               );
+              final userId = user?['id']?.toString();
+              final isOwner = userId != null && userId == _currentUserId;
 
               return Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
@@ -4267,6 +4397,44 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                       color: Colors.grey[500],
                                     ),
                                   ),
+                                  if (isOwner) ...[
+                                    const Spacer(),
+                                    GestureDetector(
+                                      onTapDown: (TapDownDetails details) {
+                                        showMenu<String>(
+                                          context: context,
+                                          position: RelativeRect.fromLTRB(
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                          ),
+                                          items: [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(children: [
+                                                Icon(Icons.edit, size: 18),
+                                                SizedBox(width: 8),
+                                                Text('Modifier'),
+                                              ]),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(children: [
+                                                Icon(Icons.delete, size: 18, color: Colors.redAccent),
+                                                SizedBox(width: 8),
+                                                Text('Supprimer', style: TextStyle(color: Colors.redAccent)),
+                                              ]),
+                                            ),
+                                          ],
+                                        ).then((value) {
+                                          if (value == 'edit') editComment(comment);
+                                          else if (value == 'delete') deleteComment(comment, isReply);
+                                        });
+                                      },
+                                      child: Icon(Icons.more_horiz, size: 18, color: Colors.grey[400]),
+                                    ),
+                                  ],
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -4475,7 +4643,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     final discount = widget.discount;
 
     // Deep link URL
-    final String deepLink = 'https://myreklam.com/bons-plans/$bonPlanId';
+    final String deepLink = ShareService.buildUrl('bon-plans', bonPlanId ?? '');
 
     final String priceText = price != null && price.isNotEmpty
         ? (originalPrice != null && originalPrice.isNotEmpty

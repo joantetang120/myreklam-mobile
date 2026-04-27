@@ -103,9 +103,13 @@ class StoryService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         if (body['success'] == true && body['data'] != null) {
-          return (body['data'] as List)
+          final groups = (body['data'] as List)
               .map((g) => StoryUserGroup.fromJson(g as Map<String, dynamic>))
               .toList();
+          for (final group in groups) {
+            group.stories.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          }
+          return groups;
         }
       }
       return [];
@@ -126,9 +130,11 @@ class StoryService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         if (body['success'] == true && body['data'] != null) {
-          return (body['data'] as List)
+          final list = (body['data'] as List)
               .map((s) => StoryModel.fromJson(s as Map<String, dynamic>))
               .toList();
+          list.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+          return list;
         }
       }
       return [];

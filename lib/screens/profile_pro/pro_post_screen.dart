@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:myreklam/services/share_service.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/create_post_screen.dart';
 import 'package:myreklam/screens/image_preview_screen.dart';
@@ -2890,64 +2891,6 @@ class _ProPostScreenState extends State<ProPostScreen>
     }
   }
 
-  void _shareBonPlan(String bonPlanId) {
-    // Share functionality for bon plans
-    final String shareUrl =
-        '${ApiConfig.baseUrl.replaceAll('/api', '')}/bon-plans/$bonPlanId';
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Partager ce bon plan',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
-                title: const Text('Copier le lien'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Lien copié dans le presse-papiers'),
-                      backgroundColor: Color(0xFF3AAE5E),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
-                title: const Text('Partager via...'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Implement native share
-                },
-              ),
-              const SizedBox(height: 10),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   Widget _buildReactionBar(
     String apiSlug,
@@ -3027,7 +2970,7 @@ class _ProPostScreenState extends State<ProPostScreen>
         // Share icon
         const SizedBox(width: 14),
         GestureDetector(
-          onTap: () => _shareBonPlan(entityId),
+          onTap: () => ShareService.shareEntity(apiSlug, entityId),
           child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
         ),
       ],

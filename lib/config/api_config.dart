@@ -5,12 +5,12 @@ class ApiConfig {
   // 🔧 CHANGE THIS URL TO POINT TO YOUR BACKEND SERVER
   // ============================================================
   // static const String baseUrl = 'https://myreklam-admin.maisoft-group.com/api';
-  static const String baseUrl = 'http://192.168.10.142:8000/api';
+  static const String baseUrl = 'http://192.168.1.237:8000/api';
   // Examples:
   //   Local Android emulator:  'http://10.0.2.2:8000/api'
   //   Local iOS simulator:     'http://localhost:8000/api'
   //   Local device (WiFi):     'http://192.168.1.XX:8000/api'
-  //   Production:              'https://api.myreklam.com/api'
+  //   Production:              'https://api.myreklam.fr/api'
   // ============================================================
 
   static const Duration connectTimeout = Duration(seconds: 30);
