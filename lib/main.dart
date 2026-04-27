@@ -12,6 +12,7 @@ import 'package:myreklam/services/push_notification_service.dart';
 import 'package:myreklam/screens/login_screen.dart';
 import 'package:myreklam/providers/conversation_provider.dart';
 import 'package:myreklam/services/auth_state_manager.dart';
+import 'package:myreklam/services/deep_link_service.dart';
 import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -38,6 +39,10 @@ void main() async {
   // Initialisation du service de push notifications (FCM)
   await PushNotificationService.instance.init();
   print('✅ PushNotificationService initialisé');
+
+  // Initialisation du service de deep links
+  await DeepLinkService.instance.init();
+  print('✅ DeepLinkService initialisé');
 
   runApp(const MyApp());
 }

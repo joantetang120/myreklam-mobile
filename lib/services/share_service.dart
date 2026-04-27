@@ -25,9 +25,11 @@ class ShareService {
     }
   }
 
-  /// Builds the public deep-link URL for an entity.
+  /// Builds the public share URL for an entity.
+  /// The backend at /s/{type}/{id} redirects mobile users to the deep link
+  /// and falls back to the app store if not installed.
   static String buildUrl(String apiSlug, String entityId) =>
-      '$_baseUrl/${_urlPath(apiSlug)}/$entityId';
+      '$_baseUrl/s/${_urlPath(apiSlug)}/$entityId';
 
   /// Shares an entity using the native OS share sheet.
   /// [title] is used as the share subject and prepended to the link.
