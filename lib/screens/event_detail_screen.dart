@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:myreklam/services/share_service.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -656,71 +657,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         // Share icon
         const SizedBox(width: 14),
         GestureDetector(
-          onTap: () => _shareBonPlan(entityId),
+          onTap: () => ShareService.shareEntity(apiSlug, entityId),
           child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
         ),
       ],
     );
   }
 
-  void _shareBonPlan(String bonPlanId) {
-    // Share functionality for bon plans
-    final String shareUrl =
-        '${ApiConfig.baseUrl.replaceAll('/api', '')}/bon-plans/$bonPlanId';
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Partager ce bon plan',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
-                title: const Text('Copier le lien'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Lien copié dans le presse-papiers'),
-                      backgroundColor: Color(0xFF3AAE5E),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
-                title: const Text('Partager via...'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Implement native share
-                },
-              ),
-              const SizedBox(height: 10),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   /// Like _asInt but returns null instead of 0 for null/invalid values
   int? _tryAsInt(dynamic value) {
@@ -2702,7 +2645,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     final eventId = widget.eventId ?? '';
 
     // Deep link URL - you can customize this based on your domain
-    final String deepLink = 'https://myreklam.com/events/$eventId';
+    final String deepLink = ShareService.buildUrl('events', eventId);
 
     final String shareText = '''🎉 $title
 
@@ -3050,7 +2993,8 @@ $deepLink'''
     }
   }
 
-  void _showEntityCommentsSheet(String s, String id) {
+  void _showEntityCommentsSheet(String s, String id) async {
+    await _getCurrentUserId();
     List<Map<String, dynamic>> comments = [];
     bool isLoading = true;
     final ctrl = TextEditingController();
@@ -3141,6 +3085,142 @@ $deepLink'''
             }
           }
 
+          Future<void> editComment(Map<String, dynamic> comment) async {
+            final commentId = comment['id'];
+            final currentBody = comment['body']?.toString() ?? '';
+            final editController = TextEditingController(text: currentBody);
+
+            final newText = await showDialog<String>(
+              context: ctx,
+              builder: (context) => AlertDialog(
+                title: const Text('Modifier le commentaire'),
+                content: TextField(
+                  controller: editController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: 'Votre commentaire...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, editController.text),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3AAE5E),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Enregistrer', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
+            );
+
+            if (newText == null || newText.trim().isEmpty || newText == currentBody) return;
+
+            try {
+              final response = await ApiClient().authenticatedPut(
+                '/comments/$commentId',
+                body: {'body': newText.trim()},
+              );
+              final updatedComment = response['data'] as Map<String, dynamic>?;
+              if (updatedComment != null) {
+                ms(() {
+                  comment['body'] = updatedComment['body'];
+                  comment['updated_at'] = updatedComment['updated_at'];
+                });
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Erreur lors de la modification: ${e.toString()}'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            }
+          }
+
+          Future<void> deleteComment(
+            Map<String, dynamic> comment,
+            bool isReply,
+          ) async {
+            final commentId = comment['id'];
+            final confirmed = await showDialog<bool>(
+              context: ctx,
+              builder: (context) => AlertDialog(
+                title: const Text('Supprimer le commentaire'),
+                content: const Text('Êtes-vous sûr de vouloir supprimer ce commentaire ?'),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
+            );
+
+            if (confirmed != true) return;
+
+            try {
+              await ApiClient().authenticatedDelete('/comments/$commentId');
+
+              ms(() {
+                if (isReply) {
+                  final parentId = comment['parent_id'] ?? comment['comment_id'];
+                  final parent = comments.firstWhere(
+                    (c) => c['id'] == parentId,
+                    orElse: () => <String, dynamic>{},
+                  );
+                  if (parent.isNotEmpty) {
+                    final replies = List<Map<String, dynamic>>.from(
+                      (parent['replies'] as List?) ?? [],
+                    );
+                    replies.removeWhere((r) => r['id'] == commentId);
+                    parent['replies'] = replies;
+                    parent['replies_count'] = replies.length;
+                  }
+                } else {
+                  comments.removeWhere((c) => c['id'] == commentId);
+                }
+              });
+
+              if (!isReply) {
+                setState(() {
+                  _getReaction(s, id).commentsCount =
+                      (_getReaction(s, id).commentsCount > 0)
+                          ? _getReaction(s, id).commentsCount - 1
+                          : 0;
+                });
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Erreur lors de la suppression: ${e.toString()}'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            }
+          }
+
           Widget buildCommentItem(
             Map<String, dynamic> comment, {
             bool isReply = false,
@@ -3203,6 +3283,8 @@ $deepLink'''
               } catch (_) {}
             }
 
+            final userId = user?['id']?.toString();
+            final isOwner = userId != null && userId == _currentUserId;
             final replies = List<Map<String, dynamic>>.from(
               (comment['replies'] as List?) ?? [],
             );
@@ -3251,6 +3333,44 @@ $deepLink'''
                                     color: Colors.grey[500],
                                   ),
                                 ),
+                                if (isOwner) ...[
+                                  const Spacer(),
+                                  GestureDetector(
+                                    onTapDown: (TapDownDetails details) {
+                                      showMenu<String>(
+                                        context: context,
+                                        position: RelativeRect.fromLTRB(
+                                          details.globalPosition.dx,
+                                          details.globalPosition.dy,
+                                          details.globalPosition.dx,
+                                          details.globalPosition.dy,
+                                        ),
+                                        items: [
+                                          const PopupMenuItem(
+                                            value: 'edit',
+                                            child: Row(children: [
+                                              Icon(Icons.edit, size: 18),
+                                              SizedBox(width: 8),
+                                              Text('Modifier'),
+                                            ]),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'delete',
+                                            child: Row(children: [
+                                              Icon(Icons.delete, size: 18, color: Colors.redAccent),
+                                              SizedBox(width: 8),
+                                              Text('Supprimer', style: TextStyle(color: Colors.redAccent)),
+                                            ]),
+                                          ),
+                                        ],
+                                      ).then((value) {
+                                        if (value == 'edit') editComment(comment);
+                                        else if (value == 'delete') deleteComment(comment, isReply);
+                                      });
+                                    },
+                                    child: Icon(Icons.more_horiz, size: 18, color: Colors.grey[400]),
+                                  ),
+                                ],
                               ],
                             ),
                             const SizedBox(height: 4),

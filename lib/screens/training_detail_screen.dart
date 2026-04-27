@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:myreklam/services/share_service.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
@@ -2208,71 +2209,13 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         // Share icon
         const SizedBox(width: 14),
         GestureDetector(
-          onTap: () => _shareBonPlan(entityId),
+          onTap: () => ShareService.shareEntity(apiSlug, entityId),
           child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
         ),
       ],
     );
   }
 
-  void _shareBonPlan(String bonPlanId) {
-    // Share functionality for bon plans
-    final String shareUrl =
-        '${ApiConfig.baseUrl.replaceAll('/api', '')}/bon-plans/$bonPlanId';
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Partager ce bon plan',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
-                title: const Text('Copier le lien'),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Lien copié dans le presse-papiers'),
-                      backgroundColor: Color(0xFF3AAE5E),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
-                title: const Text('Partager via...'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Implement native share
-                },
-              ),
-              const SizedBox(height: 10),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   Widget _buildDescription() {
     // Show plain text description instead of delta
@@ -2614,10 +2557,16 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     return parts.isNotEmpty ? parts.join(', ') : 'Localisation non spécifiée';
   }
 
-  Widget _buildCommentItem(Map<String, dynamic> comment) {
+  Widget _buildCommentItem(
+    Map<String, dynamic> comment, {
+    bool isReply = false,
+    void Function(int id, String name)? onReply,
+    void Function(Map<String, dynamic>)? onEdit,
+    void Function(Map<String, dynamic>, bool)? onDelete,
+  }) {
     final user = comment['user'] as Map<String, dynamic>?;
     final body = comment['body']?.toString() ?? '';
-    final createdAt = comment['created_at']?.toString() ?? '';
+    final createdAt = comment['created_at'];
 
     // Extract user name from nested profiles
     String displayName = 'Utilisateur';
@@ -2641,63 +2590,173 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       }
     }
 
+    // Extract avatar URL
+    String? rawAvatarUrl;
+    if (user != null) {
+      if (user['particulier_profile'] != null) {
+        rawAvatarUrl = user['particulier_profile']['avatar_url']?.toString();
+      } else if (user['pro_profile'] != null) {
+        rawAvatarUrl = user['pro_profile']['avatar_url']?.toString();
+      }
+    }
+    final avatarUrl = ApiConfig.resolveMediaUrl(rawAvatarUrl);
+
+    // Relative time
+    String timeAgo = 'Il y a un moment';
+    if (createdAt != null) {
+      try {
+        final date = DateTime.parse(createdAt.toString());
+        final diff = DateTime.now().difference(date);
+        if (diff.inDays > 0) {
+          timeAgo = 'Il y a ${diff.inDays}j';
+        } else if (diff.inHours > 0) {
+          timeAgo = 'Il y a ${diff.inHours}h';
+        } else if (diff.inMinutes > 0) {
+          timeAgo = 'Il y a ${diff.inMinutes}min';
+        }
+      } catch (_) {}
+    }
+
+    final replies = List<Map<String, dynamic>>.from(
+      (comment['replies'] as List?) ?? [],
+    );
+    final userId = user?['id']?.toString();
+    final isOwner = userId != null && userId == _currentUserId;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
+      padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: const Color(0xFF3AAE5E).withOpacity(0.1),
-            child: Text(
-              displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
-              style: const TextStyle(
-                color: Color(0xFF3AAE5E),
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: isReply ? 14 : 18,
+                backgroundImage: avatarUrl != null
+                    ? NetworkImage(avatarUrl)
+                    : const AssetImage(
+                            'assets/images/dashboard_particulier/Ellipse 10.png',
+                          )
+                          as ImageProvider,
               ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  displayName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  body,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                ),
-                if (createdAt.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      createdAt,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          displayName,
+                          style: TextStyle(
+                            fontSize: isReply ? 12 : 13,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF333333),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          timeAgo,
+                          style: TextStyle(
+                            fontSize: isReply ? 10 : 11,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                        if (isOwner && (onEdit != null || onDelete != null)) ...[
+                          const Spacer(),
+                          GestureDetector(
+                            onTapDown: (TapDownDetails details) {
+                              showMenu<String>(
+                                context: context,
+                                position: RelativeRect.fromLTRB(
+                                  details.globalPosition.dx,
+                                  details.globalPosition.dy,
+                                  details.globalPosition.dx,
+                                  details.globalPosition.dy,
+                                ),
+                                items: [
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Row(children: [
+                                      Icon(Icons.edit, size: 18),
+                                      SizedBox(width: 8),
+                                      Text('Modifier'),
+                                    ]),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(children: [
+                                      Icon(Icons.delete, size: 18, color: Colors.redAccent),
+                                      SizedBox(width: 8),
+                                      Text('Supprimer', style: TextStyle(color: Colors.redAccent)),
+                                    ]),
+                                  ),
+                                ],
+                              ).then((value) {
+                                if (value == 'edit') onEdit?.call(comment);
+                                else if (value == 'delete') onDelete?.call(comment, isReply);
+                              });
+                            },
+                            child: Icon(Icons.more_horiz, size: 18, color: Colors.grey[400]),
+                          ),
+                        ],
+                      ],
                     ),
-                  ),
-              ],
-            ),
+                    const SizedBox(height: 4),
+                    Text(
+                      body,
+                      style: TextStyle(
+                        fontSize: isReply ? 12 : 13,
+                        color: Colors.grey[700],
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    if (!isReply && onReply != null)
+                      GestureDetector(
+                        onTap: () {
+                          final commentId = comment['id'];
+                          final idInt = commentId is int
+                              ? commentId
+                              : int.tryParse(commentId?.toString() ?? '');
+                          if (idInt != null) onReply(idInt, displayName);
+                        },
+                        child: Text(
+                          'Répondre',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
+          if (!isReply && replies.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...replies.map(
+              (r) => _buildCommentItem(r, isReply: true, onReply: onReply, onEdit: onEdit, onDelete: onDelete),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  void _showCommentsSheet() {
+  void _showCommentsSheet() async {
     if (widget.trainingId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Impossible de charger les commentaires')),
       );
       return;
     }
+    await _getCurrentUserId();
+    int? replyingToId;
+    String? replyingToName;
 
     showModalBottomSheet(
       context: context,
@@ -2724,10 +2783,13 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   return;
                 }
 
+                final String endpoint = replyingToId != null
+                    ? '${ApiConfig.baseUrl}/trainings/${widget.trainingId}/comments/$replyingToId/reply'
+                    : '${ApiConfig.baseUrl}/trainings/${widget.trainingId}/comments';
+                final wasReply = replyingToId != null;
+
                 final response = await http.post(
-                  Uri.parse(
-                    '${ApiConfig.baseUrl}/trainings/${widget.trainingId}/comments',
-                  ),
+                  Uri.parse(endpoint),
                   headers: {
                     'Authorization': 'Bearer $token',
                     'Accept': 'application/json',
@@ -2741,13 +2803,32 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   final newComment = data['data'] as Map<String, dynamic>?;
                   if (newComment != null) {
                     modalSetState(() {
-                      _comments.insert(0, newComment);
-                      _commentsCount++;
+                      if (wasReply) {
+                        final parent = _comments.firstWhere(
+                          (c) => c['id'] == replyingToId,
+                          orElse: () => <String, dynamic>{},
+                        );
+                        if (parent.isNotEmpty) {
+                          final replies = List<Map<String, dynamic>>.from(
+                            (parent['replies'] as List?) ?? [],
+                          );
+                          replies.add(newComment);
+                          parent['replies'] = replies;
+                          parent['replies_count'] = (parent['replies_count'] as int? ?? 0) + 1;
+                        }
+                      } else {
+                        _comments.insert(0, newComment);
+                        _commentsCount++;
+                      }
+                      replyingToId = null;
+                      replyingToName = null;
                     });
-                    setState(() {
-                      _localCommentsCount =
-                          (_localCommentsCount ?? _comments.length) + 1;
-                    });
+                    if (!wasReply) {
+                      setState(() {
+                        _localCommentsCount =
+                            (_localCommentsCount ?? _comments.length) + 1;
+                      });
+                    }
                   }
                   commentCtrl.clear();
                   FocusScope.of(ctx).unfocus();
@@ -2776,6 +2857,113 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Erreur lors de l\'envoi')),
                 );
+              }
+            }
+
+            Future<void> editComment(Map<String, dynamic> comment) async {
+              final commentId = comment['id'];
+              final currentBody = comment['body']?.toString() ?? '';
+              final editController = TextEditingController(text: currentBody);
+              final newText = await showDialog<String>(
+                context: context,
+                builder: (dialogCtx) => AlertDialog(
+                  title: const Text('Modifier le commentaire'),
+                  content: TextField(
+                    controller: editController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Votre commentaire...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogCtx),
+                      child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(dialogCtx, editController.text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3AAE5E),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Enregistrer', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              );
+              if (newText == null || newText.trim().isEmpty || newText == currentBody) return;
+              try {
+                final response = await ApiClient().authenticatedPut(
+                  '/comments/$commentId',
+                  body: {'body': newText.trim()},
+                );
+                final updatedComment = response['data'] as Map<String, dynamic>?;
+                if (updatedComment != null) {
+                  setState(() {
+                    comment['body'] = updatedComment['body'];
+                    comment['updated_at'] = updatedComment['updated_at'];
+                  });
+                  modalSetState(() {});
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erreur lors de la modification: ${e.toString()}'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            }
+
+            Future<void> deleteComment(Map<String, dynamic> comment, bool isReply) async {
+              final commentId = comment['id'];
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (dialogCtx) => AlertDialog(
+                  title: const Text('Supprimer le commentaire'),
+                  content: const Text('Êtes-vous sûr de vouloir supprimer ce commentaire ?'),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogCtx, false),
+                      child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(dialogCtx, true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed != true) return;
+              try {
+                await ApiClient().authenticatedDelete('/comments/$commentId');
+                setState(() {
+                  _comments.removeWhere((c) => c['id'] == commentId);
+                  if (_localCommentsCount != null && _localCommentsCount! > 0) {
+                    _localCommentsCount = _localCommentsCount! - 1;
+                  }
+                });
+                modalSetState(() {
+                  if (_commentsCount > 0) _commentsCount--;
+                });
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erreur lors de la suppression: ${e.toString()}'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
               }
             }
 
@@ -2831,10 +3019,44 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                               padding: const EdgeInsets.all(16),
                               itemCount: _comments.length,
                               itemBuilder: (context, index) {
-                                return _buildCommentItem(_comments[index]);
+                                return _buildCommentItem(
+                                  _comments[index],
+                                  onReply: (id, name) {
+                                    modalSetState(() {
+                                      replyingToId = id;
+                                      replyingToName = name;
+                                    });
+                                  },
+                                  onEdit: editComment,
+                                  onDelete: deleteComment,
+                                );
                               },
                             ),
                     ),
+                    if (replyingToName != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        color: Colors.grey[100],
+                        child: Row(
+                          children: [
+                            Icon(Icons.reply, size: 16, color: Colors.grey[600]),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Répondre à $replyingToName',
+                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => modalSetState(() {
+                                replyingToId = null;
+                                replyingToName = null;
+                              }),
+                              child: const Icon(Icons.close, size: 16),
+                            ),
+                          ],
+                        ),
+                      ),
                     // Input field
                     Container(
                       padding: EdgeInsets.only(
@@ -2906,7 +3128,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     final trainingId = widget.trainingId;
 
     // Deep link URL
-    final String deepLink = 'https://myreklam.com/trainings/$trainingId';
+    final String deepLink = ShareService.buildUrl('trainings', trainingId ?? '');
 
     final String priceText = price != null && price.isNotEmpty ? '\n💰 $price' : '';
 
@@ -3016,7 +3238,8 @@ $deepLink'''
     }
   }
 
-  void _showEntityCommentsSheet(String s, String id) {
+  void _showEntityCommentsSheet(String s, String id) async {
+    await _getCurrentUserId();
     List<Map<String, dynamic>> comments = [];
     bool isLoading = true;
     final ctrl = TextEditingController();
@@ -3104,6 +3327,142 @@ $deepLink'''
             }
           }
 
+          Future<void> editComment(Map<String, dynamic> comment) async {
+            final commentId = comment['id'];
+            final currentBody = comment['body']?.toString() ?? '';
+            final editController = TextEditingController(text: currentBody);
+
+            final newText = await showDialog<String>(
+              context: ctx,
+              builder: (context) => AlertDialog(
+                title: const Text('Modifier le commentaire'),
+                content: TextField(
+                  controller: editController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: 'Votre commentaire...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, editController.text),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3AAE5E),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Enregistrer', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
+            );
+
+            if (newText == null || newText.trim().isEmpty || newText == currentBody) return;
+
+            try {
+              final response = await ApiClient().authenticatedPut(
+                '/comments/$commentId',
+                body: {'body': newText.trim()},
+              );
+              final updatedComment = response['data'] as Map<String, dynamic>?;
+              if (updatedComment != null) {
+                ms(() {
+                  comment['body'] = updatedComment['body'];
+                  comment['updated_at'] = updatedComment['updated_at'];
+                });
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Erreur lors de la modification: ${e.toString()}'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            }
+          }
+
+          Future<void> deleteComment(
+            Map<String, dynamic> comment,
+            bool isReply,
+          ) async {
+            final commentId = comment['id'];
+            final confirmed = await showDialog<bool>(
+              context: ctx,
+              builder: (context) => AlertDialog(
+                title: const Text('Supprimer le commentaire'),
+                content: const Text('Êtes-vous sûr de vouloir supprimer ce commentaire ?'),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
+              ),
+            );
+
+            if (confirmed != true) return;
+
+            try {
+              await ApiClient().authenticatedDelete('/comments/$commentId');
+
+              ms(() {
+                if (isReply) {
+                  final parentId = comment['parent_id'] ?? comment['comment_id'];
+                  final parent = comments.firstWhere(
+                    (c) => c['id'] == parentId,
+                    orElse: () => <String, dynamic>{},
+                  );
+                  if (parent.isNotEmpty) {
+                    final replies = List<Map<String, dynamic>>.from(
+                      (parent['replies'] as List?) ?? [],
+                    );
+                    replies.removeWhere((r) => r['id'] == commentId);
+                    parent['replies'] = replies;
+                    parent['replies_count'] = replies.length;
+                  }
+                } else {
+                  comments.removeWhere((c) => c['id'] == commentId);
+                }
+              });
+
+              if (!isReply) {
+                setState(() {
+                  _getReaction(s, id).commentsCount =
+                      (_getReaction(s, id).commentsCount > 0)
+                          ? _getReaction(s, id).commentsCount - 1
+                          : 0;
+                });
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Erreur lors de la suppression: ${e.toString()}'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            }
+          }
+
           Widget buildCommentItem(
             Map<String, dynamic> comment, {
             bool isReply = false,
@@ -3166,6 +3525,8 @@ $deepLink'''
               } catch (_) {}
             }
 
+            final userId = user?['id']?.toString();
+            final isOwner = userId != null && userId == _currentUserId;
             final replies = List<Map<String, dynamic>>.from(
               (comment['replies'] as List?) ?? [],
             );
@@ -3214,6 +3575,44 @@ $deepLink'''
                                     color: Colors.grey[500],
                                   ),
                                 ),
+                                if (isOwner) ...[
+                                  const Spacer(),
+                                  GestureDetector(
+                                    onTapDown: (TapDownDetails details) {
+                                      showMenu<String>(
+                                        context: context,
+                                        position: RelativeRect.fromLTRB(
+                                          details.globalPosition.dx,
+                                          details.globalPosition.dy,
+                                          details.globalPosition.dx,
+                                          details.globalPosition.dy,
+                                        ),
+                                        items: [
+                                          const PopupMenuItem(
+                                            value: 'edit',
+                                            child: Row(children: [
+                                              Icon(Icons.edit, size: 18),
+                                              SizedBox(width: 8),
+                                              Text('Modifier'),
+                                            ]),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'delete',
+                                            child: Row(children: [
+                                              Icon(Icons.delete, size: 18, color: Colors.redAccent),
+                                              SizedBox(width: 8),
+                                              Text('Supprimer', style: TextStyle(color: Colors.redAccent)),
+                                            ]),
+                                          ),
+                                        ],
+                                      ).then((value) {
+                                        if (value == 'edit') editComment(comment);
+                                        else if (value == 'delete') deleteComment(comment, isReply);
+                                      });
+                                    },
+                                    child: Icon(Icons.more_horiz, size: 18, color: Colors.grey[400]),
+                                  ),
+                                ],
                               ],
                             ),
                             const SizedBox(height: 4),
