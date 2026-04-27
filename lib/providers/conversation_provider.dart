@@ -38,7 +38,10 @@ class ConversationProvider extends ChangeNotifier {
 
       // 2. Charger les messages depuis le cache local d'abord (offline support)
       print("DEBUG: Loading messages from local cache...");
-      final cachedMessages = await _db.getMessages(conversationId, _currentUserId!);
+      final cachedMessages = await _db.getMessages(
+        conversationId,
+        _currentUserId!,
+      );
       if (cachedMessages.isNotEmpty) {
         _messagesByConversation[conversationId] = cachedMessages;
         _isLoading = false;
@@ -54,7 +57,7 @@ class ConversationProvider extends ChangeNotifier {
           _currentUserId!,
         );
         print("DEBUG: Got ${messages.length} messages from API");
-        
+
         // 4. Sauvegarder dans la base locale
         await _db.saveMessages(messages, conversationId, _currentUserId!);
         _messagesByConversation[conversationId] = messages;
@@ -142,7 +145,11 @@ class ConversationProvider extends ChangeNotifier {
   }
 
   // Envoyer un message
-  Future<void> sendMessage(int conversationId, String text) async {
+  Future<void> sendMessage(
+    int conversationId,
+    String text, {
+    Map<String, dynamic>? attachments,
+  }) async {
     try {
       _currentUserId ??= await _chatService.getCurrentUserId();
 
@@ -159,6 +166,7 @@ class ConversationProvider extends ChangeNotifier {
           conversationId,
           text,
           _currentUserId!,
+          attachments: attachments,
         );
 
         // 3. Supprimer le message en attente et sauvegarder le vrai message
@@ -187,7 +195,11 @@ class ConversationProvider extends ChangeNotifier {
   }
 
   // Modifier un message
-  Future<void> editMessage(int conversationId, int messageId, String newText) async {
+  Future<void> editMessage(
+    int conversationId,
+    int messageId,
+    String newText,
+  ) async {
     try {
       _currentUserId ??= await _chatService.getCurrentUserId();
       if (_currentUserId == null) throw Exception('User not authenticated');
@@ -219,7 +231,11 @@ class ConversationProvider extends ChangeNotifier {
   }
 
   // Supprimer un message
-  Future<void> deleteMessage(int conversationId, int messageId, String deleteType) async {
+  Future<void> deleteMessage(
+    int conversationId,
+    int messageId,
+    String deleteType,
+  ) async {
     try {
       _currentUserId ??= await _chatService.getCurrentUserId();
       if (_currentUserId == null) throw Exception('User not authenticated');

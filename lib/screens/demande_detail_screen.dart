@@ -1064,8 +1064,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
   Future<void> _startConversationWithAuthor(
     BuildContext context,
-    Map<String, dynamic> authorData,
-  ) async {
+    Map<String, dynamic> authorData, {
+    Map<String, dynamic>? annonceData,
+  }) async {
     final authorId = authorData['id']?.toString();
 
     String authorName = 'Utilisateur';
@@ -1145,6 +1146,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                   authorAvatar ??
                   'assets/images/dashboard_particulier/Ellipse 10.png',
               status: 'En ligne',
+              linkedAnnonce: annonceData,
             ),
           ),
         );
@@ -1519,7 +1521,20 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                           onPressed: () {
                             final author = widget.demandeData?['user'];
                             if (author is Map<String, dynamic>) {
-                              _startConversationWithAuthor(context, author);
+                              _startConversationWithAuthor(
+                                context,
+                                author,
+                                annonceData: {
+                                  'annonce_type': 'Demande',
+                                  'annonce_id': widget.demandeId ?? '',
+                                  'title': widget.demandeTitle,
+                                  'description': widget.description,
+                                  'image_url': widget.images.isNotEmpty
+                                      ? widget.images.first
+                                      : '',
+                                  'author_name': widget.username,
+                                },
+                              );
                               return;
                             }
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -1640,7 +1655,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                   children: [
                     IconButton(
                       onPressed: _shareDemande,
-                      icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
+                      icon: Icon(
+                        Icons.share_outlined,
+                        color: Colors.grey[600],
+                        size: 24,
+                      ),
                     ),
                     Text(
                       'Partager',
@@ -1907,7 +1926,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     final title = widget.demandeTitle;
     final nature = widget.nature ?? 'Général';
     final type = widget.type ?? '';
-    final location = widget.locationCity ?? (widget.nationwide ? 'Toute la France' : 'Lieu non précisé');
+    final location =
+        widget.locationCity ??
+        (widget.nationwide ? 'Toute la France' : 'Lieu non précisé');
     final description = widget.description;
     final demandeId = widget.demandeId;
     final budget = widget.budgetMax;
@@ -1915,9 +1936,12 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     // Deep link URL
     final String deepLink = 'https://myreklam.com/demandes/$demandeId';
 
-    final String budgetText = budget != null && budget.isNotEmpty ? '\n💰 Budget max: $budget' : '';
+    final String budgetText = budget != null && budget.isNotEmpty
+        ? '\n💰 Budget max: $budget'
+        : '';
 
-    final String shareText = '''📋 $title
+    final String shareText =
+        '''📋 $title
 
 🏷️ $nature${type.isNotEmpty ? ' • $type' : ''}
 📍 $location$budgetText
@@ -1925,7 +1949,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 $description
 
 $deepLink'''
-        .trim();
+            .trim();
 
     Share.share(shareText, subject: title);
   }

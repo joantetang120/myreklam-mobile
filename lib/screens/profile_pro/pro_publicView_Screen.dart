@@ -961,6 +961,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
       return _MediaItemWidget(
         url: urls[0],
         onTap: () => _openImagePreview(context, urls, 0),
+        height: 400,
       );
     }
 
@@ -3311,7 +3312,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
                   // Title
                   Padding(
-                    padding: EdgeInsets.fromLTRB(16, imageUrls.isNotEmpty ? 16 : 56, 100, 0),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      imageUrls.isNotEmpty ? 16 : 56,
+                      100,
+                      0,
+                    ),
                     child: Text(
                       title,
                       style: const TextStyle(
@@ -6701,8 +6707,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             ),
             child:
                 _isViewingOwnProfile &&
-                    (bannerUrl == null ||
-                        (presentation?.trim().isEmpty ?? true))
+                    bannerUrl == null &&
+                    (presentation?.trim().isEmpty ?? true)
                 ? Padding(
                     padding: const EdgeInsets.fromLTRB(10, 18, 10, 16),
                     child: Column(
