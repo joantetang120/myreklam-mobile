@@ -1,9 +1,9 @@
 import 'package:share_plus/share_plus.dart';
 
 /// Centralised share service for all entity types.
-/// Uses myreklam.fr deep links so that mobile users are prompted to open the app.
+/// Uses myreklam-admin.maisoft-group.com deep links so that mobile users are prompted to open the app.
 class ShareService {
-  static const String _baseUrl = 'https://myreklam.fr';
+  static const String _baseUrl = 'https://myreklam-admin.maisoft-group.com';
 
   /// Maps the internal API slug to the public URL path segment used on the website.
   static String _urlPath(String apiSlug) {
