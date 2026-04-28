@@ -10,14 +10,14 @@ import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
-import 'package:myreklam/services/user_session.dart';
+import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 
 /// Handles incoming deep links of the form:
 ///   myreklam://s/{type}/{id}
-///   https://myreklam.fr/s/{type}/{id}
+///   https://myreklam-admin.maisoft-group.com/s/{type}/{id}
 ///
 /// Fetches the entity from the API and navigates to the correct detail screen.
 class DeepLinkService {
@@ -290,7 +290,6 @@ class DeepLinkService {
       isOwner: data['user_id']?.toString() == UserSession().id,
       demandeData: data,
       acceptMessages: data['accept_messages'] == true,
-      authorData: user,
       commentsCount: _tryInt(data['comments_count']),
     )));
   }

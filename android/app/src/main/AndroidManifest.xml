@@ -45,13 +45,13 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="myreklam"/>
             </intent-filter>
-            <!-- HTTPS deep link: https://myreklam.fr/s/{type}/{id} -->
+            <!-- HTTPS deep link: https://myreklam-admin.maisoft-group.com/s/{type}/{id} -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https"
-                      android:host="myreklam.fr"
+                      android:host="myreklam-admin.maisoft-group.com"
                       android:pathPrefix="/s/"/>
             </intent-filter>
         </activity>
