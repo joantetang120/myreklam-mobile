@@ -289,13 +289,23 @@ class _SearchScreenState extends State<SearchScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
+                    final query = _searchController.text.trim();
+                    if (query.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Veuillez entrer un terme de recherche'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => ParticulierMainScreen(
                           initialIndex: 3,
                           showSearchResults: true,
-                          searchQuery: _searchController.text.trim(),
+                          searchQuery: query,
                           searchCategory: _selectedCategory,
                           searchLocation: _selectedLocation?.address ?? '',
                           searchLocationLat: _selectedLocation?.latitude,

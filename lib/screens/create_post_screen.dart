@@ -40,6 +40,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   List<Map<String, dynamic>> _existingMedia = [];
   final List<int> _deletedMediaIds = [];
   String? _userAvatar;
+  String? _username;
   bool _isLoadingAvatar = true;
 
   bool get _isEditMode => widget.isEditMode;
@@ -71,9 +72,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       final avatarUrl =
           user?['avatar_url']?.toString() ?? user?['avatar']?.toString();
 
+      // Get username from display_name, name, or pseudo fields
+      final displayName = user?['display_name']?.toString();
+      final name = user?['name']?.toString();
+      final pseudo = user?['pseudo']?.toString();
+      final username = displayName?.isNotEmpty == true
+          ? displayName
+          : (name?.isNotEmpty == true ? name : pseudo);
+
       if (mounted) {
         setState(() {
           _userAvatar = ApiConfig.resolveMediaUrl(avatarUrl);
+          _username = username;
           _isLoadingAvatar = false;
         });
       }
@@ -407,9 +417,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Mon compte',
-                          style: TextStyle(
+                        Text(
+                          _username ?? 'Mon compte',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.black,

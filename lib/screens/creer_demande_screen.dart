@@ -2127,7 +2127,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Vous pouvez consulter cela au niveau de votre espace professionnel',
+                'Vous pouvez consulter cela au niveau de votre espace ',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,

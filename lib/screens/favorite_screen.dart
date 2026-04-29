@@ -1224,7 +1224,10 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     final createdAt = ev['created_at']?.toString();
     final priceType = ev['price_type']?.toString() ?? 'gratuit';
     final priceAmount = ev['price_amount'];
-    final coverageArea = ev['coverage_area']?.toString() ?? '';
+    final isNationwide = ev['is_nationwide'] == true;
+    final coverageArea = isNationwide
+        ? 'Toute la France'
+        : (ev['coverage_area']?.toString() ?? '');
     final eventDate = ev['event_date']?.toString();
     final startDate = ev['start_date']?.toString();
     final durationType = ev['duration_type']?.toString() ?? '';
