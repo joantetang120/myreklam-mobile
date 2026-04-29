@@ -44,6 +44,10 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   bool _isVideoInitialized = false;
   bool _isLongPressPaused = false;
 
+  // Swipe down to dismiss
+  double _dragOffset = 0.0;
+  bool _isDragging = false;
+
   @override
   void initState() {
     super.initState();
@@ -662,7 +666,31 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         onTap: () => FocusScope.of(context).unfocus(),
         onLongPressStart: (_) => _progressController.stop(),
         onLongPressEnd: (_) => _progressController.forward(),
-        child: Stack(
+        onVerticalDragStart: (_) {
+          setState(() => _isDragging = true);
+        },
+        onVerticalDragUpdate: (details) {
+          // Only allow dragging down (positive delta)
+          if (details.delta.dy > 0) {
+            setState(() => _dragOffset += details.delta.dy);
+          }
+        },
+        onVerticalDragEnd: (details) {
+          final velocity = details.velocity.pixelsPerSecond.dy;
+          // Dismiss if dragged past threshold or flung down quickly
+          if (_dragOffset > 150 || velocity > 500) {
+            Navigator.pop(context);
+          } else {
+            // Snap back to original position
+            setState(() {
+              _dragOffset = 0.0;
+              _isDragging = false;
+            });
+          }
+        },
+        child: Transform.translate(
+          offset: Offset(0, _dragOffset),
+          child: Stack(
           children: [
             SafeArea(
               child: Column(
@@ -820,6 +848,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 },
               ),
           ],
+        ),
         ),
       ),
     );

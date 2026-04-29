@@ -309,13 +309,6 @@ class _FollowersScreenState extends State<FollowersScreen>
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    user['email'] ?? '',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
                 ],
               ),
             ),

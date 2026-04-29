@@ -21,6 +21,7 @@ import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/bon_plan_carousel.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProFavorisScreen extends StatefulWidget {
@@ -2877,10 +2878,12 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         event['sub_category_label'].toString(),
     ];
     final price = _formatPrice(event);
-    final coverageArea =
-        event['coverage_area']?.toString() ??
-        event['location']?.toString() ??
-        'Non spécifié';
+    final isNationwide = event['is_nationwide'] == true;
+    final coverageArea = isNationwide
+        ? 'Toute la France'
+        : (event['coverage_area']?.toString() ??
+           event['location']?.toString() ??
+           'Non spécifié');
 
     final eventId = event['id']?.toString() ?? '';
 
@@ -3271,48 +3274,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       return _buildBonPlanImage(urls.first);
     }
 
-    return StatefulBuilder(
-      builder: (context, setState) {
-        final controller = PageController();
-        int currentPage = 0;
-
-        return Column(
-          children: [
-            SizedBox(
-              height: 220,
-              child: PageView.builder(
-                controller: controller,
-                itemCount: urls.length,
-                onPageChanged: (index) => setState(() => currentPage = index),
-                itemBuilder: (context, index) {
-                  return _buildBonPlanImage(urls[index]);
-                },
-              ),
-            ),
-            // Page indicator
-            if (urls.length > 1) ...[
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(urls.length, (index) {
-                  return Container(
-                    width: 6,
-                    height: 6,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: index == currentPage
-                          ? const Color(0xFFFF9800)
-                          : Colors.grey[300],
-                    ),
-                  );
-                }),
-              ),
-            ],
-          ],
-        );
-      },
-    );
+    return BonPlanCarousel(urls: urls);
   }
 
   int _calculateDiscount(dynamic originalPrice, dynamic finalPrice) {

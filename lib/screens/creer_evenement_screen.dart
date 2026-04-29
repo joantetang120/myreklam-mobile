@@ -893,7 +893,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               Text(
                 _isEditMode
                     ? 'Votre événement a été mis à jour avec succès'
-                    : 'Vous pouvez consulter cela au niveau de votre espace professionnel',
+                    : 'Vous pouvez consulter cela au niveau de votre espace ',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,

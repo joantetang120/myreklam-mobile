@@ -1365,6 +1365,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       final tags = <PostTag>[
         if (data['category']?.toString().isNotEmpty == true) PostTag(title: data['category'].toString(), icon: Icons.category_outlined, color: Colors.blue),
       ];
+      final isNationwide = data['is_nationwide'] == true;
       Navigator.push(context, MaterialPageRoute(builder: (_) => EventDetailScreen(
         eventId: eventId,
         avatar: avatar.isNotEmpty ? avatar : 'assets/images/default_avatar.png',
@@ -1376,9 +1377,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         tags: tags,
         timeAgo: _timeAgo(data['created_at']?.toString()),
         eventDate: data['start_date']?.toString() ?? data['event_date']?.toString(),
-        coverageArea: data['coverage_area']?.toString() ?? data['location']?.toString(),
+        coverageArea: isNationwide ? 'Toute la France' : (data['coverage_area']?.toString() ?? data['location']?.toString()),
         locationCity: data['location_city']?.toString(),
         locationPostalCode: data['location_postal_code']?.toString(),
+        isNationwide: isNationwide,
         isOwner: ev['user_id']?.toString() == UserSession().id,
         eventData: data,
         acceptMessages: data['accept_messages'] == true,

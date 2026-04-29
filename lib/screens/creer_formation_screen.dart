@@ -994,7 +994,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               Text(
                 _isEditMode
                     ? 'Votre formation a été mise à jour avec succès'
-                    : 'Vous pouvez consulter cela au niveau de votre espace professionnel',
+                    : 'Vous pouvez consulter cela au niveau de votre espace ',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,

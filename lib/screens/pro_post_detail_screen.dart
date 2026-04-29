@@ -10,6 +10,7 @@ import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/bon_plan_carousel.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/creer_bon_plan_screen.dart';
@@ -591,48 +592,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       return _buildBonPlanImage(urls.first);
     }
 
-    return StatefulBuilder(
-      builder: (context, setState) {
-        final controller = PageController();
-        int currentPage = 0;
-
-        return Column(
-          children: [
-            SizedBox(
-              height: 220,
-              child: PageView.builder(
-                controller: controller,
-                itemCount: urls.length,
-                onPageChanged: (index) => setState(() => currentPage = index),
-                itemBuilder: (context, index) {
-                  return _buildBonPlanImage(urls[index]);
-                },
-              ),
-            ),
-            // Page indicator
-            if (urls.length > 1) ...[
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(urls.length, (index) {
-                  return Container(
-                    width: 6,
-                    height: 6,
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: index == currentPage
-                          ? const Color(0xFFFF9800)
-                          : Colors.grey[300],
-                    ),
-                  );
-                }),
-              ),
-            ],
-          ],
-        );
-      },
-    );
+    return BonPlanCarousel(urls: urls);
   }
 
   Widget _buildBonPlanImage(String url) {

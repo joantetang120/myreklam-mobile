@@ -1596,6 +1596,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   /// Build location display string combining coverage_area, city and postal_code
   String _buildLocationDisplay() {
+    if (widget.isNationwide) {
+      return 'Toute la France';
+    }
+
     final List<String> parts = [];
 
     if (widget.coverageArea != null && widget.coverageArea!.isNotEmpty) {
