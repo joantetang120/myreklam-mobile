@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/subscription_service.dart';
 import 'package:myreklam/services/stripe_payment_service.dart';
+import 'package:myreklam/services/paypal_payment_service.dart';
 import 'package:myreklam/services/api_client.dart';
 
 enum PaymentMethod { paypal, stripe }
@@ -133,8 +134,8 @@ class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
   }
 
   Future<void> _handleSubscribe(String plan, {String? billingCycle, PaymentMethod? paymentMethod}) async {
-    // Stripe payments are handled separately through _processStripePayment
-    if (paymentMethod == PaymentMethod.stripe) {
+    // Stripe and PayPal payments are handled separately
+    if (paymentMethod == PaymentMethod.stripe || paymentMethod == PaymentMethod.paypal) {
       return;
     }
 
@@ -319,6 +320,7 @@ enum _BillingCycle { monthly, annual }
 class _PremiumPlanState extends State<_PremiumPlan> {
   _BillingCycle _cycle = _BillingCycle.annual;
   final StripePaymentService _stripeService = StripePaymentService();
+  final PayPalPaymentService _paypalService = PayPalPaymentService();
   bool _isProcessingPayment = false;
 
   void _showPaymentMethodModal() {
@@ -368,10 +370,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                   color: const Color(0xFF0070BA),
                   onTap: () {
                     Navigator.pop(ctx);
-                    widget.onContinue(
-                      _cycle == _BillingCycle.monthly ? 'monthly' : 'annual',
-                      PaymentMethod.paypal,
-                    );
+                    _processPayPalPayment();
                   },
                 ),
                 const SizedBox(height: 12),
@@ -450,6 +449,70 @@ class _PremiumPlanState extends State<_PremiumPlan> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur de paiement: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingPayment = false);
+      }
+    }
+  }
+
+  Future<void> _processPayPalPayment() async {
+    if (_isProcessingPayment) return;
+
+    setState(() => _isProcessingPayment = true);
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final billingCycle = _cycle == _BillingCycle.monthly ? 'monthly' : 'annual';
+
+    try {
+      final success = await _paypalService.processPayment(
+        billingCycle: billingCycle,
+        context: context,
+      );
+
+      // Hide loading indicator
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (success && mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Paiement réussi ! Abonnement Premium activé.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to main screen
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ParticulierMainScreen(),
+          ),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      // Hide loading indicator
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur de paiement PayPal: $e'),
             backgroundColor: Colors.red,
           ),
         );
