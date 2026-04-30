@@ -493,6 +493,7 @@ class _PostCardWidget extends StatefulWidget {
   final _PostAuthorInfo author;
   final String content;
   final String timeAgo;
+  final String timeAgoRepost;
   final List<String> mediaUrls;
   final Function(String) onToggleReaction;
   final Widget Function() buildReactionBar;
@@ -511,6 +512,7 @@ class _PostCardWidget extends StatefulWidget {
     required this.onToggleReaction,
     required this.buildReactionBar,
     required this.buildTypeTag,
+    required this.timeAgoRepost,
   });
 
   @override
@@ -584,7 +586,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                 ),
               ),
               Text(
-                '${authorInfo.accountType} • ${widget.timeAgo}',
+                '${authorInfo.accountType} • ${widget.isRepost && widget.isQuoteRepost ? widget.timeAgoRepost : widget.timeAgo}',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ],
@@ -4244,7 +4246,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                     body: body,
                                   );
                                   if (ctx.mounted) {
-                                    Navigator.pop(ctx, 'success');
+                                    Navigator.pop(ctx);
                                   }
                                 } catch (e) {
                                   modalSetState(() => isSubmitting = false);
@@ -4397,7 +4399,6 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       ],
     );
   }
-
 
   Widget _buildReactionBar(
     String apiSlug,
@@ -5266,6 +5267,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     final content = originalPost['content']?.toString() ?? '';
     final createdAt = originalPost['created_at']?.toString();
     final timeAgo = _buildTimeAgo(createdAt);
+    final timeAgoRepost = _buildTimeAgo(raw['created_at']?.toString());
     final allMediaUrls = _extractAllMediaUrls(originalPost);
 
     // For simple reposts (no text), use original post's reactions
@@ -5293,6 +5295,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       author: author,
       content: content,
       timeAgo: timeAgo,
+      timeAgoRepost: timeAgoRepost,
       mediaUrls: allMediaUrls,
       onToggleReaction: (type) =>
           _toggleReaction('posts', reactionEntityId, type),
