@@ -512,6 +512,16 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 if (item['media'] != null) {
                   resource['media'] = item['media'];
                 }
+                // Preserve reaction data from feed item (not in resource)
+                if (item['user_reaction'] != null) {
+                  resource['user_reaction'] = item['user_reaction'];
+                }
+                if (item['likes_count'] != null) {
+                  resource['likes_count'] = item['likes_count'];
+                }
+                if (item['comments_count'] != null) {
+                  resource['comments_count'] = item['comments_count'];
+                }
                 return resource;
               })
               .where((bonPlan) => bonPlan['id'].toString() != widget.bonPlanId)
@@ -666,15 +676,31 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     Map<String, dynamic> resource,
   ) {
     final key = _reactionKey(apiSlug, entityId);
-    // Only seed if not already present to preserve locally incremented counts
-    _reactions.putIfAbsent(
-      key,
-      () => _ReactionData(
-        likesCount: _asInt(resource['likes_count']),
-        commentsCount: _asInt(resource['comments_count']),
-        userReaction: resource['user_reaction']?.toString(),
-      ),
-    );
+    final apiUserReaction = resource['user_reaction']?.toString();
+    final apiLikesCount = _asInt(resource['likes_count']);
+    final apiCommentsCount = _asInt(resource['comments_count']);
+
+    if (!_reactions.containsKey(key)) {
+      // First time - create with API values
+      _reactions[key] = _ReactionData(
+        likesCount: apiLikesCount,
+        commentsCount: apiCommentsCount,
+        userReaction: apiUserReaction,
+      );
+    } else {
+      // Already exists - update user_reaction from API if we don't have one
+      final current = _reactions[key]!;
+      if (current.userReaction == null && apiUserReaction != null) {
+        current.userReaction = apiUserReaction;
+      }
+      // Use max of API count and current (don't let stale API overwrite local)
+      if (apiLikesCount > current.likesCount) {
+        current.likesCount = apiLikesCount;
+      }
+      if (apiCommentsCount > current.commentsCount) {
+        current.commentsCount = apiCommentsCount;
+      }
+    }
   }
 
   String _buildTimeAgo(String? isoDate) {
@@ -4146,32 +4172,47 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(dialogCtx),
-                      child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
                     ),
                     ElevatedButton(
-                      onPressed: () => Navigator.pop(dialogCtx, editController.text),
+                      onPressed: () =>
+                          Navigator.pop(dialogCtx, editController.text),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3AAE5E),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      child: const Text('Enregistrer', style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        'Enregistrer',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
               );
 
-              if (newText == null || newText.trim().isEmpty || newText == currentBody) return;
+              if (newText == null ||
+                  newText.trim().isEmpty ||
+                  newText == currentBody)
+                return;
 
               try {
                 final response = await ApiClient().authenticatedPut(
                   '/comments/$commentId',
                   body: {'body': newText.trim()},
                 );
-                final updatedComment = response['data'] as Map<String, dynamic>?;
+                final updatedComment =
+                    response['data'] as Map<String, dynamic>?;
                 if (updatedComment != null) {
                   setState(() {
                     comment['body'] = updatedComment['body'];
@@ -4183,7 +4224,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Erreur lors de la modification: ${e.toString()}'),
+                      content: Text(
+                        'Erreur lors de la modification: ${e.toString()}',
+                      ),
                       backgroundColor: Colors.redAccent,
                     ),
                   );
@@ -4191,26 +4234,41 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               }
             }
 
-            Future<void> deleteComment(Map<String, dynamic> comment, bool isReply) async {
+            Future<void> deleteComment(
+              Map<String, dynamic> comment,
+              bool isReply,
+            ) async {
               final commentId = comment['id'];
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (dialogCtx) => AlertDialog(
                   title: const Text('Supprimer le commentaire'),
-                  content: const Text('Êtes-vous sûr de vouloir supprimer ce commentaire ?'),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  content: const Text(
+                    'Êtes-vous sûr de vouloir supprimer ce commentaire ?',
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(dialogCtx, false),
-                      child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(dialogCtx, true),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.redAccent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        'Supprimer',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
@@ -4222,7 +4280,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 await ApiClient().authenticatedDelete('/comments/$commentId');
                 setState(() {
                   if (isReply) {
-                    final parentId = comment['parent_id'] ?? comment['comment_id'];
+                    final parentId =
+                        comment['parent_id'] ?? comment['comment_id'];
                     final parent = _comments.firstWhere(
                       (c) => c['id'] == parentId,
                       orElse: () => <String, dynamic>{},
@@ -4237,7 +4296,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     }
                   } else {
                     _comments.removeWhere((c) => c['id'] == commentId);
-                    if (_localCommentsCount != null && _localCommentsCount! > 0) {
+                    if (_localCommentsCount != null &&
+                        _localCommentsCount! > 0) {
                       _localCommentsCount = _localCommentsCount! - 1;
                     }
                   }
@@ -4247,7 +4307,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Erreur lors de la suppression: ${e.toString()}'),
+                      content: Text(
+                        'Erreur lors de la suppression: ${e.toString()}',
+                      ),
                       backgroundColor: Colors.redAccent,
                     ),
                   );
@@ -4372,27 +4434,46 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                           items: [
                                             const PopupMenuItem(
                                               value: 'edit',
-                                              child: Row(children: [
-                                                Icon(Icons.edit, size: 18),
-                                                SizedBox(width: 8),
-                                                Text('Modifier'),
-                                              ]),
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit, size: 18),
+                                                  SizedBox(width: 8),
+                                                  Text('Modifier'),
+                                                ],
+                                              ),
                                             ),
                                             const PopupMenuItem(
                                               value: 'delete',
-                                              child: Row(children: [
-                                                Icon(Icons.delete, size: 18, color: Colors.redAccent),
-                                                SizedBox(width: 8),
-                                                Text('Supprimer', style: TextStyle(color: Colors.redAccent)),
-                                              ]),
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.delete,
+                                                    size: 18,
+                                                    color: Colors.redAccent,
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'Supprimer',
+                                                    style: TextStyle(
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ).then((value) {
-                                          if (value == 'edit') editComment(comment);
-                                          else if (value == 'delete') deleteComment(comment, isReply);
+                                          if (value == 'edit')
+                                            editComment(comment);
+                                          else if (value == 'delete')
+                                            deleteComment(comment, isReply);
                                         });
                                       },
-                                      child: Icon(Icons.more_horiz, size: 18, color: Colors.grey[400]),
+                                      child: Icon(
+                                        Icons.more_horiz,
+                                        size: 18,
+                                        color: Colors.grey[400],
+                                      ),
                                     ),
                                   ],
                                 ],

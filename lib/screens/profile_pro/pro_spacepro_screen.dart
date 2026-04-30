@@ -2111,10 +2111,8 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                         child: _buildActionButton(
                                           icon: Icons.visibility_outlined,
                                           color: const Color(0xFF2E9B5B),
-                                          onTap: () => _viewDocument(
-                                            fileUrl,
-                                            fileName,
-                                          ),
+                                          onTap: () =>
+                                              _viewDocument(fileUrl, fileName),
                                           label: 'Voir',
                                         ),
                                       ),
