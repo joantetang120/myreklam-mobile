@@ -13,6 +13,7 @@ import 'package:myreklam/screens/login_screen.dart';
 import 'package:myreklam/providers/conversation_provider.dart';
 import 'package:myreklam/services/auth_state_manager.dart';
 import 'package:myreklam/services/deep_link_service.dart';
+import 'package:myreklam/services/stripe_payment_service.dart';
 import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -24,6 +25,10 @@ void main() async {
   // Initialize Firebase FIRST before any other service
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   print('✅ Firebase initialisé');
+
+  // Initialize Stripe for payments
+  await StripePaymentService.initialize();
+  print('✅ Stripe initialisé');
 
   // Set navigator key for AuthStateManager
   AuthStateManager().setNavigatorKey(navigatorKey);
