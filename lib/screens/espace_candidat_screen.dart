@@ -5,9 +5,12 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
+import 'package:myreklam/screens/training_detail_screen.dart';
+import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class EspaceCandidatScreen extends StatefulWidget {
   const EspaceCandidatScreen({super.key});
@@ -89,6 +92,323 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
       _candidatures = allCandidatures;
       _isLoadingCandidatures = false;
     });
+  }
+
+  Future<void> _navigateToDetail(String? entityId, String type) async {
+    if (entityId == null || entityId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir les détails')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      if (type == 'formation') {
+        final response = await ApiClient().authenticatedGet('/trainings/$entityId');
+        Navigator.pop(context);
+
+        final data = response['data'] as Map<String, dynamic>? ?? response;
+        final user = data['user'] as Map<String, dynamic>?;
+        final userData = data['user'] as Map<String, dynamic>?;
+
+        // Extract images
+        final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+        final images = mediaFiles
+            .where((m) => m is Map && m['url'] != null)
+            .map((m) => ApiConfig.resolveMediaUrl(m['url']?.toString()) ?? '')
+            .where((url) => url.isNotEmpty)
+            .toList();
+
+        // Build owner info
+        final ownerName = user?['display_name']?.toString() ?? 
+                         user?['name']?.toString() ?? 
+                         user?['pro_profile']?['company_name']?.toString() ??
+                         user?['particulier_profile']?['pseudo']?.toString() ??
+                         'Organisme';
+
+        // Get training data
+        final title = data['title']?.toString() ?? '';
+        final description = data['description']?.toString() ?? '';
+        final descriptionDelta = data['description_delta'];
+        final trainingType = data['training_type']?.toString();
+        final trainingCategory = data['training_category']?.toString();
+        final trainingSubCategory = data['training_sub_category']?.toString();
+        final trainingStyleRaw = data['training_style'];
+        final trainingStyle = trainingStyleRaw is List
+            ? trainingStyleRaw.map((e) => e.toString()).toList()
+            : <String>[];
+        final trainingPublicRaw = data['training_public'];
+        final trainingPublic = trainingPublicRaw is List
+            ? trainingPublicRaw.map((e) => e.toString()).toList()
+            : <String>[];
+        final requiredLevelsRaw = data['required_levels'];
+        final requiredLevels = requiredLevelsRaw is List
+            ? requiredLevelsRaw.map((e) => e.toString()).toList()
+            : <String>[];
+        final price = data['price']?.toString();
+        final priceType = data['price_type']?.toString();
+        final publicType = data['public_type']?.toString();
+        final tempo = data['tempo']?.toString();
+        final trainingFundingRaw = data['training_funding'];
+        final trainingFunding = trainingFundingRaw is List
+            ? trainingFundingRaw.map((e) => e.toString()).toList()
+            : <String>[];
+        final durationInH = data['duration_in_h'] is int
+            ? data['duration_in_h'] as int
+            : int.tryParse(data['duration_in_h']?.toString() ?? '');
+        final durationUnit = data['duration_unit']?.toString();
+        final startDate = data['start_date']?.toString();
+        final endDate = data['end_date']?.toString();
+        final dateToDefine = data['date_to_define'] == true;
+        final addressCity = data['address_city']?.toString();
+        final addressZipcode = data['address_zipcode']?.toString();
+        final addressLine1 = data['address_line_1']?.toString();
+        final showLocation = data['show_location'] != false;
+        final certificationRaw = data['certification'];
+        final certification = certificationRaw is List
+            ? certificationRaw.map((e) => e.toString()).toList()
+            : <String>[];
+        final website = data['website']?.toString();
+        final documentFilesRaw = data['document_files'] as List? ?? [];
+        final documents = documentFilesRaw
+            .where((d) => d is Map)
+            .map((d) => Map<String, dynamic>.from(d as Map))
+            .toList();
+        final createdAt = data['created_at']?.toString();
+
+        // Check ownership
+        final currentUserId = UserSession().id;
+        final isOwner = data['user_id']?.toString() == currentUserId;
+
+        if (mounted) {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TrainingDetailScreen(
+                images: images,
+                companyLogo: 'assets/images/Formation.png',
+                companyName: ownerName,
+                trainingTitle: title,
+                description: description,
+                descriptionDelta: descriptionDelta,
+                tags: [],
+                timeAgo: createdAt ?? '',
+                website: website,
+                trainingType: trainingType,
+                trainingCategory: trainingCategory,
+                trainingSubCategory: trainingSubCategory,
+                trainingStyle: trainingStyle,
+                trainingPublic: trainingPublic,
+                requiredLevels: requiredLevels,
+                price: price,
+                priceType: priceType,
+                publicType: publicType,
+                tempo: tempo,
+                trainingFunding: trainingFunding,
+                durationInH: durationInH,
+                durationUnit: durationUnit,
+                startDate: startDate,
+                endDate: endDate,
+                dateToDefine: dateToDefine,
+                addressCity: addressCity,
+                addressZipcode: addressZipcode,
+                addressLine1: addressLine1,
+                showLocation: showLocation,
+                certification: certification,
+                documents: documents,
+                isOwner: isOwner,
+                trainingId: entityId,
+                trainingData: data,
+                returnToListingOnEdit: false,
+                authorData: userData,
+                commentsCount: data['comments_count'] as int? ?? 0,
+              ),
+            ),
+          );
+        }
+      } else if (type == 'evenement') {
+        final response = await ApiClient().authenticatedGet('/events/$entityId');
+        Navigator.pop(context);
+
+        final data = response['data'] as Map<String, dynamic>? ?? response;
+        final user = data['user'] as Map<String, dynamic>?;
+        final userData = data['user'] as Map<String, dynamic>?;
+
+        // Extract images
+        final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+        final images = mediaFiles
+            .where((m) => m is Map && m['url'] != null)
+            .map((m) => ApiConfig.resolveMediaUrl(m['url']?.toString()) ?? '')
+            .where((url) => url.isNotEmpty)
+            .toList();
+
+        // Build owner info
+        final ownerName = user?['display_name']?.toString() ?? 
+                         user?['name']?.toString() ?? 
+                         user?['pro_profile']?['company_name']?.toString() ??
+                         user?['particulier_profile']?['pseudo']?.toString() ??
+                         'Organisateur';
+        final profileImage = user?['avatar_url']?.toString() ?? user?['avatar']?.toString() ?? '';
+
+        // Get event data
+        final title = data['title']?.toString() ?? '';
+        final description = data['description']?.toString() ?? '';
+        final descriptionDelta = data['description_delta'];
+        final categoryCode = data['category_code']?.toString();
+        final subCategoryCode = data['sub_category_code']?.toString();
+        final formatType = data['format_type']?.toString();
+        final durationType = data['duration_type']?.toString();
+        final eventDate = data['event_date']?.toString();
+        final startDate = data['start_date']?.toString();
+        final endDate = data['end_date']?.toString();
+        final startTime = data['start_time']?.toString();
+        final endTime = data['end_time']?.toString();
+        final priceType = data['price_type']?.toString();
+        final pricingMode = data['pricing_mode']?.toString();
+        final priceAmount = data['price_amount']?.toString();
+        final priceCategories = (data['price_categories'] as List?)
+            ?.map<Map<String, dynamic>>((c) => Map<String, dynamic>.from(c as Map))
+            .toList() ?? <Map<String, dynamic>>[];
+        final reservationMode = data['reservation_mode']?.toString();
+        final coverageArea = data['coverage_area']?.toString();
+        final locationCity = data['location_city']?.toString();
+        final locationPostalCode = data['location_postal_code']?.toString();
+        final isNationwide = data['is_nationwide'] == true;
+        final organizerName = data['organizer_name']?.toString();
+        final isOrganizer = data['is_organizer'] != false;
+        final websiteUrl = data['website_url']?.toString();
+        final landingUrl = data['landing_url']?.toString();
+        final acceptMessages = data['accept_messages'] == true;
+        final createdAt = data['created_at']?.toString();
+
+        // Check ownership
+        final currentUserId = UserSession().id;
+        final isOwner = data['user_id']?.toString() == currentUserId;
+
+        if (mounted) {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => EventDetailScreen(
+                images: images,
+                avatar: profileImage,
+                username: isOrganizer ? ownerName : (organizerName ?? 'Organisateur'),
+                userType: 'Évènement',
+                eventTitle: title,
+                description: description,
+                descriptionDelta: descriptionDelta,
+                tags: [],
+                timeAgo: createdAt ?? '',
+                categoryCode: categoryCode,
+                subCategoryCode: subCategoryCode,
+                formatType: formatType,
+                durationType: durationType,
+                eventDate: eventDate,
+                startDate: startDate,
+                endDate: endDate,
+                startTime: startTime,
+                endTime: endTime,
+                priceType: priceType,
+                pricingMode: pricingMode,
+                priceAmount: priceAmount,
+                priceCategories: priceCategories,
+                reservationMode: reservationMode,
+                coverageArea: coverageArea,
+                locationCity: locationCity,
+                locationPostalCode: locationPostalCode,
+                isNationwide: isNationwide,
+                organizerName: organizerName,
+                isOrganizer: isOrganizer,
+                websiteUrl: websiteUrl,
+                landingUrl: landingUrl,
+                acceptMessages: acceptMessages,
+                isOwner: isOwner,
+                eventId: entityId,
+                eventData: data,
+                returnToListingOnEdit: false,
+                authorData: userData,
+                commentsCount: data['comments_count'] as int? ?? 0,
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteCandidature(dynamic id, String type) async {
+    if (id == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer la candidature'),
+        content: const Text(
+          'Êtes-vous sûr de vouloir supprimer cette candidature ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      String endpoint;
+      if (type == 'formation') {
+        endpoint = '/trainings/subscriptions/$id';
+      } else if (type == 'evenement') {
+        endpoint = '/events/participations/$id';
+      } else {
+        return;
+      }
+
+      await ApiClient().authenticatedDelete(endpoint);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Candidature supprimée'),
+            backgroundColor: Color(0xFF2E9B5B),
+          ),
+        );
+        _loadCandidatures();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la suppression: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _startChatWithOwner(int ownerId) async {
@@ -993,6 +1313,11 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                   statusColor = const Color(0xFFFF9800);
               }
 
+              final candidatureId = candidature['id'];
+              final trainingId = candidature['training_id'];
+              final eventId = candidature['event_id'];
+              final entityId = (type == 'formation' ? trainingId : eventId)?.toString();
+
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: _buildCandidatureCard(
@@ -1005,6 +1330,8 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                   type: displayType,
                   typeIcon: typeIcon,
                   date: _formatDate(date),
+                  onDelete: () => _deleteCandidature(candidatureId, type),
+                  onViewDetails: () => _navigateToDetail(entityId, type),
                 ),
               );
             }).toList(),
@@ -1058,6 +1385,8 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     required String type,
     required IconData typeIcon,
     required String date,
+    VoidCallback? onDelete,
+    VoidCallback? onViewDetails,
   }) {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -1147,16 +1476,19 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                 ),
               ),
               const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFEBEE),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.delete_outline,
-                  size: 16,
-                  color: Color(0xFFE53935),
+              GestureDetector(
+                onTap: onDelete,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFEBEE),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    size: 16,
+                    color: Color(0xFFE53935),
+                  ),
                 ),
               ),
             ],
@@ -1191,7 +1523,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                 ],
               ),
               GestureDetector(
-                onTap: () {},
+                onTap: onViewDetails,
                 child: const Text(
                   'Voir les détails',
                   style: TextStyle(

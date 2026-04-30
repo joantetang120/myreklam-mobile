@@ -814,10 +814,12 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
         event['sub_category_label'].toString(),
     ];
     final price = _formatPrice(event);
-    final coverageArea =
-        event['coverage_area']?.toString() ??
-        event['location']?.toString() ??
-        'Non spécifié';
+    final isNationwide = event['is_nationwide'] == true;
+    final coverageArea = isNationwide
+        ? 'Toute la France'
+        : (event['coverage_area']?.toString() ??
+           event['location']?.toString() ??
+           'Non spécifié');
 
     final eventId = event['id']?.toString() ?? '';
 
