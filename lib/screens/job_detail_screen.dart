@@ -107,6 +107,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   bool _isLoadingFollow = false;
   bool _isFavorite = false;
   bool _isLoadingFavorite = false;
+  bool _hasApplied = false;
+  bool _isLoadingApply = false;
   List<Map<String, dynamic>> _comments = [];
   int? _localCommentsCount;
   bool _isLoadingComments = false;
@@ -148,8 +150,36 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     _localCommentsCount = widget.commentsCount;
     _checkFollowStatus();
     _checkFavoriteStatus();
+    _checkApplicationStatus();
     _fetchComments();
     _fetchSimilarJobOffers();
+  }
+
+  Future<void> _checkApplicationStatus() async {
+    if (widget.isOwner || widget.jobOfferId == null) return;
+
+    try {
+      final response = await ApiClient().authenticatedGet(
+        '/job-offers/my-applications',
+      );
+
+      final data = response['data'];
+      if (data is List) {
+        final applications = List<Map<String, dynamic>>.from(data);
+        final hasApplied = applications.any((app) {
+          final jobId =
+              app['job_offer_id']?.toString() ??
+              app['jobOfferId']?.toString() ??
+              app['job_offer']?['id']?.toString();
+          return jobId == widget.jobOfferId;
+        });
+        if (hasApplied) {
+          setState(() => _hasApplied = true);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking application status: $e');
+    }
   }
 
   Future<void> _fetchComments() async {
@@ -292,30 +322,45 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(dialogCtx),
-                      child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
                     ),
                     ElevatedButton(
-                      onPressed: () => Navigator.pop(dialogCtx, editController.text),
+                      onPressed: () =>
+                          Navigator.pop(dialogCtx, editController.text),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3AAE5E),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      child: const Text('Enregistrer', style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        'Enregistrer',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
               );
-              if (newText == null || newText.trim().isEmpty || newText == currentBody) return;
+              if (newText == null ||
+                  newText.trim().isEmpty ||
+                  newText == currentBody)
+                return;
               try {
                 final response = await ApiClient().authenticatedPut(
                   '/comments/$commentId',
                   body: {'body': newText.trim()},
                 );
-                final updatedComment = response['data'] as Map<String, dynamic>?;
+                final updatedComment =
+                    response['data'] as Map<String, dynamic>?;
                 if (updatedComment != null) {
                   setState(() {
                     comment['body'] = updatedComment['body'];
@@ -327,7 +372,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Erreur lors de la modification: ${e.toString()}'),
+                      content: Text(
+                        'Erreur lors de la modification: ${e.toString()}',
+                      ),
                       backgroundColor: Colors.redAccent,
                     ),
                   );
@@ -335,26 +382,41 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               }
             }
 
-            Future<void> deleteComment(Map<String, dynamic> comment, bool isReply) async {
+            Future<void> deleteComment(
+              Map<String, dynamic> comment,
+              bool isReply,
+            ) async {
               final commentId = comment['id'];
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (dialogCtx) => AlertDialog(
                   title: const Text('Supprimer le commentaire'),
-                  content: const Text('Êtes-vous sûr de vouloir supprimer ce commentaire ?'),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  content: const Text(
+                    'Êtes-vous sûr de vouloir supprimer ce commentaire ?',
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(dialogCtx, false),
-                      child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(dialogCtx, true),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.redAccent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        'Supprimer',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
@@ -364,7 +426,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 await ApiClient().authenticatedDelete('/comments/$commentId');
                 setState(() {
                   if (isReply) {
-                    final parentId = comment['parent_id'] ?? comment['comment_id'];
+                    final parentId =
+                        comment['parent_id'] ?? comment['comment_id'];
                     final parent = _comments.firstWhere(
                       (c) => c['id'] == parentId,
                       orElse: () => <String, dynamic>{},
@@ -379,7 +442,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     }
                   } else {
                     _comments.removeWhere((c) => c['id'] == commentId);
-                    if (_localCommentsCount != null && _localCommentsCount! > 0) {
+                    if (_localCommentsCount != null &&
+                        _localCommentsCount! > 0) {
                       _localCommentsCount = _localCommentsCount! - 1;
                     }
                   }
@@ -389,7 +453,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Erreur lors de la suppression: ${e.toString()}'),
+                      content: Text(
+                        'Erreur lors de la suppression: ${e.toString()}',
+                      ),
                       backgroundColor: Colors.redAccent,
                     ),
                   );
@@ -659,7 +725,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                             color: Colors.grey[500],
                           ),
                         ),
-                        if (isOwner && (onEdit != null || onDelete != null)) ...[
+                        if (isOwner &&
+                            (onEdit != null || onDelete != null)) ...[
                           const Spacer(),
                           GestureDetector(
                             onTapDown: (TapDownDetails details) {
@@ -674,27 +741,46 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                                 items: [
                                   const PopupMenuItem(
                                     value: 'edit',
-                                    child: Row(children: [
-                                      Icon(Icons.edit, size: 18),
-                                      SizedBox(width: 8),
-                                      Text('Modifier'),
-                                    ]),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit, size: 18),
+                                        SizedBox(width: 8),
+                                        Text('Modifier'),
+                                      ],
+                                    ),
                                   ),
                                   const PopupMenuItem(
                                     value: 'delete',
-                                    child: Row(children: [
-                                      Icon(Icons.delete, size: 18, color: Colors.redAccent),
-                                      SizedBox(width: 8),
-                                      Text('Supprimer', style: TextStyle(color: Colors.redAccent)),
-                                    ]),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.delete,
+                                          size: 18,
+                                          color: Colors.redAccent,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Supprimer',
+                                          style: TextStyle(
+                                            color: Colors.redAccent,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ).then((value) {
-                                if (value == 'edit') onEdit?.call(comment);
-                                else if (value == 'delete') onDelete?.call(comment, isReply);
+                                if (value == 'edit')
+                                  onEdit?.call(comment);
+                                else if (value == 'delete')
+                                  onDelete?.call(comment, isReply);
                               });
                             },
-                            child: Icon(Icons.more_horiz, size: 18, color: Colors.grey[400]),
+                            child: Icon(
+                              Icons.more_horiz,
+                              size: 18,
+                              color: Colors.grey[400],
+                            ),
                           ),
                         ],
                       ],
@@ -729,7 +815,13 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           if (!isReply && replies.isNotEmpty) ...[
             const SizedBox(height: 8),
             ...replies.map(
-              (r) => _buildCommentItem(r, isReply: true, onReply: onReply, onEdit: onEdit, onDelete: onDelete),
+              (r) => _buildCommentItem(
+                r,
+                isReply: true,
+                onReply: onReply,
+                onEdit: onEdit,
+                onDelete: onDelete,
+              ),
             ),
           ],
         ],
@@ -1771,7 +1863,6 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     );
   }
 
-
   Widget _buildReactionBar(
     String apiSlug,
     String entityId, {
@@ -2570,6 +2661,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         final message =
             response['message']?.toString() ??
             'Candidature envoyée avec succès.';
+        setState(() => _hasApplied = true);
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
@@ -2611,6 +2704,163 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text('Erreur: ${e.toString()}')));
       }
+    }
+
+    void _showApplyDialog() {
+      if (widget.jobOfferId == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Offre invalide.')));
+        return;
+      }
+
+      showDialog(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              'Confirmer la candidature',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Job details preview
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          // if (widget.companyLogo.isNotEmpty)
+                          //   ClipRRect(
+                          //     borderRadius: BorderRadius.circular(8),
+                          //     child: Image.network(
+                          //       widget.companyLogo,
+                          //       width: 40,
+                          //       height: 40,
+                          //       fit: BoxFit.cover,
+                          //       errorBuilder: (_, __, ___) => Container(
+                          //         width: 40,
+                          //         height: 40,
+                          //         color: Colors.grey[300],
+                          //         child: Icon(
+                          //           Icons.business,
+                          //           size: 20,
+                          //           color: Colors.grey[600],
+                          //         ),
+                          //       ),
+                          //     ),
+                          //   ),
+                          // const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.jobTitle,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  widget.companyName,
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      if (widget.location.isNotEmpty)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 14,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                widget.location,
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 12,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Voulez-vous postuler à cette offre d\'emploi ?',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Votre profil sera envoyé au recruteur.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: _isLoadingApply
+                    ? null
+                    : () async {
+                        Navigator.pop(dialogContext);
+                        await applyToJobOffer();
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF9800),
+                  foregroundColor: Colors.white,
+                ),
+                child: _isLoadingApply
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                    : const Text('Postuler'),
+              ),
+            ],
+          );
+        },
+      );
     }
 
     // Debug: Check contact button conditions
@@ -2972,9 +3222,11 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     Expanded(
                       flex: widget.applyButtonFlex,
                       child: ElevatedButton(
-                        onPressed: applyToJobOffer,
+                        onPressed: _hasApplied ? null : _showApplyDialog,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF9800),
+                          backgroundColor: _hasApplied
+                              ? Colors.grey
+                              : const Color(0xFFFF9800),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
@@ -2982,13 +3234,28 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          'Postuler',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        child: _hasApplied
+                            ? const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.check_circle, size: 18),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'postulé',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : const Text(
+                                'Postuler',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(width: 12),
