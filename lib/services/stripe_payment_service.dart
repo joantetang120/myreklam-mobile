@@ -1,0 +1,176 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'api_client.dart';
+
+/// Service for handling Stripe payments
+class StripePaymentService {
+  final ApiClient _api = ApiClient();
+
+  /// Initialize Stripe with publishable key
+  static Future<void> initialize() async {
+    // Stripe test publishable key
+    Stripe.publishableKey =
+        'pk_test_51TRuHoLvvZRcoJBC6SLA5LoH4iSmM3jryLOy5GvB47XSgPkf7zif0q9BChNtG71p9PFMMSY9tvwRhPNQ118ZmLWe00yT7KpThZ';
+
+    // Set merchant identifier (required for Apple Pay, recommended for test mode)
+    Stripe.merchantIdentifier = 'merchant.myreklam.app';
+
+    // Apply settings with error handling
+    try {
+      await Stripe.instance.applySettings();
+      debugPrint('✅ Stripe initialized successfully');
+    } catch (e) {
+      debugPrint('⚠️ Stripe initialization warning: $e');
+      // Continue anyway - sometimes this fails on first run
+    }
+  }
+
+  /// Create a payment intent and present payment sheet
+  /// Returns true if payment was successful, false otherwise
+  Future<bool> processPayment({
+    required String billingCycle,
+    required BuildContext context,
+  }) async {
+    try {
+      // Ensure Stripe is initialized
+      if (Stripe.publishableKey.isEmpty) {
+        await initialize();
+      }
+
+      // Step 1: Create payment intent on backend
+      final paymentData = await _createPaymentIntent(billingCycle);
+
+      if (paymentData == null) {
+        _showError(context, 'Failed to initialize payment');
+        return false;
+      }
+
+      final clientSecret = paymentData['client_secret'] as String;
+      final paymentIntentId = paymentData['payment_intent_id'] as String;
+
+      // Step 2: Configure and present payment sheet
+      final paymentSuccessful = await _presentPaymentSheet(
+        clientSecret: clientSecret,
+        billingCycle: billingCycle,
+      );
+
+      if (!paymentSuccessful) {
+        return false;
+      }
+
+      // Step 3: Confirm payment and create subscription on backend
+      final subscriptionData = await _confirmPayment(
+        paymentIntentId: paymentIntentId,
+        billingCycle: billingCycle,
+      );
+
+      if (subscriptionData == null) {
+        _showError(context, 'Payment succeeded but failed to create subscription');
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Stripe payment error: $e');
+      _showError(context, 'Payment failed: $e');
+      return false;
+    }
+  }
+
+  /// Create payment intent on backend
+  Future<Map<String, dynamic>?> _createPaymentIntent(String billingCycle) async {
+    try {
+      final response = await _api.authenticatedPost(
+        '/payments/intent',
+        body: {
+          'billing_cycle': billingCycle,
+        },
+      );
+
+      if (response['success'] == true) {
+        return {
+          'client_secret': response['client_secret'],
+          'payment_intent_id': response['payment_intent_id'],
+          'amount': response['amount'],
+        };
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('Create payment intent error: $e');
+      return null;
+    }
+  }
+
+  /// Present Stripe payment sheet
+  Future<bool> _presentPaymentSheet({
+    required String clientSecret,
+    required String billingCycle,
+  }) async {
+    try {
+      // Setup payment sheet - basic configuration for v10.2.0
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: clientSecret,
+          merchantDisplayName: 'Myreklam',
+          style: ThemeMode.light,
+          allowsDelayedPaymentMethods: false,
+        ),
+      );
+
+      // Present payment sheet
+      await Stripe.instance.presentPaymentSheet();
+
+      // If we get here, payment was successful
+      return true;
+    } on StripeException catch (e) {
+      if (e.error.code == FailureCode.Canceled) {
+        // User canceled the payment
+        debugPrint('Payment canceled by user');
+        return false;
+      }
+      debugPrint('Stripe exception: ${e.error.localizedMessage}');
+      return false;
+    } catch (e) {
+      debugPrint('Present payment sheet error: $e');
+      return false;
+    }
+  }
+
+  /// Confirm payment and create subscription
+  Future<Map<String, dynamic>?> _confirmPayment({
+    required String paymentIntentId,
+    required String billingCycle,
+  }) async {
+    try {
+      final response = await _api.authenticatedPost(
+        '/payments/confirm',
+        body: {
+          'payment_intent_id': paymentIntentId,
+          'plan': 'premium',
+          'billing_cycle': billingCycle,
+        },
+      );
+
+      if (response['success'] == true) {
+        return response['subscription'] as Map<String, dynamic>?;
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('Confirm payment error: $e');
+      return null;
+    }
+  }
+
+  void _showError(BuildContext context, String message) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}

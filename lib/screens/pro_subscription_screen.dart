@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/subscription_service.dart';
+import 'package:myreklam/services/stripe_payment_service.dart';
 import 'package:myreklam/services/api_client.dart';
+
+enum PaymentMethod { paypal, stripe }
 
 class ProSubscriptionScreen extends StatefulWidget {
   const ProSubscriptionScreen({super.key});
@@ -120,7 +123,7 @@ class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
               controller: _tabController,
               children: [
                 _FreePlan(onContinue: () => _handleSubscribe('free')),
-                _PremiumPlan(onContinue: (billingCycle) => _handleSubscribe('premium', billingCycle: billingCycle)),
+                _PremiumPlan(onContinue: (billingCycle, method) => _handleSubscribe('premium', billingCycle: billingCycle, paymentMethod: method)),
               ],
             ),
           ),
@@ -129,7 +132,12 @@ class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
     );
   }
 
-  Future<void> _handleSubscribe(String plan, {String? billingCycle}) async {
+  Future<void> _handleSubscribe(String plan, {String? billingCycle, PaymentMethod? paymentMethod}) async {
+    // Stripe payments are handled separately through _processStripePayment
+    if (paymentMethod == PaymentMethod.stripe) {
+      return;
+    }
+
     if (_isLoading) return;
     setState(() => _isLoading = true);
 
@@ -137,6 +145,7 @@ class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
       await _subscriptionService.subscribe(
         plan: plan,
         billingCycle: billingCycle,
+        paymentMethod: paymentMethod?.name,
       );
 
       if (!mounted) return;
@@ -299,7 +308,7 @@ class _FreePlan extends StatelessWidget {
 class _PremiumPlan extends StatefulWidget {
   const _PremiumPlan({required this.onContinue});
 
-  final void Function(String billingCycle) onContinue;
+  final void Function(String billingCycle, PaymentMethod method) onContinue;
 
   @override
   State<_PremiumPlan> createState() => _PremiumPlanState();
@@ -309,6 +318,148 @@ enum _BillingCycle { monthly, annual }
 
 class _PremiumPlanState extends State<_PremiumPlan> {
   _BillingCycle _cycle = _BillingCycle.annual;
+  final StripePaymentService _stripeService = StripePaymentService();
+  bool _isProcessingPayment = false;
+
+  void _showPaymentMethodModal() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const Text(
+                  'Choisir votre méthode de paiement',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Abonnement Premium - ${_cycle == _BillingCycle.monthly ? 'Mensuel' : 'Annuel'}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                _PaymentOptionTile(
+                  icon: Icons.payment,
+                  label: 'PayPal',
+                  color: const Color(0xFF0070BA),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    widget.onContinue(
+                      _cycle == _BillingCycle.monthly ? 'monthly' : 'annual',
+                      PaymentMethod.paypal,
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                _PaymentOptionTile(
+                  icon: Icons.credit_card,
+                  label: 'Stripe (Carte bancaire)',
+                  color: const Color(0xFF635BFF),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _processStripePayment();
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Annuler'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _processStripePayment() async {
+    if (_isProcessingPayment) return;
+
+    setState(() => _isProcessingPayment = true);
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final billingCycle = _cycle == _BillingCycle.monthly ? 'monthly' : 'annual';
+
+    try {
+      final success = await _stripeService.processPayment(
+        billingCycle: billingCycle,
+        context: context,
+      );
+
+      // Hide loading indicator
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (success && mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Paiement réussi ! Abonnement Premium activé.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to main screen
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const ParticulierMainScreen(),
+          ),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      // Hide loading indicator
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur de paiement: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingPayment = false);
+      }
+    }
+  }
 
   static final Map<_BillingCycle, _PremiumPricing> _pricing = {
     _BillingCycle.monthly: const _PremiumPricing(
@@ -473,9 +624,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
                           ),
-                          onTap: () => widget.onContinue(
-                            _cycle == _BillingCycle.monthly ? 'monthly' : 'annual',
-                          ),
+                          onTap: _showPaymentMethodModal,
                         ),
                       ],
                     ),
@@ -721,6 +870,59 @@ class _GradientButton extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PaymentOptionTile extends StatelessWidget {
+  const _PaymentOptionTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, color: color.withOpacity(0.6), size: 16),
+          ],
         ),
       ),
     );

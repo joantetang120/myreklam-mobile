@@ -16,12 +16,16 @@ class SubscriptionService {
   Future<Map<String, dynamic>> subscribe({
     required String plan,
     String? billingCycle,
+    String? paymentMethod,
   }) async {
     final body = <String, dynamic>{
       'plan': plan,
     };
     if (billingCycle != null) {
       body['billing_cycle'] = billingCycle;
+    }
+    if (paymentMethod != null) {
+      body['payment_method'] = paymentMethod;
     }
     return await _api.authenticatedPost('/subscriptions/subscribe', body: body);
   }
