@@ -8,9 +8,9 @@ class StripePaymentService {
 
   /// Initialize Stripe with publishable key
   static Future<void> initialize() async {
-    // Stripe test publishable key
+    // Stripe LIVE publishable key
     Stripe.publishableKey =
-        'pk_test_51TRuHoLvvZRcoJBC6SLA5LoH4iSmM3jryLOy5GvB47XSgPkf7zif0q9BChNtG71p9PFMMSY9tvwRhPNQ118ZmLWe00yT7KpThZ';
+        'pk_live_51KEdn8LjQlGQsbAn8FktZTnAdzff9sURGFoMVhDKOvPrwYqvdO2yD6PTxWg0Vleopg0CIgXq9wYezK5SmQ0mj9qZ00yklzhRrP';
 
     // Set merchant identifier (required for Apple Pay, recommended for test mode)
     Stripe.merchantIdentifier = 'merchant.myreklam.app';

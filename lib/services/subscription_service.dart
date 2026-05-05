@@ -34,4 +34,9 @@ class SubscriptionService {
   Future<Map<String, dynamic>> getCurrentSubscription() async {
     return await _api.authenticatedGet('/subscriptions/current');
   }
+
+  /// POST /api/subscriptions/cancel
+  Future<Map<String, dynamic>> cancelSubscription() async {
+    return await _api.authenticatedPost('/subscriptions/cancel');
+  }
 }
