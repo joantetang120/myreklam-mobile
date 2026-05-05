@@ -8,6 +8,7 @@ import 'package:myreklam/widgets/publish_option_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/creer_bon_plan_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/utils/subscription_helper.dart';
 
 class PublishOptionsScreen extends StatefulWidget {
   const PublishOptionsScreen({super.key});
@@ -18,6 +19,15 @@ class PublishOptionsScreen extends StatefulWidget {
 
 class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
   final UserSession _userSession = UserSession();
+
+  void _navigateIfAllowed(BuildContext context, Widget screen) {
+    if (_userSession.isPro &&
+        !SubscriptionHelper.canAccessFeature(ProFeature.postAnnouncement)) {
+      SubscriptionHelper.showTrialExpiredDialog(context);
+      return;
+    }
+    Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
+  }
 
   Widget _buildNotifBubble(BuildContext context) {
     return GestureDetector(
@@ -206,14 +216,8 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                       'Partagez les meilleures offres, promotions et bons plans avec la communauté.',
                   icon: Icons.card_giftcard_outlined,
                   iconColor: const Color(0xFFFF9800),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreerBonPlanScreen(),
-                      ),
-                    );
-                  },
+                  onTap: () =>
+                      _navigateIfAllowed(context, const CreerBonPlanScreen()),
                 ),
                 // Show Offre d'emploi and Formation only for professionals
                 if (_userSession.isPro) ...[
@@ -226,14 +230,10 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                         'Déposez vos offres de recrutement ou trouvez des opportunités professionnelles.',
                     icon: Icons.work_outline,
                     iconColor: Colors.lightBlueAccent,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreerOffreEmploiScreen(),
-                        ),
-                      );
-                    },
+                    onTap: () => _navigateIfAllowed(
+                      context,
+                      const CreerOffreEmploiScreen(),
+                    ),
                   ),
                   PublishOptionCard(
                     backgroundColor: const Color(0xFFE6F7EF),
@@ -244,14 +244,10 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                         'Proposez vos formations et partagez vos connaissances avec les membres.',
                     icon: Icons.school_outlined,
                     iconColor: const Color(0xFF3AAE5E),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreerFormationScreen(),
-                        ),
-                      );
-                    },
+                    onTap: () => _navigateIfAllowed(
+                      context,
+                      const CreerFormationScreen(),
+                    ),
                   ),
                 ],
                 PublishOptionCard(
@@ -263,14 +259,8 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                       'Organisez et annoncez vos événements, rencontres et activités.',
                   icon: Icons.event_outlined,
                   iconColor: const Color(0xFF00897B),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreerEvenementScreen(),
-                      ),
-                    );
-                  },
+                  onTap: () =>
+                      _navigateIfAllowed(context, const CreerEvenementScreen()),
                 ),
                 PublishOptionCard(
                   backgroundColor: const Color(0xFFFFF9C4),
@@ -281,14 +271,8 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                       'Exprimez vos besoins et recevez des réponses de la communauté.',
                   icon: Icons.chat_bubble_outline,
                   iconColor: const Color(0xFFFFA000),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CreerDemandeScreen(),
-                      ),
-                    );
-                  },
+                  onTap: () =>
+                      _navigateIfAllowed(context, CreerDemandeScreen()),
                 ),
                 const SizedBox(height: 20),
               ],

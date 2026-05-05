@@ -5,6 +5,7 @@ import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/widgets/avatars_story.dart';
 import 'package:myreklam/widgets/chat_item_widget.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/screens/pro_subscription_screen.dart';
 import 'package:myreklam/screens/add_story_screen.dart';
 import 'package:myreklam/screens/my_stories_screen.dart';
 import 'package:myreklam/screens/story_viewer_screen.dart';
@@ -15,6 +16,7 @@ import 'package:myreklam/services/story_store.dart';
 import 'package:myreklam/services/story_service.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/providers/conversation_provider.dart';
 import 'package:intl/intl.dart';
 
@@ -328,6 +330,11 @@ class _MessageScreenState extends State<MessageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Block messaging access for free pro users
+    if (SubscriptionHelper.isProFree) {
+      return _buildPremiumLockScreen(context);
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
@@ -809,6 +816,128 @@ class _MessageScreenState extends State<MessageScreen> {
             fontSize: 13,
             fontWeight: FontWeight.w500,
             color: isSelected ? Colors.white : Colors.grey[600],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumLockScreen(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9F9FB),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          padding: const EdgeInsets.only(left: 10),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            size: 18,
+            color: Color(0xFF616161),
+          ),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    const ParticulierMainScreen(initialIndex: 0),
+              ),
+            );
+          },
+        ),
+        title: const Text(
+          'Messages',
+          style: TextStyle(
+            color: Color(0xFF616161),
+            fontFamily: 'Manjari',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9800).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.lock_outline,
+                  size: 48,
+                  color: Color(0xFFFF9800),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Messagerie réservée aux comptes Premium',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Passez à la version Premium pour accéder à la messagerie et communiquer avec les autres utilisateurs.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF8D8D8D),
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ProSubscriptionScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2E9B5B),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Passer Premium',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const ParticulierMainScreen(initialIndex: 0),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Retour à l\'accueil',
+                  style: TextStyle(color: Color(0xFF8D8D8D)),
+                ),
+              ),
+            ],
           ),
         ),
       ),

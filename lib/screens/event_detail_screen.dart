@@ -19,6 +19,7 @@ import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
@@ -2473,9 +2474,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: widget.eventId != null
-                          ? () => _showEntityCommentsSheet(
-                              'events',
-                              widget.eventId!,
+                          ? () => SubscriptionHelper.guardFeature(
+                              context,
+                              ProFeature.commentAndReact,
+                              () => _showEntityCommentsSheet(
+                                'events',
+                                widget.eventId!,
+                              ),
+                              featureName: 'Commenter',
                             )
                           : null,
                       icon: const Icon(Icons.chat_outlined, size: 18),
@@ -3032,6 +3038,13 @@ $deepLink'''
           }
 
           Future<void> submitComment() async {
+            if (!SubscriptionHelper.canAccessFeature(ProFeature.commentAndReact)) {
+              if (context.mounted) {
+                SubscriptionHelper.showTrialExpiredDialog(context);
+              }
+              return;
+            }
+
             final text = ctrl.text.trim();
             if (text.isEmpty) return;
 

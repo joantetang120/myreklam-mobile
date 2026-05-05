@@ -2917,8 +2917,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     final coverageArea = isNationwide
         ? 'Toute la France'
         : (event['coverage_area']?.toString() ??
-           event['location']?.toString() ??
-           'Non spécifié');
+              event['location']?.toString() ??
+              'Non spécifié');
 
     final eventId = event['id']?.toString() ?? '';
 

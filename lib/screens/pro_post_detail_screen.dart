@@ -19,6 +19,7 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:share_plus/share_plus.dart';
@@ -839,6 +840,15 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             }
 
             Future<void> submitComment() async {
+              if (!SubscriptionHelper.canAccessFeature(
+                ProFeature.commentAndReact,
+              )) {
+                if (context.mounted) {
+                  SubscriptionHelper.showTrialExpiredDialog(context);
+                }
+                return;
+              }
+
               final text = commentCtrl.text.trim();
               if (text.isEmpty) return;
 
@@ -2908,7 +2918,12 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => _showCommentsSheet(context),
+                      onPressed: () => SubscriptionHelper.guardFeature(
+                        context,
+                        ProFeature.commentAndReact,
+                        () => _showCommentsSheet(context),
+                        featureName: 'Commenter',
+                      ),
                       icon: const Icon(Icons.chat_outlined, size: 18),
                       label: Text(
                         _comments.isEmpty
@@ -3577,6 +3592,17 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     Map<String, dynamic> authorData, {
     Map<String, dynamic>? annonceData,
   }) async {
+    // Check subscription for pro users
+    if (!SubscriptionHelper.canAccessFeature(ProFeature.messaging)) {
+      if (context.mounted) {
+        SubscriptionHelper.showPremiumRequiredDialog(
+          context,
+          featureName: 'Messagerie',
+        );
+      }
+      return;
+    }
+
     final authorId = authorData['id']?.toString();
 
     // Extraire le nom depuis le profil particulier
@@ -4082,6 +4108,15 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             final commentCtrl = TextEditingController();
 
             Future<void> submitComment() async {
+              if (!SubscriptionHelper.canAccessFeature(
+                ProFeature.commentAndReact,
+              )) {
+                if (context.mounted) {
+                  SubscriptionHelper.showTrialExpiredDialog(context);
+                }
+                return;
+              }
+
               final text = commentCtrl.text.trim();
               if (text.isEmpty) return;
 
