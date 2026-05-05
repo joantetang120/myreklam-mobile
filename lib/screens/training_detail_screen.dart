@@ -17,6 +17,7 @@ import 'package:myreklam/screens/creer_formation_screen.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
@@ -1489,9 +1490,16 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   children: [
                     IconButton(
                       onPressed: _shareTraining,
-                      icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
+                      icon: Icon(
+                        Icons.share_outlined,
+                        color: Colors.grey[600],
+                        size: 24,
+                      ),
                     ),
-                    Text('Partager', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    Text(
+                      'Partager',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
                   ],
                 ),
                 //         color: Colors.grey[600],
@@ -1721,7 +1729,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => _showCommentsSheet(),
+                      onPressed: () => SubscriptionHelper.guardFeature(
+                        context,
+                        ProFeature.commentAndReact,
+                        () => _showCommentsSheet(),
+                        featureName: 'Commenter',
+                      ),
                       icon: const Icon(Icons.chat_outlined, size: 18),
                       label: Text(
                         _comments.isEmpty
@@ -2216,7 +2229,6 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     );
   }
 
-
   Widget _buildDescription() {
     // Show plain text description instead of delta
     if (widget.description.isNotEmpty) {
@@ -2663,7 +2675,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                             color: Colors.grey[500],
                           ),
                         ),
-                        if (isOwner && (onEdit != null || onDelete != null)) ...[
+                        if (isOwner &&
+                            (onEdit != null || onDelete != null)) ...[
                           const Spacer(),
                           GestureDetector(
                             onTapDown: (TapDownDetails details) {
@@ -2678,27 +2691,46 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                 items: [
                                   const PopupMenuItem(
                                     value: 'edit',
-                                    child: Row(children: [
-                                      Icon(Icons.edit, size: 18),
-                                      SizedBox(width: 8),
-                                      Text('Modifier'),
-                                    ]),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit, size: 18),
+                                        SizedBox(width: 8),
+                                        Text('Modifier'),
+                                      ],
+                                    ),
                                   ),
                                   const PopupMenuItem(
                                     value: 'delete',
-                                    child: Row(children: [
-                                      Icon(Icons.delete, size: 18, color: Colors.redAccent),
-                                      SizedBox(width: 8),
-                                      Text('Supprimer', style: TextStyle(color: Colors.redAccent)),
-                                    ]),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.delete,
+                                          size: 18,
+                                          color: Colors.redAccent,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Supprimer',
+                                          style: TextStyle(
+                                            color: Colors.redAccent,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ).then((value) {
-                                if (value == 'edit') onEdit?.call(comment);
-                                else if (value == 'delete') onDelete?.call(comment, isReply);
+                                if (value == 'edit')
+                                  onEdit?.call(comment);
+                                else if (value == 'delete')
+                                  onDelete?.call(comment, isReply);
                               });
                             },
-                            child: Icon(Icons.more_horiz, size: 18, color: Colors.grey[400]),
+                            child: Icon(
+                              Icons.more_horiz,
+                              size: 18,
+                              color: Colors.grey[400],
+                            ),
                           ),
                         ],
                       ],
@@ -2739,7 +2771,13 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           if (!isReply && replies.isNotEmpty) ...[
             const SizedBox(height: 8),
             ...replies.map(
-              (r) => _buildCommentItem(r, isReply: true, onReply: onReply, onEdit: onEdit, onDelete: onDelete),
+              (r) => _buildCommentItem(
+                r,
+                isReply: true,
+                onReply: onReply,
+                onEdit: onEdit,
+                onDelete: onDelete,
+              ),
             ),
           ],
         ],
@@ -2771,6 +2809,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             final commentCtrl = TextEditingController();
 
             Future<void> submitComment() async {
+              if (!SubscriptionHelper.canAccessFeature(
+                ProFeature.commentAndReact,
+              )) {
+                if (context.mounted) {
+                  SubscriptionHelper.showTrialExpiredDialog(context);
+                }
+                return;
+              }
+
               final text = commentCtrl.text.trim();
               if (text.isEmpty) return;
 
@@ -2814,7 +2861,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           );
                           replies.add(newComment);
                           parent['replies'] = replies;
-                          parent['replies_count'] = (parent['replies_count'] as int? ?? 0) + 1;
+                          parent['replies_count'] =
+                              (parent['replies_count'] as int? ?? 0) + 1;
                         }
                       } else {
                         _comments.insert(0, newComment);
@@ -2876,30 +2924,45 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       border: OutlineInputBorder(),
                     ),
                   ),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(dialogCtx),
-                      child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
                     ),
                     ElevatedButton(
-                      onPressed: () => Navigator.pop(dialogCtx, editController.text),
+                      onPressed: () =>
+                          Navigator.pop(dialogCtx, editController.text),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3AAE5E),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      child: const Text('Enregistrer', style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        'Enregistrer',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
               );
-              if (newText == null || newText.trim().isEmpty || newText == currentBody) return;
+              if (newText == null ||
+                  newText.trim().isEmpty ||
+                  newText == currentBody)
+                return;
               try {
                 final response = await ApiClient().authenticatedPut(
                   '/comments/$commentId',
                   body: {'body': newText.trim()},
                 );
-                final updatedComment = response['data'] as Map<String, dynamic>?;
+                final updatedComment =
+                    response['data'] as Map<String, dynamic>?;
                 if (updatedComment != null) {
                   setState(() {
                     comment['body'] = updatedComment['body'];
@@ -2911,7 +2974,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Erreur lors de la modification: ${e.toString()}'),
+                      content: Text(
+                        'Erreur lors de la modification: ${e.toString()}',
+                      ),
                       backgroundColor: Colors.redAccent,
                     ),
                   );
@@ -2919,26 +2984,41 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               }
             }
 
-            Future<void> deleteComment(Map<String, dynamic> comment, bool isReply) async {
+            Future<void> deleteComment(
+              Map<String, dynamic> comment,
+              bool isReply,
+            ) async {
               final commentId = comment['id'];
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (dialogCtx) => AlertDialog(
                   title: const Text('Supprimer le commentaire'),
-                  content: const Text('Êtes-vous sûr de vouloir supprimer ce commentaire ?'),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  content: const Text(
+                    'Êtes-vous sûr de vouloir supprimer ce commentaire ?',
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(dialogCtx, false),
-                      child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                      child: Text(
+                        'Annuler',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(dialogCtx, true),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.redAccent,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+                      child: const Text(
+                        'Supprimer',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ],
                 ),
@@ -2959,7 +3039,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Erreur lors de la suppression: ${e.toString()}'),
+                      content: Text(
+                        'Erreur lors de la suppression: ${e.toString()}',
+                      ),
                       backgroundColor: Colors.redAccent,
                     ),
                   );
@@ -3035,16 +3117,26 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     ),
                     if (replyingToName != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
                         color: Colors.grey[100],
                         child: Row(
                           children: [
-                            Icon(Icons.reply, size: 16, color: Colors.grey[600]),
+                            Icon(
+                              Icons.reply,
+                              size: 16,
+                              color: Colors.grey[600],
+                            ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
                                 'Répondre à $replyingToName',
-                                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
                               ),
                             ),
                             GestureDetector(
@@ -3128,11 +3220,17 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     final trainingId = widget.trainingId;
 
     // Deep link URL
-    final String deepLink = ShareService.buildUrl('trainings', trainingId ?? '');
+    final String deepLink = ShareService.buildUrl(
+      'trainings',
+      trainingId ?? '',
+    );
 
-    final String priceText = price != null && price.isNotEmpty ? '\n💰 $price' : '';
+    final String priceText = price != null && price.isNotEmpty
+        ? '\n💰 $price'
+        : '';
 
-    final String shareText = '''📚 $title
+    final String shareText =
+        '''📚 $title
 
 🏢 $company
 📍 $location
@@ -3141,7 +3239,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 $description
 
 $deepLink'''
-        .trim();
+            .trim();
 
     Share.share(shareText, subject: title);
   }
@@ -3273,6 +3371,15 @@ $deepLink'''
           }
 
           Future<void> submitComment() async {
+            if (!SubscriptionHelper.canAccessFeature(
+              ProFeature.commentAndReact,
+            )) {
+              if (context.mounted) {
+                SubscriptionHelper.showTrialExpiredDialog(context);
+              }
+              return;
+            }
+
             final text = ctrl.text.trim();
             if (text.isEmpty) return;
 
@@ -3350,21 +3457,33 @@ $deepLink'''
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                    child: Text(
+                      'Annuler',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
                   ),
                   ElevatedButton(
-                    onPressed: () => Navigator.pop(context, editController.text),
+                    onPressed: () =>
+                        Navigator.pop(context, editController.text),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3AAE5E),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                    child: const Text('Enregistrer', style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      'Enregistrer',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
             );
 
-            if (newText == null || newText.trim().isEmpty || newText == currentBody) return;
+            if (newText == null ||
+                newText.trim().isEmpty ||
+                newText == currentBody)
+              return;
 
             try {
               final response = await ApiClient().authenticatedPut(
@@ -3382,7 +3501,9 @@ $deepLink'''
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Erreur lors de la modification: ${e.toString()}'),
+                    content: Text(
+                      'Erreur lors de la modification: ${e.toString()}',
+                    ),
                     backgroundColor: Colors.redAccent,
                   ),
                 );
@@ -3399,20 +3520,32 @@ $deepLink'''
               context: ctx,
               builder: (context) => AlertDialog(
                 title: const Text('Supprimer le commentaire'),
-                content: const Text('Êtes-vous sûr de vouloir supprimer ce commentaire ?'),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                content: const Text(
+                  'Êtes-vous sûr de vouloir supprimer ce commentaire ?',
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context, false),
-                    child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+                    child: Text(
+                      'Annuler',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
                   ),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.redAccent,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
-                    child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+                    child: const Text(
+                      'Supprimer',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
@@ -3425,7 +3558,8 @@ $deepLink'''
 
               ms(() {
                 if (isReply) {
-                  final parentId = comment['parent_id'] ?? comment['comment_id'];
+                  final parentId =
+                      comment['parent_id'] ?? comment['comment_id'];
                   final parent = comments.firstWhere(
                     (c) => c['id'] == parentId,
                     orElse: () => <String, dynamic>{},
@@ -3445,17 +3579,21 @@ $deepLink'''
 
               if (!isReply) {
                 setState(() {
-                  _getReaction(s, id).commentsCount =
-                      (_getReaction(s, id).commentsCount > 0)
-                          ? _getReaction(s, id).commentsCount - 1
-                          : 0;
+                  _getReaction(
+                    s,
+                    id,
+                  ).commentsCount = (_getReaction(s, id).commentsCount > 0)
+                      ? _getReaction(s, id).commentsCount - 1
+                      : 0;
                 });
               }
             } catch (e) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Erreur lors de la suppression: ${e.toString()}'),
+                    content: Text(
+                      'Erreur lors de la suppression: ${e.toString()}',
+                    ),
                     backgroundColor: Colors.redAccent,
                   ),
                 );
@@ -3590,27 +3728,46 @@ $deepLink'''
                                         items: [
                                           const PopupMenuItem(
                                             value: 'edit',
-                                            child: Row(children: [
-                                              Icon(Icons.edit, size: 18),
-                                              SizedBox(width: 8),
-                                              Text('Modifier'),
-                                            ]),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.edit, size: 18),
+                                                SizedBox(width: 8),
+                                                Text('Modifier'),
+                                              ],
+                                            ),
                                           ),
                                           const PopupMenuItem(
                                             value: 'delete',
-                                            child: Row(children: [
-                                              Icon(Icons.delete, size: 18, color: Colors.redAccent),
-                                              SizedBox(width: 8),
-                                              Text('Supprimer', style: TextStyle(color: Colors.redAccent)),
-                                            ]),
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.delete,
+                                                  size: 18,
+                                                  color: Colors.redAccent,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  'Supprimer',
+                                                  style: TextStyle(
+                                                    color: Colors.redAccent,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ],
                                       ).then((value) {
-                                        if (value == 'edit') editComment(comment);
-                                        else if (value == 'delete') deleteComment(comment, isReply);
+                                        if (value == 'edit')
+                                          editComment(comment);
+                                        else if (value == 'delete')
+                                          deleteComment(comment, isReply);
                                       });
                                     },
-                                    child: Icon(Icons.more_horiz, size: 18, color: Colors.grey[400]),
+                                    child: Icon(
+                                      Icons.more_horiz,
+                                      size: 18,
+                                      color: Colors.grey[400],
+                                    ),
                                   ),
                                 ],
                               ],
@@ -4177,6 +4334,19 @@ $deepLink'''
 
   // Download programme document
   Future<void> _downloadProgramme() async {
+    // Check subscription for pro users
+    if (!SubscriptionHelper.canAccessFeature(
+      ProFeature.downloadTrainingPrograms,
+    )) {
+      if (mounted) {
+        SubscriptionHelper.showPremiumRequiredDialog(
+          context,
+          featureName: 'Télécharger les programmes de formations',
+        );
+      }
+      return;
+    }
+
     if (widget.documents.isEmpty) return;
 
     final document = widget.documents.first;

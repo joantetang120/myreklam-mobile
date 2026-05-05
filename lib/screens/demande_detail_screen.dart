@@ -20,6 +20,7 @@ import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
 
@@ -1233,6 +1234,17 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     Map<String, dynamic> authorData, {
     Map<String, dynamic>? annonceData,
   }) async {
+    // Check subscription for pro users
+    if (!SubscriptionHelper.canAccessFeature(ProFeature.messaging)) {
+      if (context.mounted) {
+        SubscriptionHelper.showPremiumRequiredDialog(
+          context,
+          featureName: 'Messagerie',
+        );
+      }
+      return;
+    }
+
     final authorId = authorData['id']?.toString();
 
     String authorName = 'Utilisateur';
@@ -2012,7 +2024,12 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => _showCommentsSheet(context),
+                      onPressed: () => SubscriptionHelper.guardFeature(
+                        context,
+                        ProFeature.commentAndReact,
+                        () => _showCommentsSheet(context),
+                        featureName: 'Commenter',
+                      ),
                       icon: const Icon(Icons.chat_outlined, size: 18),
                       label: Text(
                         _comments.isEmpty
@@ -3096,6 +3113,13 @@ $deepLink'''
             }
 
             Future<void> submitComment() async {
+              if (!SubscriptionHelper.canAccessFeature(ProFeature.commentAndReact)) {
+                if (context.mounted) {
+                  SubscriptionHelper.showTrialExpiredDialog(context);
+                }
+                return;
+              }
+
               final text = commentCtrl.text.trim();
               if (text.isEmpty) return;
 
