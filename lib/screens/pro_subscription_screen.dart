@@ -526,7 +526,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
 
   static final Map<_BillingCycle, _PremiumPricing> _pricing = {
     _BillingCycle.monthly: const _PremiumPricing(
-      price: '6,99€',
+      price: '1,00€',
       cadence: '/mois',
       subLabel: 'Facturé mensuellement',
       savingsLabel: null,
