@@ -30,4 +30,20 @@ class MysEarningService {
     final response = await _api.authenticatedGet('/mys/history?page=$page');
     return response;
   }
+
+  /// POST /api/mys/convert
+  /// Convert My's into a reward request.
+  Future<Map<String, dynamic>> convertMys({
+    required double amount,
+    String rewardType = 'reward',
+  }) async {
+    final response = await _api.authenticatedPost(
+      '/mys/convert',
+      body: {
+        'amount': amount,
+        'reward_type': rewardType,
+      },
+    );
+    return response;
+  }
 }

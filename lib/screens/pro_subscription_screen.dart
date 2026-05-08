@@ -19,11 +19,25 @@ class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
   late final TabController _tabController;
   final _subscriptionService = SubscriptionService();
   bool _isLoading = false;
+  bool _premiumTrialAvailable = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this, initialIndex: 1);
+    _loadSubscriptionState();
+  }
+
+  Future<void> _loadSubscriptionState() async {
+    try {
+      final response = await _subscriptionService.getCurrentSubscription();
+      if (!mounted) return;
+      setState(() {
+        _premiumTrialAvailable = response['premium_trial_available'] != false;
+      });
+    } catch (_) {
+      // The backend will still enforce eligibility when the user taps the CTA.
+    }
   }
 
   @override
@@ -112,10 +126,7 @@ class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
             child: Text(
               'Développez votre activité avec Myreklam : choisissez l\'offre qui correspond à vos ambitions.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: Color(0xFF8D8D8D),
-              ),
+              style: TextStyle(fontSize: 13, color: Color(0xFF8D8D8D)),
             ),
           ),
           const SizedBox(height: 18),
@@ -124,7 +135,14 @@ class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
               controller: _tabController,
               children: [
                 _FreePlan(onContinue: () => _handleSubscribe('free')),
-                _PremiumPlan(onContinue: (billingCycle, method) => _handleSubscribe('premium', billingCycle: billingCycle, paymentMethod: method)),
+                _PremiumPlan(
+                  premiumTrialAvailable: _premiumTrialAvailable,
+                  onContinue: (billingCycle, method) => _handleSubscribe(
+                    'premium',
+                    billingCycle: billingCycle,
+                    paymentMethod: method,
+                  ),
+                ),
               ],
             ),
           ),
@@ -133,9 +151,14 @@ class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
     );
   }
 
-  Future<void> _handleSubscribe(String plan, {String? billingCycle, PaymentMethod? paymentMethod}) async {
+  Future<void> _handleSubscribe(
+    String plan, {
+    String? billingCycle,
+    PaymentMethod? paymentMethod,
+  }) async {
     // Stripe and PayPal payments are handled separately
-    if (paymentMethod == PaymentMethod.stripe || paymentMethod == PaymentMethod.paypal) {
+    if (paymentMethod == PaymentMethod.stripe ||
+        paymentMethod == PaymentMethod.paypal) {
       return;
     }
 
@@ -153,9 +176,7 @@ class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (_) => const ParticulierMainScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const ParticulierMainScreen()),
         (route) => false,
       );
     } on ApiException catch (e) {
@@ -236,8 +257,10 @@ class _FreePlan extends StatelessWidget {
                             SizedBox(width: 4),
                             Padding(
                               padding: EdgeInsets.only(bottom: 6),
-                              child: Text('/mois',
-                                  style: TextStyle(color: Color(0xFF8D8D8D))),
+                              child: Text(
+                                '/mois',
+                                style: TextStyle(color: Color(0xFF8D8D8D)),
+                              ),
                             ),
                           ],
                         ),
@@ -250,35 +273,75 @@ class _FreePlan extends StatelessWidget {
                         _buildFeatureGroup(
                           title: 'TROUVER',
                           items: const [
-                            FeatureItem('Consulter les annonces (illimité)', FeatureStatus.warning),
-                            FeatureItem('Commenter et réagir aux annonces (1 mois)', FeatureStatus.warning),
-                            FeatureItem('Obtenir un numéro ou email de contact', FeatureStatus.unavailable, strike: true),
-                            FeatureItem('Voir les documents partagés', FeatureStatus.unavailable, strike: true),
-                            FeatureItem('Télécharger les programmes de formations', FeatureStatus.unavailable, strike: true),
+                            FeatureItem(
+                              'Consulter les annonces (illimité)',
+                              FeatureStatus.warning,
+                            ),
+                            FeatureItem(
+                              'Commenter et réagir aux annonces (1 mois)',
+                              FeatureStatus.warning,
+                            ),
+                            FeatureItem(
+                              'Obtenir un numéro ou email de contact',
+                              FeatureStatus.unavailable,
+                              strike: true,
+                            ),
+                            FeatureItem(
+                              'Voir les documents partagés',
+                              FeatureStatus.unavailable,
+                              strike: true,
+                            ),
+                            FeatureItem(
+                              'Télécharger les programmes de formations',
+                              FeatureStatus.unavailable,
+                              strike: true,
+                            ),
                           ],
                           headerColor: const Color(0xFFFF9800),
                         ),
                         _buildFeatureGroup(
                           title: 'PROMOUVOIR',
                           items: const [
-                            FeatureItem('Poster une annonce (1 mois)', FeatureStatus.warning),
-                            FeatureItem('Partager mes coordonnées sur mes annonces', FeatureStatus.unavailable, strike: true),
+                            FeatureItem(
+                              'Poster une annonce (1 mois)',
+                              FeatureStatus.warning,
+                            ),
+                            FeatureItem(
+                              'Partager mes coordonnées sur mes annonces',
+                              FeatureStatus.unavailable,
+                              strike: true,
+                            ),
                           ],
                           headerColor: const Color(0xFFFF9800),
                         ),
                         _buildFeatureGroup(
                           title: 'COMMUNIQUER',
                           items: const [
-                            FeatureItem('Accès à la messagerie', FeatureStatus.unavailable, strike: true),
-                            FeatureItem('Convertir mes My\'s en récompense', FeatureStatus.unavailable, strike: true),
+                            FeatureItem(
+                              'Accès à la messagerie',
+                              FeatureStatus.unavailable,
+                              strike: true,
+                            ),
+                            FeatureItem(
+                              'Convertir mes My\'s en récompense',
+                              FeatureStatus.unavailable,
+                              strike: true,
+                            ),
                           ],
                           headerColor: const Color(0xFFFF9800),
                         ),
                         _buildFeatureGroup(
                           title: 'DIFFUSER',
                           items: const [
-                            FeatureItem('Profil (Basique)', FeatureStatus.warning),
-                            FeatureItem('Répondre aux avis', FeatureStatus.unavailable, strike: true),
+                            FeatureItem(
+                              'Profil (Basique)',
+                              FeatureStatus.warning,
+                            ),
+                            FeatureItem(
+                              'Répondre aux avis',
+                              FeatureStatus.unavailable,
+                              strike: true,
+                            ),
                           ],
                           headerColor: const Color(0xFFFF9800),
                         ),
@@ -307,9 +370,13 @@ class _FreePlan extends StatelessWidget {
 }
 
 class _PremiumPlan extends StatefulWidget {
-  const _PremiumPlan({required this.onContinue});
+  const _PremiumPlan({
+    required this.onContinue,
+    required this.premiumTrialAvailable,
+  });
 
-  final void Function(String billingCycle, PaymentMethod method) onContinue;
+  final void Function(String billingCycle, PaymentMethod? method) onContinue;
+  final bool premiumTrialAvailable;
 
   @override
   State<_PremiumPlan> createState() => _PremiumPlanState();
@@ -348,19 +415,13 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                 ),
                 const Text(
                   'Choisir votre méthode de paiement',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Abonnement Premium - ${_cycle == _BillingCycle.monthly ? 'Mensuel' : 'Annuel'}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
@@ -433,9 +494,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
         // Navigate to main screen
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (_) => const ParticulierMainScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const ParticulierMainScreen()),
           (route) => false,
         );
       }
@@ -497,9 +556,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
         // Navigate to main screen
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (_) => const ParticulierMainScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const ParticulierMainScreen()),
           (route) => false,
         );
       }
@@ -526,7 +583,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
 
   static final Map<_BillingCycle, _PremiumPricing> _pricing = {
     _BillingCycle.monthly: const _PremiumPricing(
-      price: '1,00€',
+      price: '6,99€',
       cadence: '/mois',
       subLabel: 'Facturé mensuellement',
       savingsLabel: null,
@@ -606,7 +663,9 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                                     padding: const EdgeInsets.only(bottom: 6),
                                     child: Text(
                                       pricing.cadence,
-                                      style: const TextStyle(color: Color(0xFF6D7278)),
+                                      style: const TextStyle(
+                                        color: Color(0xFF6D7278),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -614,13 +673,18 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                               const SizedBox(height: 6),
                               Text(
                                 pricing.subLabel,
-                                style: const TextStyle(color: Color(0xFF6D7278)),
+                                style: const TextStyle(
+                                  color: Color(0xFF6D7278),
+                                ),
                                 textAlign: TextAlign.center,
                               ),
                               if (pricing.savingsLabel != null) ...[
                                 const SizedBox(height: 10),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 18,
+                                    vertical: 10,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE0F7EA),
                                     borderRadius: BorderRadius.circular(30),
@@ -638,56 +702,100 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        const _CenteredPremiumIntro(),
+                        _CenteredPremiumIntro(
+                          trialAvailable: widget.premiumTrialAvailable,
+                        ),
                         const SizedBox(height: 24),
                         _buildFeatureGroup(
                           title: 'TROUVER',
                           items: const [
-                            FeatureItem('Consulter les annonces (illimité)', FeatureStatus.available),
-                            FeatureItem('Commenter et réagir aux annonces (illimité)', FeatureStatus.available),
-                            FeatureItem('Obtenir un numéro ou email de contact', FeatureStatus.available),
-                            FeatureItem('Voir les documents partagés', FeatureStatus.available),
-                            FeatureItem('Télécharger les programmes de formations', FeatureStatus.available),
+                            FeatureItem(
+                              'Consulter les annonces (illimité)',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Commenter et réagir aux annonces (illimité)',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Obtenir un numéro ou email de contact',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Voir les documents partagés',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Télécharger les programmes de formations',
+                              FeatureStatus.available,
+                            ),
                           ],
                           headerColor: const Color(0xFF2E9B5B),
                         ),
                         _buildFeatureGroup(
                           title: 'PROMOUVOIR',
                           items: const [
-                            FeatureItem('Poster une annonce (illimité)', FeatureStatus.available),
-                            FeatureItem('Partager mes coordonnées sur mes annonces', FeatureStatus.available),
+                            FeatureItem(
+                              'Poster une annonce (illimité)',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Partager mes coordonnées sur mes annonces',
+                              FeatureStatus.available,
+                            ),
                           ],
                           headerColor: const Color(0xFF2E9B5B),
                         ),
                         _buildFeatureGroup(
                           title: 'COMMUNIQUER',
                           items: const [
-                            FeatureItem('Accès à la messagerie', FeatureStatus.available),
-                            FeatureItem('Convertir mes My\'s en récompense', FeatureStatus.available),
+                            FeatureItem(
+                              'Accès à la messagerie',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Convertir mes My\'s en récompense',
+                              FeatureStatus.available,
+                            ),
                           ],
                           headerColor: const Color(0xFF2E9B5B),
                         ),
                         _buildFeatureGroup(
                           title: 'DIFFUSER',
                           items: const [
-                            FeatureItem('Profil (Premium)', FeatureStatus.available),
-                            FeatureItem('Badge "Profil vérifié"', FeatureStatus.available),
-                            FeatureItem('Répondre aux avis', FeatureStatus.available),
+                            FeatureItem(
+                              'Profil (Premium)',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Badge "Profil vérifié"',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Répondre aux avis',
+                              FeatureStatus.available,
+                            ),
                           ],
                           headerColor: const Color(0xFF2E9B5B),
                         ),
                         const SizedBox(height: 16),
                         _GradientButton(
-                          label: 'Continuer en Premium',
+                          label: widget.premiumTrialAvailable
+                              ? 'Démarrer l\'essai Premium'
+                              : 'Continuer en Premium',
                           gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFF04BC7B),
-                              Color(0xFF03CD85),
-                            ],
+                            colors: [Color(0xFF04BC7B), Color(0xFF03CD85)],
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
                           ),
-                          onTap: _showPaymentMethodModal,
+                          onTap: widget.premiumTrialAvailable
+                              ? () => widget.onContinue(
+                                  _cycle == _BillingCycle.monthly
+                                      ? 'monthly'
+                                      : 'annual',
+                                  null,
+                                )
+                              : _showPaymentMethodModal,
                         ),
                       ],
                     ),
@@ -718,10 +826,7 @@ class _PremiumPricing {
 }
 
 class _BillingToggle extends StatelessWidget {
-  const _BillingToggle({
-    required this.activeCycle,
-    required this.onChanged,
-  });
+  const _BillingToggle({required this.activeCycle, required this.onChanged});
 
   final _BillingCycle activeCycle;
   final ValueChanged<_BillingCycle> onChanged;
@@ -781,7 +886,9 @@ class _BillingToggle extends StatelessWidget {
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                color: isActive ? const Color(0xFF2E9B5B) : const Color(0xFF6D7278),
+                color: isActive
+                    ? const Color(0xFF2E9B5B)
+                    : const Color(0xFF6D7278),
               ),
             ),
           ),
@@ -792,20 +899,24 @@ class _BillingToggle extends StatelessWidget {
 }
 
 class _CenteredPremiumIntro extends StatelessWidget {
-  const _CenteredPremiumIntro();
+  const _CenteredPremiumIntro({required this.trialAvailable});
+
+  final bool trialAvailable;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
-      children: const [
+      children: [
         Text(
-          '1 mois offert. Vous serez facturé à la fin du mois. Vous pouvez annuler à tout moment pendant la période d’essai.',
-          style: TextStyle(color: Color(0xFF6D7278)),
+          trialAvailable
+              ? '1 mois offert. Vous pourrez choisir un paiement à la fin de la période d’essai.'
+              : 'Votre essai Premium a déjà été utilisé. Choisissez une formule pour activer Premium.',
+          style: const TextStyle(color: Color(0xFF6D7278)),
           textAlign: TextAlign.center,
         ),
-        SizedBox(height: 18),
-        _PremiumHighlights(),
+        const SizedBox(height: 18),
+        const _PremiumHighlights(),
       ],
     );
   }
@@ -869,7 +980,9 @@ class _HighlightTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: const Color(0xFFDFF5E8),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF2E9B5B).withOpacity(0.25)),
+            border: Border.all(
+              color: const Color(0xFF2E9B5B).withOpacity(0.25),
+            ),
           ),
           child: Icon(item.icon, color: const Color(0xFF24A05B), size: 16),
         ),
@@ -984,7 +1097,11 @@ class _PaymentOptionTile extends StatelessWidget {
                 ),
               ),
             ),
-            Icon(Icons.arrow_forward_ios, color: color.withOpacity(0.6), size: 16),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: color.withOpacity(0.6),
+              size: 16,
+            ),
           ],
         ),
       ),
@@ -1020,9 +1137,7 @@ class _FreePlanHeader extends StatelessWidget {
               child: SizedBox(
                 width: 160,
                 height: 160,
-                child: CustomPaint(
-                  painter: _SwirlPainter(opacity: 0.25),
-                ),
+                child: CustomPaint(painter: _SwirlPainter(opacity: 0.25)),
               ),
             ),
             Column(
@@ -1039,10 +1154,7 @@ class _FreePlanHeader extends StatelessWidget {
                 SizedBox(height: 6),
                 Text(
                   'Découvrez la plateforme avec des fonctionnalités de base.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 13),
                 ),
               ],
             ),
@@ -1068,10 +1180,7 @@ class _PremiumPlanHeader extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-            Color(0xFF04BC7B),
-            Color(0xFF03CD85),
-          ],
+            colors: [Color(0xFF04BC7B), Color(0xFF03CD85)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -1084,16 +1193,17 @@ class _PremiumPlanHeader extends StatelessWidget {
               child: SizedBox(
                 width: 200,
                 height: 200,
-                child: CustomPaint(
-                  painter: _SwirlPainter(opacity: 0.18),
-                ),
+                child: CustomPaint(painter: _SwirlPainter(opacity: 0.18)),
               ),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
@@ -1132,10 +1242,7 @@ class _PremiumPlanHeader extends StatelessWidget {
                 const SizedBox(height: 6),
                 const Text(
                   'Maximisez votre visibilité et développez votre activité sans limites.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 13),
                 ),
               ],
             ),
@@ -1193,7 +1300,7 @@ Widget _buildFeatureGroup({
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-           color: Color(0xFF04BC7B),
+            color: Color(0xFF04BC7B),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -1255,8 +1362,9 @@ Widget _buildFeatureLine(FeatureItem item) {
             style: TextStyle(
               fontSize: 12,
               color: const Color(0xFF4A4A4A),
-              decoration:
-                  item.strike ? TextDecoration.lineThrough : TextDecoration.none,
+              decoration: item.strike
+                  ? TextDecoration.lineThrough
+                  : TextDecoration.none,
             ),
           ),
         ),

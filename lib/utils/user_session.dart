@@ -24,7 +24,28 @@ class UserSession {
   Map<String, dynamic>? get subscription => _subscription;
   String? get subscriptionPlan => _subscription?['plan'];
   String? get subscriptionStatus => _subscription?['status'];
-  bool get hasActiveSubscription => _subscription != null && _subscription!.isNotEmpty;
+  Map<String, dynamic> get subscriptionPermissions {
+    final permissions = _subscription?['permissions'];
+    if (permissions is Map) {
+      return Map<String, dynamic>.from(permissions);
+    }
+    return const {};
+  }
+
+  bool get hasActiveSubscription {
+    if (_subscription == null || _subscription!.isEmpty) return false;
+    final status = subscriptionStatus;
+    if (status != 'active' && status != 'trial') return false;
+
+    final endDate = _subscription!['end_date'];
+    if (endDate == null) return true;
+    final parsed = DateTime.tryParse(endDate.toString());
+    if (parsed == null) return true;
+    return DateTime.now().isBefore(parsed);
+  }
+
+  bool get premiumTrialAvailable =>
+      _subscription?['premium_trial_available'] == true;
   String? get parrainageCode => _parrainageCode;
   double get mys => _mys;
 
@@ -80,7 +101,9 @@ class UserSession {
     _mys = 0;
   }
 
-  bool get needsAccountType => _userType.isEmpty || _userType == 'particulier' && _id != null && !_profileCompleted;
+  bool get needsAccountType =>
+      _userType.isEmpty ||
+      _userType == 'particulier' && _id != null && !_profileCompleted;
   bool get needsProfileCompletion => !_profileCompleted;
   bool get needsSubscription => isPro && !hasActiveSubscription;
 }

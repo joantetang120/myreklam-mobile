@@ -115,6 +115,7 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
       'job_application' => 'Candidature',
       'referral_particulier' => 'Parrainage particulier',
       'referral_pro' => 'Parrainage entreprise',
+      'mys_conversion' => 'Conversion récompense',
       'registration' => 'Inscription',
       'profile_picture' => 'Photo de profil',
       'phone_added' => 'Numéro de téléphone',
@@ -140,12 +141,19 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
       'job_application' => Icons.work_outline,
       'referral_particulier' => Icons.group_add,
       'referral_pro' => Icons.business,
+      'mys_conversion' => Icons.swap_horiz,
       'registration' => Icons.app_registration,
       'profile_picture' => Icons.camera_alt,
       'phone_added' => Icons.phone,
       'social_media' => Icons.link,
       _ => Icons.star,
     };
+  }
+
+  String _formatMysAmount(dynamic rawAmount) {
+    final amount = double.tryParse(rawAmount.toString()) ?? 0;
+    final formatted = amount.abs().toStringAsFixed(amount % 1 == 0 ? 0 : 2);
+    return amount < 0 ? '-$formatted My\'s' : '+$formatted My\'s';
   }
 
   @override
@@ -364,7 +372,7 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
-                                        '+${earning['amount']} My\'s',
+                                        _formatMysAmount(earning['amount']),
                                         style: const TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
