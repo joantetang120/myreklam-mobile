@@ -25,6 +25,20 @@ enum ProFeature {
 }
 
 class SubscriptionHelper {
+  static const Map<ProFeature, String> _permissionKeys = {
+    ProFeature.viewAnnouncements: 'view_announcements',
+    ProFeature.commentAndReact: 'comment_and_react',
+    ProFeature.getContactInfo: 'get_contact_info',
+    ProFeature.viewSharedDocuments: 'view_shared_documents',
+    ProFeature.downloadTrainingPrograms: 'download_training_programs',
+    ProFeature.postAnnouncement: 'post_announcement',
+    ProFeature.shareCoordinatesOnAds: 'share_coordinates_on_ads',
+    ProFeature.messaging: 'messaging',
+    ProFeature.convertMysToRewards: 'convert_mys_to_rewards',
+    ProFeature.premiumProfile: 'premium_profile',
+    ProFeature.replyToReviews: 'reply_to_reviews',
+  };
+
   /// Check if the current user is a pro with an active premium subscription
   static bool get isProPremium {
     final session = UserSession();
@@ -43,13 +57,19 @@ class SubscriptionHelper {
   /// Check if the free pro trial period (1 month from account creation) is still active
   static bool get isWithinFreeTrialPeriod {
     final session = UserSession();
+    final trialEndDate = session.subscription?['trial_end_date'];
+    if (trialEndDate != null) {
+      final trialEnd = DateTime.tryParse(trialEndDate.toString());
+      if (trialEnd != null) return DateTime.now().isBefore(trialEnd);
+    }
+
     final createdAt =
         session.subscription?['start_date'] ??
         session.subscription?['created_at'];
-    if (createdAt == null) return true; // Default to allowed if unknown
+    if (createdAt == null) return false;
 
     final created = DateTime.tryParse(createdAt.toString());
-    if (created == null) return true;
+    if (created == null) return false;
 
     final oneMonthLater = created.add(const Duration(days: 30));
     return DateTime.now().isBefore(oneMonthLater);
@@ -61,6 +81,12 @@ class SubscriptionHelper {
 
     // Non-pro users: all features allowed (different rules apply)
     if (!session.isPro) return true;
+
+    final permissionKey = _permissionKeys[feature];
+    final permissions = session.subscriptionPermissions;
+    if (permissionKey != null && permissions.containsKey(permissionKey)) {
+      return permissions[permissionKey] == true;
+    }
 
     // Premium pro: all features allowed
     if (isProPremium) return true;
