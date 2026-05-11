@@ -15,12 +15,15 @@ class UserSession {
   Map<String, dynamic>? _subscription;
   String? _parrainageCode;
   double _mys = 0;
+  bool _isGuest = false;
 
   String get userType => _userType;
   String? get id => _id;
   String? get email => _email;
   bool get isEmailVerified => _isEmailVerified;
   bool get profileCompleted => _profileCompleted;
+  bool get isGuest => _isGuest;
+  bool get isAuthenticated => !_isGuest && _id != null;
   Map<String, dynamic>? get subscription => _subscription;
   String? get subscriptionPlan => _subscription?['plan'];
   String? get subscriptionStatus => _subscription?['status'];
@@ -53,6 +56,11 @@ class UserSession {
     _userType = type;
   }
 
+  void startGuestMode() {
+    clear();
+    _isGuest = true;
+  }
+
   bool get isParticulier => _userType == 'particulier';
   bool get isPro => _userType == 'pro';
 
@@ -66,6 +74,7 @@ class UserSession {
     String? parrainageCode,
     dynamic mys,
   }) {
+    _isGuest = false;
     if (id != null) _id = id;
     if (email != null) _email = email;
     if (accountType != null) _userType = accountType;
@@ -99,6 +108,7 @@ class UserSession {
     _subscription = null;
     _parrainageCode = null;
     _mys = 0;
+    _isGuest = false;
   }
 
   bool get needsAccountType =>

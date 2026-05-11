@@ -9,16 +9,22 @@ class CustomBottomBar extends StatefulWidget {
   final Function(int) onTap;
 
   /// Global notifier to update the avatar from anywhere (e.g. profile screens)
-  static final ValueNotifier<String?> avatarNotifier = ValueNotifier<String?>(null);
-  
+  static final ValueNotifier<String?> avatarNotifier = ValueNotifier<String?>(
+    null,
+  );
+
   /// Global notifier to trigger avatar reload from backend
-  static final ValueNotifier<bool> refreshAvatarNotifier = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> refreshAvatarNotifier = ValueNotifier<bool>(
+    false,
+  );
 
   /// Global notifier for notification count
-  static final ValueNotifier<int> notificationCountNotifier = ValueNotifier<int>(0);
+  static final ValueNotifier<int> notificationCountNotifier =
+      ValueNotifier<int>(0);
 
   /// Global notifier to trigger notification count refresh
-  static final ValueNotifier<bool> refreshNotificationNotifier = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> refreshNotificationNotifier =
+      ValueNotifier<bool>(false);
 
   const CustomBottomBar({
     super.key,
@@ -41,16 +47,24 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
     _loadUnreadCount();
     CustomBottomBar.avatarNotifier.addListener(_onAvatarChanged);
     CustomBottomBar.refreshAvatarNotifier.addListener(_onRefreshAvatar);
-    CustomBottomBar.notificationCountNotifier.addListener(_onNotificationCountChanged);
-    CustomBottomBar.refreshNotificationNotifier.addListener(_onRefreshNotificationCount);
+    CustomBottomBar.notificationCountNotifier.addListener(
+      _onNotificationCountChanged,
+    );
+    CustomBottomBar.refreshNotificationNotifier.addListener(
+      _onRefreshNotificationCount,
+    );
   }
 
   @override
   void dispose() {
     CustomBottomBar.avatarNotifier.removeListener(_onAvatarChanged);
     CustomBottomBar.refreshAvatarNotifier.removeListener(_onRefreshAvatar);
-    CustomBottomBar.notificationCountNotifier.removeListener(_onNotificationCountChanged);
-    CustomBottomBar.refreshNotificationNotifier.removeListener(_onRefreshNotificationCount);
+    CustomBottomBar.notificationCountNotifier.removeListener(
+      _onNotificationCountChanged,
+    );
+    CustomBottomBar.refreshNotificationNotifier.removeListener(
+      _onRefreshNotificationCount,
+    );
     super.dispose();
   }
 
@@ -67,8 +81,12 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
   }
 
   Future<void> _loadUnreadCount() async {
+    if (UserSession().isGuest) return;
+
     try {
-      final response = await ApiClient().authenticatedGet('/notifications/unread-count');
+      final response = await ApiClient().authenticatedGet(
+        '/notifications/unread-count',
+      );
       if (mounted && response['success'] == true) {
         final count = response['unread_count'] ?? 0;
         setState(() => _unreadNotifCount = count);
@@ -90,6 +108,13 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
   }
 
   Future<void> _loadAvatar() async {
+    if (UserSession().isGuest) {
+      if (mounted) {
+        setState(() => _avatarUrl = null);
+      }
+      return;
+    }
+
     try {
       final response = await ProfileService().getProfile();
       if (!mounted) return;
@@ -103,9 +128,11 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
   Widget build(BuildContext context) {
     // Get bottom system insets for gesture navigation (Samsung, etc.)
     final bottomPadding = MediaQuery.of(context).padding.bottom;
-    
+
     return Container(
-      height: 85 + (bottomPadding > 0 ? bottomPadding - 8 : 0),
+      height: UserSession().isGuest
+          ? 0
+          : (85 + (bottomPadding > 0 ? bottomPadding - 8 : 0)),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -122,26 +149,33 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildItem(0, Icons.home_outlined, Icons.home_outlined, 'Accueil'),
-            _buildItem(
-              1,
-              Icons.chat_bubble_outline,
-              Icons.chat_bubble_outline,
-              'Chat',
-            ),
-            _buildItem(
-              2,
-              Icons.article_outlined,
-              Icons.article_outlined,
-              'Publier',
-            ),
-            _buildItem(
-              3,
-              Icons.search_outlined,
-              Icons.search_outlined,
-              'Recherche',
-            ),
-            _buildProfileItem(4),
+            if (!UserSession().isGuest) ...[
+              _buildItem(
+                0,
+                Icons.home_outlined,
+                Icons.home_outlined,
+                'Accueil',
+              ),
+              _buildItem(
+                1,
+                Icons.chat_bubble_outline,
+                Icons.chat_bubble_outline,
+                'Chat',
+              ),
+              _buildItem(
+                2,
+                Icons.article_outlined,
+                Icons.article_outlined,
+                'Publier',
+              ),
+              _buildItem(
+                3,
+                Icons.search_outlined,
+                Icons.search_outlined,
+                'Recherche',
+              ),
+              _buildProfileItem(4),
+            ],
           ],
         ),
       ),
@@ -250,7 +284,10 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                           ? DecorationImage(
                               image: _avatarUrl!.startsWith('http')
                                   ? NetworkImage(_avatarUrl!)
-                                  : NetworkImage(ApiConfig.resolveMediaUrl(_avatarUrl!) ?? ''),
+                                  : NetworkImage(
+                                      ApiConfig.resolveMediaUrl(_avatarUrl!) ??
+                                          '',
+                                    ),
                               fit: BoxFit.cover,
                             )
                           : null,
@@ -273,7 +310,9 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                       decoration: const BoxDecoration(
                         color: Colors.red,
                         shape: BoxShape.circle,
-                        border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 1.5)),
+                        border: Border.fromBorderSide(
+                          BorderSide(color: Colors.white, width: 1.5),
+                        ),
                       ),
                       constraints: const BoxConstraints(
                         minWidth: 16,

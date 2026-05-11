@@ -38,6 +38,7 @@ import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/screens/suggested_users_screen.dart';
 import 'package:myreklam/screens/search_screen.dart';
+import 'package:myreklam/utils/guest_access.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
@@ -645,6 +646,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
 
     return InkWell(
       onTap: () {
+        if (!GuestAccess.ensureAuthenticated(
+          context,
+          featureName: 'voir le detail des publications',
+        )) {
+          return;
+        }
+
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -921,6 +929,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
     List<String> urls,
     int initialIndex,
   ) {
+    if (!GuestAccess.ensureAuthenticated(
+      context,
+      featureName: 'voir le detail des medias',
+    )) {
+      return;
+    }
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) =>
@@ -1115,6 +1130,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     'demande': 'demandes',
   };
 
+  bool _requireAuth(String featureName) {
+    return GuestAccess.ensureAuthenticated(context, featureName: featureName);
+  }
+
   /// Build small avatar widget - shows icon if no avatar
   Widget _buildSmallAvatar(String avatarUrl, double radius) {
     final hasAvatar =
@@ -1192,6 +1211,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   void _openStory(BuildContext context, StoryUserGroup group) {
+    if (!_requireAuth('voir les stories')) return;
+
     debugPrint('Opening story for user ${group.userId}, isOwn: ${group.isOwn}');
     final storyMaps = group.stories.map((s) {
       final resolvedImage = ApiConfig.resolveMediaUrl(s.mediaUrl);
@@ -1250,6 +1271,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Future<void> _loadViewedStatus() async {
+    if (UserSession().isGuest) return;
+
     try {
       debugPrint('Loading viewed status...');
       final viewedIds = await StoryService().getFullyViewedUserIds();
@@ -1269,19 +1292,25 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_onFeedScroll);
-    _prefetchCurrentUser();
+    if (!UserSession().isGuest) {
+      _prefetchCurrentUser();
+    }
     ReactionCacheService.init().then((_) => _loadUnifiedFeed(reset: true));
-    _storyStore.loadFeed();
-    _loadSuggestions();
-    _checkAndShowWelcomeBonus();
+    if (!UserSession().isGuest) {
+      _storyStore.loadFeed();
+      _loadSuggestions();
+      _checkAndShowWelcomeBonus();
+    }
 
     // Small delay to ensure user data is loaded
     Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) _checkAndShowOnboarding();
+      if (mounted && !UserSession().isGuest) _checkAndShowOnboarding();
     });
 
     // Load viewed status for stories
-    _loadViewedStatus();
+    if (!UserSession().isGuest) {
+      _loadViewedStatus();
+    }
 
     // Listen for My's refresh requests
     ParticulierDashboardScreen.refreshMysNotifier.addListener(
@@ -1295,6 +1324,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Future<void> _checkAndShowWelcomeBonus() async {
+    if (UserSession().isGuest) return;
+
     // Wait for user data to be fetched first
     await _getCurrentUserId();
 
@@ -1333,6 +1364,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Future<void> _checkAndShowOnboarding() async {
+    if (UserSession().isGuest) return;
+
     // Wait for user data to be fetched first
     await _getCurrentUserId();
 
@@ -1401,6 +1434,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   final ProfileService _profileService = ProfileService();
 
   Future<void> _loadSuggestions() async {
+    if (UserSession().isGuest) return;
+
     if (!mounted) return;
     setState(() => _isLoadingSuggestions = true);
     try {
@@ -1418,6 +1453,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Future<void> _toggleFollowSuggestion(int index) async {
+    if (!_requireAuth('suivre un profil')) return;
+
     final user = _suggestions[index];
     final userId = user['id'].toString();
     try {
@@ -1445,6 +1482,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Widget _buildSuggestedProfiles() {
+    if (UserSession().isGuest) return const SizedBox.shrink();
+
     if (_isLoadingSuggestions && _suggestions.isEmpty) {
       return const SizedBox(
         height: 200,
@@ -1631,6 +1670,11 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   void _onRefreshMysRequested() {
+    if (UserSession().isGuest) {
+      ParticulierDashboardScreen.refreshMysNotifier.value = false;
+      return;
+    }
+
     if (ParticulierDashboardScreen.refreshMysNotifier.value) {
       debugPrint('My\'s refresh requested - updating balance');
       _prefetchCurrentUser(forceRefresh: true);
@@ -1645,7 +1689,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     if (state == AppLifecycleState.resumed) {
       // App came to foreground
       debugPrint('App resumed - refreshing user data');
-      _prefetchCurrentUser(forceRefresh: true);
+      if (!UserSession().isGuest) {
+        _prefetchCurrentUser(forceRefresh: true);
+      }
       _syncReactionsFromCache();
     }
   }
@@ -1684,7 +1730,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     _syncReactionsFromCache();
     // Refresh feed and stories silently (no visible loader) to show updated likes, comments, reposts, etc.
     _loadUnifiedFeed(reset: true, silent: true);
-    _storyStore.loadFeed();
+    if (!UserSession().isGuest) {
+      _storyStore.loadFeed();
+    }
   }
 
   void _onRefreshFeedRequested() {
@@ -1694,12 +1742,16 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       _reactions.clear();
       _syncReactionsFromCache();
       _loadUnifiedFeed(reset: true, silent: true);
-      _storyStore.loadFeed();
+      if (!UserSession().isGuest) {
+        _storyStore.loadFeed();
+      }
       ParticulierDashboardScreen.refreshFeedNotifier.value = false;
     }
   }
 
   Future<void> _handleStoryEntryTap() async {
+    if (!_requireAuth('gerer vos stories')) return;
+
     if (_storyStore.stories.isEmpty) {
       final result = await Navigator.push(
         context,
@@ -1735,6 +1787,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Future<String?> _getCurrentUserId({bool forceRefresh = false}) async {
+    if (UserSession().isGuest) return null;
+
     if (!forceRefresh && _currentUserId != null) {
       return _currentUserId;
     }
@@ -1858,7 +1912,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       }
     }
 
-    _storyStore.loadFeed();
+    if (!UserSession().isGuest) {
+      _storyStore.loadFeed();
+    }
   }
 
   void _onFeedScroll() {
@@ -1994,6 +2050,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         bool _isLoading = false;
 
         Future<void> _toggleFavorite() async {
+          if (!_requireAuth('ajouter ce bon plan aux favoris')) return;
+
           if (_isLoading) return;
 
           // Toggle immediately for responsive UI
@@ -2465,6 +2523,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         bool _isLoading = false;
 
         Future<void> _toggleFavorite() async {
+          if (!_requireAuth('ajouter cette offre aux favoris')) return;
+
           if (_isLoading || jobId.isEmpty) return;
 
           // Toggle immediately for responsive UI
@@ -2777,6 +2837,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         bool isLoading = false;
 
         Future<void> _toggleFavorite() async {
+          if (!_requireAuth('ajouter cette formation aux favoris')) return;
+
           if (isLoading || trainingId.isEmpty) return;
 
           // Toggle immediately for responsive UI
@@ -2959,6 +3021,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
 
     Future<void> _toggleFavorite() async {
+      if (!_requireAuth('ajouter cet evenement aux favoris')) return;
+
       // Toggle immediately for responsive UI
       final newValue = !isFavoritedNotifier.value;
       isFavoritedNotifier.value = newValue;
@@ -3156,6 +3220,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         bool isLoadingFavorite = false;
 
         Future<void> toggleFavorite() async {
+          if (!_requireAuth('ajouter cette demande aux favoris')) return;
+
           if (isLoadingFavorite || demandeId.isEmpty) return;
 
           // Toggle immediately for responsive UI
@@ -3900,6 +3966,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     String entityId,
     String type,
   ) async {
+    if (!_requireAuth('aimer une publication')) return;
+
     final data = _getReaction(apiSlug, entityId);
 
     // Optimistic update
@@ -3947,6 +4015,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     String postId, {
     Map<String, dynamic>? originalPostData,
   }) async {
+    if (!_requireAuth('republier une publication')) return;
+
     final textController = TextEditingController();
     bool isSubmitting = false;
 
@@ -4478,7 +4548,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         // Share icon
         const SizedBox(width: 14),
         GestureDetector(
-          onTap: () => ShareService.shareEntity(apiSlug, entityId),
+          onTap: () {
+            if (!_requireAuth('partager une annonce')) return;
+            ShareService.shareEntity(apiSlug, entityId);
+          },
           child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
         ),
         // For bon plans: show author avatar and name on the left
@@ -4486,6 +4559,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           const Spacer(),
           GestureDetector(
             onTap: () {
+              if (UserSession().isGuest) {
+                return;
+              }
               final userId = authorData['id']?.toString();
               final accountType = authorData['account_type']?.toString();
               if (userId != null && userId.isNotEmpty) {
@@ -4509,6 +4585,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   // ── Real comments sheet ─────────────────────────────────────────
 
   void _showEntityCommentsSheet(String apiSlug, String entityId) {
+    if (!_requireAuth('voir et ecrire des commentaires')) return;
+
     List<Map<String, dynamic>> comments = [];
     bool isLoading = true;
     String? error;
@@ -5407,6 +5485,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Future<void> _navigateToBonPlanDetail(Map<String, dynamic> bp) async {
+    if (!_requireAuth('voir le detail des annonces')) return;
+
     final bonPlanId = bp['id']?.toString();
     if (bonPlanId == null || bonPlanId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -5569,6 +5649,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Future<void> _navigateToJobDetail(Map<String, dynamic> job) async {
+    if (!_requireAuth('voir le detail des annonces')) return;
+
     final jobId = job['id']?.toString();
     if (jobId == null || jobId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -5788,6 +5870,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Future<void> _navigateToTrainingDetail(Map<String, dynamic> tr) async {
+    if (!_requireAuth('voir le detail des annonces')) return;
+
     final trainingId = tr['id']?.toString();
     if (trainingId == null || trainingId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -5955,6 +6039,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Future<void> _navigateToEventDetail(Map<String, dynamic> ev) async {
+    if (!_requireAuth('voir le detail des annonces')) return;
+
     final eventId = ev['id']?.toString();
     if (eventId == null || eventId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -6115,6 +6201,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Future<void> _navigateToDemandeDetail(Map<String, dynamic> demande) async {
+    if (!_requireAuth('voir le detail des annonces')) return;
+
     final demandeId = demande['id']?.toString();
     if (demandeId == null || demandeId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -6359,6 +6447,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   Widget _buildNotifBubble() {
     return GestureDetector(
       onTap: () {
+        if (!_requireAuth('la recherche')) return;
+
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const SearchScreen()),
@@ -6375,6 +6465,33 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         child: const Icon(Icons.search, color: Color(0xFF2A8143), size: 18),
       ),
     );
+  }
+
+  Widget _buildGuestStoriesLocked() {
+    return SizedBox.shrink();
+    // return GestureDetector(
+    //   onTap: () => _requireAuth('voir les stories'),
+    //   child: Row(
+    //     mainAxisSize: MainAxisSize.min,
+    //     children: [
+    //       Container(
+    //         width: 58,
+    //         height: 58,
+    //         decoration: BoxDecoration(
+    //           shape: BoxShape.circle,
+    //           color: Colors.grey.shade100,
+    //           border: Border.all(color: Colors.grey.shade300, width: 1.5),
+    //         ),
+    //         child: const Icon(Icons.lock_outline, color: Color(0xFF3AAE5E)),
+    //       ),
+    //       const SizedBox(width: 10),
+    //       const Text(
+    //         'Stories',
+    //         style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+    //       ),
+    //     ],
+    //   ),
+    // );
   }
 
   @override
@@ -6519,207 +6636,240 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   //story
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: ValueListenableBuilder<List<StoryUserGroup>>(
-                      valueListenable: _storyStore.feedNotifier,
-                      builder: (_, feedGroups, __) {
-                        final ownGroup = feedGroups
-                            .where((g) => g.isOwn)
-                            .toList();
+                    child: UserSession().isGuest
+                        ? _buildGuestStoriesLocked()
+                        : ValueListenableBuilder<List<StoryUserGroup>>(
+                            valueListenable: _storyStore.feedNotifier,
+                            builder: (_, feedGroups, __) {
+                              final ownGroup = feedGroups
+                                  .where((g) => g.isOwn)
+                                  .toList();
 
-                        // Separate viewed and unviewed groups
-                        final otherGroups = feedGroups
-                            .where((g) => !g.isOwn)
-                            .toList();
+                              // Separate viewed and unviewed groups
+                              final otherGroups = feedGroups
+                                  .where((g) => !g.isOwn)
+                                  .toList();
 
-                        final unviewedGroups = otherGroups
-                            .where(
-                              (g) => !_fullyViewedUserIds.contains(g.userId),
-                            )
-                            .toList();
-                        final viewedGroups = otherGroups
-                            .where(
-                              (g) => _fullyViewedUserIds.contains(g.userId),
-                            )
-                            .toList();
+                              final unviewedGroups = otherGroups
+                                  .where(
+                                    (g) =>
+                                        !_fullyViewedUserIds.contains(g.userId),
+                                  )
+                                  .toList();
+                              final viewedGroups = otherGroups
+                                  .where(
+                                    (g) =>
+                                        _fullyViewedUserIds.contains(g.userId),
+                                  )
+                                  .toList();
 
-                        // Combine: unviewed first, then viewed (WhatsApp-like behavior)
-                        final sortedOtherGroups = [
-                          ...unviewedGroups,
-                          ...viewedGroups,
-                        ];
+                              // Combine: unviewed first, then viewed (WhatsApp-like behavior)
+                              final sortedOtherGroups = [
+                                ...unviewedGroups,
+                                ...viewedGroups,
+                              ];
 
-                        final hasOwnStories =
-                            ownGroup.isNotEmpty &&
-                            ownGroup.first.stories.isNotEmpty;
+                              final hasOwnStories =
+                                  ownGroup.isNotEmpty &&
+                                  ownGroup.first.stories.isNotEmpty;
 
-                        // Check if current user's own stories have been fully viewed
-                        // For own stories, we track locally since backend doesn't record own views
-                        final currentUserId = _currentUserId;
-                        final ownStoriesViewed =
-                            currentUserId != null &&
-                            (_fullyViewedUserIds.contains(currentUserId) ||
-                                _hasViewedOwnStories);
+                              // Check if current user's own stories have been fully viewed
+                              // For own stories, we track locally since backend doesn't record own views
+                              final currentUserId = _currentUserId;
+                              final ownStoriesViewed =
+                                  currentUserId != null &&
+                                  (_fullyViewedUserIds.contains(
+                                        currentUserId,
+                                      ) ||
+                                      _hasViewedOwnStories);
 
-                        return Align(
-                          alignment: Alignment.centerLeft,
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // "Votre story" entry
-                                GestureDetector(
-                                  onTap: _handleStoryEntryTap,
-                                  child: Column(
-                                    spacing: 5,
+                              return Align(
+                                alignment: Alignment.centerLeft,
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Stack(
-                                        clipBehavior: Clip.none,
-                                        children: [
-                                          GestureDetector(
-                                            onTap: _handleStoryEntryTap,
-                                            child: Container(
-                                              padding: EdgeInsets.all(
-                                                hasOwnStories ? 2 : 10,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color:
-                                                    hasOwnStories &&
-                                                        !ownStoriesViewed
-                                                    ? const Color(0xFFE6F7EF)
-                                                    : Colors.grey.shade200,
-                                                border: Border.all(
-                                                  color:
-                                                      hasOwnStories &&
-                                                          !ownStoriesViewed
-                                                      ? const Color(0xFF3AAE5E)
-                                                      : Colors.grey.shade400,
-                                                  width: hasOwnStories
-                                                      ? 2.5
-                                                      : 1.5,
-                                                ),
-                                              ),
-                                              child: hasOwnStories
-                                                  ? CircleAvatar(
-                                                      radius: 22,
-                                                      backgroundImage:
-                                                          (ownGroup
-                                                                      .first
-                                                                      .userAvatar !=
-                                                                  null &&
-                                                              ownGroup
-                                                                  .first
-                                                                  .userAvatar!
-                                                                  .isNotEmpty)
-                                                          ? NetworkImage(
-                                                                  ApiConfig.resolveMediaUrl(
+                                      // "Votre story" entry
+                                      GestureDetector(
+                                        onTap: _handleStoryEntryTap,
+                                        child: Column(
+                                          spacing: 5,
+                                          children: [
+                                            Stack(
+                                              clipBehavior: Clip.none,
+                                              children: [
+                                                GestureDetector(
+                                                  onTap: _handleStoryEntryTap,
+                                                  child: Container(
+                                                    padding: EdgeInsets.all(
+                                                      hasOwnStories ? 2 : 10,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      shape: BoxShape.circle,
+                                                      color:
+                                                          hasOwnStories &&
+                                                              !ownStoriesViewed
+                                                          ? const Color(
+                                                              0xFFE6F7EF,
+                                                            )
+                                                          : Colors
+                                                                .grey
+                                                                .shade200,
+                                                      border: Border.all(
+                                                        color:
+                                                            hasOwnStories &&
+                                                                !ownStoriesViewed
+                                                            ? const Color(
+                                                                0xFF3AAE5E,
+                                                              )
+                                                            : Colors
+                                                                  .grey
+                                                                  .shade400,
+                                                        width: hasOwnStories
+                                                            ? 2.5
+                                                            : 1.5,
+                                                      ),
+                                                    ),
+                                                    child: hasOwnStories
+                                                        ? CircleAvatar(
+                                                            radius: 22,
+                                                            backgroundImage:
+                                                                (ownGroup
+                                                                            .first
+                                                                            .userAvatar !=
+                                                                        null &&
                                                                     ownGroup
                                                                         .first
-                                                                        .userAvatar,
-                                                                  )!,
-                                                                )
-                                                                as ImageProvider
-                                                          : const AssetImage(
-                                                              _defaultAvatar,
+                                                                        .userAvatar!
+                                                                        .isNotEmpty)
+                                                                ? NetworkImage(
+                                                                        ApiConfig.resolveMediaUrl(
+                                                                          ownGroup
+                                                                              .first
+                                                                              .userAvatar,
+                                                                        )!,
+                                                                      )
+                                                                      as ImageProvider
+                                                                : const AssetImage(
+                                                                    _defaultAvatar,
+                                                                  ),
+                                                          )
+                                                        : const Center(
+                                                            child: Icon(
+                                                              Icons.add,
+                                                              color: Color(
+                                                                0xFF3AAE5E,
+                                                              ),
                                                             ),
-                                                    )
-                                                  : const Center(
-                                                      child: Icon(
-                                                        Icons.add,
-                                                        color: Color(
-                                                          0xFF3AAE5E,
+                                                          ),
+                                                  ),
+                                                ),
+                                                if (hasOwnStories)
+                                                  Positioned(
+                                                    bottom: -2,
+                                                    right: -2,
+                                                    child: GestureDetector(
+                                                      onTap: () async {
+                                                        if (!_requireAuth(
+                                                          'gerer vos stories',
+                                                        )) {
+                                                          return;
+                                                        }
+
+                                                        final result =
+                                                            await Navigator.push(
+                                                              context,
+                                                              MaterialPageRoute(
+                                                                builder: (_) =>
+                                                                    const AddStoryScreen(),
+                                                              ),
+                                                            );
+                                                        if (result
+                                                            is StoryModel) {
+                                                          _storyStore.addStory(
+                                                            result,
+                                                          );
+                                                        }
+                                                      },
+                                                      child: Container(
+                                                        padding:
+                                                            const EdgeInsets.all(
+                                                              3,
+                                                            ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                              color:
+                                                                  const Color(
+                                                                    0xFF3AAE5E,
+                                                                  ),
+                                                              shape: BoxShape
+                                                                  .circle,
+                                                              border: Border.all(
+                                                                color: Colors
+                                                                    .white,
+                                                                width: 2,
+                                                              ),
+                                                            ),
+                                                        child: const Icon(
+                                                          Icons.add,
+                                                          color: Colors.white,
+                                                          size: 12,
                                                         ),
                                                       ),
                                                     ),
+                                                  ),
+                                              ],
                                             ),
-                                          ),
-                                          if (hasOwnStories)
-                                            Positioned(
-                                              bottom: -2,
-                                              right: -2,
-                                              child: GestureDetector(
-                                                onTap: () async {
-                                                  final result =
-                                                      await Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (_) =>
-                                                              const AddStoryScreen(),
-                                                        ),
-                                                      );
-                                                  if (result is StoryModel) {
-                                                    _storyStore.addStory(
-                                                      result,
-                                                    );
-                                                  }
-                                                },
-                                                child: Container(
-                                                  padding: const EdgeInsets.all(
-                                                    3,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(
-                                                      0xFF3AAE5E,
-                                                    ),
-                                                    shape: BoxShape.circle,
-                                                    border: Border.all(
-                                                      color: Colors.white,
-                                                      width: 2,
-                                                    ),
-                                                  ),
-                                                  child: const Icon(
-                                                    Icons.add,
-                                                    color: Colors.white,
-                                                    size: 12,
-                                                  ),
-                                                ),
-                                              ),
+                                            const Text(
+                                              "Votre story",
+                                              style: TextStyle(fontSize: 10),
                                             ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                      const Text(
-                                        "Votre story",
-                                        style: TextStyle(fontSize: 10),
+                                      const SizedBox(width: 12),
+
+                                      // Other users' stories from API feed
+                                      ...sortedOtherGroups.map(
+                                        (group) => Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 12,
+                                          ),
+                                          child: AvatarsStory(
+                                            name: group.userName
+                                                .split(' ')
+                                                .first,
+                                            imageName:
+                                                group.userAvatar ??
+                                                _defaultAvatar,
+                                            onTap: () =>
+                                                _openStory(context, group),
+                                            isViewed: _fullyViewedUserIds
+                                                .contains(group.userId),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-
-                                // Other users' stories from API feed
-                                ...sortedOtherGroups.map(
-                                  (group) => Padding(
-                                    padding: const EdgeInsets.only(left: 12),
-                                    child: AvatarsStory(
-                                      name: group.userName.split(' ').first,
-                                      imageName:
-                                          group.userAvatar ?? _defaultAvatar,
-                                      onTap: () => _openStory(context, group),
-                                      isViewed: _fullyViewedUserIds.contains(
-                                        group.userId,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
 
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ), // space on sides
-                    child: Container(
-                      height: 1, // thin line
-                      color: Colors.grey[300], // light gray
-                    ),
-                  ),
+                  UserSession().isGuest
+                      ? SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ), // space on sides
+                          child: Container(
+                            height: 1, // thin line
+                            color: Colors.grey[300], // light gray
+                          ),
+                        ),
 
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
@@ -6729,6 +6879,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                         const Text("Catégories"),
                         GestureDetector(
                           onTap: () {
+                            if (!_requireAuth('parcourir les categories')) {
+                              return;
+                            }
+
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -6756,6 +6910,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             bgColor: Color(0xFFFFE0B2).withOpacity(0.2),
                             icon: Icons.card_giftcard_outlined,
                             onTap: () {
+                              if (!_requireAuth('ouvrir les bons plans')) {
+                                return;
+                              }
+
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -6771,6 +6929,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             bgColor: Color(0xFFB3E5FC).withOpacity(0.2),
                             iconAsset: 'assets/images/offres.png',
                             onTap: () {
+                              if (!_requireAuth('ouvrir les offres')) {
+                                return;
+                              }
+
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -6787,6 +6949,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             bgColor: Color(0xFFE1BEE7).withOpacity(0.1),
                             iconAsset: 'assets/images/Formation.png',
                             onTap: () {
+                              if (!_requireAuth('ouvrir les formations')) {
+                                return;
+                              }
+
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -6802,6 +6968,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             bgColor: Color(0xFFE6F7EF).withOpacity(0.5),
                             icon: Icons.event_outlined,
                             onTap: () {
+                              if (!_requireAuth('ouvrir les evenements')) {
+                                return;
+                              }
+
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -6823,6 +6993,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             ).withOpacity(0.2),
                             icon: Icons.chat_outlined,
                             onTap: () {
+                              if (!_requireAuth('ouvrir les demandes')) {
+                                return;
+                              }
+
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(

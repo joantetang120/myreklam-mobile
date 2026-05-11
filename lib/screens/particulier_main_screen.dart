@@ -10,6 +10,7 @@ import 'package:myreklam/screens/profile_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_profile_screen.dart';
 import 'package:myreklam/services/chat_notification_service.dart';
 import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/utils/guest_access.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:provider/provider.dart';
 
@@ -69,7 +70,9 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
     _showSearchResults = widget.showSearchResults;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ChatNotificationService.instance.init();
+      if (!UserSession().isGuest) {
+        ChatNotificationService.instance.init();
+      }
     });
   }
 
@@ -88,17 +91,33 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
     });
   }
 
-  List<Widget> get _pages => [
-    ParticulierDashboardScreen(key: ValueKey(_dashboardRefreshKey)),
-    const MessageScreen(),
-    const Scaffold(body: Center(child: Text('Publier Screen'))),
-    const SearchScreen(),
-    UserSession().isPro
-        ? ProfileProScreen(key: ValueKey(_profileRefreshKey))
-        : ProfileScreen(key: ValueKey(_profileRefreshKey)),
-  ];
+  List<Widget> get _pages {
+    if (UserSession().isGuest) {
+      return [
+        ParticulierDashboardScreen(key: ValueKey(_dashboardRefreshKey)),
+      ];
+    }
+
+    return [
+      ParticulierDashboardScreen(key: ValueKey(_dashboardRefreshKey)),
+      const MessageScreen(),
+      const Scaffold(body: Center(child: Text('Publier Screen'))),
+      const SearchScreen(),
+      UserSession().isPro
+          ? ProfileProScreen(key: ValueKey(_profileRefreshKey))
+          : ProfileScreen(key: ValueKey(_profileRefreshKey)),
+    ];
+  }
 
   void _handleTabTapped(int index) {
+    if (UserSession().isGuest && index != 0) {
+      GuestAccess.showLoginRequiredDialog(
+        context,
+        featureName: 'cette section',
+      );
+      return;
+    }
+
     if (index == 2) {
       Navigator.push(
         context,
@@ -165,7 +184,10 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
       );
       displayIndex = 3;
     } else {
-      body = IndexedStack(index: _currentIndex, children: _pages);
+      body = IndexedStack(
+        index: UserSession().isGuest ? 0 : _currentIndex,
+        children: _pages,
+      );
     }
 
     return AppLayout(
