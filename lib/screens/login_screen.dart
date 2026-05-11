@@ -5,7 +5,10 @@ import 'package:myreklam/services/auth_service.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/google_sign_in_service.dart';
 import 'package:myreklam/services/facebook_sign_in_service.dart';
+import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/utils/auth_navigator.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/screens/particulier_main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -63,6 +66,18 @@ class _LoginScreenState extends State<LoginScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _handleGuestAccess() async {
+    await TokenStorage.clearTokens();
+    UserSession().startGuestMode();
+
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const ParticulierMainScreen()),
+      (route) => false,
+    );
   }
 
   @override
@@ -233,6 +248,29 @@ class _LoginScreenState extends State<LoginScreen> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF1B8D4B),
+                            side: const BorderSide(color: Color(0xFF1B8D4B)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: _isLoading ? null : _handleGuestAccess,
+                          icon: const Icon(Icons.visibility_outlined),
+                          label: const Text(
+                            'Acces invite',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
