@@ -20,6 +20,7 @@ class DemandeCard extends StatelessWidget {
   final bool isLoadingFavorite;
   final VoidCallback? onFavoriteToggle;
   final String? accountType;
+  final VoidCallback? onReport;
 
   const DemandeCard({
     super.key,
@@ -41,6 +42,7 @@ class DemandeCard extends StatelessWidget {
     this.isLoadingFavorite = false,
     this.onFavoriteToggle,
     this.accountType,
+    this.onReport,
   });
 
   @override
@@ -94,12 +96,22 @@ class DemandeCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (onReport != null)
+                    IconButton(
+                      tooltip: 'Signaler',
+                      onPressed: onReport,
+                      icon: const Icon(
+                        Icons.report_outlined,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                    ),
                   // Favorite icon
                   if (onFavoriteToggle != null)
                     GestureDetector(
                       onTap: isLoadingFavorite ? null : onFavoriteToggle,
                       child: Container(
-                        margin: const EdgeInsets.only(right: 100, bottom: 20),
+                        margin: const EdgeInsets.only(bottom: 20),
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           color: isFavorited

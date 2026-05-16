@@ -28,6 +28,7 @@ import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -3959,6 +3960,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           isLoadingFavorite: _isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToJobOfferDetail(job),
+          onReport: canReportResource(job)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'job-offers',
+                    entityId: jobId,
+                    title: jobTitle,
+                  )
+              : null,
           onAvatarTap: () {},
           reactionBar: jobId.isNotEmpty
               ? _buildReactionBar('job-offers', jobId)
@@ -4424,6 +4433,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           isLoadingFavorite: isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToTrainingDetail(training),
+          onReport: canReportResource(training)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'trainings',
+                    entityId: trainingId,
+                    title: title,
+                  )
+              : null,
           onAvatarTap: () {},
           reactionBar: trainingId.isNotEmpty
               ? _buildReactionBar('trainings', trainingId)
@@ -4951,6 +4968,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           likesCount: _asInt(event['likes_count']),
           commentsCount: _asInt(event['comments_count']),
           onTapCTA: () => _navigateToEventDetail(event),
+          onReport: canReportResource(event)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'events',
+                    entityId: eventId,
+                    title: eventTitle,
+                  )
+              : null,
           tags: tags.isNotEmpty ? tags : null,
           onAvatarTap: () {},
           reactionBar: eventId.isNotEmpty
@@ -5287,6 +5312,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
+          onReport: canReportResource(demande)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'demandes',
+                    entityId: demandeId,
+                    title: title,
+                  )
+              : null,
           reactionBar: demandeId.isNotEmpty
               ? _buildReactionBar(
                   'demandes',

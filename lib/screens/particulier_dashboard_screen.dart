@@ -11,6 +11,7 @@ import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/formation_card.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/widgets/welcome_bonus_popup.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
@@ -2348,6 +2349,38 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   ),
                 ),
               ),
+              if (canReportResource(bp))
+                Positioned(
+                  top: 12,
+                  left: 58,
+                  child: GestureDetector(
+                    onTap: () => showAnnouncementReportDialog(
+                      context: context,
+                      entityType: 'bonplans',
+                      entityId: bpId,
+                      title: title,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.report_outlined,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
               // Bon Plan tag at top-right
               Positioned(
                 top: 12,
@@ -2548,6 +2581,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           isLoadingFavorite: _isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToJobDetail(job),
+          onReport: canReportResource(job)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'job-offers',
+                    entityId: jobId,
+                    title: jobTitle,
+                  )
+              : null,
           onAvatarTap: () {
             if (user?['id'] != null) {
               final isProUser =
@@ -2858,6 +2899,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           isLoadingFavorite: isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToTrainingDetail(training),
+          onReport: canReportResource(training)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'trainings',
+                    entityId: trainingId,
+                    title: title,
+                  )
+              : null,
           onAvatarTap: () {
             if (user?['id'] != null) {
               final isProUser =
@@ -3066,6 +3115,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       likesCount: _asInt(event['likes_count']),
       commentsCount: _asInt(event['comments_count']),
       onTapCTA: () => _navigateToEventDetail(event),
+      onReport: canReportResource(event)
+          ? () => showAnnouncementReportDialog(
+                context: context,
+                entityType: 'events',
+                entityId: eventId,
+                title: eventTitle,
+              )
+          : null,
       tags: tags.isNotEmpty ? tags : null,
       onAvatarTap: () {
         if (user?['id'] != null) {
@@ -3263,6 +3320,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
+          onReport: canReportResource(demande)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'demandes',
+                    entityId: demandeId,
+                    title: title,
+                  )
+              : null,
           reactionBar: demandeId.isNotEmpty
               ? _buildReactionBar(
                   'demandes',

@@ -7,6 +7,7 @@ import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
@@ -1008,6 +1009,38 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                   ),
                 ),
               ),
+              if (canReportResource(bp))
+                Positioned(
+                  top: 12,
+                  left: 58,
+                  child: GestureDetector(
+                    onTap: () => showAnnouncementReportDialog(
+                      context: context,
+                      entityType: 'bonplans',
+                      entityId: bpId,
+                      title: title,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.report_outlined,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
               // Bon Plan tag at top-right
               Positioned(
                 top: 12,

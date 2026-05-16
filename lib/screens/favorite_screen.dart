@@ -15,6 +15,7 @@ import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class FavoriteScreen extends StatefulWidget {
@@ -707,6 +708,14 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       commentsCount: 0,
       timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
       onTapCTA: () => _navigateToDemandeDetail(d),
+      onReport: canReportResource(d)
+          ? () => showAnnouncementReportDialog(
+                context: context,
+                entityType: 'demandes',
+                entityId: d['id']?.toString() ?? '',
+                title: title,
+              )
+          : null,
     );
   }
 
@@ -991,6 +1000,14 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       onApply: () => _navigateToTrainingDetail(tr),
       isFavorited: isFavorited,
       onFavoriteToggle: _toggleFavorite,
+      onReport: canReportResource(tr)
+          ? () => showAnnouncementReportDialog(
+                context: context,
+                entityType: 'trainings',
+                entityId: tr['id']?.toString() ?? '',
+                title: title,
+              )
+          : null,
     );
   }
 
@@ -1367,6 +1384,14 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       onTapCTA: () => _navigateToEventDetail(ev),
       isFavorite: isFavorited,
       onFavoriteToggle: _toggleFavorite,
+      onReport: canReportResource(ev)
+          ? () => showAnnouncementReportDialog(
+                context: context,
+                entityType: 'events',
+                entityId: ev['id']?.toString() ?? '',
+                title: title,
+              )
+          : null,
     );
   }
 
@@ -1861,6 +1886,14 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       onApply: () => _navigateToJobOfferDetail(jo),
       isFavorited: _isFavorited,
       onFavoriteToggle: _toggleFavorite,
+      onReport: canReportResource(jo)
+          ? () => showAnnouncementReportDialog(
+                context: context,
+                entityType: 'job-offers',
+                entityId: jo['id']?.toString() ?? '',
+                title: title,
+              )
+          : null,
     );
   }
 

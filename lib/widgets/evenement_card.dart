@@ -23,6 +23,7 @@ class EvenementCard extends StatelessWidget {
   final ValueNotifier<bool>? isFavoriteNotifier;
   final bool isFavorite;
   final VoidCallback? onFavoriteToggle;
+  final VoidCallback? onReport;
 
   const EvenementCard({
     super.key,
@@ -46,6 +47,7 @@ class EvenementCard extends StatelessWidget {
     this.isFavoriteNotifier,
     this.isFavorite = false,
     this.onFavoriteToggle,
+    this.onReport,
   });
 
   @override
@@ -432,6 +434,31 @@ class EvenementCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
+                if (onReport != null) ...[
+                  GestureDetector(
+                    onTap: onReport,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.report_outlined,
+                        size: 18,
+                        color: Colors.redAccent,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 // Événement tag
                 Container(
                   padding: const EdgeInsets.symmetric(

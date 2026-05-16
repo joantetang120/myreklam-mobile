@@ -22,6 +22,7 @@ import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -5197,6 +5198,14 @@ class _ParticulierPublicViewScreenState
           likesCount: _asInt(event['likes_count']),
           commentsCount: _asInt(event['comments_count']),
           onTapCTA: () => _navigateToEventDetail(event),
+          onReport: canReportResource(event)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'events',
+                    entityId: eventId,
+                    title: eventTitle,
+                  )
+              : null,
           tags: tags.isNotEmpty ? tags : null,
           onAvatarTap: () {},
           reactionBar: eventId.isNotEmpty
@@ -5527,6 +5536,14 @@ class _ParticulierPublicViewScreenState
           isFavorited: favoris,
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
+          onReport: canReportResource(demande)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'demandes',
+                    entityId: demandeId,
+                    title: title,
+                  )
+              : null,
           reactionBar: demandeId.isNotEmpty
               ? _buildReactionBar(
                   'demandes',

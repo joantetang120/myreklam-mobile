@@ -13,6 +13,7 @@ import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/widgets/formation_card.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/screens/creer_formation_screen.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/api_client.dart';
@@ -2102,6 +2103,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           isLoadingFavorite: isLoading,
                           onFavoriteToggle: _toggleFavorite,
                           onApply: () => _navigateToTrainingDetail(training),
+                          onReport: canReportResource(training)
+                              ? () => showAnnouncementReportDialog(
+                                    context: context,
+                                    entityType: 'trainings',
+                                    entityId: trainingId,
+                                    title: title,
+                                  )
+                              : null,
                           onAvatarTap: () {
                             if (user?['id'] != null) {
                               final isProUser =
