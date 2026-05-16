@@ -14,6 +14,7 @@ import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/user_detail_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/demande_card.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/conversation_service.dart';
@@ -4287,6 +4288,14 @@ $deepLink'''
           isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
+          onReport: canReportResource(demande)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'demandes',
+                    entityId: demandeId,
+                    title: title,
+                  )
+              : null,
           reactionBar: demandeId.isNotEmpty
               ? Builder(
                   builder: (ctx) {

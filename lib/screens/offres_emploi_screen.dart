@@ -8,6 +8,7 @@ import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
@@ -603,6 +604,14 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
           isLoadingFavorite: _isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToJobDetail(job),
+          onReport: canReportResource(job)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'job-offers',
+                    entityId: jobId,
+                    title: jobTitle,
+                  )
+              : null,
           onAvatarTap: () {
             if (user?['id'] != null) {
               final isProUser =

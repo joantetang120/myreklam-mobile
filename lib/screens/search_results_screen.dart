@@ -8,6 +8,7 @@ import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/formation_card.dart' show FormationCard, FormationTag;
 import 'package:myreklam/widgets/job_announcement_card.dart' show JobAnnouncementCard, JobDetailTag;
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
@@ -848,6 +849,14 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           isLoadingFavorite: _isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToJobDetail(job),
+          onReport: canReportResource(job)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'job-offers',
+                    entityId: jobId,
+                    title: jobTitle,
+                  )
+              : null,
           onAvatarTap: () => _navigateToUserProfile(user),
           reactionBar: jobId.isNotEmpty ? _buildReactionBar('job-offers', jobId) : null,
         );
@@ -925,6 +934,14 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           isLoadingFavorite: isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToTrainingDetail(training),
+          onReport: canReportResource(training)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'trainings',
+                    entityId: trainingId,
+                    title: title,
+                  )
+              : null,
           onAvatarTap: () => _navigateToUserProfile(user),
           reactionBar: trainingId.isNotEmpty ? _buildReactionBar('trainings', trainingId) : null,
         );
@@ -962,6 +979,14 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       commentsCount: _getReaction('events', eventId).commentsCount,
       reactionBar: eventId.isNotEmpty ? _buildReactionBar('events', eventId) : null,
       onTapCTA: () => _navigateToEventDetail(event),
+      onReport: canReportResource(event)
+          ? () => showAnnouncementReportDialog(
+                context: context,
+                entityType: 'events',
+                entityId: eventId,
+                title: title,
+              )
+          : null,
       onAvatarTap: () => _navigateToUserProfile(user),
     );
   }
@@ -991,7 +1016,27 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             ),
             title: GestureDetector(onTap: () => _navigateToUserProfile(user), child: Text(userName, style: const TextStyle(fontWeight: FontWeight.w600))),
             subtitle: Text('Demande', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-            trailing: Text(_timeAgo(createdAt), style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (canReportResource(demande))
+                  IconButton(
+                    tooltip: 'Signaler',
+                    onPressed: () => showAnnouncementReportDialog(
+                      context: context,
+                      entityType: 'demandes',
+                      entityId: demandeId,
+                      title: title,
+                    ),
+                    icon: const Icon(
+                      Icons.report_outlined,
+                      color: Colors.redAccent,
+                      size: 20,
+                    ),
+                  ),
+                Text(_timeAgo(createdAt), style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+              ],
+            ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),

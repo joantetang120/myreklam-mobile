@@ -28,6 +28,7 @@ import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -3959,6 +3960,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           isLoadingFavorite: _isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToJobOfferDetail(job),
+          onReport: canReportResource(job)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'job-offers',
+                    entityId: jobId,
+                    title: jobTitle,
+                  )
+              : null,
           onAvatarTap: () {},
           reactionBar: jobId.isNotEmpty
               ? _buildReactionBar('job-offers', jobId)
@@ -4424,6 +4433,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           isLoadingFavorite: isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToTrainingDetail(training),
+          onReport: canReportResource(training)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'trainings',
+                    entityId: trainingId,
+                    title: title,
+                  )
+              : null,
           onAvatarTap: () {},
           reactionBar: trainingId.isNotEmpty
               ? _buildReactionBar('trainings', trainingId)
@@ -4951,6 +4968,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           likesCount: _asInt(event['likes_count']),
           commentsCount: _asInt(event['comments_count']),
           onTapCTA: () => _navigateToEventDetail(event),
+          onReport: canReportResource(event)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'events',
+                    entityId: eventId,
+                    title: eventTitle,
+                  )
+              : null,
           tags: tags.isNotEmpty ? tags : null,
           onAvatarTap: () {},
           reactionBar: eventId.isNotEmpty
@@ -5287,6 +5312,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: isLoadingFavorite,
           onFavoriteToggle: toggleFavorite,
+          onReport: canReportResource(demande)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'demandes',
+                    entityId: demandeId,
+                    title: title,
+                  )
+              : null,
           reactionBar: demandeId.isNotEmpty
               ? _buildReactionBar(
                   'demandes',
@@ -5608,6 +5641,131 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _showReportReasonDialog() async {
+    final targetId = widget.userId ?? _profileResponse?['user']?['id']?.toString();
+    if (targetId == null || targetId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'identifier ce compte.')),
+      );
+      return;
+    }
+
+    final profile = _profileResponse?['profile'];
+    final displayName = (profile is Map)
+        ? (profile['company_name']?.toString() ?? 'ce compte')
+        : 'ce compte';
+    final reasonController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        String? reasonError;
+        bool isSubmitting = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Signaler le compte'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Pourquoi voulez-vous signaler $displayName ?'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: reasonController,
+                  minLines: 3,
+                  maxLines: 5,
+                  maxLength: 1000,
+                  textInputAction: TextInputAction.newline,
+                  decoration: InputDecoration(
+                    hintText: 'Expliquez la raison du signalement...',
+                    errorText: reasonError,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () => Navigator.pop(dialogContext),
+                child: Text(
+                  'Annuler',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        final reason = reasonController.text.trim();
+                        if (reason.length < 10) {
+                          setDialogState(() {
+                            reasonError =
+                                'Veuillez saisir au moins 10 caracteres.';
+                          });
+                          return;
+                        }
+
+                        setDialogState(() {
+                          isSubmitting = true;
+                          reasonError = null;
+                        });
+
+                        try {
+                          await _profileService.reportUser(targetId, reason);
+                          if (!mounted) return;
+                          Navigator.pop(dialogContext);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Signalement envoye'),
+                              backgroundColor: Color(0xFF3AAE5E),
+                            ),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          setDialogState(() {
+                            isSubmitting = false;
+                            reasonError = e is ApiException
+                                ? e.firstError
+                                : 'Impossible d\'envoyer le signalement.';
+                          });
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Signaler',
+                        style: TextStyle(color: Colors.white),
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    reasonController.dispose();
   }
 
   Future<void> _loadPosts({bool showLoader = true}) async {
@@ -6085,7 +6243,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   icon: const Icon(Icons.more_vert, color: Colors.black),
                   onSelected: (value) {
                     if (value == 'report') {
-                      _showReportConfirmation();
+                      _showReportReasonDialog();
                     }
                   },
                   itemBuilder: (context) => [

@@ -14,6 +14,7 @@ class JobAnnouncementCard extends StatelessWidget {
   final bool isFavorited;
   final VoidCallback? onFavoriteToggle;
   final bool isLoadingFavorite;
+  final VoidCallback? onReport;
 
   const JobAnnouncementCard({
     super.key,
@@ -30,6 +31,7 @@ class JobAnnouncementCard extends StatelessWidget {
     this.isFavorited = false,
     this.onFavoriteToggle,
     this.isLoadingFavorite = false,
+    this.onReport,
   });
 
   @override
@@ -107,6 +109,23 @@ class JobAnnouncementCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 4),
+                            if (onReport != null) ...[
+                              IconButton(
+                                tooltip: 'Signaler',
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
+                                padding: EdgeInsets.zero,
+                                onPressed: onReport,
+                                icon: const Icon(
+                                  Icons.report_outlined,
+                                  color: Colors.redAccent,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                            ],
                             // Favorite heart button
                             GestureDetector(
                               onTap: isLoadingFavorite ? null : onFavoriteToggle,

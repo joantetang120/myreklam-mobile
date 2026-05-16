@@ -15,6 +15,7 @@ import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/widgets/post_content_card.dart' show PostTag;
 import 'package:myreklam/screens/creer_offre_emploi_screen.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
@@ -2401,6 +2402,14 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           isLoadingFavorite: _isLoading,
           onFavoriteToggle: _toggleFavorite,
           onApply: () => _navigateToJobDetail(job),
+          onReport: canReportResource(job)
+              ? () => showAnnouncementReportDialog(
+                    context: context,
+                    entityType: 'job-offers',
+                    entityId: jobId,
+                    title: jobTitle,
+                  )
+              : null,
           onAvatarTap: () {
             if (user?['id'] != null) {
               final isProUser =

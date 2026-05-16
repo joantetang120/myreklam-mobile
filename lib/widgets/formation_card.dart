@@ -13,6 +13,7 @@ class FormationCard extends StatelessWidget {
   final bool isFavorited;
   final VoidCallback? onFavoriteToggle;
   final bool isLoadingFavorite;
+  final VoidCallback? onReport;
 
   const FormationCard({
     super.key,
@@ -28,6 +29,7 @@ class FormationCard extends StatelessWidget {
     this.isFavorited = false,
     this.onFavoriteToggle,
     this.isLoadingFavorite = false,
+    this.onReport,
   });
 
   @override
@@ -233,6 +235,31 @@ class FormationCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
+                if (onReport != null) ...[
+                  GestureDetector(
+                    onTap: onReport,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.report_outlined,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 // Formation tag
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

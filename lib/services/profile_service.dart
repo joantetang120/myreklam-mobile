@@ -102,6 +102,14 @@ class ProfileService {
     return await _api.authenticatedDelete('/profile/$userId/unfollow');
   }
 
+  /// POST /api/profile/{userId}/report
+  Future<Map<String, dynamic>> reportUser(String userId, String reason) async {
+    return await _api.authenticatedPost(
+      '/profile/$userId/report',
+      body: {'reason': reason.trim()},
+    );
+  }
+
   /// PUT /api/profile/me
   Future<Map<String, dynamic>> updateProfile(
     Map<String, dynamic> fields,

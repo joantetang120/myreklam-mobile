@@ -7,6 +7,7 @@ import 'package:myreklam/screens/profile_particulier/particulier_public_view_scr
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/config/api_config.dart';
@@ -967,6 +968,14 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
       likesCount: _asInt(event['likes_count']),
       commentsCount: _asInt(event['comments_count']),
       onTapCTA: () => _navigateToEventDetail(event),
+      onReport: canReportResource(event)
+          ? () => showAnnouncementReportDialog(
+                context: context,
+                entityType: 'events',
+                entityId: eventId,
+                title: eventTitle,
+              )
+          : null,
       tags: tags.isNotEmpty ? tags : null,
       onAvatarTap: () {
         if (user?['id'] != null) {
