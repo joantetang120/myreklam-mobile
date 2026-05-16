@@ -1642,7 +1642,11 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                   proProfile?['logo_url']?.toString() ??
                   user['avatar_url']?.toString();
 
-              return Padding(
+              return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1831,7 +1835,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                     ],
                   ],
                 ),
-              );
+              ));
             }
 
             return Padding(

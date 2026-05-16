@@ -3317,7 +3317,11 @@ $deepLink'''
             final likesCount = comment['likes_count'] as int? ?? 0;
             final isLiked = comment['user_reaction']?.toString() == 'like';
 
-            return Padding(
+            return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
               padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3506,7 +3510,7 @@ $deepLink'''
                   ],
                 ],
               ),
-            );
+            ));
           }
 
           return DraggableScrollableSheet(
@@ -3709,7 +3713,11 @@ $deepLink'''
     final likesCount = comment['likes_count'] as int? ?? 0;
     final isLiked = comment['user_reaction']?.toString() == 'like';
 
-    return Padding(
+    return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
       padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3850,7 +3858,7 @@ $deepLink'''
           ],
         ],
       ),
-    );
+    ));
   }
 
   void _showReplyDialog(Map<String, dynamic> parentComment) async {

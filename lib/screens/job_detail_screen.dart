@@ -696,7 +696,11 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     final id = comment['id'];
     final idInt = id is int ? id : int.tryParse(id?.toString() ?? '');
 
-    return Padding(
+    return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
       padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -837,7 +841,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           ],
         ],
       ),
-    );
+    ));
   }
 
   Map<String, dynamic>? _effectiveAuthorData() {
@@ -1500,7 +1504,11 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                   proProfile?['logo_url']?.toString() ??
                   user['avatar_url']?.toString();
 
-              return Padding(
+              return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1689,7 +1697,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     ],
                   ],
                 ),
-              );
+              ));
             }
 
             return Padding(

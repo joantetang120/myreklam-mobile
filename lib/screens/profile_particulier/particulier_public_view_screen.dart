@@ -3542,7 +3542,11 @@ class _ParticulierPublicViewScreenState
                   proProfile?['logo_url']?.toString() ??
                   user['avatar_url']?.toString();
 
-              return Padding(
+              return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -3731,7 +3735,7 @@ class _ParticulierPublicViewScreenState
                     ],
                   ],
                 ),
-              );
+              ));
             }
 
             return Padding(

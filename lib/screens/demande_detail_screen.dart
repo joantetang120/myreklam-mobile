@@ -913,7 +913,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     final id = comment['id'];
     final idInt = id is int ? id : int.tryParse(id?.toString() ?? '');
 
-    return Padding(
+    return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
       padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1032,7 +1036,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
           ],
         ],
       ),
-    );
+    ));
   }
 
   Map<String, dynamic>? _effectiveAuthorData() {
@@ -3426,7 +3430,11 @@ $deepLink'''
                   proProfile?['logo_url']?.toString() ??
                   user['avatar_url']?.toString();
 
-              return Padding(
+              return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -3615,7 +3623,7 @@ $deepLink'''
                     ],
                   ],
                 ),
-              );
+              ));
             }
 
             return Padding(
