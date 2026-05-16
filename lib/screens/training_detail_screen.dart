@@ -2644,7 +2644,11 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     final userId = user?['id']?.toString();
     final isOwner = userId != null && userId == _currentUserId;
 
-    return Padding(
+    return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
       padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2791,7 +2795,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           ],
         ],
       ),
-    );
+    ));
   }
 
   void _showCommentsSheet() async {
@@ -3680,7 +3684,11 @@ $deepLink'''
             final likesCount = comment['likes_count'] as int? ?? 0;
             final isLiked = comment['user_reaction']?.toString() == 'like';
 
-            return Padding(
+            return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
               padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3888,7 +3896,7 @@ $deepLink'''
                   ],
                 ],
               ),
-            );
+            ));
           }
 
           return DraggableScrollableSheet(

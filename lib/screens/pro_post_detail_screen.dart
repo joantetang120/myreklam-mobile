@@ -12,6 +12,7 @@ import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
 import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/creer_bon_plan_screen.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
@@ -1160,7 +1161,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   proProfile?['logo_url']?.toString() ??
                   user['avatar_url']?.toString();
 
-              return Padding(
+              return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1349,7 +1354,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     ],
                   ],
                 ),
-              );
+              ));
             }
 
             return Padding(
@@ -4035,7 +4040,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       } catch (_) {}
     }
 
-    return Padding(
+    return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -4086,7 +4095,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   void _showCommentsSheet(BuildContext context) async {
@@ -4414,7 +4423,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               final userId = user?['id']?.toString();
               final isOwner = userId != null && userId == _currentUserId;
 
-              return Padding(
+              return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -4553,7 +4566,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     ],
                   ],
                 ),
-              );
+              ));
             }
 
             return DraggableScrollableSheet(

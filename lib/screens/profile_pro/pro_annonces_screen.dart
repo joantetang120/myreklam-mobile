@@ -22,6 +22,7 @@ import 'package:myreklam/screens/demande_detail_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/formation_card.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/utils/user_session.dart';
 
 class ProAnnoncesScreen extends StatefulWidget {
@@ -3956,7 +3957,11 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                   proProfile?['logo_url']?.toString() ??
                   user['avatar_url']?.toString();
 
-              return Padding(
+              return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -4150,7 +4155,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                     ],
                   ],
                 ),
-              );
+              ));
             }
 
             return Padding(

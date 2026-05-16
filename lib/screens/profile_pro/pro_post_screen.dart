@@ -13,6 +13,7 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
@@ -2126,7 +2127,11 @@ class _ProPostScreenState extends State<ProPostScreen>
                   proProfile?['logo_url']?.toString() ??
                   user['avatar_url']?.toString();
 
-              return Padding(
+              return reportableCommentGesture(
+                context: context,
+                comment: comment,
+                currentUserId: _currentUserId,
+                child: Padding(
                 padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2320,7 +2325,7 @@ class _ProPostScreenState extends State<ProPostScreen>
                     ],
                   ],
                 ),
-              );
+              ));
             }
 
             return Padding(
