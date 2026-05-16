@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:myreklam/utils/user_session.dart';
 import 'api_client.dart';
 
 /// Service for handling Stripe payments
@@ -153,7 +154,11 @@ class StripePaymentService {
       );
 
       if (response['success'] == true) {
-        return response['subscription'] as Map<String, dynamic>?;
+        final subscription = response['subscription'] as Map<String, dynamic>?;
+        if (subscription != null) {
+          UserSession().updateFromApi(subscription: Map<String, dynamic>.from(subscription));
+        }
+        return subscription;
       }
 
       return null;

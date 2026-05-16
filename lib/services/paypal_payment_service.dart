@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:myreklam/utils/user_session.dart';
 import 'api_client.dart';
 
 class PayPalPaymentService {
@@ -54,7 +55,13 @@ class PayPalPaymentService {
       throw Exception(response['message'] ?? 'Failed to capture PayPal payment');
     }
 
-    return response['subscription'];
+    final subscription = response['subscription'];
+    if (subscription is Map) {
+      UserSession().updateFromApi(
+        subscription: Map<String, dynamic>.from(subscription),
+      );
+    }
+    return subscription;
   }
 
   /// Process full PayPal payment flow

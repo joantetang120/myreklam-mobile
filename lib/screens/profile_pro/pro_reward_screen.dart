@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/mys_history_screen.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:intl/intl.dart';
@@ -17,6 +19,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
   // Historique state
   List<Map<String, dynamic>> _earnings = [];
   bool _isLoadingEarnings = true;
+  bool _isConverting = false;
   double _currentMys = 0;
 
   // Level thresholds
@@ -125,6 +128,111 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
     }
   }
 
+  Future<void> _handleConvertMys() async {
+    if (!SubscriptionHelper.canAccessFeature(ProFeature.convertMysToRewards)) {
+      SubscriptionHelper.showPremiumRequiredDialog(
+        context,
+        featureName: 'Conversion des My\'s en récompense',
+      );
+      return;
+    }
+
+    final availableMys = _currentMys > 0 ? _currentMys : UserSession().mys;
+    if (availableMys < 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vous devez avoir au moins 1 My\'s à convertir.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final controller = TextEditingController(
+      text: availableMys.toStringAsFixed(availableMys % 1 == 0 ? 0 : 2),
+    );
+
+    final amount = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Convertir vos My\'s'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Solde disponible: $availableMys My\'s'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Montant à convertir',
+                suffixText: 'My\'s',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final parsed = double.tryParse(
+                controller.text.trim().replaceAll(',', '.'),
+              );
+              if (parsed == null || parsed < 1 || parsed > availableMys) {
+                return;
+              }
+              Navigator.pop(ctx, parsed);
+            },
+            child: const Text('Convertir'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+    if (amount == null) return;
+
+    setState(() => _isConverting = true);
+    try {
+      final response = await MysEarningService().convertMys(amount: amount);
+      final conversion = response['conversion'];
+      final newBalance = conversion is Map
+          ? double.tryParse(conversion['new_balance'].toString())
+          : null;
+
+      if (newBalance != null) {
+        setState(() => _currentMys = newBalance);
+        UserSession().updateMys(newBalance);
+      }
+
+      await _loadEarningsHistory();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            response['message']?.toString() ??
+                'Conversion enregistrée avec succès.',
+          ),
+          backgroundColor: const Color(0xFF3AAE5E),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isConverting = false);
+    }
+  }
+
   String _formatDate(String? dateStr) {
     if (dateStr == null) return '';
     try {
@@ -152,6 +260,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
       'job_application' => 'Candidature',
       'referral_particulier' => 'Parrainage particulier',
       'referral_pro' => 'Parrainage entreprise',
+      'mys_conversion' => 'Conversion récompense',
       _ => actionType,
     };
   }
@@ -229,11 +338,13 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: _isConverting ? null : _handleConvertMys,
                     icon: const Icon(Icons.swap_horiz, size: 18),
-                    label: const Text(
-                      'Convertir en récompenses',
-                      style: TextStyle(
+                    label: Text(
+                      _isConverting
+                          ? 'Conversion...'
+                          : 'Convertir en récompenses',
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -883,7 +994,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                   child: _buildHistoryRow(
                     earning['description'] ?? _getActionLabel(earning['action_type']),
                     _formatDate(earning['created_at']),
-                    '+ ${earning['amount']} My\'s',
+                    _formatMysAmount(earning['amount']),
                     _getActionLabel(earning['action_type']),
                   ),
                 );
@@ -984,6 +1095,12 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
         ],
       ),
     );
+  }
+
+  String _formatMysAmount(dynamic rawAmount) {
+    final amount = double.tryParse(rawAmount.toString()) ?? 0;
+    final formatted = amount.abs().toStringAsFixed(amount % 1 == 0 ? 0 : 2);
+    return amount < 0 ? '- $formatted My\'s' : '+ $formatted My\'s';
   }
 
   Widget _buildEarnMoreSection() {
@@ -1109,6 +1226,14 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                   'Parrainez une entreprise et gagnez vos premiers My\'s dès son inscription !',
               reward: '2 My\'s',
               index: 8,
+            ),
+            _buildEarnItem(
+              icon: Icons.diamond_outlined,
+              title: 'Parrainage d\'entreprise Premium',
+              subtitle:
+                  'Parrainez une entreprise Premium et recevez un bonus renforce.',
+              reward: '5 My\'s',
+              index: 9,
               isLast: true,
             ),
           ],

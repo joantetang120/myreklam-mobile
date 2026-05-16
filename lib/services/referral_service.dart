@@ -17,7 +17,7 @@ class ReferralService {
     required String referralCode,
   }) async {
     return await _api.post('/referral/validate', body: {
-      'referral_code': referralCode,
+      'parrainage_code': referralCode,
     });
   }
 }
