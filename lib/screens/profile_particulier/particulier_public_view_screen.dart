@@ -1629,6 +1629,131 @@ class _ParticulierPublicViewScreenState
     );
   }
 
+  Future<void> _showReportReasonDialog() async {
+    final targetId = widget.userId ?? _profileResponse?['user']?['id']?.toString();
+    if (targetId == null || targetId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'identifier ce compte.')),
+      );
+      return;
+    }
+
+    final profile = _profileResponse?['profile'];
+    final displayName = (profile is Map)
+        ? (profile['pseudo']?.toString() ?? 'ce compte')
+        : 'ce compte';
+    final reasonController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        String? reasonError;
+        bool isSubmitting = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Signaler le compte'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Pourquoi voulez-vous signaler $displayName ?'),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: reasonController,
+                  minLines: 3,
+                  maxLines: 5,
+                  maxLength: 1000,
+                  textInputAction: TextInputAction.newline,
+                  decoration: InputDecoration(
+                    hintText: 'Expliquez la raison du signalement...',
+                    errorText: reasonError,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () => Navigator.pop(dialogContext),
+                child: Text(
+                  'Annuler',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        final reason = reasonController.text.trim();
+                        if (reason.length < 10) {
+                          setDialogState(() {
+                            reasonError =
+                                'Veuillez saisir au moins 10 caracteres.';
+                          });
+                          return;
+                        }
+
+                        setDialogState(() {
+                          isSubmitting = true;
+                          reasonError = null;
+                        });
+
+                        try {
+                          await _profileService.reportUser(targetId, reason);
+                          if (!mounted) return;
+                          Navigator.pop(dialogContext);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Signalement envoye'),
+                              backgroundColor: Color(0xFF3AAE5E),
+                            ),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          setDialogState(() {
+                            isSubmitting = false;
+                            reasonError = e is ApiException
+                                ? e.firstError
+                                : 'Impossible d\'envoyer le signalement.';
+                          });
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Signaler',
+                        style: TextStyle(color: Colors.white),
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    reasonController.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoadingProfile) {
@@ -1686,7 +1811,7 @@ class _ParticulierPublicViewScreenState
                   icon: const Icon(Icons.more_vert, color: Colors.black),
                   onSelected: (value) {
                     if (value == 'report') {
-                      _showReportConfirmation();
+                      _showReportReasonDialog();
                     }
                   },
                   itemBuilder: (context) => [
