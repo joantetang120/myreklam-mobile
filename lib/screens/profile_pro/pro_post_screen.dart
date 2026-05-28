@@ -1428,9 +1428,39 @@ class _ProPostScreenState extends State<ProPostScreen>
       color: const Color(0xFF3AAE5E),
       child: ListView.builder(
         padding: const EdgeInsets.all(12),
-        itemCount: postsOverride.length,
+        itemCount: postsOverride.length + 1,
         itemBuilder: (context, index) {
-          final post = postsOverride[index];
+          if (index == 0) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3AAE5E).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFF3AAE5E).withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Color(0xFF3AAE5E), size: 16),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Pour supprimer un post, glissez vers la gauche',
+                      style: TextStyle(
+                        color: Color(0xFF3AAE5E),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+          final post = postsOverride[index - 1];
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: _buildPostCard(post),
