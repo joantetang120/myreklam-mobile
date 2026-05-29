@@ -43,35 +43,55 @@ class PushNotificationService {
     // Initialize local notifications for foreground messages
     await _initLocalNotifications();
 
-    // Get FCM token
-    _fcmToken = await _messaging.getToken();
-    print('🔔 FCM Token: ${_fcmToken?.substring(0, 30)}...');
+    // Get FCM token (with error handling for simulator or unconfigured devices)
+    try {
+      // On iOS, wait for APNS token first — getToken() throws if APNS isn't ready
+      if (Platform.isIOS) {
+        String? apnsToken;
+        for (int i = 0; i < 5; i++) {
+          try {
+            apnsToken = await _messaging.getAPNSToken();
+          } catch (_) {}
+          if (apnsToken != null) break;
+          await Future.delayed(const Duration(seconds: 1));
+        }
+        if (apnsToken == null) {
+          print('🔔 APNS not available (simulator or APNS not configured) — skipping FCM token');
+          _setupMessageHandlers();
+          print('✅ PushNotificationService initialized (no FCM token)');
+          return;
+        }
+      }
 
-    // Register token with backend
-    if (_fcmToken != null) {
-      await _registerTokenWithBackend(_fcmToken!);
+      _fcmToken = await _messaging.getToken();
+      if (_fcmToken != null) {
+        print('🔔 FCM Token: ${_fcmToken!.substring(0, 30)}...');
+        await _registerTokenWithBackend(_fcmToken!);
+      }
+    } catch (e) {
+      print('🔔 Push notifications not available: $e');
+      print('   (This is normal on simulator or if APNS is not configured)');
     }
 
-    // Listen for token refresh
+    _setupMessageHandlers();
+
+    print('✅ PushNotificationService initialized');
+  }
+
+  /// Wire up token-refresh and message listeners (safe to call even without FCM token)
+  void _setupMessageHandlers() {
     _messaging.onTokenRefresh.listen((token) {
       print('🔔 FCM Token refreshed');
       _fcmToken = token;
       _registerTokenWithBackend(token);
     });
 
-    // Handle foreground messages
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-
-    // Handle message when app is opened from background
     FirebaseMessaging.onMessageOpenedApp.listen(_handleMessageOpenedApp);
 
-    // Check if app was opened from a terminated state
-    final initialMessage = await _messaging.getInitialMessage();
-    if (initialMessage != null) {
-      _handleMessageOpenedApp(initialMessage);
-    }
-
-    print('✅ PushNotificationService initialized');
+    _messaging.getInitialMessage().then((initialMessage) {
+      if (initialMessage != null) _handleMessageOpenedApp(initialMessage);
+    });
   }
 
   /// Request notification permission
