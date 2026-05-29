@@ -250,6 +250,29 @@ class ConversationService {
     }
   }
 
+  // Récupérer le nombre total de messages non lus
+  Future<int> getUnreadCount() async {
+    try {
+      final token = await TokenStorage.getAccessToken();
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/conversations/unread-count'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['count'] ?? 0;
+      }
+      return 0;
+    } catch (e) {
+      print('❌ Error loading unread count: $e');
+      return 0;
+    }
+  }
+
   // Créer ou récupérer une conversation avec un utilisateur
   Future<ChatConversation> getOrCreateConversation(int otherUserId) async {
     try {

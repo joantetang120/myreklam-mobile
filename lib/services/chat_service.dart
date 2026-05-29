@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'token_storage.dart';
 import '../config/api_config.dart';
 import 'chat_notification_service.dart';
+import '../widgets/custom_bottom_bar.dart';
 
 class ChatService {
   static PusherChannelsFlutter _pusher = PusherChannelsFlutter.getInstance();
@@ -375,6 +376,10 @@ class ChatService {
       );
 
       print('🔔 Notification locale envoyée');
+
+      // Refresh global chat unread count in bottom bar
+      CustomBottomBar.refreshChatNotifier.value =
+          !CustomBottomBar.refreshChatNotifier.value;
     } catch (e) {
       print('❌ Erreur notification: $e');
     }
