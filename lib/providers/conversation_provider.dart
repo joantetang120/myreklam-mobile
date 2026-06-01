@@ -5,6 +5,7 @@ import 'package:myreklam/models/chat_message.dart';
 import 'package:myreklam/services/chat_service.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/message_database.dart';
+import 'package:myreklam/widgets/custom_bottom_bar.dart';
 
 class ConversationProvider extends ChangeNotifier {
   final ConversationService _chatService = ConversationService();
@@ -139,6 +140,10 @@ class ConversationProvider extends ChangeNotifier {
       notifyListeners();
 
       print("DEBUG: New message ${message.id} processed and UI updated");
+
+      // Refresh global chat unread count in bottom bar
+      CustomBottomBar.refreshChatNotifier.value =
+          !CustomBottomBar.refreshChatNotifier.value;
     } catch (e) {
       print('❌ Error handling new message: $e');
     }
@@ -277,6 +282,10 @@ class ConversationProvider extends ChangeNotifier {
         _messagesByConversation[conversationId] = messages
             .map((msg) => msg.isMe ? msg : msg.copyWith(isRead: true))
             .toList();
+
+        // Refresh global chat unread count in bottom bar
+        CustomBottomBar.refreshChatNotifier.value =
+            !CustomBottomBar.refreshChatNotifier.value;
 
         notifyListeners();
       }
