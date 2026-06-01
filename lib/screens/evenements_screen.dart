@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myreklam/services/share_service.dart';
+// Bouton partager masqué — import 'package:myreklam/services/share_service.dart';
 import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
@@ -1219,12 +1219,7 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
             ],
           ),
         ),
-        // Share icon
-        const SizedBox(width: 14),
-        GestureDetector(
-          onTap: () => ShareService.shareEntity(apiSlug, entityId),
-          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
-        ),
+        // Bouton partager masqué
       ],
     );
   }

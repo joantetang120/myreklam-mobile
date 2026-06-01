@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:myreklam/services/share_service.dart';
+// import 'package:myreklam/services/share_service.dart'; // Bouton partager masqué
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/create_post_screen.dart';
 import 'package:myreklam/screens/image_preview_screen.dart';
@@ -3002,12 +3002,12 @@ class _ProPostScreenState extends State<ProPostScreen>
             ),
           ],
         ],
-        // Share icon
-        const SizedBox(width: 14),
-        GestureDetector(
-          onTap: () => ShareService.shareEntity(apiSlug, entityId),
-          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
-        ),
+        // Bouton partager masqué
+        // const SizedBox(width: 14),
+        // GestureDetector(
+        //   onTap: () => ShareService.shareEntity(apiSlug, entityId),
+        //   child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
+        // ),
       ],
     );
   }
