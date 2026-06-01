@@ -3,6 +3,7 @@ import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/conversation_service.dart';
 
 class CustomBottomBar extends StatefulWidget {
   final int currentIndex;
@@ -26,6 +27,14 @@ class CustomBottomBar extends StatefulWidget {
   static final ValueNotifier<bool> refreshNotificationNotifier =
       ValueNotifier<bool>(false);
 
+  /// Global notifier for chat unread count
+  static final ValueNotifier<int> chatCountNotifier = ValueNotifier<int>(0);
+
+  /// Global notifier to trigger chat count refresh
+  static final ValueNotifier<bool> refreshChatNotifier = ValueNotifier<bool>(
+    false,
+  );
+
   const CustomBottomBar({
     super.key,
     required this.currentIndex,
@@ -39,12 +48,14 @@ class CustomBottomBar extends StatefulWidget {
 class _CustomBottomBarState extends State<CustomBottomBar> {
   String? _avatarUrl;
   int _unreadNotifCount = 0;
+  int _unreadChatCount = 0;
 
   @override
   void initState() {
     super.initState();
     _loadAvatar();
     _loadUnreadCount();
+    _loadChatUnreadCount();
     CustomBottomBar.avatarNotifier.addListener(_onAvatarChanged);
     CustomBottomBar.refreshAvatarNotifier.addListener(_onRefreshAvatar);
     CustomBottomBar.notificationCountNotifier.addListener(
@@ -53,6 +64,8 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
     CustomBottomBar.refreshNotificationNotifier.addListener(
       _onRefreshNotificationCount,
     );
+    CustomBottomBar.chatCountNotifier.addListener(_onChatCountChanged);
+    CustomBottomBar.refreshChatNotifier.addListener(_onRefreshChatCount);
   }
 
   @override
@@ -65,6 +78,8 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
     CustomBottomBar.refreshNotificationNotifier.removeListener(
       _onRefreshNotificationCount,
     );
+    CustomBottomBar.chatCountNotifier.removeListener(_onChatCountChanged);
+    CustomBottomBar.refreshChatNotifier.removeListener(_onRefreshChatCount);
     super.dispose();
   }
 
@@ -78,6 +93,30 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
   void _onRefreshNotificationCount() {
     if (!mounted) return;
     _loadUnreadCount();
+  }
+
+  void _onChatCountChanged() {
+    if (!mounted) return;
+    setState(() {
+      _unreadChatCount = CustomBottomBar.chatCountNotifier.value;
+    });
+  }
+
+  void _onRefreshChatCount() {
+    if (!mounted) return;
+    _loadChatUnreadCount();
+  }
+
+  Future<void> _loadChatUnreadCount() async {
+    if (UserSession().isGuest) return;
+
+    try {
+      final count = await ConversationService().getUnreadCount();
+      if (mounted) {
+        setState(() => _unreadChatCount = count);
+        CustomBottomBar.chatCountNotifier.value = count;
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadUnreadCount() async {
@@ -161,6 +200,7 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                 Icons.chat_bubble_outline,
                 Icons.chat_bubble_outline,
                 'Chat',
+                badgeCount: _unreadChatCount,
               ),
               _buildItem(
                 2,
@@ -186,8 +226,9 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
     int index,
     IconData selectedIcon,
     IconData unselectedIcon,
-    String label,
-  ) {
+    String label, {
+    int badgeCount = 0,
+  }) {
     final isSelected = widget.currentIndex == index;
     final color = isSelected
         ? const Color(0xFF2E9B5B)
@@ -222,7 +263,39 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
                       borderRadius: BorderRadius.circular(10),
                     )
                   : null,
-              child: Icon(icon, color: color, size: 26),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon, color: color, size: 26),
+                  if (badgeCount > 0)
+                    Positioned(
+                      top: -4,
+                      right: -4,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Center(
+                          child: Text(
+                            badgeCount > 99 ? '99+' : '$badgeCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             Text(
               label,

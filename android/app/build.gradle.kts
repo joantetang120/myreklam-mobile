@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,6 +7,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
 }
+
+// Keystore properties
+val keystorePassword = "Myrekl@m2029@785"
+val myKeyPassword = "Myrekl@m2029@785"
+val myKeyAlias = "myreklam"
+val myStoreFile = file("../myreklam-key.jks")
 
 android {
     namespace = "com.myreklam.app"
@@ -32,11 +40,19 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = myKeyAlias
+            keyPassword = myKeyPassword
+            storeFile = myStoreFile
+            storePassword = keystorePassword
+            storeType = "PKCS12"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

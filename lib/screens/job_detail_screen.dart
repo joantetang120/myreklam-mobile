@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:myreklam/services/share_service.dart';
+// Bouton partager masqué
+// import 'package:myreklam/services/share_service.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
@@ -24,7 +25,8 @@ import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
-import 'package:share_plus/share_plus.dart';
+// Bouton partager masqué
+// import 'package:share_plus/share_plus.dart';
 
 class _ReactionData {
   int likesCount;
@@ -1937,12 +1939,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             ],
           ),
         ),
-        // Share icon
-        const SizedBox(width: 14),
-        GestureDetector(
-          onTap: () => ShareService.shareEntity(apiSlug, entityId),
-          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
-        ),
+        // Bouton partager masqué
       ],
     );
   }
@@ -3346,24 +3343,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     ),
                   ],
                 ),
-                // Partager (Share) button
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: _shareJob,
-                      icon: Icon(
-                        Icons.share_outlined,
-                        color: Colors.grey[600],
-                        size: 24,
-                      ),
-                    ),
-                    Text(
-                      'Partager',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
+                // Bouton partager masqué
                 //         color: Colors.grey[600],
                 //       ),
                 //     ),
@@ -3692,29 +3672,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     );
   }
 
-  void _shareJob() {
-    final title = widget.jobTitle;
-    final company = widget.companyName;
-    final location = widget.location;
-    final description = widget.description;
-    final jobId = widget.jobOfferId;
-
-    // Deep link URL
-    final String deepLink = ShareService.buildUrl('job-offers', jobId ?? '');
-
-    final String shareText =
-        '''💼 $title
-
-🏢 $company
-📍 $location
-
-$description
-
-$deepLink'''
-            .trim();
-
-    Share.share(shareText, subject: title);
-  }
+  // Bouton partager masqué
+  // void _shareJob() { ... }
 
   static Future<void> _startConversation(
     BuildContext context,

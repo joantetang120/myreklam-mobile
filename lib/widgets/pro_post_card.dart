@@ -279,12 +279,7 @@ class ProPostCard extends StatelessWidget {
                 commentsCount.toString(),
                 onTap: onCommentsTap,
               ),
-              const SizedBox(width: 20),
-              Icon(
-                Icons.share_outlined,
-                color: Colors.grey.withOpacity(0.7),
-                size: 18,
-              ),
+              // Bouton partager masqué
             ],
           ),
         ],

@@ -118,8 +118,7 @@ class MyPostItem extends StatelessWidget {
                 onTap: onCommentsTap,
                 child: _buildStat(Icons.chat_bubble_outline, commentCount.toString()),
               ),
-              const SizedBox(width: 20),
-              _buildStat(Icons.share_outlined, shareCount.toString()),
+              // Bouton partager masqué
             ],
           ),
         ],

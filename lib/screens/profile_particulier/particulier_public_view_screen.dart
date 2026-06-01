@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:myreklam/services/share_service.dart';
+// Bouton partager masqué
+// import 'package:myreklam/services/share_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/demande_detail_screen.dart';
@@ -4112,12 +4113,7 @@ class _ParticulierPublicViewScreenState
             ),
           ],
         ],
-        // Share icon
-        const SizedBox(width: 14),
-        GestureDetector(
-          onTap: () => ShareService.shareEntity(apiSlug, entityId),
-          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
-        ),
+        // Bouton partager masqué
         // For bon plans: show author avatar and name on the left
         if (isBonPlan && authorData != null) ...[
           const Spacer(),

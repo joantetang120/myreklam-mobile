@@ -18,6 +18,7 @@ import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/providers/conversation_provider.dart';
+import 'package:myreklam/widgets/custom_bottom_bar.dart';
 import 'package:intl/intl.dart';
 
 class MessageScreen extends StatefulWidget {
@@ -229,6 +230,10 @@ class _MessageScreenState extends State<MessageScreen> {
 
     // Marquer les messages comme lus
     await _chatService.markAsRead(conversation.id);
+
+    // Refresh global chat unread count in bottom bar
+    CustomBottomBar.refreshChatNotifier.value =
+        !CustomBottomBar.refreshChatNotifier.value;
 
     // Recharger les conversations pour mettre à jour le compteur
     await _loadConversations();

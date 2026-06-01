@@ -58,12 +58,12 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA3voo0Cdm-kN3891rzRLTqoWDS6C1fODQ',
-    appId: '1:166441708619:ios:PLACEHOLDER', // Will be replaced with actual iOS app ID
+    apiKey: 'AIzaSyCR5RvO_ME986BERLVC1uUD3iuXrAQSnP8',
+    appId: '1:166441708619:ios:b9f54d758662bee01b31ce',
     messagingSenderId: '166441708619',
     projectId: 'myreklam-7b2d9',
     storageBucket: 'myreklam-7b2d9.firebasestorage.app',
-    iosClientId: '166441708619-tt4a3fg0ah3g5ol3mmt0f5a65hgif4f8.apps.googleusercontent.com',
-    iosBundleId: 'com.example.myreklam',
+    iosClientId: '166441708619-29cn3er22uqtg54bbeb4eqc8ap2dg5ii.apps.googleusercontent.com',
+    iosBundleId: 'com.myreklam.app',
   );
 }
