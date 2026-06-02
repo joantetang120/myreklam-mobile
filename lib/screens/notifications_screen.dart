@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/profile_service.dart';
 import 'package:intl/intl.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -123,6 +126,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       });
     } catch (e) {
       debugPrint('Error marking all as read: $e');
+    }
+  }
+
+  Future<void> _navigateToFollowerProfile(
+    Map<String, dynamic> notif,
+  ) async {
+    final data = notif['data'] as Map<String, dynamic>?;
+    final followerId =
+        data?['follower_id']?.toString() ?? notif['reference_id']?.toString();
+    if (followerId == null || followerId.isEmpty) return;
+
+    try {
+      final profile = await ProfileService().getUserProfile(followerId);
+      if (!mounted) return;
+      final user = profile['user'] as Map<String, dynamic>?;
+      final accountType = user?['account_type']?.toString().toLowerCase() ?? '';
+      final isPro = accountType == 'pro' || accountType == 'professionnel';
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => isPro
+              ? ProPublicViewScreen(userId: followerId)
+              : ParticulierPublicViewScreen(userId: followerId),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error navigating to follower profile: $e');
     }
   }
 
@@ -384,6 +414,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       onTap: () {
         if (!isRead) {
           _markAsRead(notif['id']);
+        }
+        if (type == 'new_follower') {
+          _navigateToFollowerProfile(notif);
         }
       },
       child: Container(
