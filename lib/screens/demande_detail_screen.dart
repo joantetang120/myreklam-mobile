@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myreklam/services/share_service.dart';
+// Bouton partager masqué — import 'package:myreklam/services/share_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:icons_launcher/cli_commands.dart';
@@ -22,7 +22,7 @@ import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/utils/subscription_helper.dart';
-import 'package:share_plus/share_plus.dart';
+// Bouton partager masqué — import 'package:share_plus/share_plus.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
 
 class _ReactionData {
@@ -1812,27 +1812,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     ),
                   ],
                 ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: _shareDemande,
-                      icon: Icon(
-                        Icons.share_outlined,
-                        color: Colors.grey[600],
-                        size: 24,
-                      ),
-                    ),
-                    Text(
-                      'Partager',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                        fontFamily: 'Manjari',
-                      ),
-                    ),
-                  ],
-                ),
+                // Bouton partager masqué
               ],
             ),
             const SizedBox(height: 16),
@@ -2089,37 +2069,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     );
   }
 
-  void _shareDemande() {
-    final title = widget.demandeTitle;
-    final nature = widget.nature ?? 'Général';
-    final type = widget.type ?? '';
-    final location =
-        widget.locationCity ??
-        (widget.nationwide ? 'Toute la France' : 'Lieu non précisé');
-    final description = widget.description;
-    final demandeId = widget.demandeId;
-    final budget = widget.budgetMax;
-
-    // Deep link URL
-    final String deepLink = ShareService.buildUrl('demandes', demandeId ?? '');
-
-    final String budgetText = budget != null && budget.isNotEmpty
-        ? '\n💰 Budget max: $budget'
-        : '';
-
-    final String shareText =
-        '''📋 $title
-
-🏷️ $nature${type.isNotEmpty ? ' • $type' : ''}
-📍 $location$budgetText
-
-$description
-
-$deepLink'''
-            .trim();
-
-    Share.share(shareText, subject: title);
-  }
+  // Bouton partager masqué — méthode _shareDemande désactivée
 
   void _showDeleteDialog(BuildContext context) {
     if (widget.demandeId == null) {
@@ -4091,12 +4041,7 @@ $deepLink'''
             ],
           ),
         ),
-        // Share icon
-        const SizedBox(width: 14),
-        GestureDetector(
-          onTap: () => ShareService.shareEntity(apiSlug, entityId),
-          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
-        ),
+        // Bouton partager masqué
       ],
     );
   }

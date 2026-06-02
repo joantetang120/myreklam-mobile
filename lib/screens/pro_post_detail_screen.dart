@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:myreklam/services/share_service.dart';
+// Bouton partager masqué
+// import 'package:myreklam/services/share_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
@@ -23,7 +24,8 @@ import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
-import 'package:share_plus/share_plus.dart';
+// Bouton partager masqué
+// import 'package:share_plus/share_plus.dart';
 
 class _ReactionData {
   int likesCount;
@@ -1585,14 +1587,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   );
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.share, color: Color(0xFF3AAE5E)),
-                title: const Text('Partager via...'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Implement native share
-                },
-              ),
+              // Bouton partager masqué
               const SizedBox(height: 10),
             ],
           ),
@@ -1746,12 +1741,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             ],
           ),
         ),
-        // Share icon
-        const SizedBox(width: 14),
-        GestureDetector(
-          onTap: () => ShareService.shareEntity(apiSlug, entityId),
-          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
-        ),
+        // Bouton partager masqué
         // For bon plans: show author avatar and name on the left
         if (isBonPlan && authorData != null) ...[
           const Spacer(),
@@ -2518,27 +2508,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           ),
                         ],
                       ),
-                      // Partager (Share) button
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            onPressed: _shareBonPlan,
-                            icon: Icon(
-                              Icons.share_outlined,
-                              color: Colors.grey[600],
-                              size: 24,
-                            ),
-                          ),
-                          Text(
-                            'Partager',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
+                      // Bouton partager masqué
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -4698,42 +4668,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     );
   }
 
-  void _shareBonPlan() {
-    final title = widget.title;
-    final author = widget.name;
-    final location = widget.availability;
-    final price = widget.price;
-    final originalPrice = widget.originalPrice;
-    final description = widget.description;
-    final bonPlanId = widget.bonPlanId;
-    final discount = widget.discount;
-
-    // Deep link URL
-    final String deepLink = ShareService.buildUrl('bon-plans', bonPlanId ?? '');
-
-    final String priceText = price != null && price.isNotEmpty
-        ? (originalPrice != null && originalPrice.isNotEmpty
-              ? '\n💰 ~~$originalPrice~~ → **$price**'
-              : '\n💰 $price')
-        : '';
-
-    final String discountText = discount != null && discount.isNotEmpty
-        ? '\n🏷️ Réduction: $discount'
-        : '';
-
-    final String shareText =
-        '''🛍️ $title
-
-👤 $author
-📍 $location$priceText$discountText
-
-$description
-
-$deepLink'''
-            .trim();
-
-    Share.share(shareText, subject: title);
-  }
+  // Bouton partager masqué
+  // void _shareBonPlan() { ... }
 
   Widget _buildTag(String text, IconData icon, Color color) {
     if (text.isEmpty) return const SizedBox.shrink();

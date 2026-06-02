@@ -1144,14 +1144,15 @@ class _OwnStoryOverlay extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              GestureDetector(
-                onTap: () {},
-                child: const Icon(
-                  Icons.share_outlined,
-                  color: Colors.white,
-                  size: 26,
-                ),
-              ),
+              // Bouton partager masqué
+              // GestureDetector(
+              //   onTap: () {},
+              //   child: const Icon(
+              //     Icons.share_outlined,
+              //     color: Colors.white,
+              //     size: 26,
+              //   ),
+              // ),
             ],
           ),
         ),

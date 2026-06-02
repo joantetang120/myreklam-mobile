@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:myreklam/services/share_service.dart';
+// Bouton partager masqué — import 'package:myreklam/services/share_service.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -22,7 +22,7 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
-import 'package:share_plus/share_plus.dart';
+// Bouton partager masqué — import 'package:share_plus/share_plus.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
 
 class _ReactionData {
@@ -632,12 +632,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             ],
           ),
         ),
-        // Share icon
-        const SizedBox(width: 14),
-        GestureDetector(
-          onTap: () => ShareService.shareEntity(apiSlug, entityId),
-          child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
-        ),
+        // Bouton partager masqué
       ],
     );
   }
@@ -1389,13 +1384,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 color: const Color(0xFF6001D2),
                 onTap: _addToYahooCalendar,
               ),
-              const SizedBox(height: 8),
-              _buildCalendarOption(
-                icon: Icons.share,
-                label: 'Partager l\'événement',
-                color: const Color(0xFF03A9F4),
-                onTap: _shareEvent,
-              ),
+              // Bouton partager masqué
             ],
           ),
           actions: [
@@ -2229,17 +2218,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   ],
                 ),
-                // Partager (Share) button
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: _shareEvent,
-                      icon: Icon(Icons.share_outlined, color: Colors.grey[600], size: 24),
-                    ),
-                    Text('Partager', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                  ],
-                ),
+                // Bouton partager masqué
               ],
             ),
             const SizedBox(height: 16),
@@ -2634,26 +2613,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     }
   }
 
-  void _shareEvent() {
-    final title = widget.eventTitle;
-    final description = widget.description;
-    final location = widget.locationCity ?? 'Lieu non précisé';
-    final eventId = widget.eventId ?? '';
-
-    // Deep link URL - you can customize this based on your domain
-    final String deepLink = ShareService.buildUrl('events', eventId);
-
-    final String shareText = '''🎉 $title
-
-📍 $location
-
-$description
-
-$deepLink'''
-        .trim();
-
-    Share.share(shareText, subject: title);
-  }
+  // Bouton partager masqué — méthode _shareEvent désactivée
 
   void _showDeleteDialog(BuildContext context) {
     if (widget.eventId == null) {
