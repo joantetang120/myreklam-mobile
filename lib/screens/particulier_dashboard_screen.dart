@@ -3025,11 +3025,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     ];
     final price = _formatPrice(event);
     final isNationwide = event['is_nationwide'] == true;
-    final coverageArea = isNationwide
+    final area = isNationwide
         ? 'Toute la France'
         : (event['coverage_area']?.toString() ??
               event['location']?.toString() ??
               'Non spécifié');
+    final city = event['location_city']?.toString();
+    final coverageArea = (city != null && city.isNotEmpty)
+        ? '$area - $city'
+        : area;
 
     final eventId = event['id']?.toString() ?? '';
 

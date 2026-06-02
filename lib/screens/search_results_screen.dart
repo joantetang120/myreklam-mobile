@@ -954,7 +954,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     final title = event['title']?.toString() ?? 'Événement';
     final createdAt = event['created_at']?.toString();
     final eventDate = event['event_date']?.toString() ?? '';
-    final location = event['location']?.toString() ?? '';
+    final isNationwide = event['is_nationwide'] == true;
+    final area = isNationwide
+        ? 'Toute la France'
+        : (event['coverage_area']?.toString() ??
+           event['location']?.toString() ??
+           'Non spécifié');
+    final city = event['location_city']?.toString();
+    final location = (city != null && city.isNotEmpty)
+        ? '$area - $city'
+        : area;
     final price = event['price']?.toString();
     final mediaFiles = event['media_files'] as List? ?? [];
     final imageUrl = mediaFiles.isNotEmpty ? mediaFiles.first['url']?.toString() : null;

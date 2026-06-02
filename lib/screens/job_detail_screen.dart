@@ -120,31 +120,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   /// Check if edit option should be shown
   /// Hide edit if: 1) post is older than 2 hours OR 2) people have applied
   bool get _canEdit {
-    if (!widget.isOwner) return false;
-
-    final data = widget.jobOfferData;
-    if (data == null) return true; // Allow edit if no data (fallback)
-
-    // Check if post is older than 2 hours
-    final createdAtStr = data['created_at']?.toString();
-    if (createdAtStr != null && createdAtStr.isNotEmpty) {
-      final createdAt = DateTime.tryParse(createdAtStr);
-      if (createdAt != null) {
-        final twoHoursAgo = DateTime.now().subtract(const Duration(hours: 2));
-        if (createdAt.isBefore(twoHoursAgo)) {
-          return false; // Post is older than 2 hours
-        }
-      }
-    }
-
-    // Check if people have applied to this job offer
-    final applicationsCount = data['applications_count'] ?? 0;
-    if (applicationsCount is int && applicationsCount > 0) {
-      return false; // People have applied
-    }
-
-    return true;
+    return widget.isOwner;
   }
+
 
   @override
   void initState() {
@@ -2929,7 +2907,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          if (_canEdit)
+          if (widget.isOwner)
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
@@ -2967,20 +2945,21 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          size: 20,
-                          color: Color(0xFF616161),
-                        ),
-                        SizedBox(width: 12),
-                        Text('Modifier'),
-                      ],
+                  if (_canEdit)
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 20,
+                            color: Color(0xFF616161),
+                          ),
+                          SizedBox(width: 12),
+                          Text('Modifier'),
+                        ],
+                      ),
                     ),
-                  ),
                   const PopupMenuItem(
                     value: 'delete',
                     child: Row(

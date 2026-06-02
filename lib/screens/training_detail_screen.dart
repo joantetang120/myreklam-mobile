@@ -143,33 +143,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   bool _isLoadingSimilar = false;
 
   /// Check if edit option should be shown
-  /// Hide edit if: 1) post is older than 2 hours OR 2) people have subscribed
   bool get _canEdit {
-    if (!widget.isOwner) return false;
-
-    final data = widget.trainingData;
-    if (data == null) return true; // Allow edit if no data (fallback)
-
-    // Check if post is older than 2 hours
-    final createdAtStr = data['created_at']?.toString();
-    if (createdAtStr != null && createdAtStr.isNotEmpty) {
-      final createdAt = DateTime.tryParse(createdAtStr);
-      if (createdAt != null) {
-        final twoHoursAgo = DateTime.now().subtract(const Duration(hours: 2));
-        if (createdAt.isBefore(twoHoursAgo)) {
-          return false; // Post is older than 2 hours
-        }
-      }
-    }
-
-    // Check if people have subscribed to this training
-    final subscriptionsCount = data['subscriptions_count'] ?? 0;
-    if (subscriptionsCount is int && subscriptionsCount > 0) {
-      return false; // People have subscribed
-    }
-
-    return true;
+    return widget.isOwner;
   }
+
 
   @override
   void initState() {
@@ -1040,7 +1017,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          if (_canEdit)
+          if (widget.isOwner)
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
@@ -1071,20 +1048,21 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          size: 20,
-                          color: Color(0xFF616161),
-                        ),
-                        SizedBox(width: 12),
-                        Text('Modifier'),
-                      ],
+                  if (_canEdit)
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 20,
+                            color: Color(0xFF616161),
+                          ),
+                          SizedBox(width: 12),
+                          Text('Modifier'),
+                        ],
+                      ),
                     ),
-                  ),
                   const PopupMenuItem(
                     value: 'delete',
                     child: Row(
