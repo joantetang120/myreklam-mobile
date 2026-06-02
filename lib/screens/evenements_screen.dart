@@ -1,32 +1,18 @@
 import 'package:flutter/material.dart';
-// Bouton partager masqué — import 'package:myreklam/services/share_service.dart';
+import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
+import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/services/reaction_cache_service.dart';
+import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
+import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
-import 'package:myreklam/services/api_client.dart';
-import 'package:myreklam/config/api_config.dart';
-import 'package:myreklam/utils/user_session.dart';
-import 'package:myreklam/services/reaction_cache_service.dart';
-import 'package:myreklam/widgets/post_content_card.dart';
-
-// Helper class for reaction data
-class _ReactionData {
-  int likesCount;
-  int commentsCount;
-  String? userReaction;
-
-  _ReactionData({
-    this.likesCount = 0,
-    this.commentsCount = 0,
-    this.userReaction,
-  });
-}
 
 class EvenementsScreen extends StatefulWidget {
   const EvenementsScreen({super.key});
@@ -35,199 +21,145 @@ class EvenementsScreen extends StatefulWidget {
   State<EvenementsScreen> createState() => _EvenementsScreenState();
 }
 
+class _ReactionData {
+  int likesCount;
+  int commentsCount;
+  int repostsCount;
+  String? userReaction;
+
+  _ReactionData({
+    this.likesCount = 0,
+    this.commentsCount = 0,
+    this.repostsCount = 0,
+    this.userReaction,
+  });
+}
+
 class _EvenementsScreenState extends State<EvenementsScreen> {
+  static const _defaultAvatar =
+      'assets/images/dashboard_particulier/Ellipse 10.png';
+
   List<Map<String, dynamic>> _items = [];
   bool _isLoading = true;
   String? _error;
   String? _currentUserId;
 
+  final Map<String, _ReactionData> _reactions = {};
+
   @override
   void initState() {
     super.initState();
-    ReactionCacheService.init().then((_) => _loadData());
+    _loadData();
+    if (!UserSession().isGuest) {
+      _getCurrentUserId();
+    }
   }
 
   Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
+    setState(() => _isLoading = true);
     try {
-      final response = await ApiClient().get(
-        '/feed/latest?type=event&limit=20',
-      );
+      final response = await ApiClient().get('/feed/latest?type=event&limit=50');
       final data = response['data'];
       List<Map<String, dynamic>> fetched = [];
-      if (data is Map<String, dynamic> && data['items'] is List) {
+      if (data is Map && data['items'] is List) {
         fetched = List<Map<String, dynamic>>.from(data['items'] as List);
+      } else if (data is List) {
+        fetched = List<Map<String, dynamic>>.from(data);
       }
       if (mounted) {
-        // Seed reactions BEFORE setState to prevent _getReaction pre-populating with empty data
-        for (final item in fetched) {
-          final itemId = item['id']?.toString() ?? '';
-          if (itemId.isNotEmpty) {
-            _seedReactionFromResource('events', itemId, item, force: true);
-          }
-        }
         setState(() {
           _items = fetched;
           _isLoading = false;
-        });
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.message;
-          _isLoading = false;
+          _error = null;
         });
       }
     } catch (e) {
+      debugPrint('Error loading events: $e');
       if (mounted) {
         setState(() {
-          _error = 'Impossible de charger les évènements.';
           _isLoading = false;
+          _error = 'Impossible de charger les évènements.';
         });
       }
     }
   }
 
-  String? _buildStorageUrl(String? path) {
-    if (path == null || path.isEmpty) return null;
-    return ApiConfig.resolveMediaUrl(path);
+  String? _buildStorageUrl(String? url) {
+    if (url == null || url.isEmpty) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('assets/')) return url;
+    return ApiConfig.resolveMediaUrl(url);
   }
 
   String _buildTimeAgo(String? dateStr) {
     if (dateStr == null) return '';
     try {
       final date = DateTime.parse(dateStr);
-      final diff = DateTime.now().difference(date);
-      if (diff.inDays > 7) return 'il y a ${diff.inDays ~/ 7} semaine(s)';
-      if (diff.inDays > 0) return 'il y a ${diff.inDays} jour(s)';
-      if (diff.inHours > 0) return 'il y a ${diff.inHours} heure(s)';
-      return 'il y a ${diff.inMinutes} min';
+      final now = DateTime.now();
+      final diff = now.difference(date);
+      if (diff.inMinutes < 1) return "À l'instant";
+      if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes} min';
+      if (diff.inHours < 24) return 'il y a ${diff.inHours}h';
+      if (diff.inDays < 7) return 'il y a ${diff.inDays}j';
+      return 'il y a ${diff.inDays}j';
     } catch (_) {
-      return '';
+      return dateStr;
     }
+  }
+
+  int _asInt(dynamic val) {
+    if (val == null) return 0;
+    if (val is int) return val;
+    if (val is double) return val.toInt();
+    if (val is String) return int.tryParse(val) ?? 0;
+    return 0;
+  }
+
+  String _extractMediaUrl(Map<String, dynamic> event) {
+    final mediaFiles = event['media_files'] as List? ?? event['media'] as List? ?? [];
+    for (final m in mediaFiles) {
+      if (m is Map && m['url'] != null) {
+        final url = _buildStorageUrl(m['url']?.toString());
+        if (url != null && url.isNotEmpty) return url;
+      }
+    }
+    return '';
   }
 
   String _formatEventDate(Map<String, dynamic> event) {
-    final durationType = event['duration_type']?.toString();
-    final eventDate = event['event_date']?.toString();
-    final startDate = event['start_date']?.toString();
-    final endDate = event['end_date']?.toString();
-
-    String formatDate(String? iso) {
-      if (iso == null) return '';
-      try {
-        final date = DateTime.parse(iso);
-        const months = [
-          'janvier',
-          'février',
-          'mars',
-          'avril',
-          'mai',
-          'juin',
-          'juillet',
-          'août',
-          'septembre',
-          'octobre',
-          'novembre',
-          'décembre',
-        ];
-        return '${date.day} ${months[date.month - 1]} ${date.year}';
-      } catch (_) {
-        return iso;
-      }
+    final dateStr = event['event_date']?.toString() ??
+        event['start_date']?.toString() ??
+        event['date']?.toString();
+    if (dateStr == null) return 'Date non spécifiée';
+    try {
+      final date = DateTime.parse(dateStr);
+      final months = [
+        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+      ];
+      return '${date.day} ${months[date.month - 1]} ${date.year}';
+    } catch (_) {
+      return dateStr;
     }
-
-    if (durationType == 'permanent') return 'Permanent';
-
-    // Handle multi_day with start/end dates like bon plan validity
-    if (durationType == 'multi_day') {
-      final hasStart = startDate != null && startDate.isNotEmpty;
-      final hasEnd = endDate != null && endDate.isNotEmpty;
-
-      if (hasStart && hasEnd) {
-        final formattedStart = formatDate(startDate);
-        final formattedEnd = formatDate(endDate);
-        return 'Du $formattedStart Au $formattedEnd';
-      } else if (hasStart) {
-        final formatted = formatDate(startDate);
-        return 'À partir du $formatted';
-      } else if (hasEnd) {
-        final formatted = formatDate(endDate);
-        return 'Jusqu\'au $formatted';
-      }
-      return 'À partir de bientôt';
-    }
-
-    final formatted = formatDate(eventDate);
-    return formatted.isNotEmpty
-        ? 'A lieu, $formatted'
-        : 'Date annoncée prochainement';
   }
 
   String _stripHtml(String html) {
-    return html.replaceAll(RegExp(r'<[^>]*>'), '').trim();
+    final regExp = RegExp(r'<[^>]*>');
+    return html.replaceAll(regExp, '').trim();
   }
 
-  String get _defaultAvatar =>
-      'assets/images/dashboard_particulier/Ellipse 10.png';
-
-  String? _extractMediaUrl(Map<String, dynamic> resource) {
-    final media = resource['media'] ?? resource['media_files'];
-    if (media is List && media.isNotEmpty) {
-      final first = media.first;
-      if (first is Map<String, dynamic>) {
-        final url = first['url']?.toString();
-        if (url != null && url.isNotEmpty) {
-          if (url.startsWith('http')) return url;
-          return "${ApiConfig.baseUrl.replaceFirst('/api', '')}$url";
-        }
-      }
-    }
-    final cover = resource['cover_url']?.toString();
-    if (cover != null && cover.isNotEmpty) {
-      if (cover.startsWith('http')) return cover;
-      return "${ApiConfig.baseUrl.replaceFirst('/api', '')}$cover";
-    }
-    return null;
-  }
-
-  String _formatEventStatus(String? startDateStr, String? endDateStr) {
-    if (startDateStr == null || startDateStr.isEmpty) return 'À venir';
-    try {
-      final start = DateTime.parse(startDateStr);
-      final now = DateTime.now();
-      if (endDateStr != null && endDateStr.isNotEmpty) {
-        final end = DateTime.parse(endDateStr);
-        if (now.isAfter(end)) return 'Terminé';
-      }
-      if (now.isAfter(start)) return 'En cours';
-      return 'À venir';
-    } catch (_) {
-      return 'À venir';
-    }
-  }
-
-  int _asInt(dynamic value) {
-    if (value is int) return value;
-    if (value is double) return value.toInt();
-    return int.tryParse(value?.toString() ?? '') ?? 0;
+  bool canReportResource(Map<String, dynamic> resource) {
+    if (UserSession().isGuest) return false;
+    final userId = resource['user_id']?.toString();
+    return userId != _currentUserId;
   }
 
   Widget _buildNotifBubble() {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-        );
-      },
+      onTap: () {},
       child: Container(
-        width: 32,
-        height: 32,
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: const Color(0xFFE6F7EF),
@@ -257,6 +189,7 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
+            expandedHeight: 120,
             floating: false,
             pinned: true,
             snap: false,
@@ -296,26 +229,12 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
                         padding: const EdgeInsets.only(
                           left: 16,
                           right: 16,
-                          bottom: 10,
+                          bottom: 20,
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: 8,
-                                right: 6,
-                              ),
-                              child: GestureDetector(
-                                onTap: () => Navigator.pop(context),
-                                child: const Icon(
-                                  Icons.arrow_back,
-                                  color: Colors.white,
-                                  size: 22,
-                                ),
-                              ),
-                            ),
                             const Text(
                               'Evènements',
                               style: TextStyle(
@@ -356,42 +275,18 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
                 );
               },
             ),
-            actions: [
-              Container(
-                margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF9E6),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFFD700)),
-                ),
-                child: Row(
-                  children: [
-                    Image.asset(
-                      'assets/images/profil_pro/reward.png',
-                      width: 12,
-                      height: 12,
-                    ),
-                    SizedBox(width: 4),
-                    Text(
-                      UserSession().mys.toString(),
-                      style: TextStyle(
-                        color: Color(0xFFFFD700),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      'My\'s',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                  size: 22,
                 ),
               ),
+            ),
+            actions: [
               Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: _buildNotifBubble(),
@@ -490,6 +385,10 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
                 final item = _items[index];
                 final resource =
                     item['resource'] as Map<String, dynamic>? ?? {};
+                final entityId = resource['id']?.toString() ?? '';
+                if (entityId.isNotEmpty) {
+                  _seedReactionFromResource('events', entityId, resource);
+                }
                 return _buildEventCard(resource);
               }, childCount: _items.length),
             ),
@@ -1002,8 +901,6 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
   // ─────────────────────────────────────────────────────────────
   // REACTION BAR & SUPPORTING METHODS (copied from dashboard)
   // ─────────────────────────────────────────────────────────────
-
-  final Map<String, _ReactionData> _reactions = {};
 
   String _reactionKey(String apiSlug, String entityId) => '$apiSlug:$entityId';
 

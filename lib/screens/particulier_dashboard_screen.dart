@@ -44,6 +44,7 @@ import 'package:myreklam/utils/guest_access.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
+import 'package:myreklam/screens/profile_pro/pro_reward_screen.dart';
 import 'package:myreklam/widgets/particulier_onboarding_modal.dart';
 import 'package:myreklam/widgets/pro_onboarding_modal.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -501,6 +502,8 @@ class _PostCardWidget extends StatefulWidget {
   final Function(String) onToggleReaction;
   final Widget Function() buildReactionBar;
   final Widget Function(String, Color, IconData) buildTypeTag;
+  final String? currentUserId;
+  final void Function(String postId)? onDeletePost;
 
   const _PostCardWidget({
     required this.postId,
@@ -516,6 +519,8 @@ class _PostCardWidget extends StatefulWidget {
     required this.buildReactionBar,
     required this.buildTypeTag,
     required this.timeAgoRepost,
+    this.currentUserId,
+    this.onDeletePost,
   });
 
   @override
@@ -526,7 +531,17 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
   bool _isExpanded = false;
   static const int _collapsedMaxLength = 150;
 
-  Widget _buildAuthorRow(_PostAuthorInfo authorInfo) {
+  bool get _isPostOwner {
+    if (widget.currentUserId == null) return false;
+    // For simple reposts, the post entity belongs to the reposter
+    if (widget.isRepost && !widget.isQuoteRepost) {
+      return widget.reposter.id == widget.currentUserId;
+    }
+    // For original posts and quote reposts, the author owns the post
+    return widget.author.id == widget.currentUserId;
+  }
+
+  Widget _buildAuthorRow(_PostAuthorInfo authorInfo, {Widget? trailing}) {
     return Row(
       children: [
         GestureDetector(
@@ -592,6 +607,53 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                 '${authorInfo.accountType} • ${widget.isRepost && widget.isQuoteRepost ? widget.timeAgoRepost : widget.timeAgo}',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
+            ],
+          ),
+        ),
+        if (trailing != null) trailing,
+      ],
+    );
+  }
+
+  Widget _buildPostMenu() {
+    return PopupMenuButton<String>(
+      icon: Icon(Icons.more_vert, color: Colors.grey[600], size: 20),
+      padding: EdgeInsets.zero,
+      onSelected: (value) async {
+        if (value == 'delete') {
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Supprimer la publication'),
+              content: const Text(
+                'Voulez-vous vraiment supprimer cette publication ?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Annuler'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Supprimer'),
+                ),
+              ],
+            ),
+          );
+          if (confirmed == true && widget.onDeletePost != null) {
+            widget.onDeletePost!(widget.postId);
+          }
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline, color: Colors.red, size: 20),
+              SizedBox(width: 8),
+              Text('Supprimer', style: TextStyle(color: Colors.red)),
             ],
           ),
         ),
@@ -754,7 +816,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                     const SizedBox(height: 8),
                   ],
                   // Author row
-                  _buildAuthorRow(displayAuthor),
+                  _buildAuthorRow(
+                    displayAuthor,
+                    trailing: widget.currentUserId != null &&
+                            _isPostOwner
+                        ? _buildPostMenu()
+                        : null,
+                  ),
                 ],
               ),
             ),
@@ -1305,7 +1373,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     }
 
     // Small delay to ensure user data is loaded
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 600), () {
       if (mounted && !UserSession().isGuest) _checkAndShowOnboarding();
     });
 
@@ -3026,11 +3094,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     ];
     final price = _formatPrice(event);
     final isNationwide = event['is_nationwide'] == true;
-    final coverageArea = isNationwide
+    final area = isNationwide
         ? 'Toute la France'
         : (event['coverage_area']?.toString() ??
               event['location']?.toString() ??
               'Non spécifié');
+    final city = event['location_city']?.toString();
+    final coverageArea = (city != null && city.isNotEmpty)
+        ? '$area - $city'
+        : area;
 
     final eventId = event['id']?.toString() ?? '';
 
@@ -5442,7 +5514,39 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       buildReactionBar: () =>
           _buildReactionBar('posts', reactionEntityId, postData: raw),
       buildTypeTag: _buildTypeTag,
+      currentUserId: _currentUserId,
+      onDeletePost: _deletePostFromFeed,
     );
+  }
+
+  Future<void> _deletePostFromFeed(String postId) async {
+    try {
+      await ApiClient().authenticatedDelete('/posts/$postId');
+      if (mounted) {
+        setState(() {
+          _feedItems.removeWhere((item) {
+            final resource = item['resource'] as Map<String, dynamic>?;
+            final id = resource?['id']?.toString() ?? '';
+            return id == postId && item['feed_type'] == 'post';
+          });
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Publication supprimée'),
+            backgroundColor: Color(0xFF3AAE5E),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la suppression: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   _PostAuthorInfo _extractPostAuthorInfo(Map<String, dynamic> raw) {
@@ -6646,42 +6750,58 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 },
               ),
               actions: [
-                Container(
-                  margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF9E6),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFFFD700)),
-                  ),
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        'assets/images/profil_pro/reward.png',
-                        width: 12,
-                        height: 12,
+                GestureDetector(
+                  onTap: () {
+                    if (!GuestAccess.ensureAuthenticated(
+                      context,
+                      featureName: 'voir les récompenses',
+                    )) {
+                      return;
+                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProRewardScreen(),
                       ),
-                      SizedBox(width: 4),
-                      Text(
-                        UserSession().mys.toString(),
-                        style: TextStyle(
-                          color: Color(0xFFFFD700),
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF9E6),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFFD700)),
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset(
+                          'assets/images/profil_pro/reward.png',
+                          width: 12,
+                          height: 12,
                         ),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        'My\'s',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                        SizedBox(width: 4),
+                        Text(
+                          UserSession().mys.toString(),
+                          style: TextStyle(
+                            color: Color(0xFFFFD700),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 5),
+                        Text(
+                          'My\'s',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Padding(

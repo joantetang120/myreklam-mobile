@@ -193,32 +193,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
   String? _currentUserId;
 
   /// Check if edit option should be shown
-  /// Hide edit if: 1) post is older than 2 hours OR 2) people have favorited it
   bool get _canEdit {
-    if (!widget.isOwner) return false;
-
-    final data = widget.bonPlanData;
-    if (data == null) return true; // Allow edit if no data (fallback)
-
-    // Check if post is older than 2 hours
-    final createdAtStr = data['created_at']?.toString();
-    if (createdAtStr != null && createdAtStr.isNotEmpty) {
-      final createdAt = DateTime.tryParse(createdAtStr);
-      if (createdAt != null) {
-        final twoHoursAgo = DateTime.now().subtract(const Duration(hours: 2));
-        if (createdAt.isBefore(twoHoursAgo)) {
-          return false; // Post is older than 2 hours
-        }
-      }
-    }
-
-    // Check if people have favorited this post
-    final favoritesCount = data['favorites_count'] ?? 0;
-    if (favoritesCount is int && favoritesCount > 0) {
-      return false; // People have favorited
-    }
-
-    return true;
+    return widget.isOwner;
   }
 
   @override
@@ -2088,7 +2064,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          if (_canEdit)
+          if (widget.isOwner)
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
@@ -2126,20 +2102,21 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          size: 20,
-                          color: Color(0xFF616161),
-                        ),
-                        SizedBox(width: 12),
-                        Text('Modifier'),
-                      ],
+                  if (_canEdit)
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 20,
+                            color: Color(0xFF616161),
+                          ),
+                          SizedBox(width: 12),
+                          Text('Modifier'),
+                        ],
+                      ),
                     ),
-                  ),
                   const PopupMenuItem(
                     value: 'delete',
                     child: Row(
