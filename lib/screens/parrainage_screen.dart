@@ -77,9 +77,6 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
     }
   }
 
-  String _getShareMessage() {
-    return 'Bonjour, j\'utilise myreklam et j\'en suis vraiment satisfait. Voici un lien de parrainage qui te permet de t\'inscrire et de bénéficier de nombreux avantages. En utilisant ce lien, tu m\'aideras à gagner des points My\'s que je pourrai échanger contre des récompenses ! Merci d\'avance ! $_referralLink';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -225,10 +222,6 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
                 onCopy: () => _copyToClipboard(_referralLink, 'Lien copié !'),
               ),
 
-              const SizedBox(height: 16),
-
-              // Share Message Section
-              _buildShareMessageSection(),
 
               const SizedBox(height: 24),
 
@@ -389,88 +382,6 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
     );
   }
 
-  Widget _buildShareMessageSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF2196F3).withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE3F2FD).withOpacity(0.5),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(11),
-                  topRight: Radius.circular(11),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.share, color: Color(0xFF2196F3), size: 20),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Message de partage',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF2196F3),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[100]!),
-                ),
-                child: Text(
-                  _getShareMessage(),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[600],
-                    height: 1.5,
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _copyToClipboard(_getShareMessage(), 'Message copié !'),
-                  icon: const Icon(Icons.copy, size: 18),
-                  label: const Text(
-                    'Copier le message',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFF3E0),
-                    foregroundColor: const Color(0xFFFF9800),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildHistorySection() {
     return Padding(
