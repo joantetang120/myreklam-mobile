@@ -208,20 +208,6 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
                 },
               ),
 
-              const SizedBox(height: 16),
-
-              // Referral Link Section
-              _buildReferralSection(
-                icon: Icons.link_outlined,
-                title: 'Votre lien de parrainage',
-                content: _referralLink,
-                buttonLabel: 'Copier le lien',
-                description:
-                    'Partagez ce lien avec vos amis pour qu\'ils puissent s\'inscrire et vous faire gagner des My\'s',
-                onCopy: () => _copyToClipboard(_referralLink, 'Lien copié !'),
-              ),
-
-
               const SizedBox(height: 24),
 
               // History list at bottom
