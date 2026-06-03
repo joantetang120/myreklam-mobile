@@ -18,6 +18,7 @@ import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/screens/demande_detail_screen.dart';
 import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class SearchResultsScreen extends StatefulWidget {
@@ -170,9 +171,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 size: 18,
               ),
               const SizedBox(width: 4),
-              Text(
-                '${data.likesCount}',
-                style: TextStyle(color: likeColor, fontSize: 12, fontWeight: FontWeight.w500),
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  '${data.likesCount}',
+                  style: TextStyle(color: likeColor, fontSize: 12, fontWeight: FontWeight.w500),
+                ),
               ),
             ],
           ),
