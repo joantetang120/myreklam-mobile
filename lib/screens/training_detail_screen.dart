@@ -25,6 +25,7 @@ import 'package:myreklam/screens/profile_particulier/particulier_public_view_scr
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 // Bouton partager masqué
 // import 'package:share_plus/share_plus.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart' show CustomBottomBar;
 
 class _ReactionData {
@@ -1481,21 +1482,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               child: Row(
                 children: [
                   // Avatar
-                  GestureDetector(
+                  ReklamAvatar(
+                    avatarUrl: _resolveAvatarUrl(),
+                    displayName: _resolveOwnerName(),
+                    radius: 24,
+                    accountType: _resolveUserType(),
                     onTap: widget.authorData != null
                         ? () => _navigateToUserProfile(context)
                         : null,
-                    child: CircleAvatar(
-                      radius: 24,
-                      backgroundImage:
-                          (_resolveAvatarUrl() ?? '').startsWith('http')
-                          ? NetworkImage(_resolveAvatarUrl()!)
-                          : AssetImage(
-                                  _resolveAvatarUrl() ??
-                                      'assets/images/Formation.png',
-                                )
-                                as ImageProvider,
-                    ),
                   ),
                   const SizedBox(width: 12),
                   // Name and user type
@@ -2614,14 +2608,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
+              ReklamAvatar(
+                avatarUrl: avatarUrl,
+                displayName: displayName,
                 radius: isReply ? 14 : 18,
-                backgroundImage: avatarUrl != null
-                    ? NetworkImage(avatarUrl)
-                    : const AssetImage(
-                            'assets/images/dashboard_particulier/Ellipse 10.png',
-                          )
-                          as ImageProvider,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -3623,16 +3613,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
+                      ReklamAvatar(
+                        avatarUrl: avatarUrl,
+                        displayName: displayName,
                         radius: isReply ? 14 : 18,
-                        backgroundImage:
-                            avatarUrl != null &&
-                                avatarUrl.toString().startsWith('http')
-                            ? NetworkImage(avatarUrl)
-                            : const AssetImage(
-                                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                                  )
-                                  as ImageProvider,
                       ),
                       const SizedBox(width: 10),
                       Expanded(

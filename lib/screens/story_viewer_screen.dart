@@ -6,6 +6,7 @@ import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/story_service.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class StoryViewerScreen extends StatefulWidget {
   final String name;
@@ -300,14 +301,10 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                         itemBuilder: (context, index) {
                           final viewer = viewers[index];
                           return ListTile(
-                            leading: CircleAvatar(
+                            leading: ReklamAvatar(
+                              avatarUrl: viewer.userAvatar,
+                              displayName: viewer.userName,
                               radius: 20,
-                              backgroundImage: viewer.userAvatar != null
-                                  ? NetworkImage(viewer.userAvatar!)
-                                  : const AssetImage(
-                                          'assets/images/dashboard_particulier/Ellipse 10.png',
-                                        )
-                                        as ImageProvider,
                             ),
                             title: Text(
                               viewer.userName,

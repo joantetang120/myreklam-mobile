@@ -8,6 +8,7 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final String? postId;
@@ -401,16 +402,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             strokeWidth: 2,
                           ),
                         )
-                      : CircleAvatar(
+                      : ReklamAvatar(
+                          avatarUrl: _userAvatar,
+                          displayName: _username,
                           radius: 25,
-                          backgroundImage:
-                              _userAvatar != null &&
-                                  _userAvatar!.startsWith('http')
-                              ? NetworkImage(_userAvatar!)
-                              : const AssetImage(
-                                      'assets/images/dashboard_particulier/Ellipse 10.png',
-                                    )
-                                    as ImageProvider,
                         ),
                   const SizedBox(width: 12),
                   Expanded(

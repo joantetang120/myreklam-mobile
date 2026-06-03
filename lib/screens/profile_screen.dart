@@ -28,6 +28,7 @@ import 'package:myreklam/services/auth_service.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -369,26 +370,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
                           radius: 45,
+                          avatarUrl: _avatarUrl,
+                          displayName: _pseudo,
                           backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              _avatarUrl != null &&
-                                  (_avatarUrl!.startsWith('https') ||
-                                      _avatarUrl!.startsWith('http'))
-                              ? NetworkImage(_avatarUrl!)
-                              : (_avatarUrl != null
-                                    ? NetworkImage(
-                                        "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${_avatarUrl!}",
-                                      )
-                                    : null),
-                          child: _avatarUrl == null
-                              ? const Icon(
-                                  Icons.person,
-                                  size: 50,
-                                  color: Colors.white,
-                                )
-                              : null,
                         ),
                         Positioned(
                           bottom: 0,

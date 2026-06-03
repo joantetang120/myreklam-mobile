@@ -19,6 +19,7 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/providers/conversation_provider.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:intl/intl.dart';
 
 class MessageScreen extends StatefulWidget {
@@ -482,22 +483,13 @@ class _MessageScreenState extends State<MessageScreen> {
                                             ),
                                           ),
                                           child: hasOwnStories
-                                              ? CircleAvatar(
+                                              ? ReklamAvatar(
+                                                  avatarUrl: _currentUserAvatar != null &&
+                                                          _currentUserAvatar!.isNotEmpty
+                                                      ? _buildAvatarUrl(_currentUserAvatar)
+                                                      : null,
+                                                  displayName: 'Vous',
                                                   radius: 22,
-                                                  backgroundImage:
-                                                      _currentUserAvatar !=
-                                                              null &&
-                                                          _currentUserAvatar!
-                                                              .isNotEmpty
-                                                      ? NetworkImage(
-                                                          _buildAvatarUrl(
-                                                            _currentUserAvatar,
-                                                          ),
-                                                        )
-                                                      : const AssetImage(
-                                                              'assets/images/dashboard_particulier/Ellipse 10.png',
-                                                            )
-                                                            as ImageProvider,
                                                 )
                                               : const Center(
                                                   child: Icon(

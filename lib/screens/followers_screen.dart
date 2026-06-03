@@ -3,6 +3,7 @@ import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/services/profile_service.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class FollowersScreen extends StatefulWidget {
   final bool initialShowFollowers;
@@ -282,14 +283,10 @@ class _FollowersScreenState extends State<FollowersScreen>
         children: [
           GestureDetector(
             onTap: () => _navigateToProfile(userId, user),
-            child: CircleAvatar(
+            child: ReklamAvatar(
+              avatarUrl: avatar,
+              displayName: name,
               radius: 26,
-              backgroundImage: avatar.startsWith('http')
-                  ? NetworkImage(avatar) as ImageProvider
-                  : AssetImage(
-                      'assets/images/dashboard_particulier/Ellipse 10.png',
-                    ),
-              backgroundColor: Colors.grey[200],
             ),
           ),
           const SizedBox(width: 12),

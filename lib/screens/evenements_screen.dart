@@ -13,6 +13,7 @@ import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class EvenementsScreen extends StatefulWidget {
   const EvenementsScreen({super.key});
@@ -1537,23 +1538,10 @@ class _EvenementsScreenState extends State<EvenementsScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
+                          avatarUrl: avatarUrl,
+                          displayName: displayName,
                           radius: isReply ? 14 : 18,
-                          backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(
-                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                      avatarUrl,
-                                )
-                              : null,
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Icon(
-                                  Icons.person,
-                                  size: isReply ? 12 : 16,
-                                  color: Colors.grey[600],
-                                )
-                              : null,
                         ),
                         const SizedBox(width: 10),
                         Expanded(

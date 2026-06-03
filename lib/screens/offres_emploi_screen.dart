@@ -11,6 +11,7 @@ import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
@@ -1383,23 +1384,11 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
+                          avatarUrl: avatarUrl,
+                          displayName: displayName,
                           radius: isReply ? 14 : 18,
-                          backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(
-                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                      avatarUrl,
-                                )
-                              : null,
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Icon(
-                                  Icons.person,
-                                  size: isReply ? 12 : 16,
-                                  color: Colors.grey[600],
-                                )
-                              : null,
+                          accountType: user['account_type']?.toString(),
                         ),
                         const SizedBox(width: 10),
                         Expanded(

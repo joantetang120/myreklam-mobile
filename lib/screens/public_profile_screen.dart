@@ -12,6 +12,7 @@ import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PublicProfileScreen extends StatefulWidget {
@@ -631,17 +632,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                         color: Color(0xFF2E9B5B),
                         shape: BoxShape.circle,
                       ),
-                      child: CircleAvatar(
+                      child: ReklamAvatar(
+                        avatarUrl: avatar,
+                        displayName: displayName,
                         radius: 45,
-                        backgroundColor: Colors.white,
-                        backgroundImage: avatar.startsWith('http')
-                            ? NetworkImage(avatar) as ImageProvider
-                            : avatar.startsWith('assets/')
-                            ? AssetImage(avatar)
-                            : NetworkImage(
-                                    ApiConfig.resolveMediaUrl(avatar) ?? '',
-                                  )
-                                  as ImageProvider,
+                        accountType: _userData?['pro_profile'] != null
+                            ? 'pro'
+                            : 'particulier',
                       ),
                     ),
                   ),

@@ -12,6 +12,7 @@ import 'package:myreklam/widgets/user_detail_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/creer_evenement_screen.dart';
@@ -2228,21 +2229,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  GestureDetector(
+                  ReklamAvatar(
+                    avatarUrl: _resolveAvatarUrl(),
+                    displayName: _resolveOwnerName(),
+                    radius: 24,
+                    accountType: _resolveUserType(),
                     onTap: widget.authorData != null
                         ? () => _navigateToUserProfile(context)
                         : null,
-                    child: CircleAvatar(
-                      radius: 24,
-                      backgroundImage:
-                          (_resolveAvatarUrl() ?? '').startsWith('http')
-                          ? NetworkImage(_resolveAvatarUrl()!)
-                          : AssetImage(
-                                  _resolveAvatarUrl() ??
-                                      'assets/images/Evenement.png',
-                                )
-                                as ImageProvider,
-                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -3266,16 +3260,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
+                      ReklamAvatar(
+                        avatarUrl: avatarUrl,
+                        displayName: displayName,
                         radius: isReply ? 14 : 18,
-                        backgroundImage:
-                            avatarUrl != null &&
-                                avatarUrl.toString().startsWith('http')
-                            ? NetworkImage(avatarUrl)
-                            : const AssetImage(
-                                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                                  )
-                                  as ImageProvider,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -3662,15 +3650,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
+              ReklamAvatar(
+                avatarUrl: avatarUrl,
+                displayName: displayName,
                 radius: isReply ? 14 : 18,
-                backgroundImage:
-                    avatarUrl != null && avatarUrl.toString().startsWith('http')
-                    ? NetworkImage(avatarUrl)
-                    : const AssetImage(
-                            'assets/images/dashboard_particulier/Ellipse 10.png',
-                          )
-                          as ImageProvider,
               ),
               const SizedBox(width: 10),
               Expanded(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class DemandeCard extends StatelessWidget {
   final String profileImage;
@@ -71,12 +72,11 @@ class DemandeCard extends StatelessWidget {
                 children: [
                   GestureDetector(
                     onTap: onAvatarTap,
-                    child: CircleAvatar(
+                    child: ReklamAvatar(
+                      avatarUrl: profileImage,
+                      displayName: username,
                       radius: 24,
-                      backgroundImage: profileImage.startsWith('http')
-                          ? NetworkImage(profileImage) as ImageProvider
-                          : AssetImage(profileImage),
-                      backgroundColor: Colors.grey[200],
+                      accountType: accountType,
                     ),
                   ),
                   const SizedBox(width: 12),

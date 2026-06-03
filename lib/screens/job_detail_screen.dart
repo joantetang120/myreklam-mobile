@@ -15,6 +15,7 @@ import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/widgets/post_content_card.dart' show PostTag;
@@ -688,14 +689,10 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
+              ReklamAvatar(
+                avatarUrl: avatarUrl,
+                displayName: displayName,
                 radius: isReply ? 14 : 18,
-                backgroundImage: avatarUrl != null
-                    ? NetworkImage(avatarUrl)
-                    : const AssetImage(
-                            'assets/images/dashboard_particulier/Ellipse 10.png',
-                          )
-                          as ImageProvider,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1496,23 +1493,10 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
+                          avatarUrl: avatarUrl,
+                          displayName: displayName,
                           radius: isReply ? 14 : 18,
-                          backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(
-                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                      avatarUrl,
-                                )
-                              : null,
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Icon(
-                                  Icons.person,
-                                  size: isReply ? 12 : 16,
-                                  color: Colors.grey[600],
-                                )
-                              : null,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -3338,16 +3322,14 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               child: Row(
                 children: [
                   // Avatar
-                  GestureDetector(
+                  ReklamAvatar(
+                    avatarUrl: widget.companyLogo,
+                    displayName: widget.companyName,
+                    radius: 24,
+                    accountType: 'pro',
                     onTap: widget.authorData != null
                         ? () => _navigateToUserProfile(context)
                         : null,
-                    child: CircleAvatar(
-                      radius: 24,
-                      backgroundImage: widget.companyLogo.startsWith('http')
-                          ? NetworkImage(widget.companyLogo)
-                          : AssetImage(widget.companyLogo) as ImageProvider,
-                    ),
                   ),
                   const SizedBox(width: 12),
                   // Name and user type

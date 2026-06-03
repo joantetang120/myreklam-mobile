@@ -10,6 +10,7 @@ import 'package:myreklam/screens/creer_offre_emploi_screen.dart';
 import 'package:myreklam/screens/profile_pro/pdf_viewer_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ProSpaceProScreen extends StatefulWidget {
@@ -1510,23 +1511,12 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                 child: SizedBox(
                   width: 50,
                   height: 50,
-                  child: CircleAvatar(
+                  child: ReklamAvatar(
                     radius: 25,
+                    avatarUrl: avatar,
+                    displayName: companyName,
+                    accountType: isPro ? 'pro' : 'particulier',
                     backgroundColor: Colors.white,
-                    backgroundImage:
-                        avatar.isNotEmpty &&
-                            (avatar.startsWith('http://') ||
-                                avatar.startsWith('https://'))
-                        ? NetworkImage(avatar) as ImageProvider
-                        : avatar.startsWith('assets/')
-                        ? AssetImage(avatar) as ImageProvider
-                        : NetworkImage(ApiConfig.resolveMediaUrl(avatar) ?? '')
-                              as ImageProvider,
-                    onBackgroundImageError:
-                        (Object exception, StackTrace? stackTrace) {
-                          // keep fallback
-                        },
-                    child: const SizedBox.shrink(),
                   ),
                 ),
               ),
@@ -1920,9 +1910,13 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: const Color(0xFFEF8A40).withOpacity(0.1),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF8A40).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
                       child: const Icon(
                         Icons.folder_shared_outlined,
                         color: Color(0xFFEF8A40),
@@ -2377,17 +2371,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
         children: [
           Row(
             children: [
-              CircleAvatar(
+              ReklamAvatar(
                 radius: 24,
-                backgroundImage:
-                    avatarPath.isNotEmpty &&
-                        (avatarPath.startsWith('http') ||
-                            avatarPath.startsWith('https'))
-                    ? NetworkImage(avatarPath) as ImageProvider
-                    : avatarPath.startsWith('assets/')
-                    ? AssetImage(avatarPath) as ImageProvider
-                    : NetworkImage(ApiConfig.resolveMediaUrl(avatarPath) ?? '')
-                          as ImageProvider,
+                avatarUrl: avatarPath,
+                displayName: name,
               ),
               const SizedBox(width: 12),
               Expanded(

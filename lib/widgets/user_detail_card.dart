@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class UserDetailCard extends StatelessWidget {
   final String avatar;
@@ -43,13 +44,11 @@ class UserDetailCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
+          ReklamAvatar(
+            avatarUrl: avatar,
+            displayName: name,
             radius: 26,
-            backgroundImage: avatar.startsWith('http')
-                ? NetworkImage(avatar) as ImageProvider
-                : avatar.startsWith('assets/')
-                    ? AssetImage(avatar) as ImageProvider
-                    : NetworkImage(ApiConfig.resolveMediaUrl(avatar) ?? '') as ImageProvider,
+            accountType: userType.toLowerCase() == 'professionnel' ? 'pro' : 'particulier',
           ),
           const SizedBox(width: 12),
           Expanded(

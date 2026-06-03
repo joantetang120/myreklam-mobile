@@ -13,6 +13,7 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -445,16 +446,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
       children: [
         GestureDetector(
           onTap: () {},
-          child: CircleAvatar(
-            radius: 20,
-            backgroundImage: authorInfo.avatar.startsWith('http')
-                ? NetworkImage(authorInfo.avatar) as ImageProvider
-                : authorInfo.avatar.startsWith('assets/')
-                ? AssetImage(authorInfo.avatar)
-                : NetworkImage(
-                        ApiConfig.resolveMediaUrl(authorInfo.avatar) ?? '',
-                      )
-                      as ImageProvider,
+          child: ReklamAvatar(
+            avatarUrl: authorInfo.avatar,
+            displayName: authorInfo.displayName,
+            accountType: authorInfo.accountType == 'Professionnel' ? 'pro' : 'particulier',
           ),
         ),
         const SizedBox(width: 10),
@@ -563,20 +558,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             color: Colors.grey[600],
                           ),
                           const SizedBox(width: 6),
-                          CircleAvatar(
+                          ReklamAvatar(
                             radius: 14,
-                            backgroundImage:
-                                widget.reposter.avatar.startsWith('http')
-                                ? NetworkImage(widget.reposter.avatar)
-                                : widget.reposter.avatar.startsWith('assets/')
-                                ? AssetImage(widget.reposter.avatar)
-                                      as ImageProvider
-                                : NetworkImage(
-                                    ApiConfig.resolveMediaUrl(
-                                          widget.reposter.avatar,
-                                        ) ??
-                                        '',
-                                  ),
+                            avatarUrl: widget.reposter.avatar,
+                            displayName: widget.reposter.displayName,
+                            accountType: widget.reposter.accountType == 'Professionnel' ? 'pro' : 'particulier',
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -681,21 +667,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                       child: Row(
                         children: [
-                          CircleAvatar(
+                          ReklamAvatar(
                             radius: 14,
-                            backgroundImage:
-                                widget.author.avatar.startsWith('http')
-                                ? NetworkImage(widget.author.avatar)
-                                      as ImageProvider
-                                : widget.author.avatar.startsWith('assets/')
-                                ? AssetImage(widget.author.avatar)
-                                : NetworkImage(
-                                        ApiConfig.resolveMediaUrl(
-                                              widget.author.avatar,
-                                            ) ??
-                                            '',
-                                      )
-                                      as ImageProvider,
+                            avatarUrl: widget.author.avatar,
+                            displayName: widget.author.displayName,
+                            accountType: widget.author.accountType == 'Professionnel' ? 'pro' : 'particulier',
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -2169,28 +2145,13 @@ class _ProPostScreenState extends State<ProPostScreen>
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
                           radius: isReply ? 14 : 18,
+                          avatarUrl: avatarUrl,
+                          displayName: displayName,
+                          accountType: user['pro_profile'] != null ? 'pro' : 'particulier',
                           backgroundColor: const Color(0xFFE6F7EF),
-                          backgroundImage:
-                              avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(
-                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                      avatarUrl,
-                                )
-                              : null,
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Text(
-                                  displayName.isNotEmpty
-                                      ? displayName[0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    fontSize: isReply ? 11 : 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2A8143),
-                                  ),
-                                )
-                              : null,
+                          textColor: const Color(0xFF2A8143),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -2653,11 +2614,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                             child: Row(
                               children: [
-                                CircleAvatar(
+                                ReklamAvatar(
                                   radius: 22,
-                                  backgroundImage: userAvatar.startsWith('http')
-                                      ? NetworkImage(userAvatar)
-                                      : AssetImage(userAvatar) as ImageProvider,
+                                  avatarUrl: userAvatar,
+                                  displayName: userName,
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -2736,16 +2696,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                                     ),
                                     child: Row(
                                       children: [
-                                        CircleAvatar(
+                                        ReklamAvatar(
                                           radius: 22,
-                                          backgroundImage: NetworkImage(
-                                            originalProfil.startsWith('http')
-                                                ? originalProfil
-                                                : (_buildStorageUrl(
-                                                        originalProfil,
-                                                      ) ??
-                                                      ''),
-                                          ),
+                                          avatarUrl: originalProfil,
+                                          displayName: originalAuthorName,
                                         ),
                                         const SizedBox(width: 6),
                                         Expanded(
