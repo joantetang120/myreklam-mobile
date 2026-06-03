@@ -44,6 +44,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   bool _isVideo = false;
   bool _isVideoInitialized = false;
   bool _isLongPressPaused = false;
+  bool _isMediaReady = false;
 
   // Swipe down to dismiss
   double _dragOffset = 0.0;
@@ -60,9 +61,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               _nextStory();
             }
           });
-    _progressController.forward();
     _recordCurrentView();
-    _initCurrentVideo();
+    _loadCurrentMedia();
 
     _replyFocusNode = FocusNode()
       ..addListener(() {
@@ -70,7 +70,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
           _progressController.stop();
           _videoController?.pause();
         } else {
-          if (!_isVideo) {
+          if (!_isVideo && _isMediaReady) {
             _progressController.forward();
           }
           _videoController?.play();
@@ -101,11 +101,13 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
 
                 // Sync video position with progress indicator
                 _videoController?.addListener(_onVideoProgress);
+                _onMediaReady();
               }
             })
             .catchError((e) {
               debugPrint('Error initializing video: $e');
               setState(() => _isVideo = false);
+              if (mounted) _onMediaReady();
             });
     } else {
       setState(() {
@@ -115,6 +117,37 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       _videoController?.dispose();
       _videoController = null;
     }
+  }
+
+  Future<void> _loadCurrentMedia() async {
+    setState(() => _isMediaReady = false);
+
+    final story = widget.stories[_currentIndex];
+    final mediaType = story['media_type'] as String? ?? 'image';
+    final mediaUrl = story['image'] as String? ?? '';
+
+    // Video loading is handled by _initCurrentVideo which calls _onMediaReady()
+    if (mediaType == 'video' &&
+        mediaUrl.isNotEmpty &&
+        mediaUrl.startsWith('http')) {
+      _initCurrentVideo();
+      return;
+    }
+
+    // Precache image before starting the timer
+    if (mediaUrl.startsWith('http')) {
+      try {
+        await precacheImage(NetworkImage(mediaUrl), context);
+      } catch (_) {}
+    }
+
+    if (mounted) _onMediaReady();
+  }
+
+  void _onMediaReady() {
+    if (!mounted || _isMediaReady) return;
+    setState(() => _isMediaReady = true);
+    _progressController.forward();
   }
 
   void _onVideoProgress() {
@@ -203,9 +236,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         _currentIndex++;
       });
       _progressController.reset();
-      _progressController.forward();
       _recordCurrentView();
-      _initCurrentVideo();
+      _loadCurrentMedia();
     } else {
       Navigator.pop(context);
     }
@@ -221,9 +253,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         _currentIndex--;
       });
       _progressController.reset();
-      _progressController.forward();
       _recordCurrentView();
-      _initCurrentVideo();
+      _loadCurrentMedia();
     }
   }
 
@@ -610,24 +641,13 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   }
 
   Widget _buildAvatarImage() {
-    final resolved = ApiConfig.resolveMediaUrl(widget.avatar);
-    if (resolved != null && resolved.startsWith('http')) {
-      return Image.network(
-        resolved,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Image.asset(
-          'assets/images/dashboard_particulier/Ellipse 10.png',
-          fit: BoxFit.cover,
-        ),
-      );
-    }
-    // Fallback to asset (local assets like default avatar)
-    return Image.asset(
-      widget.avatar,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => Image.asset(
-        'assets/images/dashboard_particulier/Ellipse 10.png',
-        fit: BoxFit.cover,
+    return ReklamAvatar(
+      avatarUrl: widget.avatar,
+      displayName: widget.name,
+      radius: 20,
+      border: Border.all(
+        color: const Color(0xFF3AAE5E),
+        width: 1.5,
       ),
     );
   }
@@ -756,18 +776,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFF3AAE5E),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: ClipOval(child: _buildAvatarImage()),
-                        ),
+                        _buildAvatarImage(),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(

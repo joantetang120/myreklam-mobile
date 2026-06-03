@@ -28,6 +28,7 @@ import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class ProfileProScreen extends StatefulWidget {
   final String? userId; // null means viewing own profile
@@ -483,33 +484,12 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       children: [
                         Stack(
                           children: [
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.grey[300],
-                                image: _avatarUrl != null
-                                    ? DecorationImage(
-                                        image: _avatarUrl!.startsWith('http')
-                                            ? NetworkImage(_avatarUrl!)
-                                            : NetworkImage(
-                                                ApiConfig.resolveMediaUrl(
-                                                      _avatarUrl!,
-                                                    ) ??
-                                                    '',
-                                              ),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
-                              ),
-                              child: _avatarUrl == null
-                                  ? const Icon(
-                                      Icons.business,
-                                      size: 40,
-                                      color: Colors.white,
-                                    )
-                                  : null,
+                            ReklamAvatar(
+                              radius: 40,
+                              avatarUrl: _avatarUrl,
+                              displayName: _companyName,
+                              accountType: 'pro',
+                              backgroundColor: Colors.grey[300],
                             ),
                             Positioned(
                               bottom: 0,

@@ -5,7 +5,7 @@ class ApiConfig {
   // 🔧 CHANGE THIS URL TO POINT TO YOUR BACKEND SERVER
   // ============================================================
   // static const String baseUrl = 'https://myreklam-admin.maisoft-group.com/api';
-  static const String baseUrl = 'http://192.168.10.245:8001/api';
+  static const String baseUrl = 'http://192.168.1.237:8001/api';
   // Examples:
   //   Local Android emulator:  'http://10.0.2.2:8000/api'
   //   Local iOS simulator:     'http://localhost:8000/api'
