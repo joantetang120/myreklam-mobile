@@ -4,6 +4,7 @@ import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/conversation_service.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class CustomBottomBar extends StatefulWidget {
   final int currentIndex;
@@ -47,6 +48,7 @@ class CustomBottomBar extends StatefulWidget {
 
 class _CustomBottomBarState extends State<CustomBottomBar> {
   String? _avatarUrl;
+  String? _displayName;
   int _unreadNotifCount = 0;
   int _unreadChatCount = 0;
 
@@ -149,7 +151,10 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
   Future<void> _loadAvatar() async {
     if (UserSession().isGuest) {
       if (mounted) {
-        setState(() => _avatarUrl = null);
+        setState(() {
+          _avatarUrl = null;
+          _displayName = null;
+        });
       }
       return;
     }
@@ -157,8 +162,16 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
     try {
       final response = await ProfileService().getProfile();
       if (!mounted) return;
+      final profile = response['profile'];
       setState(() {
-        _avatarUrl = response['profile']?['avatar_url'];
+        _avatarUrl = profile?['avatar_url'];
+        if (profile != null) {
+          if (UserSession().isParticulier) {
+            _displayName = profile['pseudo'];
+          } else {
+            _displayName = profile['company_name'] ?? profile['first_name'];
+          }
+        }
       });
     } catch (_) {}
   }
@@ -341,37 +354,17 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(3),
-                  child: Container(
-                    width: 35,
-                    height: 35,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.grey[300],
-                      border: Border.all(
-                        color: isSelected
-                            ? const Color(0xFF2E9B5B)
-                            : Colors.transparent,
-                        width: 2,
-                      ),
-                      image: _avatarUrl != null
-                          ? DecorationImage(
-                              image: _avatarUrl!.startsWith('http')
-                                  ? NetworkImage(_avatarUrl!)
-                                  : NetworkImage(
-                                      ApiConfig.resolveMediaUrl(_avatarUrl!) ??
-                                          '',
-                                    ),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
+                  child: ReklamAvatar(
+                    avatarUrl: _avatarUrl,
+                    displayName: _displayName,
+                    radius: 17.5,
+                    accountType: UserSession().isPro ? 'pro' : 'particulier',
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFF2E9B5B)
+                          : Colors.transparent,
+                      width: 2,
                     ),
-                    child: _avatarUrl == null
-                        ? Icon(
-                            UserSession().isPro ? Icons.business : Icons.person,
-                            size: 20,
-                            color: Colors.white,
-                          )
-                        : null,
                   ),
                 ),
                 if (_unreadNotifCount > 0)

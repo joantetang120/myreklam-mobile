@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class FollowerUserCard extends StatelessWidget {
   final String image;
@@ -24,9 +25,10 @@ class FollowerUserCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
-          CircleAvatar(
+          ReklamAvatar(
+            avatarUrl: image,
+            displayName: name,
             radius: 28,
-            backgroundImage: AssetImage(image),
           ),
           const SizedBox(width: 12),
           Expanded(

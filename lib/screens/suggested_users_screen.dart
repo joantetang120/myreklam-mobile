@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class SuggestedUsersScreen extends StatefulWidget {
   const SuggestedUsersScreen({super.key});
@@ -160,13 +161,11 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
                                   },
                                   child: Column(
                                     children: [
-                                      CircleAvatar(
+                                      ReklamAvatar(
+                                        avatarUrl: avatarUrl,
+                                        displayName: name,
                                         radius: 26,
-                                        backgroundImage: avatarUrl.startsWith('http')
-                                            ? NetworkImage(avatarUrl) as ImageProvider
-                                            : avatarUrl.startsWith('assets/')
-                                                ? AssetImage(avatarUrl) as ImageProvider
-                                                : NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? '') as ImageProvider,
+                                        accountType: isPro ? 'pro' : 'particulier',
                                       ),
                                       const SizedBox(height: 12),
                                       Text(

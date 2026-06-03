@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -89,7 +89,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
   final QuillController _profileDescQuillController = QuillController.basic();
 
   // Step 5 - Media
-  List<PlatformFile> _selectedMediaFiles = [];
+  List<GalleryMedia> _selectedMediaFiles = [];
   final List<String> _existingMediaUrls = [];
   List<Map<String, dynamic>> _uploadedMedia = [];
 
@@ -1001,27 +1001,18 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
 
   Future<void> _pickMedia() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov'],
-        allowMultiple: true,
-        withData: true,
-      );
-
-      if (result != null && result.files.isNotEmpty) {
-        final validFiles = result.files.where((file) {
-          final sizeInMB = (file.size) / (1024 * 1024);
-          return sizeInMB <= 20;
-        }).toList();
-
-        if (validFiles.length < result.files.length) {
-          _showSnack('Certains fichiers dépassent 20 MB et ont été ignorés', isError: true);
-        }
-
-        setState(() {
-          _selectedMediaFiles.addAll(validFiles);
-        });
+      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      if (files == null || files.isEmpty) return;
+      final validFiles = files.where((file) {
+        final sizeInMB = file.size / (1024 * 1024);
+        return sizeInMB <= 20;
+      }).toList();
+      if (validFiles.length < files.length) {
+        _showSnack('Certains fichiers dépassent 20 MB et ont été ignorés', isError: true);
       }
+      setState(() {
+        _selectedMediaFiles.addAll(validFiles);
+      });
     } catch (e) {
       debugPrint('Error picking media: $e');
       _showSnack('Erreur lors de la sélection des fichiers', isError: true);
@@ -1655,7 +1646,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     );
   }
 
-  Widget _buildPhotoPreviewCard(PlatformFile file, int index) {
+  Widget _buildPhotoPreviewCard(GalleryMedia file, int index) {
     final isCoverPhoto = index == 0;
     
     return Container(
@@ -1823,7 +1814,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     );
   }
 
-  Widget _buildMediaPreview(PlatformFile file) {
+  Widget _buildMediaPreview(GalleryMedia file) {
     final extension = file.extension?.toLowerCase();
     final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(extension);
     final isVideo = ['mp4', 'mov'].contains(extension);

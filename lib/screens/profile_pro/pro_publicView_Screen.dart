@@ -21,6 +21,7 @@ import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
@@ -32,6 +33,7 @@ import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class ProPublicViewScreen extends StatefulWidget {
   final String? userId; // null means viewing own profile
@@ -580,16 +582,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               );
             }
           },
-          child: CircleAvatar(
+          child: ReklamAvatar(
+            avatarUrl: authorInfo.avatar,
             radius: 20,
-            backgroundImage: authorInfo.avatar.startsWith('http')
-                ? NetworkImage(authorInfo.avatar) as ImageProvider
-                : authorInfo.avatar.startsWith('assets/')
-                ? AssetImage(authorInfo.avatar)
-                : NetworkImage(
-                        ApiConfig.resolveMediaUrl(authorInfo.avatar) ?? '',
-                      )
-                      as ImageProvider,
+            displayName: authorInfo.displayName,
+            accountType: authorInfo.accountType,
           ),
         ),
         const SizedBox(width: 10),
@@ -605,8 +602,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            authorInfo.accountType.toLowerCase() ==
-                                'professionnel'
+                            authorInfo.accountType.toLowerCase() == 'professionnel'
                             ? ProPublicViewScreen(userId: userId)
                             : ParticulierPublicViewScreen(userId: userId),
                       ),
@@ -711,20 +707,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             color: Colors.grey[600],
                           ),
                           const SizedBox(width: 6),
-                          CircleAvatar(
+                          ReklamAvatar(
+                            avatarUrl: widget.reposter.avatar,
                             radius: 14,
-                            backgroundImage:
-                                widget.reposter.avatar.startsWith('http')
-                                ? NetworkImage(widget.reposter.avatar)
-                                : widget.reposter.avatar.startsWith('assets/')
-                                ? AssetImage(widget.reposter.avatar)
-                                      as ImageProvider
-                                : NetworkImage(
-                                    ApiConfig.resolveMediaUrl(
-                                          widget.reposter.avatar,
-                                        ) ??
-                                        '',
-                                  ),
+                            displayName: widget.reposter.displayName,
+                            accountType: widget.reposter.accountType,
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -829,21 +816,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                       child: Row(
                         children: [
-                          CircleAvatar(
+                          ReklamAvatar(
+                            avatarUrl: widget.author.avatar,
                             radius: 14,
-                            backgroundImage:
-                                widget.author.avatar.startsWith('http')
-                                ? NetworkImage(widget.author.avatar)
-                                      as ImageProvider
-                                : widget.author.avatar.startsWith('assets/')
-                                ? AssetImage(widget.author.avatar)
-                                : NetworkImage(
-                                        ApiConfig.resolveMediaUrl(
-                                              widget.author.avatar,
-                                            ) ??
-                                            '',
-                                      )
-                                      as ImageProvider,
+                            displayName: widget.author.displayName,
+                            accountType: widget.author.accountType,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -1804,28 +1781,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
+                          avatarUrl: avatarUrl,
                           radius: isReply ? 14 : 18,
-                          backgroundColor: const Color(0xFFE6F7EF),
-                          backgroundImage:
-                              avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(
-                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                      avatarUrl,
-                                )
-                              : null,
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Text(
-                                  displayName.isNotEmpty
-                                      ? displayName[0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    fontSize: isReply ? 11 : 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2A8143),
-                                  ),
-                                )
-                              : null,
+                          displayName: displayName,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -2521,11 +2480,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                             child: Row(
                               children: [
-                                CircleAvatar(
+                                ReklamAvatar(
+                                  avatarUrl: userAvatar,
                                   radius: 22,
-                                  backgroundImage: userAvatar.startsWith('http')
-                                      ? NetworkImage(userAvatar)
-                                      : AssetImage(userAvatar) as ImageProvider,
+                                  displayName: userName,
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -2603,16 +2561,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                     ),
                                     child: Row(
                                       children: [
-                                        CircleAvatar(
+                                        ReklamAvatar(
+                                          avatarUrl: originalProfil,
                                           radius: 22,
-                                          backgroundImage: NetworkImage(
-                                            originalProfil.startsWith('http')
-                                                ? originalProfil
-                                                : (_buildStorageUrl(
-                                                        originalProfil,
-                                                      ) ??
-                                                      ''),
-                                          ),
+                                          displayName: originalAuthorName,
                                         ),
                                         const SizedBox(width: 6),
                                         Expanded(
@@ -2803,12 +2755,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
               ),
               const SizedBox(width: 4),
-              Text(
-                data.likesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  data.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],
@@ -6420,23 +6375,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 width: 2,
                               ),
                             ),
-                            child: CircleAvatar(
+                            child: ReklamAvatar(
+                              avatarUrl: avatarUrl,
                               radius: 50,
-                              backgroundImage: avatarUrl != null
-                                  ? (avatarUrl.startsWith('http')
-                                        ? NetworkImage(avatarUrl)
-                                              as ImageProvider
-                                        : NetworkImage(
-                                                ApiConfig.resolveMediaUrl(
-                                                      avatarUrl,
-                                                    ) ??
-                                                    '',
-                                              )
-                                              as ImageProvider)
-                                  : AssetImage(
-                                          'assets/images/dashboard_particulier/Ellipse 10.png',
-                                        )
-                                        as ImageProvider,
+                              displayName: displayName,
                             ),
                           ),
                         ),
@@ -7479,19 +7421,6 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     required String reviewText,
     required int rating,
   }) {
-    // Resolve avatar URL
-    ImageProvider avatarImage;
-    if (avatarPath.startsWith('http')) {
-      avatarImage = NetworkImage(avatarPath);
-    } else if (avatarPath.startsWith('assets/')) {
-      avatarImage = AssetImage(avatarPath);
-    } else {
-      final resolvedUrl = ApiConfig.resolveMediaUrl(avatarPath);
-      avatarImage = resolvedUrl != null
-          ? NetworkImage(resolvedUrl)
-          : AssetImage('assets/images/dashboard_particulier/Ellipse 10.png');
-    }
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -7503,7 +7432,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         children: [
           Row(
             children: [
-              CircleAvatar(radius: 20, backgroundImage: avatarImage),
+              ReklamAvatar(
+                avatarUrl: avatarPath,
+                radius: 20,
+                displayName: name,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -7607,11 +7540,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         children: [
           Row(
             children: [
-              CircleAvatar(
+              ReklamAvatar(
                 radius: 22,
-                backgroundImage: const AssetImage(
-                  'assets/images/dashboard_particulier/Ellipse 10.png',
-                ),
+                displayName: userName,
+                accountType: userType,
               ),
               const SizedBox(width: 12),
               Expanded(

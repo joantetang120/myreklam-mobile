@@ -18,6 +18,8 @@ import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/screens/demande_detail_screen.dart';
 import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class SearchResultsScreen extends StatefulWidget {
   final String query;
@@ -169,9 +171,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 size: 18,
               ),
               const SizedBox(width: 4),
-              Text(
-                '${data.likesCount}',
-                style: TextStyle(color: likeColor, fontSize: 12, fontWeight: FontWeight.w500),
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  '${data.likesCount}',
+                  style: TextStyle(color: likeColor, fontSize: 12, fontWeight: FontWeight.w500),
+                ),
               ),
             ],
           ),
@@ -712,17 +717,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                CircleAvatar(
+                                ReklamAvatar(
+                                  avatarUrl: ownerAvatar.isNotEmpty ? ownerAvatar : null,
+                                  displayName: ownerName,
                                   radius: 14,
-                                  backgroundColor: Colors.grey[300],
-                                  backgroundImage: ownerAvatar.isNotEmpty
-                                      ? (ownerAvatar.startsWith('http')
-                                          ? NetworkImage(ownerAvatar)
-                                          : NetworkImage(ApiConfig.resolveMediaUrl(ownerAvatar) ?? ''))
-                                      : null,
-                                  child: ownerAvatar.isEmpty
-                                      ? Icon(isPro ? Icons.business : Icons.person, size: 14, color: Colors.white)
-                                      : null,
+                                  accountType: isPro ? 'pro' : 'particulier',
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
@@ -1021,7 +1020,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           ListTile(
             leading: GestureDetector(
               onTap: () => _navigateToUserProfile(user),
-              child: CircleAvatar(backgroundImage: avatarUrl.startsWith('http') ? NetworkImage(avatarUrl) : AssetImage(avatarUrl) as ImageProvider),
+              child: ReklamAvatar(
+                avatarUrl: avatarUrl,
+                displayName: userName,
+                accountType: user?['account_type']?.toString(),
+              ),
             ),
             title: GestureDetector(onTap: () => _navigateToUserProfile(user), child: Text(userName, style: const TextStyle(fontWeight: FontWeight.w600))),
             subtitle: Text('Demande', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
@@ -1113,7 +1116,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           ListTile(
             leading: GestureDetector(
               onTap: () => _navigateToUserProfile(user),
-              child: CircleAvatar(backgroundImage: avatarUrl.startsWith('http') ? NetworkImage(avatarUrl) : AssetImage(avatarUrl) as ImageProvider),
+              child: ReklamAvatar(
+                avatarUrl: avatarUrl,
+                displayName: userName,
+                accountType: user?['account_type']?.toString(),
+              ),
             ),
             title: GestureDetector(onTap: () => _navigateToUserProfile(user), child: Text(userName, style: const TextStyle(fontWeight: FontWeight.w600))),
             subtitle: Text('Publication', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
@@ -1559,14 +1566,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       child: ListTile(
         onTap: () => _navigateToUserProfile(user),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
+        leading: ReklamAvatar(
+          avatarUrl: avatar.isNotEmpty ? avatar : null,
+          displayName: name,
           radius: 24,
-          backgroundColor: Colors.grey[200],
-          backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-          child: avatar.isEmpty
-              ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.grey))
-              : null,
+          accountType: accountType,
         ),
         title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
         subtitle: Row(

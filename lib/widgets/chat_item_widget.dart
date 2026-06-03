@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class ChatItemWidget extends StatelessWidget {
   final String image;
@@ -43,11 +44,11 @@ class ChatItemWidget extends StatelessWidget {
                   width: 50,
                   height: 50,
                   margin: const EdgeInsets.only(right: 12),
-                  child: CircleAvatar(
-                    backgroundImage: image.startsWith("assets")
-                        ? AssetImage(image)
-                        : NetworkImage(image),
+                  child: ReklamAvatar(
+                    avatarUrl: image,
+                    displayName: name,
                     radius: 24,
+                    accountType: isPro ? 'pro' : 'particulier',
                   ),
                 ),
                 if (unreadCount > 0)

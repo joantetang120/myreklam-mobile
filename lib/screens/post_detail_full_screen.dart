@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:video_player/video_player.dart';
 
 bool _isVideoUrl(String url) {
@@ -227,9 +228,11 @@ class PostDetailFullScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16.0),
               child: Row(
                 children: [
-                  CircleAvatar(
+                  ReklamAvatar(
+                    avatarUrl: author['avatar'],
+                    displayName: author['displayName'],
                     radius: 24,
-                    backgroundImage: _getAvatarProvider(author['avatar']),
+                    accountType: author['accountType'],
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -309,19 +312,5 @@ class PostDetailFullScreen extends StatelessWidget {
     );
   }
 
-  ImageProvider _getAvatarProvider(String? avatar) {
-    if (avatar == null || avatar.isEmpty) {
-      return const AssetImage(
-        'assets/images/dashboard_particulier/Ellipse 10.png',
-      );
-    }
-    if (avatar.startsWith('http')) {
-      return NetworkImage(avatar);
-    }
-    if (avatar.startsWith('assets/')) {
-      return AssetImage(avatar);
-    }
-    return NetworkImage(ApiConfig.resolveMediaUrl(avatar) ?? '')
-        as ImageProvider;
-  }
+
 }

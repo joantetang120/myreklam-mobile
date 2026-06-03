@@ -13,6 +13,8 @@ import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/user_detail_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/widgets/app_layout.dart';
@@ -903,14 +905,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
+              ReklamAvatar(
+                avatarUrl: avatarUrl,
+                displayName: displayName,
                 radius: isReply ? 14 : 18,
-                backgroundImage: avatarUrl != null
-                    ? NetworkImage(avatarUrl)
-                    : const AssetImage(
-                            'assets/images/dashboard_particulier/Ellipse 10.png',
-                          )
-                          as ImageProvider,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1822,14 +1820,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  CircleAvatar(
+                  ReklamAvatar(
+                    avatarUrl: _resolveOwnerAvatar(),
+                    displayName: _resolveOwnerName(),
                     radius: 24,
-                    backgroundImage: _resolveOwnerAvatar().startsWith('http')
-                        ? NetworkImage(_resolveOwnerAvatar()) as ImageProvider
-                        : const AssetImage(
-                            'assets/images/dashboard_particulier/Ellipse 12.png',
-                          ),
-                    backgroundColor: Colors.grey[200],
+                    accountType: _resolveUserType(),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -3371,23 +3366,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
+                          avatarUrl: avatarUrl,
+                          displayName: displayName,
                           radius: isReply ? 14 : 18,
-                          backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(
-                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                      avatarUrl,
-                                )
-                              : null,
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Icon(
-                                  Icons.person,
-                                  size: isReply ? 12 : 16,
-                                  color: Colors.grey[600],
-                                )
-                              : null,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -4011,12 +3993,15 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                 color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
               ),
               const SizedBox(width: 4),
-              Text(
-                data.likesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  data.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],

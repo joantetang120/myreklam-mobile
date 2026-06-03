@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:video_player/video_player.dart';
-import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/story_service.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class StoryEditorScreen extends StatefulWidget {
   final AssetEntity? asset;
@@ -182,22 +182,9 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
   }
 
   Widget _buildUserAvatar() {
-    final resolved = ApiConfig.resolveMediaUrl(_userAvatar);
-    if (resolved != null && resolved.startsWith('http')) {
-      return CircleAvatar(
-        radius: 12,
-        backgroundImage: NetworkImage(resolved),
-        onBackgroundImageError: (_, __) {},
-        backgroundColor: Colors.grey[300],
-      );
-    }
-    // Fallback to asset if no avatar or error
-    return CircleAvatar(
+    return ReklamAvatar(
+      avatarUrl: _userAvatar,
       radius: 12,
-      backgroundImage: const AssetImage(
-        'assets/images/dashboard_particulier/Ellipse 10.png',
-      ),
-      onBackgroundImageError: (_, __) {},
     );
   }
 

@@ -21,10 +21,12 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 // Bouton partager masqué
 // import 'package:share_plus/share_plus.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart' show CustomBottomBar;
 
 class _ReactionData {
@@ -1481,21 +1483,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               child: Row(
                 children: [
                   // Avatar
-                  GestureDetector(
+                  ReklamAvatar(
+                    avatarUrl: _resolveAvatarUrl(),
+                    displayName: _resolveOwnerName(),
+                    radius: 24,
+                    accountType: _resolveUserType(),
                     onTap: widget.authorData != null
                         ? () => _navigateToUserProfile(context)
                         : null,
-                    child: CircleAvatar(
-                      radius: 24,
-                      backgroundImage:
-                          (_resolveAvatarUrl() ?? '').startsWith('http')
-                          ? NetworkImage(_resolveAvatarUrl()!)
-                          : AssetImage(
-                                  _resolveAvatarUrl() ??
-                                      'assets/images/Formation.png',
-                                )
-                                as ImageProvider,
-                    ),
                   ),
                   const SizedBox(width: 12),
                   // Name and user type
@@ -2161,12 +2156,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
               ),
               const SizedBox(width: 4),
-              Text(
-                data.likesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  data.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],
@@ -2614,14 +2612,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
+              ReklamAvatar(
+                avatarUrl: avatarUrl,
+                displayName: displayName,
                 radius: isReply ? 14 : 18,
-                backgroundImage: avatarUrl != null
-                    ? NetworkImage(avatarUrl)
-                    : const AssetImage(
-                            'assets/images/dashboard_particulier/Ellipse 10.png',
-                          )
-                          as ImageProvider,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -3623,16 +3617,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
+                      ReklamAvatar(
+                        avatarUrl: avatarUrl,
+                        displayName: displayName,
                         radius: isReply ? 14 : 18,
-                        backgroundImage:
-                            avatarUrl != null &&
-                                avatarUrl.toString().startsWith('http')
-                            ? NetworkImage(avatarUrl)
-                            : const AssetImage(
-                                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                                  )
-                                  as ImageProvider,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
