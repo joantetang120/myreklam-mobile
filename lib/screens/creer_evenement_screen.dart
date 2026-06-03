@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:http/http.dart' as http;
@@ -85,7 +85,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   String? _submitError;
 
   // Media
-  final List<PlatformFile> _selectedMediaFiles = [];
+  final List<GalleryMedia> _selectedMediaFiles = [];
   List<_EventMediaFile> _existingMedia = [];
   final Set<String> _deletingMediaKeys = {};
 
@@ -689,20 +689,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
   Future<void> _pickMediaFiles() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'],
-        allowMultiple: true,
-        withData: true,
-      );
-
-      if (result != null && result.files.isNotEmpty) {
-        setState(() {
-          _selectedMediaFiles.addAll(result.files);
-        });
-      }
+      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      if (files == null || files.isEmpty) return;
+      setState(() {
+        _selectedMediaFiles.addAll(files);
+      });
     } catch (e) {
-      debugPrint('Error picking media files: $e');
+      debugPrint('Error picking media: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Erreur lors de la sélection des fichiers.')),
       );
@@ -1524,7 +1517,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     );
   }
 
-  Widget _buildPhotoPreviewCard(PlatformFile file, int index) {
+  Widget _buildPhotoPreviewCard(GalleryMedia file, int index) {
     final isCoverPhoto = index == 0;
 
     return Container(
@@ -1729,7 +1722,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     );
   }
 
-  Widget _buildMediaPreview(PlatformFile file) {
+  Widget _buildMediaPreview(GalleryMedia file) {
     final extension = file.extension?.toLowerCase();
     final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(extension);
     final isVideo = ['mp4', 'mov', 'avi'].contains(extension);
