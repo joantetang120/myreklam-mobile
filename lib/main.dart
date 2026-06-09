@@ -14,6 +14,7 @@ import 'package:myreklam/providers/conversation_provider.dart';
 import 'package:myreklam/services/auth_state_manager.dart';
 import 'package:myreklam/services/deep_link_service.dart';
 import 'package:myreklam/services/stripe_payment_service.dart';
+import 'package:myreklam/widgets/force_update_gate.dart';
 import 'package:provider/provider.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -79,7 +80,7 @@ class MyApp extends StatelessWidget {
         ),
         // Define routes for navigation
         routes: {'/login': (context) => const LoginScreen()},
-        home: const SplashScreen(),
+        home: const ForceUpdateGate(child: SplashScreen()),
       ),
     );
   }
