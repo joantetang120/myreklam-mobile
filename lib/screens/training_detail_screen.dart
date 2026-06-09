@@ -2778,7 +2778,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 ProFeature.commentAndReact,
               )) {
                 if (context.mounted) {
-                  SubscriptionHelper.showTrialExpiredDialog(context);
+                  SubscriptionHelper.showPremiumRequiredDialog(
+                    context,
+                    featureName: 'Commentaires et réactions',
+                  );
                 }
                 return;
               }
@@ -3309,7 +3312,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               ProFeature.commentAndReact,
             )) {
               if (context.mounted) {
-                SubscriptionHelper.showTrialExpiredDialog(context);
+                SubscriptionHelper.showPremiumRequiredDialog(
+                  context,
+                  featureName: 'Commentaires et réactions',
+                );
               }
               return;
             }

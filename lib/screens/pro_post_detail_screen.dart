@@ -825,7 +825,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 ProFeature.commentAndReact,
               )) {
                 if (context.mounted) {
-                  SubscriptionHelper.showTrialExpiredDialog(context);
+                  SubscriptionHelper.showPremiumRequiredDialog(
+                    context,
+                    featureName: 'Commentaires et réactions',
+                  );
                 }
                 return;
               }
@@ -4053,7 +4056,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 ProFeature.commentAndReact,
               )) {
                 if (context.mounted) {
-                  SubscriptionHelper.showTrialExpiredDialog(context);
+                  SubscriptionHelper.showPremiumRequiredDialog(
+                    context,
+                    featureName: 'Commentaires et réactions',
+                  );
                 }
                 return;
               }

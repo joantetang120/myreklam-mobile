@@ -217,7 +217,10 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 ProFeature.commentAndReact,
               )) {
                 if (context.mounted) {
-                  SubscriptionHelper.showTrialExpiredDialog(context);
+                  SubscriptionHelper.showPremiumRequiredDialog(
+                    context,
+                    featureName: 'Commentaires et réactions',
+                  );
                 }
                 return;
               }

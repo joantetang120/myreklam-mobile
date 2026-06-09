@@ -54,27 +54,6 @@ class SubscriptionHelper {
     return !isProPremium;
   }
 
-  /// Check if the free pro trial period (1 month from account creation) is still active
-  static bool get isWithinFreeTrialPeriod {
-    final session = UserSession();
-    final trialEndDate = session.subscription?['trial_end_date'];
-    if (trialEndDate != null) {
-      final trialEnd = DateTime.tryParse(trialEndDate.toString());
-      if (trialEnd != null) return DateTime.now().isBefore(trialEnd);
-    }
-
-    final createdAt =
-        session.subscription?['start_date'] ??
-        session.subscription?['created_at'];
-    if (createdAt == null) return false;
-
-    final created = DateTime.tryParse(createdAt.toString());
-    if (created == null) return false;
-
-    final oneMonthLater = created.add(const Duration(days: 30));
-    return DateTime.now().isBefore(oneMonthLater);
-  }
-
   /// Check if the current pro user can access a specific feature
   static bool canAccessFeature(ProFeature feature) {
     final session = UserSession();
@@ -82,14 +61,17 @@ class SubscriptionHelper {
     // Non-pro users: all features allowed (different rules apply)
     if (!session.isPro) return true;
 
-    final permissionKey = _permissionKeys[feature];
-    final permissions = session.subscriptionPermissions;
-    if (permissionKey != null && permissions.containsKey(permissionKey)) {
-      return permissions[permissionKey] == true;
-    }
-
     // Premium pro: all features allowed
     if (isProPremium) return true;
+
+    // A legacy trial must not grant premium permissions.
+    if (session.subscriptionStatus != 'trial') {
+      final permissionKey = _permissionKeys[feature];
+      final permissions = session.subscriptionPermissions;
+      if (permissionKey != null && permissions.containsKey(permissionKey)) {
+        return permissions[permissionKey] == true;
+      }
+    }
 
     // Free pro: check feature-specific rules
     switch (feature) {
@@ -97,12 +79,8 @@ class SubscriptionHelper {
       case ProFeature.viewAnnouncements:
         return true;
 
-      // Limited to 1 month trial period
       case ProFeature.commentAndReact:
       case ProFeature.postAnnouncement:
-        return isWithinFreeTrialPeriod;
-
-      // Premium only
       case ProFeature.getContactInfo:
       case ProFeature.viewSharedDocuments:
       case ProFeature.downloadTrainingPrograms:
@@ -182,68 +160,6 @@ class SubscriptionHelper {
     );
   }
 
-  /// Show a dialog for free trial expired features
-  static void showTrialExpiredDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF9800).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.access_time,
-                color: Color(0xFFFF9800),
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                'Période d\'essai expirée',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        content: const Text(
-          'Votre période d\'essai gratuite de 1 mois est terminée. Passez à la version Premium pour continuer à utiliser cette fonctionnalité.',
-          style: TextStyle(fontSize: 14, color: Color(0xFF616161)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Plus tard'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ProSubscriptionScreen(),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E9B5B),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('Passer Premium'),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Guard a feature action: if allowed, execute the callback;
   /// otherwise show the appropriate blocking dialog
   static void guardFeature(
@@ -255,18 +171,6 @@ class SubscriptionHelper {
     if (canAccessFeature(feature)) {
       onAllowed();
       return;
-    }
-
-    // Free pro, check if it's a time-limited feature
-    if (isProFree) {
-      switch (feature) {
-        case ProFeature.commentAndReact:
-        case ProFeature.postAnnouncement:
-          showTrialExpiredDialog(context);
-          return;
-        default:
-          break;
-      }
     }
 
     showPremiumRequiredDialog(context, featureName: featureName);

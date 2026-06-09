@@ -25,7 +25,10 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
   void _navigateIfAllowed(BuildContext context, Widget screen) {
     if (_userSession.isPro &&
         !SubscriptionHelper.canAccessFeature(ProFeature.postAnnouncement)) {
-      SubscriptionHelper.showTrialExpiredDialog(context);
+      SubscriptionHelper.showPremiumRequiredDialog(
+        context,
+        featureName: 'Publication d\'annonces',
+      );
       return;
     }
     Navigator.push(context, MaterialPageRoute(builder: (context) => screen));

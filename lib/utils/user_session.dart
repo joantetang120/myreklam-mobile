@@ -38,7 +38,7 @@ class UserSession {
   bool get hasActiveSubscription {
     if (_subscription == null || _subscription!.isEmpty) return false;
     final status = subscriptionStatus;
-    if (status != 'active' && status != 'trial') return false;
+    if (status != 'active') return false;
 
     final endDate = _subscription!['end_date'];
     if (endDate == null) return true;
@@ -47,8 +47,6 @@ class UserSession {
     return DateTime.now().isBefore(parsed);
   }
 
-  bool get premiumTrialAvailable =>
-      _subscription?['premium_trial_available'] == true;
   String? get parrainageCode => _parrainageCode;
   double get mys => _mys;
 
