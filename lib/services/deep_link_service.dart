@@ -52,6 +52,47 @@ class DeepLinkService {
     _navigate(type, id);
   }
 
+  /// Public entry point to open an entity detail screen by type + id.
+  ///
+  /// Used by push-notification tap handling. Accepts both the deep-link slugs
+  /// (`bons-plans`, `emplois`, …) and the singular backend reference types
+  /// (`bonplan`, `job_offer`, …), normalising them to the canonical slug.
+  Future<void> openEntity(String type, String id) =>
+      _navigate(_normalizeType(type), id);
+
+  static String _normalizeType(String type) {
+    switch (type.toLowerCase()) {
+      case 'bons-plans':
+      case 'bon-plan':
+      case 'bon_plan':
+      case 'bonplan':
+      case 'bonplans':
+      case 'deal':
+        return 'bons-plans';
+      case 'emplois':
+      case 'emploi':
+      case 'job':
+      case 'job-offer':
+      case 'job_offer':
+      case 'joboffer':
+        return 'emplois';
+      case 'formations':
+      case 'formation':
+      case 'training':
+        return 'formations';
+      case 'evenements':
+      case 'evenement':
+      case 'event':
+        return 'evenements';
+      case 'demandes':
+      case 'demande':
+      case 'request':
+        return 'demandes';
+      default:
+        return type;
+    }
+  }
+
   Future<void> _navigate(String type, String id) async {
     final ctx = navigatorKey.currentContext;
     if (ctx == null) return;
