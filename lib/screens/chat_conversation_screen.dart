@@ -703,7 +703,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
           // Message Input
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              20 + MediaQuery.paddingOf(context).bottom,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [

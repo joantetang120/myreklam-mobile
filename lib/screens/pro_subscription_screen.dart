@@ -1,50 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
-import 'package:myreklam/services/subscription_service.dart';
 import 'package:myreklam/services/stripe_payment_service.dart';
 import 'package:myreklam/services/paypal_payment_service.dart';
-import 'package:myreklam/services/api_client.dart';
 
-enum PaymentMethod { paypal, stripe }
-
-class ProSubscriptionScreen extends StatefulWidget {
+class ProSubscriptionScreen extends StatelessWidget {
   const ProSubscriptionScreen({super.key});
-
-  @override
-  State<ProSubscriptionScreen> createState() => _ProSubscriptionScreenState();
-}
-
-class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-  final _subscriptionService = SubscriptionService();
-  bool _isLoading = false;
-  bool _premiumTrialAvailable = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this, initialIndex: 1);
-    _loadSubscriptionState();
-  }
-
-  Future<void> _loadSubscriptionState() async {
-    try {
-      final response = await _subscriptionService.getCurrentSubscription();
-      if (!mounted) return;
-      setState(() {
-        _premiumTrialAvailable = response['premium_trial_available'] != false;
-      });
-    } catch (_) {
-      // The backend will still enforce eligibility when the user taps the CTA.
-    }
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,60 +28,10 @@ class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
         ),
         centerTitle: true,
       ),
-      body: Column(
+      body: const Column(
         children: [
-          const SizedBox(height: 12),
+          SizedBox(height: 14),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF4E7),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: SizedBox(
-                height: 40,
-                child: TabBar(
-                  controller: _tabController,
-                  indicator: BoxDecoration(
-                    color: const Color(0xFFFF8600),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x33FF8600),
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  labelPadding: EdgeInsets.zero,
-                  indicatorPadding: EdgeInsets.zero,
-                  dividerColor: Colors.transparent,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: const Color(0xFF7E6B5C),
-                  labelStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
-                  tabs: const [
-                    Tab(
-                      child: SizedBox.expand(
-                        child: Center(child: Text('Version GRATUITE')),
-                      ),
-                    ),
-                    Tab(
-                      child: SizedBox.expand(
-                        child: Center(child: Text('Version PREMIUM')),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          const Padding(
             padding: EdgeInsets.symmetric(horizontal: 24),
             child: Text(
               'Développez votre activité avec Myreklam : choisissez l\'offre qui correspond à vos ambitions.',
@@ -129,240 +39,8 @@ class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
               style: TextStyle(fontSize: 13, color: Color(0xFF8D8D8D)),
             ),
           ),
-          const SizedBox(height: 18),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _FreePlan(onContinue: () => _handleSubscribe('free')),
-                _PremiumPlan(
-                  premiumTrialAvailable: _premiumTrialAvailable,
-                  onContinue: (billingCycle, method) => _handleSubscribe(
-                    'premium',
-                    billingCycle: billingCycle,
-                    paymentMethod: method,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handleSubscribe(
-    String plan, {
-    String? billingCycle,
-    PaymentMethod? paymentMethod,
-  }) async {
-    // Stripe and PayPal payments are handled separately
-    if (paymentMethod == PaymentMethod.stripe ||
-        paymentMethod == PaymentMethod.paypal) {
-      return;
-    }
-
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
-
-    try {
-      await _subscriptionService.subscribe(
-        plan: plan,
-        billingCycle: billingCycle,
-        paymentMethod: paymentMethod?.name,
-      );
-
-      if (!mounted) return;
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const ParticulierMainScreen()),
-        (route) => false,
-      );
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Une erreur est survenue. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-}
-
-class _FreePlan extends StatelessWidget {
-  const _FreePlan({required this.onContinue});
-
-  final VoidCallback onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE9DED2)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _FreePlanHeader(),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(0),
-                        topRight: Radius.circular(20),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: const [
-                            Text(
-                              '0€',
-                              style: TextStyle(
-                                fontSize: 38,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFFF9800),
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Padding(
-                              padding: EdgeInsets.only(bottom: 6),
-                              child: Text(
-                                '/mois',
-                                style: TextStyle(color: Color(0xFF8D8D8D)),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Gratuit à vie · sans engagement',
-                          style: TextStyle(color: Color(0xFF8D8D8D)),
-                        ),
-                        const SizedBox(height: 26),
-                        _buildFeatureGroup(
-                          title: 'TROUVER',
-                          items: const [
-                            FeatureItem(
-                              'Consulter les annonces (illimité)',
-                              FeatureStatus.warning,
-                            ),
-                            FeatureItem(
-                              'Commenter et réagir aux annonces (1 mois)',
-                              FeatureStatus.warning,
-                            ),
-                            FeatureItem(
-                              'Obtenir un numéro ou email de contact',
-                              FeatureStatus.unavailable,
-                              strike: true,
-                            ),
-                            FeatureItem(
-                              'Voir les documents partagés',
-                              FeatureStatus.unavailable,
-                              strike: true,
-                            ),
-                            FeatureItem(
-                              'Télécharger les programmes de formations',
-                              FeatureStatus.unavailable,
-                              strike: true,
-                            ),
-                          ],
-                          headerColor: const Color(0xFFFF9800),
-                        ),
-                        _buildFeatureGroup(
-                          title: 'PROMOUVOIR',
-                          items: const [
-                            FeatureItem(
-                              'Poster une annonce (1 mois)',
-                              FeatureStatus.warning,
-                            ),
-                            FeatureItem(
-                              'Partager mes coordonnées sur mes annonces',
-                              FeatureStatus.unavailable,
-                              strike: true,
-                            ),
-                          ],
-                          headerColor: const Color(0xFFFF9800),
-                        ),
-                        _buildFeatureGroup(
-                          title: 'COMMUNIQUER',
-                          items: const [
-                            FeatureItem(
-                              'Accès à la messagerie',
-                              FeatureStatus.unavailable,
-                              strike: true,
-                            ),
-                            FeatureItem(
-                              'Convertir mes My\'s en récompense',
-                              FeatureStatus.unavailable,
-                              strike: true,
-                            ),
-                          ],
-                          headerColor: const Color(0xFFFF9800),
-                        ),
-                        _buildFeatureGroup(
-                          title: 'DIFFUSER',
-                          items: const [
-                            FeatureItem(
-                              'Profil (Basique)',
-                              FeatureStatus.warning,
-                            ),
-                            FeatureItem(
-                              'Répondre aux avis',
-                              FeatureStatus.unavailable,
-                              strike: true,
-                            ),
-                          ],
-                          headerColor: const Color(0xFFFF9800),
-                        ),
-                        const SizedBox(height: 16),
-                        _GradientButton(
-                          label: 'Continuer en gratuit',
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFFB347), Color(0xFFFF8C1A)],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          onTap: onContinue,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 30),
+          SizedBox(height: 18),
+          Expanded(child: _PremiumPlan()),
         ],
       ),
     );
@@ -370,13 +48,7 @@ class _FreePlan extends StatelessWidget {
 }
 
 class _PremiumPlan extends StatefulWidget {
-  const _PremiumPlan({
-    required this.onContinue,
-    required this.premiumTrialAvailable,
-  });
-
-  final void Function(String billingCycle, PaymentMethod? method) onContinue;
-  final bool premiumTrialAvailable;
+  const _PremiumPlan();
 
   @override
   State<_PremiumPlan> createState() => _PremiumPlanState();
@@ -702,9 +374,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        _CenteredPremiumIntro(
-                          trialAvailable: widget.premiumTrialAvailable,
-                        ),
+                        const _CenteredPremiumIntro(),
                         const SizedBox(height: 24),
                         _buildFeatureGroup(
                           title: 'TROUVER',
@@ -780,22 +450,13 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                         ),
                         const SizedBox(height: 16),
                         _GradientButton(
-                          label: widget.premiumTrialAvailable
-                              ? 'Démarrer l\'essai Premium'
-                              : 'Continuer en Premium',
+                          label: 'Continuer en Premium',
                           gradient: const LinearGradient(
                             colors: [Color(0xFF04BC7B), Color(0xFF03CD85)],
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
                           ),
-                          onTap: widget.premiumTrialAvailable
-                              ? () => widget.onContinue(
-                                  _cycle == _BillingCycle.monthly
-                                      ? 'monthly'
-                                      : 'annual',
-                                  null,
-                                )
-                              : _showPaymentMethodModal,
+                          onTap: _showPaymentMethodModal,
                         ),
                       ],
                     ),
@@ -899,20 +560,16 @@ class _BillingToggle extends StatelessWidget {
 }
 
 class _CenteredPremiumIntro extends StatelessWidget {
-  const _CenteredPremiumIntro({required this.trialAvailable});
-
-  final bool trialAvailable;
+  const _CenteredPremiumIntro();
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(
-          trialAvailable
-              ? '1 mois offert. Vous pourrez choisir un paiement à la fin de la période d’essai.'
-              : 'Votre essai Premium a déjà été utilisé. Choisissez une formule pour activer Premium.',
-          style: const TextStyle(color: Color(0xFF6D7278)),
+        const Text(
+          'Choisissez une formule et un moyen de paiement pour activer Premium.',
+          style: TextStyle(color: Color(0xFF6D7278)),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 18),
@@ -1101,62 +758,6 @@ class _PaymentOptionTile extends StatelessWidget {
               Icons.arrow_forward_ios,
               color: color.withOpacity(0.6),
               size: 16,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FreePlanHeader extends StatelessWidget {
-  const _FreePlanHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(20),
-        topRight: Radius.circular(20),
-      ),
-      child: Container(
-        height: 130,
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFFFB347), Color(0xFFFF8C1A)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -30,
-              top: -20,
-              child: SizedBox(
-                width: 160,
-                height: 160,
-                child: CustomPaint(painter: _SwirlPainter(opacity: 0.25)),
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  '| Version GRATUITE',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  'Découvrez la plateforme avec des fonctionnalités de base.',
-                  style: TextStyle(color: Colors.white, fontSize: 13),
-                ),
-              ],
             ),
           ],
         ),

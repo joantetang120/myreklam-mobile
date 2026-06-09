@@ -19,16 +19,17 @@ class SubscriptionService {
     String? billingCycle,
     String? paymentMethod,
   }) async {
-    final body = <String, dynamic>{
-      'plan': plan,
-    };
+    final body = <String, dynamic>{'plan': plan};
     if (billingCycle != null) {
       body['billing_cycle'] = billingCycle;
     }
     if (paymentMethod != null) {
       body['payment_method'] = paymentMethod;
     }
-    final response = await _api.authenticatedPost('/subscriptions/subscribe', body: body);
+    final response = await _api.authenticatedPost(
+      '/subscriptions/subscribe',
+      body: body,
+    );
     _updateSessionSubscription(response);
     return response;
   }
@@ -55,12 +56,10 @@ class SubscriptionService {
     }
 
     if (normalized != null && response['permissions'] is Map) {
-      normalized['permissions'] = Map<String, dynamic>.from(response['permissions']);
+      normalized['permissions'] = Map<String, dynamic>.from(
+        response['permissions'],
+      );
     }
-    if (normalized != null && response.containsKey('premium_trial_available')) {
-      normalized['premium_trial_available'] = response['premium_trial_available'];
-    }
-
     UserSession().updateFromApi(subscription: normalized);
   }
 }

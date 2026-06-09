@@ -56,6 +56,13 @@
 			<string>com.myreklam.app</string>
 		</dict>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>fetch</string>
+	</array>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Myreklam a besoin d'accéder à votre galerie pour que vous puissiez ajouter une storie.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
