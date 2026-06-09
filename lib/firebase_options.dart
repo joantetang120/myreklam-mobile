@@ -51,19 +51,19 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyA3voo0Cdm-kN3891rzRLTqoWDS6C1fODQ',
-    appId: '1:166441708619:android:30873afbe2bfdd021b31ce',
+    appId: '1:166441708619:android:449c9fb5d4589e3a1b31ce',
     messagingSenderId: '166441708619',
     projectId: 'myreklam-7b2d9',
     storageBucket: 'myreklam-7b2d9.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA3voo0Cdm-kN3891rzRLTqoWDS6C1fODQ',
-    appId: '1:166441708619:ios:PLACEHOLDER', // Will be replaced with actual iOS app ID
+    apiKey: 'AIzaSyCR5RvO_ME986BERLVC1uUD3iuXrAQSnP8',
+    appId: '1:166441708619:ios:7ae549b1099b43a51b31ce',
     messagingSenderId: '166441708619',
     projectId: 'myreklam-7b2d9',
     storageBucket: 'myreklam-7b2d9.firebasestorage.app',
-    iosClientId: '166441708619-tt4a3fg0ah3g5ol3mmt0f5a65hgif4f8.apps.googleusercontent.com',
+    androidClientId: '166441708619-e63s1vkkj2cbnqi43j542uscj94n5oid.apps.googleusercontent.com',
+    iosClientId: '166441708619-o38o8rtne2rsie3ur6io1aq0finjtefs.apps.googleusercontent.com',
     iosBundleId: 'com.example.myreklam',
   );
 }
