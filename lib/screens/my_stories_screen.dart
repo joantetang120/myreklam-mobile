@@ -147,6 +147,8 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
                   'time': _getTimeAgo(s.timestamp),
                   'id': s.id,
                   'views_count': s.viewsCount,
+                  'likes_count': s.likesCount,
+                  'is_liked': s.isLiked,
                   'overlay_text': s.overlayText,
                   'overlay_color': s.overlayColor,
                   'overlay_style': s.overlayStyle,

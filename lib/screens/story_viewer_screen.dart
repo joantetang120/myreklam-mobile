@@ -54,6 +54,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    _isLiked = widget.stories[_currentIndex]['is_liked'] == true;
     _progressController =
         AnimationController(vsync: this, duration: const Duration(seconds: 5))
           ..addStatusListener((status) {
@@ -226,6 +227,33 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     }
   }
 
+  Future<void> _toggleLike() async {
+    final story = widget.stories[_currentIndex];
+    final storyId = story['id'];
+    if (storyId is! int) return;
+
+    final wasLiked = _isLiked;
+    // Optimistic update + persist on the underlying map so it survives navigation.
+    setState(() {
+      _isLiked = !wasLiked;
+      story['is_liked'] = _isLiked;
+    });
+
+    final newCount = wasLiked
+        ? await _storyService.unlikeStory(storyId)
+        : await _storyService.likeStory(storyId);
+
+    if (newCount != null) {
+      story['likes_count'] = newCount;
+    } else if (mounted) {
+      // Revert on failure.
+      setState(() {
+        _isLiked = wasLiked;
+        story['is_liked'] = wasLiked;
+      });
+    }
+  }
+
   void _nextStory() {
     _videoController?.removeListener(_onVideoProgress);
     _videoController?.dispose();
@@ -234,6 +262,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     if (_currentIndex < widget.stories.length - 1) {
       setState(() {
         _currentIndex++;
+        _isLiked = widget.stories[_currentIndex]['is_liked'] == true;
       });
       _progressController.reset();
       _recordCurrentView();
@@ -251,6 +280,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     if (_currentIndex > 0) {
       setState(() {
         _currentIndex--;
+        _isLiked = widget.stories[_currentIndex]['is_liked'] == true;
       });
       _progressController.reset();
       _recordCurrentView();
@@ -351,6 +381,13 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                                 color: Colors.grey[600],
                               ),
                             ),
+                            trailing: viewer.liked
+                                ? const Icon(
+                                    Icons.favorite,
+                                    color: Colors.red,
+                                    size: 20,
+                                  )
+                                : null,
                           );
                         },
                       ),
@@ -849,9 +886,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 ownerName: widget.name,
                 storyId: story['id'] is int ? story['id'] as int : 0,
                 storyImage: story['image'] as String? ?? '',
-                onToggleLike: () {
-                  setState(() => _isLiked = !_isLiked);
-                },
+                onToggleLike: _toggleLike,
               ),
           ],
         ),
@@ -1074,21 +1109,22 @@ class _ReplyOverlayState extends State<_ReplyOverlay> {
                             ),
                     ),
                   ),
-                  // const SizedBox(width: 12),
-                  // GestureDetector(
-                  //   onTap: widget.onToggleLike,
-                  //   child: Icon(
-                  //     widget.isLiked ? Icons.favorite : Icons.favorite_border,
-                  //     color: widget.isLiked ? Colors.red : Colors.white,
-                  //     size: 28,
-                  //   ),
-                  // ),
-                  // const SizedBox(width: 16),
-                  // const Icon(
-                  //   Icons.share_outlined,
-                  //   color: Colors.white,
-                  //   size: 26,
-                  // ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: widget.onToggleLike,
+                    child: AnimatedScale(
+                      scale: widget.isLiked ? 1.15 : 1.0,
+                      duration: const Duration(milliseconds: 150),
+                      curve: Curves.easeOut,
+                      child: Icon(
+                        widget.isLiked
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: widget.isLiked ? Colors.red : Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

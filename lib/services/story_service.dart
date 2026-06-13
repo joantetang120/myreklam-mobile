@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/models/story_model.dart';
 import 'package:myreklam/services/token_storage.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class StoryService {
   static final StoryService _instance = StoryService._internal();
@@ -30,6 +31,7 @@ class StoryService {
     double? overlayX,
     double? overlayY,
     String mediaType = 'image',
+    List<int> mentions = const [],
   }) async {
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/stories');
@@ -69,6 +71,11 @@ class StoryService {
         if (overlayY != null) {
           request.fields['overlay_y'] = overlayY.toString();
         }
+      }
+
+      // Mentioned user ids — indexed keys so Laravel parses them as an array.
+      for (var i = 0; i < mentions.length; i++) {
+        request.fields['mentions[$i]'] = mentions[i].toString();
       }
 
       final streamedResponse = await request.send().timeout(
@@ -164,6 +171,81 @@ class StoryService {
     } catch (e) {
       debugPrint('Error recording story view: $e');
       return null;
+    }
+  }
+
+  /// Like a story. Returns the new likes_count, or null on failure.
+  Future<int?> likeStory(int storyId) async {
+    try {
+      final headers = await _authHeaders();
+      headers['Content-Type'] = 'application/json';
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/stories/$storyId/like'),
+            headers: headers,
+          )
+          .timeout(ApiConfig.connectTimeout);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        return body['likes_count'] as int?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error liking story: $e');
+      return null;
+    }
+  }
+
+  /// Remove a like from a story. Returns the new likes_count, or null on failure.
+  Future<int?> unlikeStory(int storyId) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http
+          .delete(
+            Uri.parse('${ApiConfig.baseUrl}/stories/$storyId/like'),
+            headers: headers,
+          )
+          .timeout(ApiConfig.connectTimeout);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        return body['likes_count'] as int?;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error unliking story: $e');
+      return null;
+    }
+  }
+
+  /// Get the current user's followers (candidates for @-mentions).
+  Future<List<MentionUser>> getMyFollowers() async {
+    try {
+      final myId = UserSession().id;
+      if (myId == null || myId.isEmpty) return [];
+
+      final headers = await _authHeaders();
+      final response = await http
+          .get(
+            Uri.parse('${ApiConfig.baseUrl}/profile/$myId/followers'),
+            headers: headers,
+          )
+          .timeout(ApiConfig.connectTimeout);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        if (body['success'] == true && body['data'] != null) {
+          return (body['data'] as List)
+              .map((u) => MentionUser.fromFollowerJson(u as Map<String, dynamic>))
+              .where((u) => u.id > 0)
+              .toList();
+        }
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching followers: $e');
+      return [];
     }
   }
 

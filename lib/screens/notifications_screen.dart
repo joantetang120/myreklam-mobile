@@ -218,6 +218,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       'content_published' => Icons.check_circle,
       'event_participation' => Icons.event_available,
       'training_subscription' => Icons.school,
+      'story_like' => Icons.favorite,
+      'story_mention' => Icons.alternate_email,
       _ => Icons.notifications,
     };
   }
@@ -231,6 +233,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       'content_published' => const Color(0xFF3AAE5E),
       'event_participation' => const Color(0xFFE91E63),
       'training_subscription' => const Color(0xFF00BCD4),
+      'story_like' => const Color(0xFFE53935),
+      'story_mention' => const Color(0xFF8E24AA),
       _ => const Color(0xFF757575),
     };
   }

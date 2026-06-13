@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:video_player/video_player.dart';
+import 'package:myreklam/models/story_model.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/story_service.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
@@ -59,6 +60,13 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
   final _textEditController = TextEditingController();
   final _textFocusNode = FocusNode();
   final _colorBarKey = GlobalKey();
+
+  // Mentions (@) state
+  List<MentionUser> _followers = [];
+  bool _followersLoaded = false;
+  bool _showMentions = false;
+  List<MentionUser> _mentionSuggestions = [];
+  final Map<int, String> _selectedMentions = {}; // userId -> displayed name
 
   @override
   void initState() {
@@ -179,6 +187,116 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
     } catch (e) {
       debugPrint('Error loading user profile: $e');
     }
+  }
+
+  // ─── Mentions (@) ──────────────────────────────────────────────────────────
+
+  Future<void> _ensureFollowersLoaded() async {
+    if (_followersLoaded) return;
+    _followersLoaded = true;
+    final followers = await _storyService.getMyFollowers();
+    if (mounted) _followers = followers;
+  }
+
+  /// Detect an in-progress "@token" at the cursor and show the picker.
+  void _onCaptionChanged(String text) {
+    final sel = _captionController.selection;
+    final cursor = (sel.baseOffset >= 0 ? sel.baseOffset : text.length)
+        .clamp(0, text.length);
+    final beforeCursor = text.substring(0, cursor);
+    final match = RegExp(r'@([\p{L}0-9_]*)$', unicode: true)
+        .firstMatch(beforeCursor);
+
+    if (match == null) {
+      if (_showMentions) setState(() => _showMentions = false);
+      return;
+    }
+
+    final query = match.group(1)!.toLowerCase();
+    _ensureFollowersLoaded().then((_) {
+      if (!mounted) return;
+      setState(() {
+        _showMentions = true;
+        _mentionSuggestions = _followers
+            .where((f) => f.name.toLowerCase().contains(query))
+            .take(30)
+            .toList();
+      });
+    });
+  }
+
+  void _selectMention(MentionUser user) {
+    final text = _captionController.text;
+    final sel = _captionController.selection;
+    final cursor = (sel.baseOffset >= 0 ? sel.baseOffset : text.length)
+        .clamp(0, text.length);
+    final before = text.substring(0, cursor);
+    final after = text.substring(cursor);
+    final atIndex = before.lastIndexOf('@');
+    if (atIndex < 0) return;
+
+    final newBefore = '${before.substring(0, atIndex)}@${user.name} ';
+    final newText = newBefore + after;
+    _captionController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newBefore.length),
+    );
+    _selectedMentions[user.id] = user.name;
+    setState(() => _showMentions = false);
+  }
+
+  /// Mentions still present in the caption at publish time.
+  List<int> _resolveMentions() {
+    final caption = _captionController.text;
+    return _selectedMentions.entries
+        .where((e) => caption.contains('@${e.value}'))
+        .map((e) => e.key)
+        .toList();
+  }
+
+  Widget _buildMentionSuggestions() {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 220),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(0.15)),
+      ),
+      child: _mentionSuggestions.isEmpty
+          ? const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Aucun abonné à mentionner',
+                style: TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+            )
+          : ListView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              itemCount: _mentionSuggestions.length,
+              itemBuilder: (context, index) {
+                final user = _mentionSuggestions[index];
+                return ListTile(
+                  dense: true,
+                  leading: ReklamAvatar(
+                    avatarUrl: user.avatar,
+                    displayName: user.name,
+                    radius: 16,
+                  ),
+                  title: Text(
+                    user.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap: () => _selectMention(user),
+                );
+              },
+            ),
+    );
   }
 
   Widget _buildUserAvatar() {
@@ -651,6 +769,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (_showMentions) _buildMentionSuggestions(),
                     TextField(
                       maxLength: 300,
                       maxLines: 5,
@@ -658,14 +777,13 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                       keyboardType: TextInputType.multiline,
                       textInputAction: TextInputAction.newline,
                       controller: _captionController,
+                      onChanged: _onCaptionChanged,
                       style: const TextStyle(color: Colors.white, fontSize: 16),
                       decoration: const InputDecoration(
-                        hintText: 'Ajouter une légende...',
+                        hintText: 'Ajouter une légende... (@ pour mentionner)',
                         hintStyle: TextStyle(color: Colors.white70),
                         border: InputBorder.none,
-                        counterStyle: const TextStyle(
-                          color: Colors.transparent,
-                        ),
+                        counterStyle: TextStyle(color: Colors.transparent),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -776,6 +894,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                                           ? _textY
                                           : null,
                                       mediaType: _isVideo ? 'video' : 'image',
+                                      mentions: _resolveMentions(),
                                     );
                                     if (story != null && mounted) {
                                       Navigator.pop(context, story);

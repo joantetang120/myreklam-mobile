@@ -283,10 +283,18 @@ class _MessageScreenState extends State<MessageScreen> {
       }
       return {
         'image': resolvedImage ?? '',
+        'media_type': s.mediaType ?? 'image',
         'text': s.caption,
         'time': time,
         'id': s.id,
         'views_count': s.viewsCount,
+        'likes_count': s.likesCount,
+        'is_liked': s.isLiked,
+        'overlay_text': s.overlayText,
+        'overlay_color': s.overlayColor,
+        'overlay_style': s.overlayStyle,
+        'overlay_x': s.overlayX,
+        'overlay_y': s.overlayY,
       };
     }).toList();
 
