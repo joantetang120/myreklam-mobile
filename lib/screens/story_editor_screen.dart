@@ -1,9 +1,14 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:video_player/video_player.dart';
+import 'package:myreklam/models/story_model.dart';
+import 'package:myreklam/models/story_overlay.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/story_service.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
@@ -59,6 +64,46 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
   final _textEditController = TextEditingController();
   final _textFocusNode = FocusNode();
   final _colorBarKey = GlobalKey();
+
+  // Mentions (@) state
+  List<MentionUser> _followers = [];
+  bool _followersLoaded = false;
+  bool _showMentions = false;
+  List<MentionUser> _mentionSuggestions = [];
+  final Map<int, String> _selectedMentions = {}; // userId -> displayed name
+
+  // Structured overlays (stickers, location, drawing)
+  final List<StoryOverlay> _overlays = [];
+  int? _selectedOverlayIndex;
+  double _gestureBaseScale = 1.0;
+  double _gestureBaseRotation = 0.0;
+
+  // Drawing mode
+  bool _isDrawing = false;
+  final List<DrawStroke> _drawStrokes = [];
+  List<Offset> _currentStroke = [];
+  Color _drawColor = Colors.white;
+  double _drawWidth = 6.0;
+  bool _isAddingLocation = false;
+
+  static const List<Color> _drawColors = [
+    Colors.white,
+    Colors.black,
+    Color(0xFFE53935),
+    Color(0xFFFF9800),
+    Color(0xFFFFEB3B),
+    Color(0xFF4CAF50),
+    Color(0xFF2196F3),
+    Color(0xFF9C27B0),
+    Color(0xFFE91E63),
+  ];
+
+  static const List<String> _stickerEmojis = [
+    '❤️', '😂', '😍', '🔥', '👍', '🎉', '😎', '🥳', '😭', '🙌',
+    '✨', '💯', '😱', '🤩', '😡', '🤔', '👏', '🙏', '💪', '🌟',
+    '⚡', '🌈', '☀️', '🌙', '⭐', '💔', '💖', '🎁', '🏆', '👑',
+    '🍕', '🍔', '☕', '🍻', '⚽', '🏀', '🎵', '📍', '✅', '❌',
+  ];
 
   @override
   void initState() {
@@ -179,6 +224,481 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
     } catch (e) {
       debugPrint('Error loading user profile: $e');
     }
+  }
+
+  // ─── Mentions (@) ──────────────────────────────────────────────────────────
+
+  Future<void> _ensureFollowersLoaded() async {
+    if (_followersLoaded) return;
+    _followersLoaded = true;
+    final followers = await _storyService.getMyFollowers();
+    if (mounted) _followers = followers;
+  }
+
+  /// Detect an in-progress "@token" at the cursor and show the picker.
+  void _onCaptionChanged(String text) {
+    final sel = _captionController.selection;
+    final cursor = (sel.baseOffset >= 0 ? sel.baseOffset : text.length)
+        .clamp(0, text.length);
+    final beforeCursor = text.substring(0, cursor);
+    final match = RegExp(r'@([\p{L}0-9_]*)$', unicode: true)
+        .firstMatch(beforeCursor);
+
+    if (match == null) {
+      if (_showMentions) setState(() => _showMentions = false);
+      return;
+    }
+
+    final query = match.group(1)!.toLowerCase();
+    _ensureFollowersLoaded().then((_) {
+      if (!mounted) return;
+      setState(() {
+        _showMentions = true;
+        _mentionSuggestions = _followers
+            .where((f) => f.name.toLowerCase().contains(query))
+            .take(30)
+            .toList();
+      });
+    });
+  }
+
+  void _selectMention(MentionUser user) {
+    final text = _captionController.text;
+    final sel = _captionController.selection;
+    final cursor = (sel.baseOffset >= 0 ? sel.baseOffset : text.length)
+        .clamp(0, text.length);
+    final before = text.substring(0, cursor);
+    final after = text.substring(cursor);
+    final atIndex = before.lastIndexOf('@');
+    if (atIndex < 0) return;
+
+    final newBefore = '${before.substring(0, atIndex)}@${user.name} ';
+    final newText = newBefore + after;
+    _captionController.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newBefore.length),
+    );
+    _selectedMentions[user.id] = user.name;
+    setState(() => _showMentions = false);
+  }
+
+  /// Mentions still present in the caption at publish time.
+  List<int> _resolveMentions() {
+    final caption = _captionController.text;
+    return _selectedMentions.entries
+        .where((e) => caption.contains('@${e.value}'))
+        .map((e) => e.key)
+        .toList();
+  }
+
+  Widget _buildMentionSuggestions() {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 220),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(0.15)),
+      ),
+      child: _mentionSuggestions.isEmpty
+          ? const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Aucun abonné à mentionner',
+                style: TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+            )
+          : ListView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              itemCount: _mentionSuggestions.length,
+              itemBuilder: (context, index) {
+                final user = _mentionSuggestions[index];
+                return ListTile(
+                  dense: true,
+                  leading: ReklamAvatar(
+                    avatarUrl: user.avatar,
+                    displayName: user.name,
+                    radius: 16,
+                  ),
+                  title: Text(
+                    user.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap: () => _selectMention(user),
+                );
+              },
+            ),
+    );
+  }
+
+  // ─── Overlays: stickers / location / drawing ───────────────────────────────
+
+  String _overlaysJson() => jsonEncode(StoryOverlay.listToJson(_overlays));
+
+  void _openStickerPicker() {
+    setState(() => _selectedOverlayIndex = null);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1C1C1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Stickers',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              GridView.count(
+                crossAxisCount: 6,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  for (final emoji in _stickerEmojis)
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _addSticker(emoji);
+                      },
+                      child: Center(
+                        child: Text(
+                          emoji,
+                          style: const TextStyle(fontSize: 30),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _addSticker(String emoji) {
+    setState(() {
+      _overlays.add(StickerOverlay(emoji: emoji, x: 0.5, y: 0.45));
+      _selectedOverlayIndex = _overlays.length - 1;
+    });
+  }
+
+  Future<void> _addLocation() async {
+    if (_isAddingLocation) return;
+    setState(() => _isAddingLocation = true);
+    try {
+      // Permission + position
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        throw 'Permission de localisation refusée';
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      ).timeout(const Duration(seconds: 12));
+
+      String name = 'Ma position';
+      try {
+        final placemarks = await placemarkFromCoordinates(
+          pos.latitude,
+          pos.longitude,
+        );
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          final city = (p.locality?.isNotEmpty == true)
+              ? p.locality!
+              : (p.subAdministrativeArea ?? p.administrativeArea ?? '');
+          final area = p.subLocality?.isNotEmpty == true ? p.subLocality! : '';
+          name = [area, city].where((s) => s.isNotEmpty).join(', ');
+          if (name.isEmpty) name = p.country ?? 'Ma position';
+        }
+      } catch (_) {
+        // Keep fallback name if reverse geocoding fails.
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _overlays.add(LocationOverlay(
+          name: name,
+          lat: pos.latitude,
+          lng: pos.longitude,
+          x: 0.5,
+          y: 0.8,
+        ));
+        _selectedOverlayIndex = _overlays.length - 1;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Localisation indisponible: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isAddingLocation = false);
+    }
+  }
+
+  void _deleteSelectedOverlay() {
+    if (_selectedOverlayIndex == null) return;
+    setState(() {
+      _overlays.removeAt(_selectedOverlayIndex!);
+      _selectedOverlayIndex = null;
+    });
+  }
+
+  Widget _buildOverlaysLayer() {
+    return Stack(
+      children: [
+        for (int i = 0; i < _overlays.length; i++)
+          if (_overlays[i] is DrawingOverlay)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: StoryDrawingPainter(
+                    (_overlays[i] as DrawingOverlay).strokes,
+                  ),
+                ),
+              ),
+            )
+          else if (_overlays[i] is PositionedOverlay)
+            _buildInteractiveOverlay(i),
+      ],
+    );
+  }
+
+  Widget _buildInteractiveOverlay(int index) {
+    final o = _overlays[index] as PositionedOverlay;
+    final size = MediaQuery.of(context).size;
+    final selected = _selectedOverlayIndex == index;
+
+    return Positioned(
+      left: o.x * size.width,
+      top: o.y * size.height,
+      child: FractionalTranslation(
+        translation: const Offset(-0.5, -0.5),
+        child: GestureDetector(
+          onTap: () => setState(() => _selectedOverlayIndex = index),
+          onScaleStart: (_) {
+            _gestureBaseScale = o.scale;
+            _gestureBaseRotation = o.rotation;
+            setState(() => _selectedOverlayIndex = index);
+          },
+          onScaleUpdate: (d) {
+            setState(() {
+              o.x = (o.x + d.focalPointDelta.dx / size.width).clamp(0.0, 1.0);
+              o.y = (o.y + d.focalPointDelta.dy / size.height).clamp(0.0, 1.0);
+              o.scale = (_gestureBaseScale * d.scale).clamp(0.3, 5.0);
+              o.rotation = _gestureBaseRotation + d.rotation;
+            });
+          },
+          child: Transform.rotate(
+            angle: o.rotation,
+            child: Transform.scale(
+              scale: o.scale,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: selected
+                    ? BoxDecoration(
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.8),
+                          width: 1,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      )
+                    : null,
+                child: buildOverlayChild(o),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Drawing mode ───────────────────────────────────────────────────────────
+
+  void _enterDrawMode() {
+    // Resume from an existing drawing if present.
+    final existingIndex =
+        _overlays.indexWhere((o) => o is DrawingOverlay);
+    setState(() {
+      _selectedOverlayIndex = null;
+      _drawStrokes.clear();
+      if (existingIndex >= 0) {
+        _drawStrokes.addAll((_overlays[existingIndex] as DrawingOverlay).strokes);
+      }
+      _isDrawing = true;
+    });
+  }
+
+  void _commitDrawing() {
+    setState(() {
+      _overlays.removeWhere((o) => o is DrawingOverlay);
+      if (_drawStrokes.isNotEmpty) {
+        // Drawing sits at the bottom so stickers stay tappable above it.
+        _overlays.insert(0, DrawingOverlay(strokes: List.of(_drawStrokes)));
+      }
+      _isDrawing = false;
+      _currentStroke = [];
+    });
+  }
+
+  void _cancelDrawing() {
+    setState(() {
+      _isDrawing = false;
+      _currentStroke = [];
+      _drawStrokes.clear();
+    });
+  }
+
+  void _undoStroke() {
+    setState(() {
+      if (_currentStroke.isNotEmpty) {
+        _currentStroke = [];
+      } else if (_drawStrokes.isNotEmpty) {
+        _drawStrokes.removeLast();
+      }
+    });
+  }
+
+  void _onDrawUpdate(Offset localPos, Size size) {
+    setState(() {
+      _currentStroke.add(
+        Offset(
+          (localPos.dx / size.width).clamp(0.0, 1.0),
+          (localPos.dy / size.height).clamp(0.0, 1.0),
+        ),
+      );
+    });
+  }
+
+  void _onDrawEnd() {
+    if (_currentStroke.isEmpty) return;
+    setState(() {
+      _drawStrokes.add(DrawStroke(
+        color: _drawColor.value,
+        width: _drawWidth,
+        points: List.of(_currentStroke),
+      ));
+      _currentStroke = [];
+    });
+  }
+
+  Widget _buildDrawingMode() {
+    final size = MediaQuery.of(context).size;
+    final liveStrokes = [
+      ..._drawStrokes,
+      if (_currentStroke.isNotEmpty)
+        DrawStroke(
+          color: _drawColor.value,
+          width: _drawWidth,
+          points: _currentStroke,
+        ),
+    ];
+
+    return Positioned.fill(
+      child: Stack(
+        children: [
+          // Drawing canvas
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onPanStart: (d) => _onDrawUpdate(d.localPosition, size),
+            onPanUpdate: (d) => _onDrawUpdate(d.localPosition, size),
+            onPanEnd: (_) => _onDrawEnd(),
+            child: CustomPaint(
+              size: Size.infinite,
+              painter: StoryDrawingPainter(liveStrokes),
+            ),
+          ),
+          // Top actions
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 16,
+            right: 16,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: _cancelDrawing,
+                  child: const Text('Annuler',
+                      style: TextStyle(color: Colors.white, fontSize: 16)),
+                ),
+                Row(
+                  children: [
+                    _buildCircleIconButton(
+                      icon: Icons.undo,
+                      onTap: _undoStroke,
+                    ),
+                    const SizedBox(width: 12),
+                    TextButton(
+                      onPressed: _commitDrawing,
+                      child: const Text('Terminé',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          )),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Color palette
+          Positioned(
+            bottom: MediaQuery.of(context).padding.bottom + 24,
+            left: 16,
+            right: 16,
+            child: SizedBox(
+              height: 44,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _drawColors.length,
+                itemBuilder: (context, i) {
+                  final c = _drawColors[i];
+                  final isSel = c.value == _drawColor.value;
+                  return GestureDetector(
+                    onTap: () => setState(() => _drawColor = c),
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      margin: const EdgeInsets.symmetric(horizontal: 6),
+                      decoration: BoxDecoration(
+                        color: c,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: isSel ? 3 : 1.5,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildUserAvatar() {
@@ -414,6 +934,9 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
               },
             ),
 
+          // Structured overlays: stickers, location, drawing
+          if (!_isDrawing) _buildOverlaysLayer(),
+
           // Text Display (when not editing)
           if (!_isEditingText && _overlayText.isNotEmpty)
             Positioned.fill(
@@ -512,48 +1035,82 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
             ),
 
           // Top Controls (simplified)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 2,
-            left: 16,
-            right: 16,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildCircleIconButton(
-                  icon: Icons.arrow_back_ios_new,
-                  onTap: () => Navigator.pop(context),
-                ),
-                Column(
-                  children: [
-                    if (!_isEditingText)
-                      _buildCircleIconButton(
-                        icon: Icons.text_fields,
-                        label: 'Aa',
-                        onTap: _startTextEditing,
-                      ),
-                    if (_isEditingText)
-                      Row(
-                        children: [
-                          _buildCircleIconButton(
-                            icon: Icons.check,
-                            onTap: _finishTextEditing,
-                          ),
-                          const SizedBox(width: 12),
-                          _buildCircleIconButton(
-                            icon: Icons.delete,
-                            onTap: _deleteText,
-                          ),
-                        ],
-                      ),
-                    if (!_isEditingText) const SizedBox(height: 12),
-                    if (!_isEditingText)
-                      _buildCircleIconButton(icon: Icons.keyboard_arrow_down),
-                  ],
-                ),
-              ],
+          if (!_isDrawing)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 2,
+              left: 16,
+              right: 16,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildCircleIconButton(
+                    icon: Icons.arrow_back_ios_new,
+                    onTap: () => Navigator.pop(context),
+                  ),
+                  // Delete button shown when an overlay is selected.
+                  if (!_isEditingText && _selectedOverlayIndex != null)
+                    _buildCircleIconButton(
+                      icon: Icons.delete_outline,
+                      onTap: _deleteSelectedOverlay,
+                    ),
+                  Column(
+                    children: [
+                      if (!_isEditingText) ...[
+                        _buildCircleIconButton(
+                          icon: Icons.text_fields,
+                          label: 'Aa',
+                          onTap: _startTextEditing,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCircleIconButton(
+                          icon: Icons.emoji_emotions_outlined,
+                          onTap: _openStickerPicker,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCircleIconButton(
+                          icon: Icons.brush_outlined,
+                          onTap: _enterDrawMode,
+                        ),
+                        const SizedBox(height: 12),
+                        _isAddingLocation
+                            ? Container(
+                                width: 40,
+                                height: 40,
+                                alignment: Alignment.center,
+                                child: const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              )
+                            : _buildCircleIconButton(
+                                icon: Icons.location_on_outlined,
+                                onTap: _addLocation,
+                              ),
+                      ],
+                      if (_isEditingText)
+                        Row(
+                          children: [
+                            _buildCircleIconButton(
+                              icon: Icons.check,
+                              onTap: _finishTextEditing,
+                            ),
+                            const SizedBox(width: 12),
+                            _buildCircleIconButton(
+                              icon: Icons.delete,
+                              onTap: _deleteText,
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
 
           // Vertical Color Gradient Bar (right side) - WhatsApp style
           if (_isEditingText)
@@ -632,8 +1189,8 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
               ),
             ),
 
-          // Bottom Section - Hidden when editing text
-          if (!_isEditingText)
+          // Bottom Section - Hidden when editing text or drawing
+          if (!_isEditingText && !_isDrawing)
             Positioned(
               bottom: 0,
               left: 0,
@@ -651,6 +1208,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (_showMentions) _buildMentionSuggestions(),
                     TextField(
                       maxLength: 300,
                       maxLines: 5,
@@ -658,14 +1216,13 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                       keyboardType: TextInputType.multiline,
                       textInputAction: TextInputAction.newline,
                       controller: _captionController,
+                      onChanged: _onCaptionChanged,
                       style: const TextStyle(color: Colors.white, fontSize: 16),
                       decoration: const InputDecoration(
-                        hintText: 'Ajouter une légende...',
+                        hintText: 'Ajouter une légende... (@ pour mentionner)',
                         hintStyle: TextStyle(color: Colors.white70),
                         border: InputBorder.none,
-                        counterStyle: const TextStyle(
-                          color: Colors.transparent,
-                        ),
+                        counterStyle: TextStyle(color: Colors.transparent),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -776,6 +1333,8 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                                           ? _textY
                                           : null,
                                       mediaType: _isVideo ? 'video' : 'image',
+                                      mentions: _resolveMentions(),
+                                      overlaysJson: _overlaysJson(),
                                     );
                                     if (story != null && mounted) {
                                       Navigator.pop(context, story);
@@ -881,6 +1440,9 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                 ),
               ),
             ),
+
+          // Drawing mode (full-screen, on top of everything)
+          if (_isDrawing) _buildDrawingMode(),
         ],
       ),
     );

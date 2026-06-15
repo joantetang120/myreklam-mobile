@@ -6,6 +6,8 @@ import 'package:myreklam/screens/login_screen.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/screens/manage_users_screen.dart';
+import 'package:myreklam/screens/managed_accounts_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
 
 class ProSettingsScreen extends StatefulWidget {
@@ -66,6 +68,36 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
               style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
             const SizedBox(height: 20),
+
+            // Gestion multi-utilisateurs (pro)
+            _buildSectionCard(
+              icon: Icons.group_add_outlined,
+              iconColor: const Color(0xFF1B8D4B),
+              iconBgColor: const Color(0xFF1B8D4B).withOpacity(0.1),
+              title: 'Ajouter utilisateurs',
+              subtitle: 'Autorisez des personnes à gérer votre compte',
+              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ManageUsersScreen()),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Comptes gérés (tous les utilisateurs)
+            _buildSectionCard(
+              icon: Icons.supervisor_account_outlined,
+              iconColor: const Color(0xFF2196F3),
+              iconBgColor: const Color(0xFF2196F3).withOpacity(0.1),
+              title: 'Gérer compte',
+              subtitle: 'Comptes auxquels vous avez accès',
+              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ManagedAccountsScreen()),
+              ),
+            ),
+            const SizedBox(height: 12),
 
             // Section Réseaux sociaux
             _buildSectionCard(
@@ -478,6 +510,8 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
     required String title,
     required String subtitle,
     Widget? child,
+    VoidCallback? onTap,
+    Widget? trailing,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -497,6 +531,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
         children: [
           InkWell(
             borderRadius: BorderRadius.circular(12),
+            onTap: onTap,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -534,6 +569,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                       ],
                     ),
                   ),
+                  if (trailing != null) trailing,
                 ],
               ),
             ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 import 'package:myreklam/screens/creer_demande_screen.dart';
 import 'package:myreklam/screens/creer_evenement_screen.dart';
 import 'package:myreklam/screens/creer_formation_screen.dart';
@@ -228,20 +230,34 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                PublishOptionCard(
-                  backgroundColor: const Color(0xFFFFF3E0),
-                  borderColor: const Color(0xFFFF9800),
-                  titleColor: const Color(0xFFFF9800),
-                  title: 'Publier un bon plan',
-                  description:
-                      'Partagez les meilleures offres, promotions et bons plans avec la communauté.',
-                  icon: Icons.card_giftcard_outlined,
-                  iconColor: const Color(0xFFFF9800),
-                  onTap: () =>
-                      _navigateIfAllowed(context, const CreerBonPlanScreen()),
-                ),
+                if (!DelegationManager.instance
+                    .can(DelegationPermission.announcements))
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Text(
+                      "Vous n'avez pas l'autorisation de publier des annonces sur ce compte.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                  ),
+                if (DelegationManager.instance
+                    .can(DelegationPermission.announcements))
+                  PublishOptionCard(
+                    backgroundColor: const Color(0xFFFFF3E0),
+                    borderColor: const Color(0xFFFF9800),
+                    titleColor: const Color(0xFFFF9800),
+                    title: 'Publier un bon plan',
+                    description:
+                        'Partagez les meilleures offres, promotions et bons plans avec la communauté.',
+                    icon: Icons.card_giftcard_outlined,
+                    iconColor: const Color(0xFFFF9800),
+                    onTap: () =>
+                        _navigateIfAllowed(context, const CreerBonPlanScreen()),
+                  ),
                 // Show Offre d'emploi and Formation only for professionals
-                if (_userSession.isPro) ...[
+                if (_userSession.isPro &&
+                    DelegationManager.instance
+                        .can(DelegationPermission.announcements)) ...[
                   PublishOptionCard(
                     backgroundColor: const Color(0xFFE0F7FA),
                     borderColor: Colors.lightBlueAccent,
@@ -271,30 +287,34 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                     ),
                   ),
                 ],
-                PublishOptionCard(
-                  backgroundColor: const Color(0xFFE0F2F1),
-                  borderColor: const Color(0xFF00897B),
-                  titleColor: const Color(0xFF00897B),
-                  title: 'Publier un Evènement',
-                  description:
-                      'Organisez et annoncez vos événements, rencontres et activités.',
-                  icon: Icons.event_outlined,
-                  iconColor: const Color(0xFF00897B),
-                  onTap: () =>
-                      _navigateIfAllowed(context, const CreerEvenementScreen()),
-                ),
-                PublishOptionCard(
-                  backgroundColor: const Color(0xFFFFF9C4),
-                  borderColor: const Color(0xFFFFA000),
-                  titleColor: const Color(0xFFFFA000),
-                  title: 'Publier une Demande',
-                  description:
-                      'Exprimez vos besoins et recevez des réponses de la communauté.',
-                  icon: Icons.chat_bubble_outline,
-                  iconColor: const Color(0xFFFFA000),
-                  onTap: () =>
-                      _navigateIfAllowed(context, CreerDemandeScreen()),
-                ),
+                if (DelegationManager.instance
+                    .can(DelegationPermission.announcements))
+                  PublishOptionCard(
+                    backgroundColor: const Color(0xFFE0F2F1),
+                    borderColor: const Color(0xFF00897B),
+                    titleColor: const Color(0xFF00897B),
+                    title: 'Publier un Evènement',
+                    description:
+                        'Organisez et annoncez vos événements, rencontres et activités.',
+                    icon: Icons.event_outlined,
+                    iconColor: const Color(0xFF00897B),
+                    onTap: () => _navigateIfAllowed(
+                        context, const CreerEvenementScreen()),
+                  ),
+                if (DelegationManager.instance
+                    .can(DelegationPermission.announcements))
+                  PublishOptionCard(
+                    backgroundColor: const Color(0xFFFFF9C4),
+                    borderColor: const Color(0xFFFFA000),
+                    titleColor: const Color(0xFFFFA000),
+                    title: 'Publier une Demande',
+                    description:
+                        'Exprimez vos besoins et recevez des réponses de la communauté.',
+                    icon: Icons.chat_bubble_outline,
+                    iconColor: const Color(0xFFFFA000),
+                    onTap: () =>
+                        _navigateIfAllowed(context, CreerDemandeScreen()),
+                  ),
                 const SizedBox(height: 20),
               ],
             ),

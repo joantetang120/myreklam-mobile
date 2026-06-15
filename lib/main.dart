@@ -13,6 +13,8 @@ import 'package:myreklam/screens/login_screen.dart';
 import 'package:myreklam/providers/conversation_provider.dart';
 import 'package:myreklam/services/auth_state_manager.dart';
 import 'package:myreklam/services/deep_link_service.dart';
+import 'package:myreklam/services/delegation_manager.dart';
+import 'package:myreklam/widgets/delegation_banner.dart';
 import 'package:myreklam/services/stripe_payment_service.dart';
 import 'package:myreklam/widgets/force_update_gate.dart';
 import 'package:provider/provider.dart';
@@ -51,6 +53,9 @@ void main() async {
   await DeepLinkService.instance.init();
   print('✅ DeepLinkService initialisé');
 
+  // Restaurer l'état de délégation (si un manager gérait un compte)
+  await DelegationManager.instance.init();
+
   runApp(const MyApp());
 }
 
@@ -65,6 +70,22 @@ class MyApp extends StatelessWidget {
         navigatorKey: navigatorKey,
         navigatorObservers: [routeObserver],
         debugShowCheckedModeBanner: false,
+        builder: (context, child) {
+          return AnimatedBuilder(
+            animation: DelegationManager.instance,
+            builder: (context, _) {
+              if (!DelegationManager.instance.isActive || child == null) {
+                return child ?? const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  const DelegationBanner(),
+                  Expanded(child: child),
+                ],
+              );
+            },
+          );
+        },
         title: 'Myreklam',
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,

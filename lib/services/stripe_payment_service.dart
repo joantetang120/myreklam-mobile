@@ -168,6 +168,48 @@ class StripePaymentService {
     }
   }
 
+  /// Process the €5 payment for an additional manager seat.
+  /// Returns the payment_intent_id on success, or null if cancelled/failed.
+  Future<String?> processSeatPayment({required BuildContext context}) async {
+    try {
+      if (Stripe.publishableKey.isEmpty) {
+        await initialize();
+      }
+
+      // 1. Create the seat PaymentIntent on the backend.
+      final response = await _api.authenticatedPost('/delegations/seat-intent');
+      if (response['success'] != true) {
+        _showError(context, response['message']?.toString() ?? 'Échec du paiement');
+        return null;
+      }
+      final clientSecret = response['client_secret'] as String;
+      final paymentIntentId = response['payment_intent_id'] as String;
+
+      // 2. Present the payment sheet.
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: clientSecret,
+          merchantDisplayName: 'Myreklam',
+          style: ThemeMode.light,
+          allowsDelayedPaymentMethods: false,
+        ),
+      );
+      await Stripe.instance.presentPaymentSheet();
+
+      // 3. Payment succeeded — the delegation endpoint verifies the intent.
+      return paymentIntentId;
+    } on StripeException catch (e) {
+      if (e.error.code != FailureCode.Canceled) {
+        _showError(context, e.error.localizedMessage ?? 'Paiement échoué');
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Seat payment error: $e');
+      _showError(context, 'Paiement échoué: $e');
+      return null;
+    }
+  }
+
   void _showError(BuildContext context, String message) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

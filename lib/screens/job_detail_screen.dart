@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 // Bouton partager masqué
 // import 'package:myreklam/services/share_service.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
@@ -2933,7 +2935,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                   }
                 },
                 itemBuilder: (context) => [
-                  if (_canEdit)
+                  if (_canEdit &&
+                      DelegationManager.instance
+                          .can(DelegationPermission.announcements))
                     const PopupMenuItem(
                       value: 'edit',
                       child: Row(
@@ -2948,16 +2952,20 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                         ],
                       ),
                     ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                        SizedBox(width: 12),
-                        Text('Supprimer', style: TextStyle(color: Colors.red)),
-                      ],
+                  if (DelegationManager.instance
+                      .can(DelegationPermission.announcements))
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline,
+                              size: 20, color: Colors.red),
+                          SizedBox(width: 12),
+                          Text('Supprimer',
+                              style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             )
@@ -3419,7 +3427,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             // Contact button - only if not owner and acceptMessages is true
             if (!widget.isOwner &&
                 widget.acceptMessages &&
-                widget.authorData != null)
+                widget.authorData != null &&
+                DelegationManager.instance.can(DelegationPermission.messages))
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: SizedBox(
