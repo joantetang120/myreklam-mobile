@@ -1696,10 +1696,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       children: [
         // Like
         GestureDetector(
-          onTap: DelegationManager.instance
-                  .can(DelegationPermission.commentsLikes)
-              ? () => _toggleReaction(apiSlug, entityId, 'like')
-              : null,
+          onTap: () => _toggleReaction(apiSlug, entityId, 'like'),
           child: Row(
             children: [
               Icon(

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
-import 'package:myreklam/models/delegation.dart';
-import 'package:myreklam/services/delegation_manager.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
 enum CommentType { comment, reply }
@@ -120,10 +118,7 @@ class CommentCard extends StatelessWidget {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: DelegationManager.instance
-                          .can(DelegationPermission.commentsLikes)
-                      ? onLike
-                      : null,
+                  onTap: onLike,
                   child: Row(
                     children: [
                       Icon(
@@ -147,10 +142,7 @@ class CommentCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
                 GestureDetector(
-                  onTap: DelegationManager.instance
-                          .can(DelegationPermission.commentsLikes)
-                      ? onReply
-                      : null,
+                  onTap: onReply,
                   child: Row(
                     children: [
                       Text(
