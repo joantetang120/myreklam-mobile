@@ -7,7 +7,6 @@ class DelegationPermission {
   static const String posts = 'posts';
   static const String messages = 'messages';
   static const String editAccount = 'edit_account';
-  static const String commentsLikes = 'comments_likes';
   static const String manageSubscription = 'manage_subscription';
 
   static const List<String> all = [
@@ -15,7 +14,6 @@ class DelegationPermission {
     posts,
     messages,
     editAccount,
-    commentsLikes,
     manageSubscription,
   ];
 
@@ -30,8 +28,6 @@ class DelegationPermission {
         return 'Répondre et envoyer des messages';
       case editAccount:
         return 'Modifier le compte';
-      case commentsLikes:
-        return 'Commenter et réagir';
       case manageSubscription:
         return "Gérer l'abonnement";
       default:
@@ -49,8 +45,6 @@ class DelegationPermission {
         return Icons.chat_bubble_outline;
       case editAccount:
         return Icons.manage_accounts_outlined;
-      case commentsLikes:
-        return Icons.favorite_border;
       case manageSubscription:
         return Icons.workspace_premium_outlined;
       default:
