@@ -86,6 +86,7 @@ dependencies:
   video_player: ^2.9.3
   # Geolocation
   geolocator: ^11.0.0
+  geocoding: ^3.0.0
   # Share functionality
   share_plus: ^10.1.4
   # Deep link handling

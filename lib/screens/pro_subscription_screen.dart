@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/stripe_payment_service.dart';
 import 'package:myreklam/services/paypal_payment_service.dart';
@@ -129,7 +131,22 @@ class _PremiumPlanState extends State<_PremiumPlan> {
     );
   }
 
+  bool _ensureCanManageSubscription() {
+    if (DelegationManager.instance
+        .can(DelegationPermission.manageSubscription)) {
+      return true;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+            "Vous n'avez pas l'autorisation de gérer l'abonnement de ce compte."),
+      ),
+    );
+    return false;
+  }
+
   Future<void> _processStripePayment() async {
+    if (!_ensureCanManageSubscription()) return;
     if (_isProcessingPayment) return;
 
     setState(() => _isProcessingPayment = true);
@@ -192,6 +209,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
   }
 
   Future<void> _processPayPalPayment() async {
+    if (!_ensureCanManageSubscription()) return;
     if (_isProcessingPayment) return;
 
     setState(() => _isProcessingPayment = true);

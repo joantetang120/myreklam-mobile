@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/models/story_overlay.dart';
 
 class StoryModel {
   final int? id;
@@ -16,6 +17,7 @@ class StoryModel {
   final int viewsCount;
   final int likesCount;
   final bool isLiked;
+  final List<StoryOverlay> overlays;
   final DateTime timestamp;
   final DateTime? expiresAt;
   final bool isOwn;
@@ -36,6 +38,7 @@ class StoryModel {
     this.viewsCount = 0,
     this.likesCount = 0,
     this.isLiked = false,
+    this.overlays = const [],
     required this.timestamp,
     this.expiresAt,
     this.isOwn = false,
@@ -71,6 +74,7 @@ class StoryModel {
           ? json['likes_count']
           : int.tryParse(json['likes_count']?.toString() ?? '0') ?? 0,
       isLiked: json['is_liked'] == true,
+      overlays: StoryOverlay.listFromJson(json['overlays']),
       timestamp:
           DateTime.tryParse(json['created_at']?.toString() ?? '') ??
           DateTime.now(),

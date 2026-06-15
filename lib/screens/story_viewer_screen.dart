@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/models/story_model.dart';
+import 'package:myreklam/models/story_overlay.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/story_service.dart';
@@ -873,12 +876,23 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 ],
               ),
             ),
+            // Structured overlays (stickers, location, drawing) over the media.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: StoryOverlaysView(
+                  overlays: story['overlays'] is List<StoryOverlay>
+                      ? story['overlays'] as List<StoryOverlay>
+                      : const [],
+                ),
+              ),
+            ),
             if (widget.isOwnStory)
               _OwnStoryOverlay(
                 viewsCount: viewsCount,
                 onShowViewers: _showViewersModal,
               )
-            else
+            else if (DelegationManager.instance
+                .can(DelegationPermission.messages))
               _ReplyOverlay(
                 isLiked: _isLiked,
                 focusNode: _replyFocusNode,

@@ -32,6 +32,7 @@ class StoryService {
     double? overlayY,
     String mediaType = 'image',
     List<int> mentions = const [],
+    String? overlaysJson,
   }) async {
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/stories');
@@ -76,6 +77,11 @@ class StoryService {
       // Mentioned user ids — indexed keys so Laravel parses them as an array.
       for (var i = 0; i < mentions.length; i++) {
         request.fields['mentions[$i]'] = mentions[i].toString();
+      }
+
+      // Structured overlays (stickers, drawing, location) as a JSON string.
+      if (overlaysJson != null && overlaysJson.isNotEmpty && overlaysJson != '[]') {
+        request.fields['overlays'] = overlaysJson;
       }
 
       final streamedResponse = await request.send().timeout(

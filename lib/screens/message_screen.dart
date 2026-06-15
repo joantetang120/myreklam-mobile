@@ -290,6 +290,7 @@ class _MessageScreenState extends State<MessageScreen> {
         'views_count': s.viewsCount,
         'likes_count': s.likesCount,
         'is_liked': s.isLiked,
+        'overlays': s.overlays,
         'overlay_text': s.overlayText,
         'overlay_color': s.overlayColor,
         'overlay_style': s.overlayStyle,

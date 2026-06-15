@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 // Bouton partager masqué — import 'package:myreklam/services/share_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -1439,7 +1441,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                   }
                 },
                 itemBuilder: (context) => [
-                  if (_canEdit)
+                  if (_canEdit &&
+                      DelegationManager.instance
+                          .can(DelegationPermission.announcements))
                     const PopupMenuItem(
                       value: 'edit',
                       child: Row(
@@ -1454,16 +1458,20 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                         ],
                       ),
                     ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                        SizedBox(width: 12),
-                        Text('Supprimer', style: TextStyle(color: Colors.red)),
-                      ],
+                  if (DelegationManager.instance
+                      .can(DelegationPermission.announcements))
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline,
+                              size: 20, color: Colors.red),
+                          SizedBox(width: 12),
+                          Text('Supprimer',
+                              style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
