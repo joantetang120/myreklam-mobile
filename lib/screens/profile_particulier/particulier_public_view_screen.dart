@@ -1833,6 +1833,27 @@ class _ParticulierPublicViewScreenState
                                 color: Color(0xFF333333),
                               ),
                             ),
+                            if (_employmentLine(profile) != null) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.work_outline,
+                                      size: 14, color: Color(0xFF666666)),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      _employmentLine(profile)!,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF666666),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                             const SizedBox(height: 8),
                             // Stats row
                             Row(
@@ -2130,6 +2151,16 @@ class _ParticulierPublicViewScreenState
         padding: EdgeInsets.zero,
       ),
     );
+  }
+
+  /// "Emploi chez Entreprise" line (LinkedIn-style), or null if neither set.
+  String? _employmentLine(dynamic profile) {
+    if (profile is! Map) return null;
+    final job = profile['job_title']?.toString().trim() ?? '';
+    final company = profile['company_name']?.toString().trim() ?? '';
+    if (job.isEmpty && company.isEmpty) return null;
+    if (job.isNotEmpty && company.isNotEmpty) return '$job chez $company';
+    return job.isNotEmpty ? job : company;
   }
 
   Widget _buildPresentationTab() {

@@ -482,12 +482,15 @@ class _PostAuthorInfo {
     required this.displayName,
     required this.accountType,
     required this.avatar,
+    this.employment,
   });
 
   final String? id;
   final String displayName;
   final String accountType;
   final String avatar;
+  // LinkedIn-style "Emploi chez Entreprise" line (null when not applicable).
+  final String? employment;
 }
 
 class _PostCardWidget extends StatefulWidget {
@@ -600,6 +603,17 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (authorInfo.employment != null)
+                Text(
+                  authorInfo.employment!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               Text(
                 '${authorInfo.accountType} • ${widget.isRepost && widget.isQuoteRepost ? widget.timeAgoRepost : widget.timeAgo}',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
@@ -5533,11 +5547,35 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       }
     }
 
+    // LinkedIn-style employment line (particulier authors only).
+    final employmentMap = feedAuthor?['employment'] as Map<String, dynamic>?;
+    final jobTitle = (employmentMap?['job_title'] ??
+            particulierProfile?['job_title'])
+        ?.toString()
+        .trim();
+    final companyName = (employmentMap?['company_name'] ??
+            particulierProfile?['company_name'])
+        ?.toString()
+        .trim();
+    String? employment;
+    if ((jobTitle != null && jobTitle.isNotEmpty) ||
+        (companyName != null && companyName.isNotEmpty)) {
+      if (jobTitle != null && jobTitle.isNotEmpty &&
+          companyName != null && companyName.isNotEmpty) {
+        employment = '$jobTitle chez $companyName';
+      } else {
+        employment = (jobTitle != null && jobTitle.isNotEmpty)
+            ? jobTitle
+            : companyName;
+      }
+    }
+
     return _PostAuthorInfo(
       id: authorId,
       displayName: resolvedName,
       accountType: accountType,
       avatar: avatar,
+      employment: employment,
     );
   }
 
