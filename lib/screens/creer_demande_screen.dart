@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:http/http.dart' as http;
@@ -326,7 +327,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   double _rayonRecherche = 0;
 
   // Media (photos from _buildStepPhoto)
-  final List<PlatformFile> _selectedMediaFiles = [];
+  final List<GalleryMedia> _selectedMediaFiles = [];
   final List<String> _existingMediaUrls = [];
   bool _isUploadingMedia = false;
 
@@ -1709,16 +1710,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
   Future<void> _pickMedia() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov'],
-        withData: true,
-      );
-      if (result == null) return;
-      setState(() => _selectedMediaFiles.addAll(result.files));
+      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      if (files == null || files.isEmpty) return;
+      setState(() => _selectedMediaFiles.addAll(files));
     } catch (_) {
-      _showSnack('Impossible d\'accéder aux fichiers.', isError: true);
+      _showSnack('Impossible d\'accéder à la galerie.', isError: true);
     }
   }
 
@@ -1742,7 +1738,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     setState(() => _selectedMediaFiles.removeAt(index));
   }
 
-  Widget _buildMediaPreview(PlatformFile file) {
+  Widget _buildMediaPreview(GalleryMedia file) {
     final ext = file.extension?.toLowerCase();
     final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(ext);
     final isVideo = ['mp4', 'mov'].contains(ext);
@@ -5385,7 +5381,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     );
   }
 
-  Widget _buildPhotoPreviewCard(PlatformFile file, int index) {
+  Widget _buildPhotoPreviewCard(GalleryMedia file, int index) {
     final isCover = index == 0 && _existingMediaUrls.isEmpty;
     return Container(
       decoration: BoxDecoration(

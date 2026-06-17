@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -28,6 +30,7 @@ import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class ProfileProScreen extends StatefulWidget {
   final String? userId; // null means viewing own profile
@@ -483,33 +486,12 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       children: [
                         Stack(
                           children: [
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.grey[300],
-                                image: _avatarUrl != null
-                                    ? DecorationImage(
-                                        image: _avatarUrl!.startsWith('http')
-                                            ? NetworkImage(_avatarUrl!)
-                                            : NetworkImage(
-                                                ApiConfig.resolveMediaUrl(
-                                                      _avatarUrl!,
-                                                    ) ??
-                                                    '',
-                                              ),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
-                              ),
-                              child: _avatarUrl == null
-                                  ? const Icon(
-                                      Icons.business,
-                                      size: 40,
-                                      color: Colors.white,
-                                    )
-                                  : null,
+                            ReklamAvatar(
+                              radius: 40,
+                              avatarUrl: _avatarUrl,
+                              displayName: _companyName,
+                              accountType: 'pro',
+                              backgroundColor: Colors.grey[300],
                             ),
                             Positioned(
                               bottom: 0,
@@ -992,22 +974,24 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         ).then((_) => _loadProfile());
                       },
                     ),
-                    _buildMenuCard(
-                      icon: 'assets/images/profil_pro/opt-6.png',
-                      backgroundColor: const Color(0xFFFFE0B2),
-                      title: 'Paramètre du compte',
-                      description:
-                          'Configurez vos préférences et sécurité du compte',
-                      color: const Color(0xFF04BC7B).withOpacity(0.15),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProSettingsScreen(),
-                          ),
-                        ).then((_) => _loadProfile());
-                      },
-                    ),
+                    if (DelegationManager.instance
+                        .can(DelegationPermission.editAccount))
+                      _buildMenuCard(
+                        icon: 'assets/images/profil_pro/opt-6.png',
+                        backgroundColor: const Color(0xFFFFE0B2),
+                        title: 'Paramètre du compte',
+                        description:
+                            'Configurez vos préférences et sécurité du compte',
+                        color: const Color(0xFF04BC7B).withOpacity(0.15),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ProSettingsScreen(),
+                            ),
+                          ).then((_) => _loadProfile());
+                        },
+                      ),
                     _buildMenuCard(
                       icon: 'assets/images/profil_pro/opt-7.png',
                       backgroundColor: const Color(0xFFFFE0B2),
@@ -1039,38 +1023,42 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         ).then((_) => _loadProfile());
                       },
                     ),
-                    _buildMenuCard(
-                      icon: 'assets/images/profil_pro/opt-9.png',
-                      backgroundColor: const Color(0xFFFFE0B2),
-                      title: 'Gérer Abonnement',
-                      description:
-                          'Gérez votre forfait et les options de facturation',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProSubscribeScreen(),
-                          ),
-                        ).then((_) => _loadProfile());
-                      },
-                    ),
-                    _buildMenuCard(
-                      icon: 'assets/images/profil_pro/opt-10.png',
-                      backgroundColor: const Color(0xFFFFE0B2),
-                      title: 'Profil Entreprise',
-                      description:
-                          'Modifiez les informations et la présentation de votre société',
-                      color: const Color(0xFF04BC7B).withOpacity(0.15),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const ProProfileEntrepriseScreen(),
-                          ),
-                        ).then((_) => _loadProfile());
-                      },
-                    ),
+                    if (DelegationManager.instance
+                        .can(DelegationPermission.manageSubscription))
+                      _buildMenuCard(
+                        icon: 'assets/images/profil_pro/opt-9.png',
+                        backgroundColor: const Color(0xFFFFE0B2),
+                        title: 'Gérer Abonnement',
+                        description:
+                            'Gérez votre forfait et les options de facturation',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ProSubscribeScreen(),
+                            ),
+                          ).then((_) => _loadProfile());
+                        },
+                      ),
+                    if (DelegationManager.instance
+                        .can(DelegationPermission.editAccount))
+                      _buildMenuCard(
+                        icon: 'assets/images/profil_pro/opt-10.png',
+                        backgroundColor: const Color(0xFFFFE0B2),
+                        title: 'Profil Entreprise',
+                        description:
+                            'Modifiez les informations et la présentation de votre société',
+                        color: const Color(0xFF04BC7B).withOpacity(0.15),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const ProProfileEntrepriseScreen(),
+                            ),
+                          ).then((_) => _loadProfile());
+                        },
+                      ),
                   ],
                 ),
               ),

@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 // Bouton partager masqué — import 'package:myreklam/services/share_service.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:myreklam/services/reaction_cache_service.dart';
@@ -12,6 +14,8 @@ import 'package:myreklam/widgets/user_detail_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/creer_evenement_screen.dart';
@@ -139,32 +143,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   bool _isLoadingSimilar = true;
 
   /// Check if edit option should be shown
-  /// Hide edit if: 1) post is older than 2 hours OR 2) people have participated
   bool get _canEdit {
-    if (!widget.isOwner) return false;
-
-    final data = widget.eventData;
-    if (data == null) return true; // Allow edit if no data (fallback)
-
-    // Check if post is older than 2 hours
-    final createdAtStr = data['created_at']?.toString();
-    if (createdAtStr != null && createdAtStr.isNotEmpty) {
-      final createdAt = DateTime.tryParse(createdAtStr);
-      if (createdAt != null) {
-        final twoHoursAgo = DateTime.now().subtract(const Duration(hours: 2));
-        if (createdAt.isBefore(twoHoursAgo)) {
-          return false; // Post is older than 2 hours
-        }
-      }
-    }
-
-    // Check if people have participated in this event
-    final participantsCount = data['participants_count'] ?? 0;
-    if (participantsCount is int && participantsCount > 0) {
-      return false; // People have participated
-    }
-
-    return true;
+    return widget.isOwner;
   }
 
   /// Translates English category codes to French labels
@@ -626,12 +606,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
               ),
               const SizedBox(width: 4),
-              Text(
-                data.likesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  data.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],
@@ -1895,7 +1878,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          if (_canEdit)
+          if (widget.isOwner)
             PopupMenuButton<String>(
               icon: const Icon(
                 Icons.more_vert,
@@ -1924,30 +1907,35 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'edit',
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.edit_outlined,
-                        size: 20,
-                        color: Color(0xFF616161),
-                      ),
-                      SizedBox(width: 12),
-                      Text('Modifier'),
-                    ],
+                if (_canEdit &&
+                    DelegationManager.instance
+                        .can(DelegationPermission.announcements))
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.edit_outlined,
+                          size: 20,
+                          color: Color(0xFF616161),
+                        ),
+                        SizedBox(width: 12),
+                        Text('Modifier'),
+                      ],
+                    ),
                   ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                      SizedBox(width: 12),
-                      Text('Supprimer', style: TextStyle(color: Colors.red)),
-                    ],
+                if (DelegationManager.instance
+                    .can(DelegationPermission.announcements))
+                  const PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                        SizedBox(width: 12),
+                        Text('Supprimer', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
                   ),
-                ),
               ],
             )
           else
@@ -2251,21 +2239,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  GestureDetector(
+                  ReklamAvatar(
+                    avatarUrl: _resolveAvatarUrl(),
+                    displayName: _resolveOwnerName(),
+                    radius: 24,
+                    accountType: _resolveUserType(),
                     onTap: widget.authorData != null
                         ? () => _navigateToUserProfile(context)
                         : null,
-                    child: CircleAvatar(
-                      radius: 24,
-                      backgroundImage:
-                          (_resolveAvatarUrl() ?? '').startsWith('http')
-                          ? NetworkImage(_resolveAvatarUrl()!)
-                          : AssetImage(
-                                  _resolveAvatarUrl() ??
-                                      'assets/images/Evenement.png',
-                                )
-                                as ImageProvider,
-                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -3009,7 +2990,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           Future<void> submitComment() async {
             if (!SubscriptionHelper.canAccessFeature(ProFeature.commentAndReact)) {
               if (context.mounted) {
-                SubscriptionHelper.showTrialExpiredDialog(context);
+                SubscriptionHelper.showPremiumRequiredDialog(
+                  context,
+                  featureName: 'Commentaires et réactions',
+                );
               }
               return;
             }
@@ -3289,16 +3273,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
+                      ReklamAvatar(
+                        avatarUrl: avatarUrl,
+                        displayName: displayName,
                         radius: isReply ? 14 : 18,
-                        backgroundImage:
-                            avatarUrl != null &&
-                                avatarUrl.toString().startsWith('http')
-                            ? NetworkImage(avatarUrl)
-                            : const AssetImage(
-                                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                                  )
-                                  as ImageProvider,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -3685,15 +3663,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
+              ReklamAvatar(
+                avatarUrl: avatarUrl,
+                displayName: displayName,
                 radius: isReply ? 14 : 18,
-                backgroundImage:
-                    avatarUrl != null && avatarUrl.toString().startsWith('http')
-                    ? NetworkImage(avatarUrl)
-                    : const AssetImage(
-                            'assets/images/dashboard_particulier/Ellipse 10.png',
-                          )
-                          as ImageProvider,
               ),
               const SizedBox(width: 10),
               Expanded(

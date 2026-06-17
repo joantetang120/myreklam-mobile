@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 // Bouton partager masqué — import 'package:myreklam/services/share_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -13,6 +15,8 @@ import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/user_detail_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/widgets/app_layout.dart';
@@ -111,31 +115,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
   /// Check if edit option should be shown
   /// Hide edit if: 1) post is older than 2 hours OR 2) people have favorited it
   bool get _canEdit {
-    if (!widget.isOwner) return false;
-
-    final data = widget.demandeData;
-    if (data == null) return true; // Allow edit if no data (fallback)
-
-    // Check if post is older than 2 hours
-    final createdAtStr = data['created_at']?.toString();
-    if (createdAtStr != null && createdAtStr.isNotEmpty) {
-      final createdAt = DateTime.tryParse(createdAtStr);
-      if (createdAt != null) {
-        final twoHoursAgo = DateTime.now().subtract(const Duration(hours: 2));
-        if (createdAt.isBefore(twoHoursAgo)) {
-          return false; // Post is older than 2 hours
-        }
-      }
-    }
-
-    // Check if people have favorited this demande
-    final favoritesCount = data['favorites_count'] ?? 0;
-    if (favoritesCount is int && favoritesCount > 0) {
-      return false; // People have favorited
-    }
-
-    return true;
+    return widget.isOwner;
   }
+
 
   // Categories API data for translating secteur/fonction
   Map<String, String> _sectorCodeToLabel = {};
@@ -925,14 +907,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
+              ReklamAvatar(
+                avatarUrl: avatarUrl,
+                displayName: displayName,
                 radius: isReply ? 14 : 18,
-                backgroundImage: avatarUrl != null
-                    ? NetworkImage(avatarUrl)
-                    : const AssetImage(
-                            'assets/images/dashboard_particulier/Ellipse 10.png',
-                          )
-                          as ImageProvider,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1425,7 +1403,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          if (_canEdit)
+          if (widget.isOwner)
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
@@ -1463,30 +1441,37 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          size: 20,
-                          color: Color(0xFF616161),
-                        ),
-                        SizedBox(width: 12),
-                        Text('Modifier'),
-                      ],
+                  if (_canEdit &&
+                      DelegationManager.instance
+                          .can(DelegationPermission.announcements))
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 20,
+                            color: Color(0xFF616161),
+                          ),
+                          SizedBox(width: 12),
+                          Text('Modifier'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                        SizedBox(width: 12),
-                        Text('Supprimer', style: TextStyle(color: Colors.red)),
-                      ],
+                  if (DelegationManager.instance
+                      .can(DelegationPermission.announcements))
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline,
+                              size: 20, color: Colors.red),
+                          SizedBox(width: 12),
+                          Text('Supprimer',
+                              style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -1843,14 +1828,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  CircleAvatar(
+                  ReklamAvatar(
+                    avatarUrl: _resolveOwnerAvatar(),
+                    displayName: _resolveOwnerName(),
                     radius: 24,
-                    backgroundImage: _resolveOwnerAvatar().startsWith('http')
-                        ? NetworkImage(_resolveOwnerAvatar()) as ImageProvider
-                        : const AssetImage(
-                            'assets/images/dashboard_particulier/Ellipse 12.png',
-                          ),
-                    backgroundColor: Colors.grey[200],
+                    accountType: _resolveUserType(),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -3070,7 +3052,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
             Future<void> submitComment() async {
               if (!SubscriptionHelper.canAccessFeature(ProFeature.commentAndReact)) {
                 if (context.mounted) {
-                  SubscriptionHelper.showTrialExpiredDialog(context);
+                  SubscriptionHelper.showPremiumRequiredDialog(
+                    context,
+                    featureName: 'Commentaires et réactions',
+                  );
                 }
                 return;
               }
@@ -3392,23 +3377,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
+                          avatarUrl: avatarUrl,
+                          displayName: displayName,
                           radius: isReply ? 14 : 18,
-                          backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(
-                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                      avatarUrl,
-                                )
-                              : null,
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Icon(
-                                  Icons.person,
-                                  size: isReply ? 12 : 16,
-                                  color: Colors.grey[600],
-                                )
-                              : null,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -4032,12 +4004,15 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                 color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
               ),
               const SizedBox(width: 4),
-              Text(
-                data.likesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  data.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],

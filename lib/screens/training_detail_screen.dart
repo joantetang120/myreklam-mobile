@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 // Bouton partager masqué
 // import 'package:myreklam/services/share_service.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
@@ -21,10 +23,12 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 // Bouton partager masqué
 // import 'package:share_plus/share_plus.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart' show CustomBottomBar;
 
 class _ReactionData {
@@ -145,33 +149,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   bool _isLoadingSimilar = false;
 
   /// Check if edit option should be shown
-  /// Hide edit if: 1) post is older than 2 hours OR 2) people have subscribed
   bool get _canEdit {
-    if (!widget.isOwner) return false;
-
-    final data = widget.trainingData;
-    if (data == null) return true; // Allow edit if no data (fallback)
-
-    // Check if post is older than 2 hours
-    final createdAtStr = data['created_at']?.toString();
-    if (createdAtStr != null && createdAtStr.isNotEmpty) {
-      final createdAt = DateTime.tryParse(createdAtStr);
-      if (createdAt != null) {
-        final twoHoursAgo = DateTime.now().subtract(const Duration(hours: 2));
-        if (createdAt.isBefore(twoHoursAgo)) {
-          return false; // Post is older than 2 hours
-        }
-      }
-    }
-
-    // Check if people have subscribed to this training
-    final subscriptionsCount = data['subscriptions_count'] ?? 0;
-    if (subscriptionsCount is int && subscriptionsCount > 0) {
-      return false; // People have subscribed
-    }
-
-    return true;
+    return widget.isOwner;
   }
+
 
   @override
   void initState() {
@@ -1042,7 +1023,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          if (_canEdit)
+          if (widget.isOwner)
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
@@ -1073,30 +1054,37 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          size: 20,
-                          color: Color(0xFF616161),
-                        ),
-                        SizedBox(width: 12),
-                        Text('Modifier'),
-                      ],
+                  if (_canEdit &&
+                      DelegationManager.instance
+                          .can(DelegationPermission.announcements))
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 20,
+                            color: Color(0xFF616161),
+                          ),
+                          SizedBox(width: 12),
+                          Text('Modifier'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                        SizedBox(width: 12),
-                        Text('Supprimer', style: TextStyle(color: Colors.red)),
-                      ],
+                  if (DelegationManager.instance
+                      .can(DelegationPermission.announcements))
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline,
+                              size: 20, color: Colors.red),
+                          SizedBox(width: 12),
+                          Text('Supprimer',
+                              style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             )
@@ -1503,21 +1491,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               child: Row(
                 children: [
                   // Avatar
-                  GestureDetector(
+                  ReklamAvatar(
+                    avatarUrl: _resolveAvatarUrl(),
+                    displayName: _resolveOwnerName(),
+                    radius: 24,
+                    accountType: _resolveUserType(),
                     onTap: widget.authorData != null
                         ? () => _navigateToUserProfile(context)
                         : null,
-                    child: CircleAvatar(
-                      radius: 24,
-                      backgroundImage:
-                          (_resolveAvatarUrl() ?? '').startsWith('http')
-                          ? NetworkImage(_resolveAvatarUrl()!)
-                          : AssetImage(
-                                  _resolveAvatarUrl() ??
-                                      'assets/images/Formation.png',
-                                )
-                                as ImageProvider,
-                    ),
                   ),
                   const SizedBox(width: 12),
                   // Name and user type
@@ -2183,12 +2164,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
               ),
               const SizedBox(width: 4),
-              Text(
-                data.likesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  data.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],
@@ -2636,14 +2620,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
+              ReklamAvatar(
+                avatarUrl: avatarUrl,
+                displayName: displayName,
                 radius: isReply ? 14 : 18,
-                backgroundImage: avatarUrl != null
-                    ? NetworkImage(avatarUrl)
-                    : const AssetImage(
-                            'assets/images/dashboard_particulier/Ellipse 10.png',
-                          )
-                          as ImageProvider,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -2806,7 +2786,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 ProFeature.commentAndReact,
               )) {
                 if (context.mounted) {
-                  SubscriptionHelper.showTrialExpiredDialog(context);
+                  SubscriptionHelper.showPremiumRequiredDialog(
+                    context,
+                    featureName: 'Commentaires et réactions',
+                  );
                 }
                 return;
               }
@@ -3337,7 +3320,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               ProFeature.commentAndReact,
             )) {
               if (context.mounted) {
-                SubscriptionHelper.showTrialExpiredDialog(context);
+                SubscriptionHelper.showPremiumRequiredDialog(
+                  context,
+                  featureName: 'Commentaires et réactions',
+                );
               }
               return;
             }
@@ -3645,16 +3631,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
+                      ReklamAvatar(
+                        avatarUrl: avatarUrl,
+                        displayName: displayName,
                         radius: isReply ? 14 : 18,
-                        backgroundImage:
-                            avatarUrl != null &&
-                                avatarUrl.toString().startsWith('http')
-                            ? NetworkImage(avatarUrl)
-                            : const AssetImage(
-                                    'assets/images/dashboard_particulier/Ellipse 10.png',
-                                  )
-                                  as ImageProvider,
                       ),
                       const SizedBox(width: 10),
                       Expanded(

@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/models/story_model.dart';
+import 'package:myreklam/models/story_overlay.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/story_service.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class StoryViewerScreen extends StatefulWidget {
   final String name;
@@ -43,6 +47,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   bool _isVideo = false;
   bool _isVideoInitialized = false;
   bool _isLongPressPaused = false;
+  bool _isMediaReady = false;
 
   // Swipe down to dismiss
   double _dragOffset = 0.0;
@@ -52,6 +57,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    _isLiked = widget.stories[_currentIndex]['is_liked'] == true;
     _progressController =
         AnimationController(vsync: this, duration: const Duration(seconds: 5))
           ..addStatusListener((status) {
@@ -59,9 +65,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               _nextStory();
             }
           });
-    _progressController.forward();
     _recordCurrentView();
-    _initCurrentVideo();
+    _loadCurrentMedia();
 
     _replyFocusNode = FocusNode()
       ..addListener(() {
@@ -69,7 +74,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
           _progressController.stop();
           _videoController?.pause();
         } else {
-          if (!_isVideo) {
+          if (!_isVideo && _isMediaReady) {
             _progressController.forward();
           }
           _videoController?.play();
@@ -100,11 +105,13 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
 
                 // Sync video position with progress indicator
                 _videoController?.addListener(_onVideoProgress);
+                _onMediaReady();
               }
             })
             .catchError((e) {
               debugPrint('Error initializing video: $e');
               setState(() => _isVideo = false);
+              if (mounted) _onMediaReady();
             });
     } else {
       setState(() {
@@ -114,6 +121,37 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       _videoController?.dispose();
       _videoController = null;
     }
+  }
+
+  Future<void> _loadCurrentMedia() async {
+    setState(() => _isMediaReady = false);
+
+    final story = widget.stories[_currentIndex];
+    final mediaType = story['media_type'] as String? ?? 'image';
+    final mediaUrl = story['image'] as String? ?? '';
+
+    // Video loading is handled by _initCurrentVideo which calls _onMediaReady()
+    if (mediaType == 'video' &&
+        mediaUrl.isNotEmpty &&
+        mediaUrl.startsWith('http')) {
+      _initCurrentVideo();
+      return;
+    }
+
+    // Precache image before starting the timer
+    if (mediaUrl.startsWith('http')) {
+      try {
+        await precacheImage(NetworkImage(mediaUrl), context);
+      } catch (_) {}
+    }
+
+    if (mounted) _onMediaReady();
+  }
+
+  void _onMediaReady() {
+    if (!mounted || _isMediaReady) return;
+    setState(() => _isMediaReady = true);
+    _progressController.forward();
   }
 
   void _onVideoProgress() {
@@ -192,6 +230,33 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     }
   }
 
+  Future<void> _toggleLike() async {
+    final story = widget.stories[_currentIndex];
+    final storyId = story['id'];
+    if (storyId is! int) return;
+
+    final wasLiked = _isLiked;
+    // Optimistic update + persist on the underlying map so it survives navigation.
+    setState(() {
+      _isLiked = !wasLiked;
+      story['is_liked'] = _isLiked;
+    });
+
+    final newCount = wasLiked
+        ? await _storyService.unlikeStory(storyId)
+        : await _storyService.likeStory(storyId);
+
+    if (newCount != null) {
+      story['likes_count'] = newCount;
+    } else if (mounted) {
+      // Revert on failure.
+      setState(() {
+        _isLiked = wasLiked;
+        story['is_liked'] = wasLiked;
+      });
+    }
+  }
+
   void _nextStory() {
     _videoController?.removeListener(_onVideoProgress);
     _videoController?.dispose();
@@ -200,11 +265,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     if (_currentIndex < widget.stories.length - 1) {
       setState(() {
         _currentIndex++;
+        _isLiked = widget.stories[_currentIndex]['is_liked'] == true;
       });
       _progressController.reset();
-      _progressController.forward();
       _recordCurrentView();
-      _initCurrentVideo();
+      _loadCurrentMedia();
     } else {
       Navigator.pop(context);
     }
@@ -218,11 +283,11 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     if (_currentIndex > 0) {
       setState(() {
         _currentIndex--;
+        _isLiked = widget.stories[_currentIndex]['is_liked'] == true;
       });
       _progressController.reset();
-      _progressController.forward();
       _recordCurrentView();
-      _initCurrentVideo();
+      _loadCurrentMedia();
     }
   }
 
@@ -300,14 +365,10 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                         itemBuilder: (context, index) {
                           final viewer = viewers[index];
                           return ListTile(
-                            leading: CircleAvatar(
+                            leading: ReklamAvatar(
+                              avatarUrl: viewer.userAvatar,
+                              displayName: viewer.userName,
                               radius: 20,
-                              backgroundImage: viewer.userAvatar != null
-                                  ? NetworkImage(viewer.userAvatar!)
-                                  : const AssetImage(
-                                          'assets/images/dashboard_particulier/Ellipse 10.png',
-                                        )
-                                        as ImageProvider,
                             ),
                             title: Text(
                               viewer.userName,
@@ -323,6 +384,13 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                                 color: Colors.grey[600],
                               ),
                             ),
+                            trailing: viewer.liked
+                                ? const Icon(
+                                    Icons.favorite,
+                                    color: Colors.red,
+                                    size: 20,
+                                  )
+                                : null,
                           );
                         },
                       ),
@@ -613,24 +681,13 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   }
 
   Widget _buildAvatarImage() {
-    final resolved = ApiConfig.resolveMediaUrl(widget.avatar);
-    if (resolved != null && resolved.startsWith('http')) {
-      return Image.network(
-        resolved,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Image.asset(
-          'assets/images/dashboard_particulier/Ellipse 10.png',
-          fit: BoxFit.cover,
-        ),
-      );
-    }
-    // Fallback to asset (local assets like default avatar)
-    return Image.asset(
-      widget.avatar,
-      fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => Image.asset(
-        'assets/images/dashboard_particulier/Ellipse 10.png',
-        fit: BoxFit.cover,
+    return ReklamAvatar(
+      avatarUrl: widget.avatar,
+      displayName: widget.name,
+      radius: 20,
+      border: Border.all(
+        color: const Color(0xFF3AAE5E),
+        width: 1.5,
       ),
     );
   }
@@ -759,18 +816,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFF3AAE5E),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: ClipOval(child: _buildAvatarImage()),
-                        ),
+                        _buildAvatarImage(),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Column(
@@ -830,12 +876,23 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 ],
               ),
             ),
+            // Structured overlays (stickers, location, drawing) over the media.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: StoryOverlaysView(
+                  overlays: story['overlays'] is List<StoryOverlay>
+                      ? story['overlays'] as List<StoryOverlay>
+                      : const [],
+                ),
+              ),
+            ),
             if (widget.isOwnStory)
               _OwnStoryOverlay(
                 viewsCount: viewsCount,
                 onShowViewers: _showViewersModal,
               )
-            else
+            else if (DelegationManager.instance
+                .can(DelegationPermission.messages))
               _ReplyOverlay(
                 isLiked: _isLiked,
                 focusNode: _replyFocusNode,
@@ -843,9 +900,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 ownerName: widget.name,
                 storyId: story['id'] is int ? story['id'] as int : 0,
                 storyImage: story['image'] as String? ?? '',
-                onToggleLike: () {
-                  setState(() => _isLiked = !_isLiked);
-                },
+                onToggleLike: _toggleLike,
               ),
           ],
         ),
@@ -1068,21 +1123,22 @@ class _ReplyOverlayState extends State<_ReplyOverlay> {
                             ),
                     ),
                   ),
-                  // const SizedBox(width: 12),
-                  // GestureDetector(
-                  //   onTap: widget.onToggleLike,
-                  //   child: Icon(
-                  //     widget.isLiked ? Icons.favorite : Icons.favorite_border,
-                  //     color: widget.isLiked ? Colors.red : Colors.white,
-                  //     size: 28,
-                  //   ),
-                  // ),
-                  // const SizedBox(width: 16),
-                  // const Icon(
-                  //   Icons.share_outlined,
-                  //   color: Colors.white,
-                  //   size: 26,
-                  // ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: widget.onToggleLike,
+                    child: AnimatedScale(
+                      scale: widget.isLiked ? 1.15 : 1.0,
+                      duration: const Duration(milliseconds: 150),
+                      curve: Curves.easeOut,
+                      child: Icon(
+                        widget.isLiked
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: widget.isLiked ? Colors.red : Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

@@ -1,4 +1,5 @@
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/push_notification_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/utils/user_session.dart';
@@ -55,6 +56,7 @@ class AuthService {
 
     if (response['user'] != null) {
       _updateSessionFromUser(response['user']);
+      await _registerPushToken();
     }
 
     return response;
@@ -62,6 +64,9 @@ class AuthService {
 
   /// POST /api/auth/logout
   Future<Map<String, dynamic>> logout() async {
+    // Unregister the device's FCM token first, while the auth token is still
+    // valid, so this device stops receiving this user's push notifications.
+    await PushNotificationService.instance.unregisterToken();
     try {
       final response = await _api.authenticatedPost('/auth/logout');
       return response;
@@ -105,6 +110,7 @@ class AuthService {
 
     if (response['user'] != null) {
       _updateSessionFromUser(response['user']);
+      await _registerPushToken();
     }
 
     return response;
@@ -158,6 +164,7 @@ class AuthService {
 
     if (response['user'] != null) {
       _updateSessionFromUser(response['user']);
+      await _registerPushToken();
     }
 
     return response;
@@ -193,11 +200,23 @@ class AuthService {
       }
 
       _updateSessionFromUser(user);
+      // Re-register the FCM token on cold start for an already-logged-in user.
+      await _registerPushToken();
       return user;
     } on ApiException {
       rethrow;
     } catch (_) {
       rethrow;
+    }
+  }
+
+  /// Register this device's FCM token with the backend. Best-effort: never
+  /// throws, so a push-registration failure can't break the auth flow.
+  Future<void> _registerPushToken() async {
+    try {
+      await PushNotificationService.instance.registerToken();
+    } catch (_) {
+      // Ignored — registration is retried on next auth / token refresh.
     }
   }
 

@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/profile_service.dart';
 import 'package:intl/intl.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -126,6 +129,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  Future<void> _navigateToFollowerProfile(
+    Map<String, dynamic> notif,
+  ) async {
+    final data = notif['data'] as Map<String, dynamic>?;
+    final followerId =
+        data?['follower_id']?.toString() ?? notif['reference_id']?.toString();
+    if (followerId == null || followerId.isEmpty) return;
+
+    try {
+      final profile = await ProfileService().getUserProfile(followerId);
+      if (!mounted) return;
+      final user = profile['user'] as Map<String, dynamic>?;
+      final accountType = user?['account_type']?.toString().toLowerCase() ?? '';
+      final isPro = accountType == 'pro' || accountType == 'professionnel';
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => isPro
+              ? ProPublicViewScreen(userId: followerId)
+              : ParticulierPublicViewScreen(userId: followerId),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error navigating to follower profile: $e');
+    }
+  }
+
   List<Map<String, dynamic>> get _filteredNotifications {
     if (_selectedTab == 0) return _notifications;
     return _notifications.where((n) => n['read_at'] == null).toList();
@@ -188,6 +218,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       'content_published' => Icons.check_circle,
       'event_participation' => Icons.event_available,
       'training_subscription' => Icons.school,
+      'story_like' => Icons.favorite,
+      'story_mention' => Icons.alternate_email,
       _ => Icons.notifications,
     };
   }
@@ -201,6 +233,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       'content_published' => const Color(0xFF3AAE5E),
       'event_participation' => const Color(0xFFE91E63),
       'training_subscription' => const Color(0xFF00BCD4),
+      'story_like' => const Color(0xFFE53935),
+      'story_mention' => const Color(0xFF8E24AA),
       _ => const Color(0xFF757575),
     };
   }
@@ -384,6 +418,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       onTap: () {
         if (!isRead) {
           _markAsRead(notif['id']);
+        }
+        if (type == 'new_follower') {
+          _navigateToFollowerProfile(notif);
         }
       },
       child: Container(

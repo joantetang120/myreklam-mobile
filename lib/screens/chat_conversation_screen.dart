@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -703,7 +705,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
           // Message Input
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              20 + MediaQuery.paddingOf(context).bottom,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -725,18 +732,29 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     ),
                     child: TextField(
                       controller: _messageController,
-                      decoration: const InputDecoration(
-                        hintText: 'Tapez votre message...',
-                        hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+                      readOnly: !DelegationManager.instance
+                          .can(DelegationPermission.messages),
+                      decoration: InputDecoration(
+                        hintText: DelegationManager.instance
+                                .can(DelegationPermission.messages)
+                            ? 'Tapez votre message...'
+                            : "Messagerie non autorisée",
+                        hintStyle: const TextStyle(
+                            color: Colors.grey, fontSize: 14),
                         border: InputBorder.none,
                       ),
-                      onSubmitted: (_) => _sendMessage(),
+                      onSubmitted: (_) => DelegationManager.instance
+                              .can(DelegationPermission.messages)
+                          ? _sendMessage()
+                          : null,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _sendImage,
+                if (DelegationManager.instance
+                    .can(DelegationPermission.messages))
+                  GestureDetector(
+                    onTap: _sendImage,
                   child: Container(
                     width: 44,
                     height: 44,
@@ -748,28 +766,32 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _isSending ? null : _sendMessage,
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: _isSending ? Colors.grey : const Color(0xFF3AAE5E),
-                      shape: BoxShape.circle,
-                    ),
-                    child: _isSending
-                        ? const Padding(
-                            padding: EdgeInsets.all(12.0),
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
+                if (DelegationManager.instance
+                    .can(DelegationPermission.messages))
+                  GestureDetector(
+                    onTap: _isSending ? null : _sendMessage,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color:
+                            _isSending ? Colors.grey : const Color(0xFF3AAE5E),
+                        shape: BoxShape.circle,
+                      ),
+                      child: _isSending
+                          ? const Padding(
+                              padding: EdgeInsets.all(12.0),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
-                            ),
-                          )
-                        : const Icon(Icons.send, color: Colors.white, size: 20),
+                            )
+                          : const Icon(Icons.send,
+                              color: Colors.white, size: 20),
+                    ),
                   ),
-                ),
               ],
             ),
           ),

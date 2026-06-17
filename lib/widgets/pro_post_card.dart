@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class ProPostCard extends StatelessWidget {
   final String profileImage;
@@ -63,9 +64,11 @@ class ProPostCard extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: onAvatarTap,
-                child: CircleAvatar(
+                child: ReklamAvatar(
+                  avatarUrl: profileImage,
+                  displayName: username,
                   radius: 24,
-                  backgroundImage: _buildImageProvider(profileImage),
+                  accountType: 'pro',
                 ),
               ),
               const SizedBox(width: 12),

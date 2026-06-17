@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/services/delegation_manager.dart';
+import 'package:myreklam/models/delegation.dart';
 
 class PublierScreen extends StatelessWidget {
   const PublierScreen({super.key});
@@ -25,21 +27,27 @@ class PublierScreen extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildOptionCard(
-                        context,
-                        image: 'assets/images/publier_bottom/Wavy_Bus-05_Single-03-[Converti] 1.png',
-                        title: 'Publier une annonce',
-                        description:
-                            'Publiez du contenu à partager avec votre communauté : un bon plan, un événement...',
-                      ),
-                      const SizedBox(height: 16),
-                      _buildOptionCard(
-                        context,
-                        image: 'assets/images/publier_bottom/Wavy_Bus-05_Single-03-[Converti] 1 (1).png',
-                        title: 'Créer un post',
-                        description:
-                            'Partagez avec votre communauté des actualités, des photos, des idées, etc',
-                      ),
+                      if (DelegationManager.instance
+                          .can(DelegationPermission.announcements))
+                        _buildOptionCard(
+                          context,
+                          image: 'assets/images/publier_bottom/Wavy_Bus-05_Single-03-[Converti] 1.png',
+                          title: 'Publier une annonce',
+                          description:
+                              'Publiez du contenu à partager avec votre communauté : un bon plan, un événement...',
+                        ),
+                      if (DelegationManager.instance
+                          .can(DelegationPermission.announcements))
+                        const SizedBox(height: 16),
+                      if (DelegationManager.instance
+                          .can(DelegationPermission.posts))
+                        _buildOptionCard(
+                          context,
+                          image: 'assets/images/publier_bottom/Wavy_Bus-05_Single-03-[Converti] 1 (1).png',
+                          title: 'Créer un post',
+                          description:
+                              'Partagez avec votre communauté des actualités, des photos, des idées, etc',
+                        ),
                     ],
                   ),
                 ),

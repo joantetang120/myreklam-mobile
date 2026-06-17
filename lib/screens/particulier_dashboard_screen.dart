@@ -14,6 +14,7 @@ import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/widgets/welcome_bonus_popup.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
@@ -44,8 +45,10 @@ import 'package:myreklam/utils/guest_access.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
+import 'package:myreklam/screens/profile_pro/pro_reward_screen.dart';
 import 'package:myreklam/widgets/particulier_onboarding_modal.dart';
 import 'package:myreklam/widgets/pro_onboarding_modal.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'dart:typed_data';
 import 'package:video_player/video_player.dart';
@@ -479,12 +482,15 @@ class _PostAuthorInfo {
     required this.displayName,
     required this.accountType,
     required this.avatar,
+    this.employment,
   });
 
   final String? id;
   final String displayName;
   final String accountType;
   final String avatar;
+  // LinkedIn-style "Emploi chez Entreprise" line (null when not applicable).
+  final String? employment;
 }
 
 class _PostCardWidget extends StatefulWidget {
@@ -501,6 +507,8 @@ class _PostCardWidget extends StatefulWidget {
   final Function(String) onToggleReaction;
   final Widget Function() buildReactionBar;
   final Widget Function(String, Color, IconData) buildTypeTag;
+  final String? currentUserId;
+  final void Function(String postId)? onDeletePost;
 
   const _PostCardWidget({
     required this.postId,
@@ -516,6 +524,8 @@ class _PostCardWidget extends StatefulWidget {
     required this.buildReactionBar,
     required this.buildTypeTag,
     required this.timeAgoRepost,
+    this.currentUserId,
+    this.onDeletePost,
   });
 
   @override
@@ -526,7 +536,17 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
   bool _isExpanded = false;
   static const int _collapsedMaxLength = 150;
 
-  Widget _buildAuthorRow(_PostAuthorInfo authorInfo) {
+  bool get _isPostOwner {
+    if (widget.currentUserId == null) return false;
+    // For simple reposts, the post entity belongs to the reposter
+    if (widget.isRepost && !widget.isQuoteRepost) {
+      return widget.reposter.id == widget.currentUserId;
+    }
+    // For original posts and quote reposts, the author owns the post
+    return widget.author.id == widget.currentUserId;
+  }
+
+  Widget _buildAuthorRow(_PostAuthorInfo authorInfo, {Widget? trailing}) {
     return Row(
       children: [
         GestureDetector(
@@ -544,16 +564,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               );
             }
           },
-          child: CircleAvatar(
+          child: ReklamAvatar(
+            avatarUrl: authorInfo.avatar,
+            displayName: authorInfo.displayName,
             radius: 20,
-            backgroundImage: authorInfo.avatar.startsWith('http')
-                ? NetworkImage(authorInfo.avatar) as ImageProvider
-                : authorInfo.avatar.startsWith('assets/')
-                ? AssetImage(authorInfo.avatar)
-                : NetworkImage(
-                        ApiConfig.resolveMediaUrl(authorInfo.avatar) ?? '',
-                      )
-                      as ImageProvider,
+            accountType: authorInfo.accountType == 'professionnel' ? 'pro' : 'particulier',
           ),
         ),
         const SizedBox(width: 10),
@@ -588,6 +603,17 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (authorInfo.employment != null)
+                Text(
+                  authorInfo.employment!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               Text(
                 '${authorInfo.accountType} • ${widget.isRepost && widget.isQuoteRepost ? widget.timeAgoRepost : widget.timeAgo}',
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
@@ -595,38 +621,63 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
             ],
           ),
         ),
+        if (trailing != null) trailing,
       ],
     );
   }
 
-  /// Build author avatar - shows icon if no avatar, otherwise shows image
-  Widget _buildAuthorAvatar(String avatarUrl, String accountType) {
-    final hasAvatar =
-        avatarUrl.isNotEmpty &&
-        avatarUrl != 'null' &&
-        avatarUrl != 'assets/images/dashboard_particulier/Ellipse 10.png';
-
-    if (!hasAvatar) {
-      return CircleAvatar(
-        radius: 20,
-        backgroundColor: Colors.grey[300],
-        child: Icon(
-          accountType == 'pro' ? Icons.business : Icons.person,
-          color: Colors.grey[600],
-          size: 20,
+  Widget _buildPostMenu() {
+    return PopupMenuButton<String>(
+      icon: Icon(Icons.more_vert, color: Colors.grey[600], size: 20),
+      padding: EdgeInsets.zero,
+      onSelected: (value) async {
+        if (value == 'delete') {
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Supprimer la publication'),
+              content: const Text(
+                'Voulez-vous vraiment supprimer cette publication ?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Annuler'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Supprimer'),
+                ),
+              ],
+            ),
+          );
+          if (confirmed == true && widget.onDeletePost != null) {
+            widget.onDeletePost!(widget.postId);
+          }
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete_outline, color: Colors.red, size: 20),
+              SizedBox(width: 8),
+              Text('Supprimer', style: TextStyle(color: Colors.red)),
+            ],
+          ),
         ),
-      );
-    }
+      ],
+    );
+  }
 
-    return CircleAvatar(
+  Widget _buildAuthorAvatar(String avatarUrl, String accountType, {String? displayName}) {
+    return ReklamAvatar(
+      avatarUrl: avatarUrl,
+      displayName: displayName,
       radius: 20,
-      backgroundColor: Colors.grey[300],
-      backgroundImage: avatarUrl.startsWith('http')
-          ? NetworkImage(avatarUrl) as ImageProvider
-          : avatarUrl.startsWith('assets/')
-          ? AssetImage(avatarUrl)
-          : NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? '')
-                as ImageProvider,
+      accountType: accountType,
     );
   }
 
@@ -706,20 +757,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             color: Colors.grey[600],
                           ),
                           const SizedBox(width: 6),
-                          CircleAvatar(
+                          ReklamAvatar(
+                            avatarUrl: widget.reposter.avatar,
+                            displayName: widget.reposter.displayName,
                             radius: 14,
-                            backgroundImage:
-                                widget.reposter.avatar.startsWith('http')
-                                ? NetworkImage(widget.reposter.avatar)
-                                : widget.reposter.avatar.startsWith('assets/')
-                                ? AssetImage(widget.reposter.avatar)
-                                      as ImageProvider
-                                : NetworkImage(
-                                    ApiConfig.resolveMediaUrl(
-                                          widget.reposter.avatar,
-                                        ) ??
-                                        '',
-                                  ),
+                            accountType: widget.reposter.accountType == 'professionnel' ? 'pro' : 'particulier',
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -754,7 +796,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                     const SizedBox(height: 8),
                   ],
                   // Author row
-                  _buildAuthorRow(displayAuthor),
+                  _buildAuthorRow(
+                    displayAuthor,
+                    trailing: widget.currentUserId != null &&
+                            _isPostOwner
+                        ? _buildPostMenu()
+                        : null,
+                  ),
                 ],
               ),
             ),
@@ -824,21 +872,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                       child: Row(
                         children: [
-                          CircleAvatar(
+                          ReklamAvatar(
+                            avatarUrl: widget.author.avatar,
+                            displayName: widget.author.displayName,
                             radius: 14,
-                            backgroundImage:
-                                widget.author.avatar.startsWith('http')
-                                ? NetworkImage(widget.author.avatar)
-                                      as ImageProvider
-                                : widget.author.avatar.startsWith('assets/')
-                                ? AssetImage(widget.author.avatar)
-                                : NetworkImage(
-                                        ApiConfig.resolveMediaUrl(
-                                              widget.author.avatar,
-                                            ) ??
-                                            '',
-                                      )
-                                      as ImageProvider,
+                            accountType: widget.author.accountType == 'professionnel' ? 'pro' : 'particulier',
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -1136,27 +1174,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     return GuestAccess.ensureAuthenticated(context, featureName: featureName);
   }
 
-  /// Build small avatar widget - shows icon if no avatar
-  Widget _buildSmallAvatar(String avatarUrl, double radius) {
-    final hasAvatar =
-        avatarUrl.isNotEmpty &&
-        avatarUrl != 'null' &&
-        avatarUrl != _defaultAvatar;
-
-    if (!hasAvatar) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: Colors.grey[300],
-        child: Icon(Icons.person, size: radius, color: Colors.grey[600]),
-      );
-    }
-
-    return CircleAvatar(
+  Widget _buildSmallAvatar(String avatarUrl, double radius, {String? displayName, String? accountType}) {
+    return ReklamAvatar(
+      avatarUrl: avatarUrl,
+      displayName: displayName,
       radius: radius,
-      backgroundColor: Colors.grey[300],
-      backgroundImage: avatarUrl.startsWith('http')
-          ? NetworkImage(avatarUrl) as ImageProvider
-          : AssetImage(avatarUrl),
+      accountType: accountType,
     );
   }
 
@@ -1231,10 +1254,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       }
       return {
         'image': resolvedImage ?? '',
+        'media_type': s.mediaType ?? 'image',
         'text': s.caption,
         'time': time,
         'id': s.id,
         'views_count': s.viewsCount,
+        'likes_count': s.likesCount,
+        'is_liked': s.isLiked,
+        'overlays': s.overlays,
         'overlay_text': s.overlayText,
         'overlay_color': s.overlayColor,
         'overlay_style': s.overlayStyle,
@@ -1305,7 +1332,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     }
 
     // Small delay to ensure user data is loaded
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 600), () {
       if (mounted && !UserSession().isGuest) _checkAndShowOnboarding();
     });
 
@@ -1577,32 +1604,11 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       },
                       child: Column(
                         children: [
-                          CircleAvatar(
+                          ReklamAvatar(
+                            avatarUrl: avatarUrl,
+                            displayName: name,
                             radius: 24,
-                            backgroundColor: Colors.grey[300],
-                            backgroundImage:
-                                avatarUrl.isNotEmpty &&
-                                    avatarUrl != _defaultAvatar
-                                ? (avatarUrl.startsWith('http')
-                                      ? NetworkImage(avatarUrl)
-                                      : avatarUrl.startsWith('assets/')
-                                      ? AssetImage(avatarUrl) as ImageProvider
-                                      : NetworkImage(
-                                              ApiConfig.resolveMediaUrl(
-                                                    avatarUrl,
-                                                  ) ??
-                                                  '',
-                                            )
-                                            as ImageProvider)
-                                : null,
-                            child:
-                                avatarUrl.isEmpty || avatarUrl == _defaultAvatar
-                                ? Icon(
-                                    isPro ? Icons.business : Icons.person,
-                                    size: 24,
-                                    color: Colors.grey[600],
-                                  )
-                                : null,
+                            accountType: isPro ? 'pro' : 'particulier',
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -3026,11 +3032,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     ];
     final price = _formatPrice(event);
     final isNationwide = event['is_nationwide'] == true;
-    final coverageArea = isNationwide
+    final area = isNationwide
         ? 'Toute la France'
         : (event['coverage_area']?.toString() ??
               event['location']?.toString() ??
               'Non spécifié');
+    final city = event['location_city']?.toString();
+    final coverageArea = (city != null && city.isNotEmpty)
+        ? '$area - $city'
+        : area;
 
     final eventId = event['id']?.toString() ?? '';
 
@@ -4188,11 +4198,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                             child: Row(
                               children: [
-                                CircleAvatar(
+                                ReklamAvatar(
+                                  avatarUrl: userAvatar,
+                                  displayName: userName,
                                   radius: 22,
-                                  backgroundImage: userAvatar.startsWith('http')
-                                      ? NetworkImage(userAvatar)
-                                      : AssetImage(userAvatar) as ImageProvider,
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -4270,16 +4279,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                     ),
                                     child: Row(
                                       children: [
-                                        CircleAvatar(
+                                        ReklamAvatar(
+                                          avatarUrl: originalProfil,
+                                          displayName: originalAuthorName,
                                           radius: 22,
-                                          backgroundImage: NetworkImage(
-                                            originalProfil.startsWith('http')
-                                                ? originalProfil
-                                                : (_buildStorageUrl(
-                                                        originalProfil,
-                                                      ) ??
-                                                      ''),
-                                          ),
                                         ),
                                         const SizedBox(width: 6),
                                         Expanded(
@@ -4561,12 +4564,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
               ),
               const SizedBox(width: 4),
-              Text(
-                data.likesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  data.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],
@@ -5016,23 +5022,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
+                          avatarUrl: avatarUrl,
+                          displayName: displayName,
                           radius: isReply ? 14 : 18,
-                          backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(
-                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                      avatarUrl,
-                                )
-                              : null,
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Icon(
-                                  Icons.person,
-                                  size: isReply ? 12 : 16,
-                                  color: Colors.grey[600],
-                                )
-                              : null,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -5442,7 +5435,39 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       buildReactionBar: () =>
           _buildReactionBar('posts', reactionEntityId, postData: raw),
       buildTypeTag: _buildTypeTag,
+      currentUserId: _currentUserId,
+      onDeletePost: _deletePostFromFeed,
     );
+  }
+
+  Future<void> _deletePostFromFeed(String postId) async {
+    try {
+      await ApiClient().authenticatedDelete('/posts/$postId');
+      if (mounted) {
+        setState(() {
+          _feedItems.removeWhere((item) {
+            final resource = item['resource'] as Map<String, dynamic>?;
+            final id = resource?['id']?.toString() ?? '';
+            return id == postId && item['feed_type'] == 'post';
+          });
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Publication supprimée'),
+            backgroundColor: Color(0xFF3AAE5E),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la suppression: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   _PostAuthorInfo _extractPostAuthorInfo(Map<String, dynamic> raw) {
@@ -5522,11 +5547,35 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       }
     }
 
+    // LinkedIn-style employment line (particulier authors only).
+    final employmentMap = feedAuthor?['employment'] as Map<String, dynamic>?;
+    final jobTitle = (employmentMap?['job_title'] ??
+            particulierProfile?['job_title'])
+        ?.toString()
+        .trim();
+    final companyName = (employmentMap?['company_name'] ??
+            particulierProfile?['company_name'])
+        ?.toString()
+        .trim();
+    String? employment;
+    if ((jobTitle != null && jobTitle.isNotEmpty) ||
+        (companyName != null && companyName.isNotEmpty)) {
+      if (jobTitle != null && jobTitle.isNotEmpty &&
+          companyName != null && companyName.isNotEmpty) {
+        employment = '$jobTitle chez $companyName';
+      } else {
+        employment = (jobTitle != null && jobTitle.isNotEmpty)
+            ? jobTitle
+            : companyName;
+      }
+    }
+
     return _PostAuthorInfo(
       id: authorId,
       displayName: resolvedName,
       accountType: accountType,
       avatar: avatar,
+      employment: employment,
     );
   }
 
@@ -6646,42 +6695,58 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 },
               ),
               actions: [
-                Container(
-                  margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF9E6),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFFFD700)),
-                  ),
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        'assets/images/profil_pro/reward.png',
-                        width: 12,
-                        height: 12,
+                GestureDetector(
+                  onTap: () {
+                    if (!GuestAccess.ensureAuthenticated(
+                      context,
+                      featureName: 'voir les récompenses',
+                    )) {
+                      return;
+                    }
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProRewardScreen(),
                       ),
-                      SizedBox(width: 4),
-                      Text(
-                        UserSession().mys.toString(),
-                        style: TextStyle(
-                          color: Color(0xFFFFD700),
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF9E6),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFFD700)),
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset(
+                          'assets/images/profil_pro/reward.png',
+                          width: 12,
+                          height: 12,
                         ),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        'My\'s',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                        SizedBox(width: 4),
+                        Text(
+                          UserSession().mys.toString(),
+                          style: TextStyle(
+                            color: Color(0xFFFFD700),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 5),
+                        Text(
+                          'My\'s',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Padding(
@@ -6794,28 +6859,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                                       ),
                                                     ),
                                                     child: hasOwnStories
-                                                        ? CircleAvatar(
+                                                        ? ReklamAvatar(
+                                                            avatarUrl: ownGroup.first.userAvatar,
+                                                            displayName: ownGroup.first.userName,
                                                             radius: 22,
-                                                            backgroundImage:
-                                                                (ownGroup
-                                                                            .first
-                                                                            .userAvatar !=
-                                                                        null &&
-                                                                    ownGroup
-                                                                        .first
-                                                                        .userAvatar!
-                                                                        .isNotEmpty)
-                                                                ? NetworkImage(
-                                                                        ApiConfig.resolveMediaUrl(
-                                                                          ownGroup
-                                                                              .first
-                                                                              .userAvatar,
-                                                                        )!,
-                                                                      )
-                                                                      as ImageProvider
-                                                                : const AssetImage(
-                                                                    _defaultAvatar,
-                                                                  ),
                                                           )
                                                         : const Center(
                                                             child: Icon(

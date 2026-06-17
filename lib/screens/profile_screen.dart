@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:myreklam/screens/profile_pro/pro_annonces_screen.dart';
@@ -28,6 +30,7 @@ import 'package:myreklam/services/auth_service.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -369,26 +372,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
                           radius: 45,
+                          avatarUrl: _avatarUrl,
+                          displayName: _pseudo,
                           backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              _avatarUrl != null &&
-                                  (_avatarUrl!.startsWith('https') ||
-                                      _avatarUrl!.startsWith('http'))
-                              ? NetworkImage(_avatarUrl!)
-                              : (_avatarUrl != null
-                                    ? NetworkImage(
-                                        "${ApiConfig.baseUrl.replaceFirst('/api', '')}/storage/${_avatarUrl!}",
-                                      )
-                                    : null),
-                          child: _avatarUrl == null
-                              ? const Icon(
-                                  Icons.person,
-                                  size: 50,
-                                  color: Colors.white,
-                                )
-                              : null,
                         ),
                         Positioned(
                           bottom: 0,
@@ -712,20 +700,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ).then((_) => _loadProfile());
                       },
                     ),
-                    _buildMenuCard(
-                      icon: 'assets/images/profil_pro/opt-6.png',
-                      backgroundColor: const Color(0xFFFFE0B2),
-                      title: 'Paramètres du compte',
-                      description: 'Configurez vos préférences et sécurité',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SettingsScreen(),
-                          ),
-                        );
-                      },
-                    ),
+                    if (DelegationManager.instance
+                        .can(DelegationPermission.editAccount))
+                      _buildMenuCard(
+                        icon: 'assets/images/profil_pro/opt-6.png',
+                        backgroundColor: const Color(0xFFFFE0B2),
+                        title: 'Paramètres du compte',
+                        description: 'Configurez vos préférences et sécurité',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsScreen(),
+                            ),
+                          );
+                        },
+                      ),
                     _buildMenuCard(
                       icon: 'assets/images/profil_pro/carbon_user.png',
                       backgroundColor: const Color(0xFFE6F7EF),
@@ -771,22 +761,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ).then((_) => _loadProfile());
                       },
                     ),
-                    _buildMenuCard(
-                      icon: 'assets/images/profil_pro/opt-1.png',
-                      backgroundColor: const Color(0xFFE6F7EF),
-                      title: 'Mon profil',
-                      description:
-                          'Gérez vos informations personnelles, votre présentation et vos réseaux sociaux',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const MonProfilParticulierScreen(),
-                          ),
-                        ).then((_) => _loadProfile());
-                      },
-                    ),
+                    if (DelegationManager.instance
+                        .can(DelegationPermission.editAccount))
+                      _buildMenuCard(
+                        icon: 'assets/images/profil_pro/opt-1.png',
+                        backgroundColor: const Color(0xFFE6F7EF),
+                        title: 'Mon profil',
+                        description:
+                            'Gérez vos informations personnelles, votre présentation et vos réseaux sociaux',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const MonProfilParticulierScreen(),
+                            ),
+                          ).then((_) => _loadProfile());
+                        },
+                      ),
                   ],
                 ),
               ),

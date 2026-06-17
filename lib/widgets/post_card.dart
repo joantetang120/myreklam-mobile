@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class PostCard extends StatelessWidget {
   final String profileImage;
@@ -47,9 +48,11 @@ class PostCard extends StatelessWidget {
           // Header
           Row(
             children: [
-              CircleAvatar(
+              ReklamAvatar(
+                avatarUrl: profileImage,
+                displayName: username,
                 radius: 24,
-                backgroundImage: _buildImageProvider(profileImage),
+                accountType: userType.toLowerCase() == 'professionnel' ? 'pro' : 'particulier',
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -198,13 +201,6 @@ class PostCard extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: content,
     );
-  }
-
-  ImageProvider _buildImageProvider(String path) {
-    if (path.startsWith('http')) {
-      return NetworkImage(path);
-    }
-    return AssetImage(path);
   }
 
   Widget _buildPostImage(String path) {

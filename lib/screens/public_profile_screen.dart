@@ -13,6 +13,8 @@ import 'package:myreklam/utils/blocked_users_manager.dart';
 import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PublicProfileScreen extends StatefulWidget {
@@ -695,17 +697,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                         color: Color(0xFF2E9B5B),
                         shape: BoxShape.circle,
                       ),
-                      child: CircleAvatar(
+                      child: ReklamAvatar(
+                        avatarUrl: avatar,
+                        displayName: displayName,
                         radius: 45,
-                        backgroundColor: Colors.white,
-                        backgroundImage: avatar.startsWith('http')
-                            ? NetworkImage(avatar) as ImageProvider
-                            : avatar.startsWith('assets/')
-                            ? AssetImage(avatar)
-                            : NetworkImage(
-                                    ApiConfig.resolveMediaUrl(avatar) ?? '',
-                                  )
-                                  as ImageProvider,
+                        accountType: _userData?['pro_profile'] != null
+                            ? 'pro'
+                            : 'particulier',
                       ),
                     ),
                   ),
@@ -1581,12 +1579,15 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
               ),
               const SizedBox(width: 4),
-              Text(
-                data.likesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  data.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],

@@ -64,6 +64,15 @@
 			<string>google-sign-in</string>
 		</dict>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>fetch</string>
+	</array>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Myreklam utilise votre position pour ajouter un lieu à votre story.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Myreklam a besoin d'accéder à votre galerie pour que vous puissiez ajouter une storie.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

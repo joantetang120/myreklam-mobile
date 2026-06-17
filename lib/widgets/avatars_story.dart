@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class AvatarsStory extends StatelessWidget {
   final String name;
@@ -14,25 +14,6 @@ class AvatarsStory extends StatelessWidget {
     this.onTap,
     this.isViewed = false,
   });
-
-  ImageProvider _getImageProvider() {
-    print("imageName $imageName");
-    // Local assets
-    if (imageName.startsWith('assets/')) {
-      return AssetImage(imageName);
-    }
-    // HTTP/HTTPS URLs (including resolved ones)
-    if (imageName.startsWith('http')) {
-      return NetworkImage(imageName);
-    }
-    // Relative paths - resolve to full URL
-    final resolved = ApiConfig.resolveMediaUrl(imageName);
-    if (resolved != null) {
-      return NetworkImage(resolved);
-    }
-    // Fallback
-    return AssetImage(imageName);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +36,11 @@ class AvatarsStory extends StatelessWidget {
             ),
             child: Padding(
               padding: EdgeInsets.all(4),
-              child: CircleAvatar(backgroundImage: _getImageProvider()),
+              child: ReklamAvatar(
+                avatarUrl: imageName,
+                displayName: name,
+                radius: 21,
+              ),
             ),
           ),
           Text(name, style: TextStyle(fontSize: 10)),

@@ -9,6 +9,7 @@ import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
+import 'package:myreklam/widgets/company_picker.dart';
 
 class MonProfilParticulierScreen extends StatefulWidget {
   const MonProfilParticulierScreen({super.key});
@@ -39,6 +40,11 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _presentationController = TextEditingController();
+  final TextEditingController _jobController = TextEditingController();
+
+  // Company (Entreprise) selection
+  int? _companyId;
+  String? _companyName;
 
   // Social media controllers
   final TextEditingController _facebookController = TextEditingController();
@@ -158,6 +164,11 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
           _emailController.text = user != null ? (user['email'] ?? '') : '';
           _phoneController.text = profile['phone']?.toString() ?? '';
           _presentationController.text = profile['bio'] ?? '';
+          _jobController.text = profile['job_title']?.toString() ?? '';
+          _companyId = profile['company_id'] is int
+              ? profile['company_id']
+              : int.tryParse(profile['company_id']?.toString() ?? '');
+          _companyName = profile['company_name']?.toString();
           _showEmailPublic =
               profile['show_email_public'] == 1 ||
               profile['show_email_public'] == true;
@@ -197,6 +208,9 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         'email': _emailController.text,
         'bio': _presentationController.text,
         'phone': _phoneController.text,
+        'job_title': _jobController.text,
+        'company_id': _companyId,
+        'company_name': _companyName,
         'show_email_public': _showEmailPublic ? 1 : 0,
         'show_phone_public': _showPhonePublic ? 1 : 0,
         'social_links': {
@@ -303,6 +317,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
     _emailController.dispose();
     _phoneController.dispose();
     _presentationController.dispose();
+    _jobController.dispose();
     _facebookController.dispose();
     _instagramController.dispose();
     _linkedinController.dispose();
@@ -473,6 +488,42 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             (val) {
               setState(() => _showPhonePublic = val!);
             },
+          ),
+          const SizedBox(height: 24),
+          _buildSectionHeader(Icons.work_outline, 'Profession'),
+          const SizedBox(height: 16),
+          _buildTextField(
+            label: 'Emploi',
+            controller: _jobController,
+            icon: Icons.badge_outlined,
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Entreprise',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF333333),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                CompanyPickerField(
+                  companyId: _companyId,
+                  companyName: _companyName,
+                  onChanged: (id, name) {
+                    setState(() {
+                      _companyId = id;
+                      _companyName = name;
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
           _buildSectionHeader(Icons.description_outlined, 'Bio'),

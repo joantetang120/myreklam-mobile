@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 // Bouton partager masqué
 // import 'package:myreklam/services/share_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
@@ -13,6 +15,8 @@ import 'package:myreklam/widgets/image_carousel.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
 import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/creer_bon_plan_screen.dart';
@@ -193,32 +197,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
   String? _currentUserId;
 
   /// Check if edit option should be shown
-  /// Hide edit if: 1) post is older than 2 hours OR 2) people have favorited it
   bool get _canEdit {
-    if (!widget.isOwner) return false;
-
-    final data = widget.bonPlanData;
-    if (data == null) return true; // Allow edit if no data (fallback)
-
-    // Check if post is older than 2 hours
-    final createdAtStr = data['created_at']?.toString();
-    if (createdAtStr != null && createdAtStr.isNotEmpty) {
-      final createdAt = DateTime.tryParse(createdAtStr);
-      if (createdAt != null) {
-        final twoHoursAgo = DateTime.now().subtract(const Duration(hours: 2));
-        if (createdAt.isBefore(twoHoursAgo)) {
-          return false; // Post is older than 2 hours
-        }
-      }
-    }
-
-    // Check if people have favorited this post
-    final favoritesCount = data['favorites_count'] ?? 0;
-    if (favoritesCount is int && favoritesCount > 0) {
-      return false; // People have favorited
-    }
-
-    return true;
+    return widget.isOwner;
   }
 
   @override
@@ -847,7 +827,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 ProFeature.commentAndReact,
               )) {
                 if (context.mounted) {
-                  SubscriptionHelper.showTrialExpiredDialog(context);
+                  SubscriptionHelper.showPremiumRequiredDialog(
+                    context,
+                    featureName: 'Commentaires et réactions',
+                  );
                 }
                 return;
               }
@@ -1175,23 +1158,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
+                          avatarUrl: avatarUrl,
+                          displayName: displayName,
                           radius: isReply ? 14 : 18,
-                          backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(
-                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                      avatarUrl,
-                                )
-                              : null,
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Icon(
-                                  Icons.person,
-                                  size: isReply ? 12 : 16,
-                                  color: Colors.grey[600],
-                                )
-                              : null,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -1735,12 +1705,15 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
               ),
               const SizedBox(width: 4),
-              Text(
-                data.likesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  data.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],
@@ -2088,7 +2061,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          if (_canEdit)
+          if (widget.isOwner)
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
@@ -2126,30 +2099,37 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   }
                 },
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          size: 20,
-                          color: Color(0xFF616161),
-                        ),
-                        SizedBox(width: 12),
-                        Text('Modifier'),
-                      ],
+                  if (_canEdit &&
+                      DelegationManager.instance
+                          .can(DelegationPermission.announcements))
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 20,
+                            color: Color(0xFF616161),
+                          ),
+                          SizedBox(width: 12),
+                          Text('Modifier'),
+                        ],
+                      ),
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                        SizedBox(width: 12),
-                        Text('Supprimer', style: TextStyle(color: Colors.red)),
-                      ],
+                  if (DelegationManager.instance
+                      .can(DelegationPermission.announcements))
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline,
+                              size: 20, color: Colors.red),
+                          SizedBox(width: 12),
+                          Text('Supprimer',
+                              style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             )
@@ -2634,16 +2614,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               child: Row(
                 children: [
                   // Avatar
-                  GestureDetector(
+                  ReklamAvatar(
+                    avatarUrl: widget.avatar,
+                    displayName: widget.name,
+                    radius: 24,
+                    accountType: widget.userType,
                     onTap: widget.authorData != null
                         ? _navigateToUserProfile
                         : null,
-                    child: CircleAvatar(
-                      radius: 24,
-                      backgroundImage: widget.avatar.startsWith('http')
-                          ? NetworkImage(widget.avatar)
-                          : AssetImage(widget.avatar) as ImageProvider,
-                    ),
                   ),
                   const SizedBox(width: 12),
                   // Name and user type
@@ -2727,7 +2705,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             // Contact button - only if not owner and acceptMessages is true
             if (!widget.isOwner &&
                 widget.acceptMessages &&
-                widget.authorData != null)
+                widget.authorData != null &&
+                DelegationManager.instance.can(DelegationPermission.messages))
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: SizedBox(
@@ -4019,15 +3998,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
+          ReklamAvatar(
+            avatarUrl: avatarUrl,
+            displayName: authorName,
             radius: 20,
-            backgroundImage:
-                avatarUrl != null && avatarUrl.toString().startsWith('http')
-                ? NetworkImage(avatarUrl)
-                : const AssetImage(
-                        'assets/images/dashboard_particulier/Ellipse 10.png',
-                      )
-                      as ImageProvider,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -4091,7 +4065,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 ProFeature.commentAndReact,
               )) {
                 if (context.mounted) {
-                  SubscriptionHelper.showTrialExpiredDialog(context);
+                  SubscriptionHelper.showPremiumRequiredDialog(
+                    context,
+                    featureName: 'Commentaires et réactions',
+                  );
                 }
                 return;
               }
@@ -4405,14 +4382,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
+                          avatarUrl: avatarUrl,
+                          displayName: displayName,
                           radius: isReply ? 14 : 18,
-                          backgroundImage: avatarUrl != null
-                              ? NetworkImage(avatarUrl)
-                              : const AssetImage(
-                                      'assets/images/dashboard_particulier/Ellipse 10.png',
-                                    )
-                                    as ImageProvider,
                         ),
                         const SizedBox(width: 10),
                         Expanded(

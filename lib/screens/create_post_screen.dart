@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:file_picker/file_picker.dart';
+import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
@@ -8,6 +8,7 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final String? postId;
@@ -35,7 +36,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   String _selectedPrivacy = 'public';
   bool _isPosting = false;
   bool _isUploadingMedia = false;
-  List<PlatformFile> _selectedMediaFiles = [];
+  List<GalleryMedia> _selectedMediaFiles = [];
   bool _showLocationField = false;
   List<Map<String, dynamic>> _existingMedia = [];
   final List<int> _deletedMediaIds = [];
@@ -120,18 +121,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       return;
     }
     try {
-      final result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'mp4', 'mov'],
-        withData: true,
-      );
-      if (result == null) return;
+      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      if (files == null || files.isEmpty) return;
       final remaining = 10 - _selectedMediaFiles.length;
-      final toAdd = result.files.take(remaining).toList();
+      final toAdd = files.take(remaining).toList();
       setState(() => _selectedMediaFiles.addAll(toAdd));
     } catch (_) {
-      _showSnack('Impossible d\'accéder aux fichiers.', isError: true);
+      _showSnack('Impossible d\'accéder à la galerie.', isError: true);
     }
   }
 
@@ -401,16 +397,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             strokeWidth: 2,
                           ),
                         )
-                      : CircleAvatar(
+                      : ReklamAvatar(
+                          avatarUrl: _userAvatar,
+                          displayName: _username,
                           radius: 25,
-                          backgroundImage:
-                              _userAvatar != null &&
-                                  _userAvatar!.startsWith('http')
-                              ? NetworkImage(_userAvatar!)
-                              : const AssetImage(
-                                      'assets/images/dashboard_particulier/Ellipse 10.png',
-                                    )
-                                    as ImageProvider,
                         ),
                   const SizedBox(width: 12),
                   Expanded(

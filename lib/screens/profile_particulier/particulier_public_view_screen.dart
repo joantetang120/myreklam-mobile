@@ -20,6 +20,7 @@ import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/demande_card.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
@@ -28,6 +29,7 @@ import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class _ReactionData {
   int likesCount;
@@ -119,16 +121,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               );
             }
           },
-          child: CircleAvatar(
+          child: ReklamAvatar(
+            avatarUrl: authorInfo.avatar,
             radius: 20,
-            backgroundImage: authorInfo.avatar.startsWith('http')
-                ? NetworkImage(authorInfo.avatar) as ImageProvider
-                : authorInfo.avatar.startsWith('assets/')
-                ? AssetImage(authorInfo.avatar)
-                : NetworkImage(
-                        ApiConfig.resolveMediaUrl(authorInfo.avatar) ?? '',
-                      )
-                      as ImageProvider,
+            displayName: authorInfo.displayName,
+            accountType: authorInfo.accountType,
           ),
         ),
         const SizedBox(width: 10),
@@ -174,34 +171,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
     );
   }
 
-  /// Build author avatar - shows icon if no avatar, otherwise shows image
   Widget _buildAuthorAvatar(String avatarUrl) {
-    final hasAvatar =
-        avatarUrl.isNotEmpty &&
-        avatarUrl != 'null' &&
-        avatarUrl != 'assets/images/dashboard_particulier/Ellipse 10.png';
-
-    if (!hasAvatar) {
-      return CircleAvatar(
-        radius: 20,
-        backgroundColor: Colors.grey[300],
-        child: Icon(
-          widget.author.accountType == 'pro' ? Icons.business : Icons.person,
-          color: Colors.grey[600],
-          size: 20,
-        ),
-      );
-    }
-
-    return CircleAvatar(
+    return ReklamAvatar(
+      avatarUrl: avatarUrl,
       radius: 20,
-      backgroundColor: Colors.grey[300],
-      backgroundImage: avatarUrl.startsWith('http')
-          ? NetworkImage(avatarUrl) as ImageProvider
-          : avatarUrl.startsWith('assets/')
-          ? AssetImage(avatarUrl)
-          : NetworkImage(ApiConfig.resolveMediaUrl(avatarUrl) ?? '')
-                as ImageProvider,
+      accountType: widget.author.accountType,
     );
   }
 
@@ -280,20 +254,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             child: _buildAuthorAvatar(widget.reposter.avatar),
                           ),
                           const SizedBox(width: 6),
-                          CircleAvatar(
+                          ReklamAvatar(
+                            avatarUrl: widget.reposter.avatar,
                             radius: 10,
-                            backgroundImage:
-                                widget.reposter.avatar.startsWith('http')
-                                ? NetworkImage(widget.reposter.avatar)
-                                : widget.reposter.avatar.startsWith('assets/')
-                                ? AssetImage(widget.reposter.avatar)
-                                      as ImageProvider
-                                : NetworkImage(
-                                    ApiConfig.resolveMediaUrl(
-                                          widget.reposter.avatar,
-                                        ) ??
-                                        '',
-                                  ),
+                            displayName: widget.reposter.displayName,
+                            accountType: widget.reposter.accountType,
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -398,21 +363,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
                       child: Row(
                         children: [
-                          CircleAvatar(
+                          ReklamAvatar(
+                            avatarUrl: widget.author.avatar,
                             radius: 14,
-                            backgroundImage:
-                                widget.author.avatar.startsWith('http')
-                                ? NetworkImage(widget.author.avatar)
-                                      as ImageProvider
-                                : widget.author.avatar.startsWith('assets/')
-                                ? AssetImage(widget.author.avatar)
-                                : NetworkImage(
-                                        ApiConfig.resolveMediaUrl(
-                                              widget.author.avatar,
-                                            ) ??
-                                            '',
-                                      )
-                                      as ImageProvider,
+                            displayName: widget.author.displayName,
+                            accountType: widget.author.accountType,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -1934,6 +1889,27 @@ class _ParticulierPublicViewScreenState
                                 color: Color(0xFF333333),
                               ),
                             ),
+                            if (_employmentLine(profile) != null) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.work_outline,
+                                      size: 14, color: Color(0xFF666666)),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      _employmentLine(profile)!,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Color(0xFF666666),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                             const SizedBox(height: 8),
                             // Stats row
                             Row(
@@ -1996,27 +1972,10 @@ class _ParticulierPublicViewScreenState
                                 width: 2,
                               ),
                             ),
-                            child: CircleAvatar(
+                            child: ReklamAvatar(
+                              avatarUrl: avatarUrl,
                               radius: 50,
-                              backgroundColor: Colors.grey[300],
-                              backgroundImage:
-                                  avatarUrl != null && avatarUrl.isNotEmpty
-                                  ? (avatarUrl.startsWith('http')
-                                        ? NetworkImage(avatarUrl)
-                                        : NetworkImage(
-                                            ApiConfig.resolveMediaUrl(
-                                                  avatarUrl,
-                                                ) ??
-                                                '',
-                                          ))
-                                  : null,
-                              child: avatarUrl == null || avatarUrl.isEmpty
-                                  ? Icon(
-                                      Icons.person,
-                                      size: 50,
-                                      color: Colors.grey[600],
-                                    )
-                                  : null,
+                              displayName: displayName,
                             ),
                           ),
                         ),
@@ -2248,6 +2207,16 @@ class _ParticulierPublicViewScreenState
         padding: EdgeInsets.zero,
       ),
     );
+  }
+
+  /// "Emploi chez Entreprise" line (LinkedIn-style), or null if neither set.
+  String? _employmentLine(dynamic profile) {
+    if (profile is! Map) return null;
+    final job = profile['job_title']?.toString().trim() ?? '';
+    final company = profile['company_name']?.toString().trim() ?? '';
+    if (job.isEmpty && company.isEmpty) return null;
+    if (job.isNotEmpty && company.isNotEmpty) return '$job chez $company';
+    return job.isNotEmpty ? job : company;
   }
 
   Widget _buildPresentationTab() {
@@ -2929,11 +2898,10 @@ class _ParticulierPublicViewScreenState
                             padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                             child: Row(
                               children: [
-                                CircleAvatar(
+                                ReklamAvatar(
+                                  avatarUrl: userAvatar,
                                   radius: 22,
-                                  backgroundImage: userAvatar.startsWith('http')
-                                      ? NetworkImage(userAvatar)
-                                      : AssetImage(userAvatar) as ImageProvider,
+                                  displayName: userName,
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -3011,16 +2979,10 @@ class _ParticulierPublicViewScreenState
                                     ),
                                     child: Row(
                                       children: [
-                                        CircleAvatar(
+                                        ReklamAvatar(
+                                          avatarUrl: originalProfil,
                                           radius: 22,
-                                          backgroundImage: NetworkImage(
-                                            originalProfil.startsWith('http')
-                                                ? originalProfil
-                                                : (_buildStorageUrl(
-                                                        originalProfil,
-                                                      ) ??
-                                                      ''),
-                                          ),
+                                          displayName: originalAuthorName,
                                         ),
                                         const SizedBox(width: 6),
                                         Expanded(
@@ -3611,23 +3573,10 @@ class _ParticulierPublicViewScreenState
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
+                          avatarUrl: avatarUrl,
                           radius: isReply ? 14 : 18,
-                          backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(
-                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                      avatarUrl,
-                                )
-                              : null,
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Icon(
-                                  Icons.person,
-                                  size: isReply ? 12 : 16,
-                                  color: Colors.grey[600],
-                                )
-                              : null,
+                          displayName: displayName,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -4063,12 +4012,15 @@ class _ParticulierPublicViewScreenState
                 color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
               ),
               const SizedBox(width: 4),
-              Text(
-                data.likesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  data.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],

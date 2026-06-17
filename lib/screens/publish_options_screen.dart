@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 import 'package:myreklam/screens/creer_demande_screen.dart';
 import 'package:myreklam/screens/creer_evenement_screen.dart';
 import 'package:myreklam/screens/creer_formation_screen.dart';
@@ -8,7 +10,9 @@ import 'package:myreklam/widgets/publish_option_card.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/creer_bon_plan_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/utils/guest_access.dart';
 import 'package:myreklam/utils/subscription_helper.dart';
+import 'package:myreklam/screens/profile_pro/pro_reward_screen.dart';
 
 class PublishOptionsScreen extends StatefulWidget {
   const PublishOptionsScreen({super.key});
@@ -23,7 +27,10 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
   void _navigateIfAllowed(BuildContext context, Widget screen) {
     if (_userSession.isPro &&
         !SubscriptionHelper.canAccessFeature(ProFeature.postAnnouncement)) {
-      SubscriptionHelper.showTrialExpiredDialog(context);
+      SubscriptionHelper.showPremiumRequiredDialog(
+        context,
+        featureName: 'Publication d\'annonces',
+      );
       return;
     }
     Navigator.push(context, MaterialPageRoute(builder: (context) => screen));
@@ -148,39 +155,55 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
               },
             ),
             actions: [
-              Container(
-                margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF9E6),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFFD700)),
-                ),
-                child: Row(
-                  children: [
-                    Image.asset(
-                      'assets/images/profil_pro/reward.png',
-                      width: 12,
-                      height: 12,
+              GestureDetector(
+                onTap: () {
+                  if (!GuestAccess.ensureAuthenticated(
+                    context,
+                    featureName: 'voir les récompenses',
+                  )) {
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProRewardScreen(),
                     ),
-                    SizedBox(width: 4),
-                    Text(
-                      UserSession().mys.toString(),
-                      style: TextStyle(
-                        color: Color(0xFFFFD700),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF9E6),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFFD700)),
+                  ),
+                  child: Row(
+                    children: [
+                      Image.asset(
+                        'assets/images/profil_pro/reward.png',
+                        width: 12,
+                        height: 12,
                       ),
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      'My\'s',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                      SizedBox(width: 4),
+                      Text(
+                        UserSession().mys.toString(),
+                        style: TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
+                      SizedBox(width: 5),
+                      Text(
+                        'My\'s',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Padding(
@@ -207,20 +230,34 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                PublishOptionCard(
-                  backgroundColor: const Color(0xFFFFF3E0),
-                  borderColor: const Color(0xFFFF9800),
-                  titleColor: const Color(0xFFFF9800),
-                  title: 'Publier un bon plan',
-                  description:
-                      'Partagez les meilleures offres, promotions et bons plans avec la communauté.',
-                  icon: Icons.card_giftcard_outlined,
-                  iconColor: const Color(0xFFFF9800),
-                  onTap: () =>
-                      _navigateIfAllowed(context, const CreerBonPlanScreen()),
-                ),
+                if (!DelegationManager.instance
+                    .can(DelegationPermission.announcements))
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Text(
+                      "Vous n'avez pas l'autorisation de publier des annonces sur ce compte.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                  ),
+                if (DelegationManager.instance
+                    .can(DelegationPermission.announcements))
+                  PublishOptionCard(
+                    backgroundColor: const Color(0xFFFFF3E0),
+                    borderColor: const Color(0xFFFF9800),
+                    titleColor: const Color(0xFFFF9800),
+                    title: 'Publier un bon plan',
+                    description:
+                        'Partagez les meilleures offres, promotions et bons plans avec la communauté.',
+                    icon: Icons.card_giftcard_outlined,
+                    iconColor: const Color(0xFFFF9800),
+                    onTap: () =>
+                        _navigateIfAllowed(context, const CreerBonPlanScreen()),
+                  ),
                 // Show Offre d'emploi and Formation only for professionals
-                if (_userSession.isPro) ...[
+                if (_userSession.isPro &&
+                    DelegationManager.instance
+                        .can(DelegationPermission.announcements)) ...[
                   PublishOptionCard(
                     backgroundColor: const Color(0xFFE0F7FA),
                     borderColor: Colors.lightBlueAccent,
@@ -250,30 +287,34 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                     ),
                   ),
                 ],
-                PublishOptionCard(
-                  backgroundColor: const Color(0xFFE0F2F1),
-                  borderColor: const Color(0xFF00897B),
-                  titleColor: const Color(0xFF00897B),
-                  title: 'Publier un Evènement',
-                  description:
-                      'Organisez et annoncez vos événements, rencontres et activités.',
-                  icon: Icons.event_outlined,
-                  iconColor: const Color(0xFF00897B),
-                  onTap: () =>
-                      _navigateIfAllowed(context, const CreerEvenementScreen()),
-                ),
-                PublishOptionCard(
-                  backgroundColor: const Color(0xFFFFF9C4),
-                  borderColor: const Color(0xFFFFA000),
-                  titleColor: const Color(0xFFFFA000),
-                  title: 'Publier une Demande',
-                  description:
-                      'Exprimez vos besoins et recevez des réponses de la communauté.',
-                  icon: Icons.chat_bubble_outline,
-                  iconColor: const Color(0xFFFFA000),
-                  onTap: () =>
-                      _navigateIfAllowed(context, CreerDemandeScreen()),
-                ),
+                if (DelegationManager.instance
+                    .can(DelegationPermission.announcements))
+                  PublishOptionCard(
+                    backgroundColor: const Color(0xFFE0F2F1),
+                    borderColor: const Color(0xFF00897B),
+                    titleColor: const Color(0xFF00897B),
+                    title: 'Publier un Evènement',
+                    description:
+                        'Organisez et annoncez vos événements, rencontres et activités.',
+                    icon: Icons.event_outlined,
+                    iconColor: const Color(0xFF00897B),
+                    onTap: () => _navigateIfAllowed(
+                        context, const CreerEvenementScreen()),
+                  ),
+                if (DelegationManager.instance
+                    .can(DelegationPermission.announcements))
+                  PublishOptionCard(
+                    backgroundColor: const Color(0xFFFFF9C4),
+                    borderColor: const Color(0xFFFFA000),
+                    titleColor: const Color(0xFFFFA000),
+                    title: 'Publier une Demande',
+                    description:
+                        'Exprimez vos besoins et recevez des réponses de la communauté.',
+                    icon: Icons.chat_bubble_outline,
+                    iconColor: const Color(0xFFFFA000),
+                    onTap: () =>
+                        _navigateIfAllowed(context, CreerDemandeScreen()),
+                  ),
                 const SizedBox(height: 20),
               ],
             ),

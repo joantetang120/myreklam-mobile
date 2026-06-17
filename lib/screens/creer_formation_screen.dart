@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -124,7 +125,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   bool _acceptMessages = true;
 
   // Step 4 - Media & Documents
-  List<PlatformFile> _selectedMediaFiles = [];
+  List<GalleryMedia> _selectedMediaFiles = [];
   List<PlatformFile> _selectedDocumentFiles = [];
   List<_TrainingMediaFile> _existingMedia = [];
   List<_TrainingDocumentFile> _existingDocuments = [];
@@ -627,23 +628,11 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
   Future<void> _pickMedia() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'],
-        allowMultiple: true,
-        withData: true,
-      );
-
-      if (result != null) {
-        final validFiles = result.files.where((file) {
-          final extension = file.extension?.toLowerCase();
-          return ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'].contains(extension);
-        }).toList();
-
-        setState(() {
-          _selectedMediaFiles.addAll(validFiles);
-        });
-      }
+      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      if (files == null || files.isEmpty) return;
+      setState(() {
+        _selectedMediaFiles.addAll(files);
+      });
     } catch (e) {
       debugPrint('Error picking media: $e');
     }
@@ -1694,7 +1683,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     );
   }
 
-  Widget _buildMediaPreviewCard(PlatformFile file, int index) {
+  Widget _buildMediaPreviewCard(GalleryMedia file, int index) {
     final isCoverPhoto = index == 0;
     
     return Container(
@@ -1774,7 +1763,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     );
   }
 
-  Widget _buildMediaPreview(PlatformFile file) {
+  Widget _buildMediaPreview(GalleryMedia file) {
     final extension = file.extension?.toLowerCase();
     final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(extension);
     final isVideo = ['mp4', 'mov', 'avi'].contains(extension);

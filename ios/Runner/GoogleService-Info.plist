@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>166441708619-29cn3er22uqtg54bbeb4eqc8ap2dg5ii.apps.googleusercontent.com</string>
+	<string>166441708619-o38o8rtne2rsie3ur6io1aq0finjtefs.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.166441708619-29cn3er22uqtg54bbeb4eqc8ap2dg5ii</string>
+	<string>com.googleusercontent.apps.166441708619-o38o8rtne2rsie3ur6io1aq0finjtefs</string>
 	<key>ANDROID_CLIENT_ID</key>
 	<string>166441708619-e63s1vkkj2cbnqi43j542uscj94n5oid.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
@@ -15,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.myreklam.app</string>
+	<string>com.example.myreklam</string>
 	<key>PROJECT_ID</key>
 	<string>myreklam-7b2d9</string>
 	<key>STORAGE_BUCKET</key>
@@ -31,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:166441708619:ios:b9f54d758662bee01b31ce</string>
+	<string>1:166441708619:ios:7ae549b1099b43a51b31ce</string>
 </dict>
 </plist>

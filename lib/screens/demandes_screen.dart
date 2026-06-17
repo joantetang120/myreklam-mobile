@@ -9,11 +9,15 @@ import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/demande_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/utils/guest_access.dart';
+import 'package:myreklam/screens/profile_pro/pro_reward_screen.dart';
 
 class _ReactionData {
   int likesCount;
@@ -324,39 +328,55 @@ class _DemandesScreenState extends State<DemandesScreen> {
               },
             ),
             actions: [
-              Container(
-                margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF9E6),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFFD700)),
-                ),
-                child: Row(
-                  children: [
-                    Image.asset(
-                      'assets/images/profil_pro/reward.png',
-                      width: 12,
-                      height: 12,
+              GestureDetector(
+                onTap: () {
+                  if (!GuestAccess.ensureAuthenticated(
+                    context,
+                    featureName: 'voir les récompenses',
+                  )) {
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProRewardScreen(),
                     ),
-                    SizedBox(width: 4),
-                    Text(
-                      UserSession().mys.toString(),
-                      style: TextStyle(
-                        color: Color(0xFFFFD700),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF9E6),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFFD700)),
+                  ),
+                  child: Row(
+                    children: [
+                      Image.asset(
+                        'assets/images/profil_pro/reward.png',
+                        width: 12,
+                        height: 12,
                       ),
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      'My\'s',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                      SizedBox(width: 4),
+                      Text(
+                        UserSession().mys.toString(),
+                        style: TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
+                      SizedBox(width: 5),
+                      Text(
+                        'My\'s',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Padding(
@@ -1168,23 +1188,11 @@ class _DemandesScreenState extends State<DemandesScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
+                          avatarUrl: avatarUrl,
+                          displayName: displayName,
                           radius: isReply ? 14 : 18,
-                          backgroundColor: Colors.grey[300],
-                          backgroundImage:
-                              avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(
-                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                      avatarUrl,
-                                )
-                              : null,
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Icon(
-                                  Icons.person,
-                                  size: isReply ? 12 : 16,
-                                  color: Colors.grey[600],
-                                )
-                              : null,
+                          accountType: user['account_type']?.toString(),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -1622,12 +1630,15 @@ class _DemandesScreenState extends State<DemandesScreen> {
                 color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
               ),
               const SizedBox(width: 4),
-              Text(
-                data.likesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  data.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],

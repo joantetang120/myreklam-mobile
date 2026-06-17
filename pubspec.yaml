@@ -65,6 +65,8 @@ dependencies:
   #Package Notifications
   firebase_core: ^3.13.0
   firebase_messaging: ^15.2.5
+  firebase_remote_config: ^5.5.0
+  package_info_plus: ^9.0.1
   # File download
   dio: ^5.8.0
   path_provider: ^2.1.5
@@ -84,6 +86,7 @@ dependencies:
   video_player: ^2.9.3
   # Geolocation
   geolocator: ^11.0.0
+  geocoding: ^3.0.0
   # Share functionality
   share_plus: ^10.1.4
   # Deep link handling

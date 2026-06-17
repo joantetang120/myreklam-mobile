@@ -8,6 +8,8 @@ import 'package:myreklam/screens/formation_screen.dart';
 import 'package:myreklam/screens/evenements_screen.dart';
 import 'package:myreklam/screens/demandes_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/utils/guest_access.dart';
+import 'package:myreklam/screens/profile_pro/pro_reward_screen.dart';
 
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({super.key});
@@ -225,39 +227,55 @@ class CategoriesScreen extends StatelessWidget {
               },
             ),
             actions: [
-              Container(
-                margin: const EdgeInsets.only(right: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF9E6),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFFD700)),
-                ),
-                child: Row(
-                  children: [
-                    Image.asset(
-                      'assets/images/profil_pro/reward.png',
-                      width: 12,
-                      height: 12,
+              GestureDetector(
+                onTap: () {
+                  if (!GuestAccess.ensureAuthenticated(
+                    context,
+                    featureName: 'voir les récompenses',
+                  )) {
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProRewardScreen(),
                     ),
-                    SizedBox(width: 4),
-                    Text(
-                      UserSession().mys.toString(),
-                      style: TextStyle(
-                        color: Color(0xFFFFD700),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF9E6),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFFD700)),
+                  ),
+                  child: Row(
+                    children: [
+                      Image.asset(
+                        'assets/images/profil_pro/reward.png',
+                        width: 12,
+                        height: 12,
                       ),
-                    ),
-                    SizedBox(width: 5),
-                    Text(
-                      'My\'s',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                      SizedBox(width: 4),
+                      Text(
+                        UserSession().mys.toString(),
+                        style: TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
+                      SizedBox(width: 5),
+                      Text(
+                        'My\'s',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Padding(

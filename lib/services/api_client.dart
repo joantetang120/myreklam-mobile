@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/services/auth_state_manager.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 
 class ApiException implements Exception {
   final int statusCode;
@@ -422,6 +423,15 @@ class ApiClient {
 
   Future<bool> _tryRefreshToken() async {
     try {
+      // Delegated sessions are intentionally non-refreshable (so they can't be
+      // escalated to full owner access). If the delegated token expired, end
+      // the delegation and restore the manager's own session.
+      if (await TokenStorage.isDelegated()) {
+        await DelegationManager.instance.exitLocal();
+        AuthStateManager().setSessionExpired();
+        return false;
+      }
+
       final refreshToken = await TokenStorage.getRefreshToken();
       if (refreshToken == null) {
         // No refresh token, session expired

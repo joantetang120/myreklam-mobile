@@ -21,7 +21,9 @@ import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
+import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -1316,28 +1318,13 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
+                        ReklamAvatar(
                           radius: isReply ? 14 : 18,
+                          avatarUrl: avatarUrl,
+                          displayName: displayName,
+                          accountType: user['pro_profile'] != null ? 'pro' : 'particulier',
                           backgroundColor: const Color(0xFFE6F7EF),
-                          backgroundImage:
-                              avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(
-                                  ApiConfig.resolveMediaUrl(avatarUrl) ??
-                                      avatarUrl,
-                                )
-                              : null,
-                          child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Text(
-                                  displayName.isNotEmpty
-                                      ? displayName[0].toUpperCase()
-                                      : '?',
-                                  style: TextStyle(
-                                    fontSize: isReply ? 11 : 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF2A8143),
-                                  ),
-                                )
-                              : null,
+                          textColor: const Color(0xFF2A8143),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -1802,12 +1789,15 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                 color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
               ),
               const SizedBox(width: 4),
-              Text(
-                data.likesCount.toString(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
-                  fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+              GestureDetector(
+                onTap: () => showLikersSheet(context, apiSlug, entityId),
+                child: Text(
+                  data.likesCount.toString(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
+                  ),
                 ),
               ),
             ],
