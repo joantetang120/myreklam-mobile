@@ -344,47 +344,54 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
     setState(() => _selectedOverlayIndex = null);
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: const Color(0xFF1C1C1E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Stickers',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.55,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Stickers',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              GridView.count(
-                crossAxisCount: 6,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  for (final emoji in _stickerEmojis)
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                        _addSticker(emoji);
-                      },
-                      child: Center(
-                        child: Text(
-                          emoji,
-                          style: const TextStyle(fontSize: 30),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: GridView.count(
+                    crossAxisCount: 6,
+                    shrinkWrap: true,
+                    children: [
+                      for (final emoji in _stickerEmojis)
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                            _addSticker(emoji);
+                          },
+                          child: Center(
+                            child: Text(
+                              emoji,
+                              style: const TextStyle(fontSize: 30),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
