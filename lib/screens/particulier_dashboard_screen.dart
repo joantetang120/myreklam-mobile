@@ -1471,7 +1471,16 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       final suggestions = await _profileService.getSuggestions();
       if (mounted) {
         setState(() {
-          _suggestions = suggestions;
+          // Hide users without a defined display name (pseudo for particuliers,
+          // company name for pros).
+          _suggestions = suggestions.where((user) {
+            final isPro = user['account_type'] == 'pro';
+            final profile =
+                isPro ? user['pro_profile'] : user['particulier_profile'];
+            final name =
+                isPro ? (profile?['company_name']) : (profile?['pseudo']);
+            return name != null && name.toString().trim().isNotEmpty;
+          }).toList();
           _isLoadingSuggestions = false;
         });
       }

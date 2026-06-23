@@ -25,8 +25,10 @@ class GalleryPicker {
 
   static Future<bool> _requestPermission() async {
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      final status = await Permission.photos.request();
-      return status.isGranted || status.isLimited;
+      // On iOS, image_picker uses PHPicker (iOS 14+) which needs NO photo
+      // permission. Pre-checking Permission.photos here wrongly blocks picking
+      // if the user previously denied access — so let image_picker handle it.
+      return true;
     }
 
     if (defaultTargetPlatform == TargetPlatform.android) {
@@ -46,12 +48,20 @@ class GalleryPicker {
     if (!hasPermission) return null;
 
     try {
+      // imageQuality forces image_picker to re-encode the picked image as JPEG.
+      // This converts iPhone HEIC/HEIF (and other formats Flutter can't decode)
+      // to a universally displayable JPEG, so uploads pass backend validation
+      // and render on every screen (cards, detail, editor).
+      const int quality = 88;
       if (allowMultiple) {
-        final files = await _picker.pickMultiImage();
+        final files = await _picker.pickMultiImage(imageQuality: quality);
         if (files.isEmpty) return null;
         return await Future.wait(files.map(_toGalleryMedia));
       } else {
-        final file = await _picker.pickImage(source: ImageSource.gallery);
+        final file = await _picker.pickImage(
+          source: ImageSource.gallery,
+          imageQuality: quality,
+        );
         if (file == null) return null;
         return [await _toGalleryMedia(file)];
       }

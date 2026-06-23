@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
+import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
@@ -30,7 +31,9 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
       final users = await _profileService.getSuggestions(query: _query);
       if (mounted) {
         setState(() {
-          _users = users;
+          // Hide users who haven't defined their display identity
+          // (pseudo for particuliers, company name for pros).
+          _users = users.where(_hasUsableName).toList();
           _isLoading = false;
         });
       }
@@ -73,6 +76,15 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
         );
       }
     }
+  }
+
+  /// Whether a suggested user has a usable display name — pseudo for
+  /// particuliers, company name for pros. Incomplete profiles are hidden.
+  bool _hasUsableName(dynamic user) {
+    final isPro = user['account_type'] == 'pro';
+    final profile = isPro ? user['pro_profile'] : user['particulier_profile'];
+    final name = isPro ? (profile?['company_name']) : (profile?['pseudo']);
+    return name != null && name.toString().trim().isNotEmpty;
   }
 
   String? _buildStorageUrl(String? url) {
@@ -153,9 +165,13 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => ParticulierPublicViewScreen(
-                                          userId: user['id'].toString(),
-                                        ),
+                                        builder: (context) => isPro
+                                            ? ProPublicViewScreen(
+                                                userId: user['id'].toString(),
+                                              )
+                                            : ParticulierPublicViewScreen(
+                                                userId: user['id'].toString(),
+                                              ),
                                       ),
                                     ).then((_) => _loadUsers());
                                   },
