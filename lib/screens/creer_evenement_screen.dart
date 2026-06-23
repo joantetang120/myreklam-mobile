@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:flutter/material.dart';
@@ -1724,17 +1725,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
   Widget _buildMediaPreview(GalleryMedia file) {
     final extension = file.extension?.toLowerCase();
-    final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(extension);
-    final isVideo = ['mp4', 'mov', 'avi'].contains(extension);
+    final isVideo =
+        ['mp4', 'mov', 'avi', 'mkv', 'webm', '3gp'].contains(extension);
 
-    if (isImage && file.bytes != null) {
-      return Image.memory(
-        file.bytes!,
-        fit: BoxFit.cover,
-        width: 100,
-        height: 100,
-      );
-    } else if (isVideo) {
+    if (isVideo) {
       return Container(
         color: Colors.black87,
         child: const Center(
@@ -1745,18 +1739,42 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           ),
         ),
       );
-    } else {
-      return Container(
-        color: const Color(0xFFF9FAFB),
-        child: const Center(
-          child: Icon(
-            Icons.insert_drive_file,
-            size: 40,
-            color: Color(0xFF3AAE5E),
-          ),
-        ),
+    }
+
+    const fileIcon = Center(
+      child: Icon(Icons.insert_drive_file, size: 40, color: Color(0xFF3AAE5E)),
+    );
+
+    // Treat anything that isn't a known video as an image. The picked file's
+    // extension can be missing or non-standard (webp/heic, or a cache path with
+    // no extension on Android), so don't gate the preview on the extension.
+    if (file.bytes != null) {
+      return Image.memory(
+        file.bytes!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => file.path.isNotEmpty
+            ? Image.file(File(file.path),
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                errorBuilder: (_, __, ___) =>
+                    Container(color: const Color(0xFFF9FAFB), child: fileIcon))
+            : Container(color: const Color(0xFFF9FAFB), child: fileIcon),
       );
     }
+    if (file.path.isNotEmpty) {
+      return Image.file(
+        File(file.path),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) =>
+            Container(color: const Color(0xFFF9FAFB), child: fileIcon),
+      );
+    }
+    return Container(color: const Color(0xFFF9FAFB), child: fileIcon);
   }
 
   // ─── STEP 1: Informations ───
@@ -2027,7 +2045,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                       ),
                       child: TextField(
                         controller: _prixEntreeController,
-                        keyboardType: TextInputType.number,
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
                         decoration: const InputDecoration(
                           hintText: 'Prix',
                           border: InputBorder.none,
@@ -2087,7 +2106,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                             ),
                             child: TextField(
                               controller: _priceCategories[index]['price'],
-                              keyboardType: TextInputType.number,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(decimal: true),
                               decoration: InputDecoration(
                                 hintText: '€',
                                 hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),

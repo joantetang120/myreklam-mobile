@@ -5,6 +5,7 @@ import 'package:myreklam/services/delegation_manager.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:icons_launcher/cli_commands.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/creer_demande_screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
@@ -1333,9 +1334,22 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     }
   }
 
+  /// True unless the URL points to a (non-image) document file.
+  bool _isImageUrl(String url) {
+    final path = Uri.tryParse(url)?.path.toLowerCase() ?? url.toLowerCase();
+    const docExts = [
+      '.pdf', '.doc', '.docx', '.xls', '.xlsx',
+      '.ppt', '.pptx', '.txt', '.csv', '.zip', '.rar',
+    ];
+    return !docExts.any(path.endsWith);
+  }
+
   /// Extracts and resolves image URLs from demandeData as fallback
   List<String> _extractImagesFromDemandeData() {
-    if (widget.images.isNotEmpty) return widget.images;
+    // Drop document URLs that callers may have mixed into `images`.
+    if (widget.images.isNotEmpty) {
+      return widget.images.where(_isImageUrl).toList();
+    }
 
     final data = widget.demandeData;
     if (data == null) return [];
@@ -1345,9 +1359,17 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
     final List<String> imageUrls = [];
     final serverBase = ApiConfig.baseUrl.replaceFirst('/api', '');
+    const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
     for (final item in mediaFiles) {
       if (item is Map<String, dynamic>) {
+        // Skip documents (PDFs, etc.) — only real images belong in the gallery.
+        final category = item['category']?.toString();
+        final type = (item['type']?.toString() ?? '').toLowerCase();
+        final isImage = category == 'image' ||
+            (category != 'document' && imageTypes.contains(type));
+        if (!isImage) continue;
+
         final url = item['url']?.toString();
         if (url != null && url.isNotEmpty) {
           if (url.startsWith('http')) {
@@ -1366,6 +1388,110 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     }
 
     return imageUrls;
+  }
+
+  /// Collect the demande's attached documents (resolved URLs + label).
+  List<Map<String, String>> _extractDocuments() {
+    final data = widget.demandeData;
+    final mediaFiles = data?['media'] ?? data?['media_files'];
+    if (mediaFiles is! List) return [];
+
+    final serverBase = ApiConfig.baseUrl.replaceFirst('/api', '');
+    const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    final docs = <Map<String, String>>[];
+
+    for (final item in mediaFiles) {
+      if (item is! Map) continue;
+      final category = item['category']?.toString();
+      final type = (item['type']?.toString() ?? '').toLowerCase();
+      // Documents are flagged by category; if missing, treat non-images as docs.
+      final isDoc =
+          category == 'document' || (category == null && !imageTypes.contains(type));
+      if (!isDoc) continue;
+
+      final rawUrl = item['url']?.toString();
+      if (rawUrl == null || rawUrl.isEmpty) continue;
+
+      String url;
+      if (rawUrl.startsWith('http')) {
+        url = rawUrl;
+      } else if (rawUrl.startsWith('/')) {
+        url = '$serverBase$rawUrl';
+      } else {
+        url = '$serverBase/$rawUrl';
+      }
+
+      docs.add({'url': url, 'type': type});
+    }
+    return docs;
+  }
+
+  Future<void> _launchDocument(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossible d\'ouvrir le document.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossible d\'ouvrir le document.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _openDocuments() async {
+    final docs = _extractDocuments();
+    if (docs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aucun document disponible.')),
+      );
+      return;
+    }
+    if (docs.length == 1) {
+      await _launchDocument(docs.first['url']!);
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Documents',
+                  style:
+                      TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+            const Divider(height: 1),
+            for (var i = 0; i < docs.length; i++)
+              ListTile(
+                leading: const Icon(Icons.description_outlined,
+                    color: Color(0xFF3AAE5E)),
+                title: Text('Document ${i + 1}'),
+                subtitle: docs[i]['type']!.isNotEmpty
+                    ? Text(docs[i]['type']!.toUpperCase())
+                    : null,
+                trailing: const Icon(Icons.open_in_new, size: 18),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _launchDocument(docs[i]['url']!);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -1744,13 +1870,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Ouverture des documents...'),
-                              ),
-                            );
-                          },
+                          onPressed: _openDocuments,
                           icon: const Icon(
                             Icons.description_outlined,
                             size: 20,

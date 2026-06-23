@@ -32,12 +32,10 @@ class CreatePostScreen extends StatefulWidget {
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
   final TextEditingController _postController = TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
   String _selectedPrivacy = 'public';
   bool _isPosting = false;
   bool _isUploadingMedia = false;
   List<GalleryMedia> _selectedMediaFiles = [];
-  bool _showLocationField = false;
   List<Map<String, dynamic>> _existingMedia = [];
   final List<int> _deletedMediaIds = [];
   String? _userAvatar;
@@ -98,11 +96,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   void _prefillFromData(Map<String, dynamic> data) {
     _postController.text = data['content']?.toString() ?? '';
     _selectedPrivacy = data['visibility']?.toString() ?? 'public';
-    final locationLabel = data['location_label']?.toString();
-    if (locationLabel != null && locationLabel.isNotEmpty) {
-      _locationController.text = locationLabel;
-      _showLocationField = true;
-    }
     final mediaFiles =
         data['media_files'] as List? ?? data['media'] as List? ?? [];
     _existingMedia = mediaFiles.whereType<Map<String, dynamic>>().toList();
@@ -111,7 +104,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   void dispose() {
     _postController.dispose();
-    _locationController.dispose();
     super.dispose();
   }
 
@@ -148,14 +140,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         'content': content,
         'visibility': _selectedPrivacy,
       };
-      final locationText = _locationController.text.trim();
-      if (_showLocationField && locationText.isNotEmpty) {
-        body['location_label'] = locationText;
-      } else {
-        body['location_label'] = null;
-        body['latitude'] = null;
-        body['longitude'] = null;
-      }
 
       String? postId;
       if (_isEditMode) {
@@ -540,61 +524,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 const SizedBox(height: 16),
               ],
 
-              // Location field (shown when toggled)
-              if (_showLocationField) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: const Color(0xFFFF9800).withOpacity(0.4),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        size: 18,
-                        color: Color(0xFFFF9800),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: _locationController,
-                          decoration: const InputDecoration(
-                            hintText: 'Ex: Paris, France',
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.symmetric(vertical: 10),
-                          ),
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.close,
-                          size: 18,
-                          color: Colors.grey,
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () {
-                          setState(() {
-                            _showLocationField = false;
-                            _locationController.clear();
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-
               // Action buttons
               _buildActionButton(
                 icon: Icons.image_outlined,
@@ -603,14 +532,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     : 'Photos / Vidéos (${_selectedMediaFiles.length}/10)',
                 color: const Color(0xFF00BCD4),
                 onTap: _pickMedia,
-              ),
-              const SizedBox(height: 12),
-              _buildActionButton(
-                icon: Icons.location_on_outlined,
-                label: 'Ajouter un lieu',
-                color: const Color(0xFFFF9800),
-                onTap: () =>
-                    setState(() => _showLocationField = !_showLocationField),
               ),
               const SizedBox(height: 40),
 

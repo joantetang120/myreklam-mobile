@@ -31,6 +31,7 @@ class StripePaymentService {
   Future<bool> processPayment({
     required String billingCycle,
     required BuildContext context,
+    String? promoCode,
   }) async {
     try {
       // Ensure Stripe is initialized
@@ -39,7 +40,7 @@ class StripePaymentService {
       }
 
       // Step 1: Create payment intent on backend
-      final paymentData = await _createPaymentIntent(billingCycle);
+      final paymentData = await _createPaymentIntent(billingCycle, promoCode);
 
       if (paymentData == null) {
         _showError(context, 'Failed to initialize payment');
@@ -79,12 +80,17 @@ class StripePaymentService {
   }
 
   /// Create payment intent on backend
-  Future<Map<String, dynamic>?> _createPaymentIntent(String billingCycle) async {
+  Future<Map<String, dynamic>?> _createPaymentIntent(
+    String billingCycle, [
+    String? promoCode,
+  ]) async {
     try {
       final response = await _api.authenticatedPost(
         '/payments/intent',
         body: {
           'billing_cycle': billingCycle,
+          if (promoCode != null && promoCode.trim().isNotEmpty)
+            'promotion_code': promoCode.trim(),
         },
       );
 
@@ -100,6 +106,37 @@ class StripePaymentService {
     } catch (e) {
       debugPrint('Create payment intent error: $e');
       return null;
+    }
+  }
+
+  /// Validate a promotion code and preview the discounted price.
+  /// Returns {discounted_amount, original_amount, discount:{label,...}} on
+  /// success, or {error: message} if invalid.
+  Future<Map<String, dynamic>> validatePromo({
+    required String billingCycle,
+    required String code,
+  }) async {
+    try {
+      final response = await _api.authenticatedPost(
+        '/payments/promo',
+        body: {
+          'billing_cycle': billingCycle,
+          'promotion_code': code.trim(),
+        },
+      );
+      if (response['success'] == true) {
+        return {
+          'valid': true,
+          'discounted_amount': response['discounted_amount'],
+          'original_amount': response['original_amount'],
+          'discount': response['discount'],
+        };
+      }
+      return {'valid': false, 'error': response['message'] ?? 'Code invalide'};
+    } on ApiException catch (e) {
+      return {'valid': false, 'error': e.message};
+    } catch (e) {
+      return {'valid': false, 'error': 'Impossible de vérifier le code promo'};
     }
   }
 

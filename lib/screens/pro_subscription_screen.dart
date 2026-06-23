@@ -64,16 +64,42 @@ class _PremiumPlanState extends State<_PremiumPlan> {
   final PayPalPaymentService _paypalService = PayPalPaymentService();
   bool _isProcessingPayment = false;
 
+  // Promo code (Stripe promotion code) state.
+  final TextEditingController _promoController = TextEditingController();
+  String? _appliedPromoCode;
+  String? _promoFeedback; // success or error message shown under the field
+  bool _promoValid = false;
+  bool _checkingPromo = false;
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
+  }
+
+  void _resetPromo() {
+    _appliedPromoCode = null;
+    _promoFeedback = null;
+    _promoValid = false;
+  }
+
   void _showPaymentMethodModal() {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      isScrollControlled: true,
       builder: (ctx) {
-        return SafeArea(
+        return StatefulBuilder(
+          builder: (ctx, setModalState) => SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 24,
+              bottom: 24 + MediaQuery.of(ctx).viewInsets.bottom,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -98,7 +124,70 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                   style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
+                // Promo / reduction code
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _promoController,
+                        enabled: !_promoValid,
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: InputDecoration(
+                          hintText: 'Code de réduction',
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          suffixIcon: _promoValid
+                              ? IconButton(
+                                  icon: const Icon(Icons.close, size: 18),
+                                  onPressed: () {
+                                    _promoController.clear();
+                                    setModalState(() {
+                                      setState(_resetPromo);
+                                    });
+                                  },
+                                )
+                              : null,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 46,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1B8D4B),
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: (_checkingPromo || _promoValid)
+                            ? null
+                            : () => _applyPromo(setModalState),
+                        child: _checkingPromo
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : const Text('Appliquer'),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_promoFeedback != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    _promoFeedback!,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: _promoValid ? const Color(0xFF1B8D4B) : Colors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
                 _PaymentOptionTile(
                   icon: Icons.payment,
                   label: 'PayPal',
@@ -126,9 +215,41 @@ class _PremiumPlanState extends State<_PremiumPlan> {
               ],
             ),
           ),
+          ),
         );
       },
     );
+  }
+
+  Future<void> _applyPromo(StateSetter setModalState) async {
+    final code = _promoController.text.trim();
+    if (code.isEmpty) return;
+    setModalState(() => setState(() => _checkingPromo = true));
+
+    final billingCycle = _cycle == _BillingCycle.monthly ? 'monthly' : 'annual';
+    final result = await _stripeService.validatePromo(
+      billingCycle: billingCycle,
+      code: code,
+    );
+
+    setModalState(() {
+      setState(() {
+        _checkingPromo = false;
+        if (result['valid'] == true) {
+          _promoValid = true;
+          _appliedPromoCode = code;
+          final disc = result['discount'] as Map<String, dynamic>?;
+          final amount = result['discounted_amount'];
+          final label = disc?['label']?.toString();
+          _promoFeedback =
+              '✓ Code appliqué${label != null && label.isNotEmpty ? ' ($label)' : ''} — nouveau prix : ${amount}€';
+        } else {
+          _promoValid = false;
+          _appliedPromoCode = null;
+          _promoFeedback = result['error']?.toString() ?? 'Code invalide';
+        }
+      });
+    });
   }
 
   bool _ensureCanManageSubscription() {
@@ -164,6 +285,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
       final success = await _stripeService.processPayment(
         billingCycle: billingCycle,
         context: context,
+        promoCode: _appliedPromoCode,
       );
 
       // Hide loading indicator
