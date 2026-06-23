@@ -29,6 +29,7 @@ import 'package:myreklam/widgets/formation_card.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
+import 'package:myreklam/utils/blocked_users_manager.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -5558,6 +5559,48 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     }
   }
 
+  Future<void> _showBlockUserDialog() async {
+    final targetId = widget.userId;
+    final profile = _profileResponse?['profile'];
+    final displayName = (profile is Map)
+        ? (profile['company_name']?.toString() ?? 'cet utilisateur')
+        : 'cet utilisateur';
+    if (targetId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Bloquer cet utilisateur'),
+        content: Text(
+          'Voulez-vous bloquer $displayName ?\n\nSon contenu sera retiré de votre fil et il ne pourra plus vous contacter.',
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('Bloquer', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    await BlockedUsersManager.blockUser(targetId);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$displayName a été bloqué'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+    Navigator.pop(context);
+  }
+
   void _showReportConfirmation() {
     final profile = _profileResponse?['profile'];
     final displayName = (profile is Map)
@@ -6203,9 +6246,22 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   onSelected: (value) {
                     if (value == 'report') {
                       _showReportReasonDialog();
+                    } else if (value == 'block') {
+                      _showBlockUserDialog();
                     }
                   },
                   itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'block',
+                      child: Row(
+                        children: [
+                          Icon(Icons.block, color: Colors.orange, size: 20),
+                          SizedBox(width: 8),
+                          Text('Bloquer cet utilisateur',
+                              style: TextStyle(color: Colors.orange)),
+                        ],
+                      ),
+                    ),
                     const PopupMenuItem(
                       value: 'report',
                       child: Row(

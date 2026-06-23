@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'package:myreklam/services/auth_service.dart';
@@ -250,6 +252,50 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
+                            children: [
+                              const TextSpan(
+                                  text:
+                                      'En vous connectant, vous acceptez nos '),
+                              TextSpan(
+                                text: "Conditions d'Utilisation",
+                                style: const TextStyle(
+                                  color: Color(0xFF1B8D4B),
+                                  decoration: TextDecoration.underline,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () => launchUrl(
+                                        Uri.parse(
+                                            'https://www.myreklam.fr/conditions.html'),
+                                        mode: LaunchMode.externalApplication,
+                                      ),
+                              ),
+                              const TextSpan(text: ' et notre '),
+                              TextSpan(
+                                text: 'Politique de Confidentialité',
+                                style: const TextStyle(
+                                  color: Color(0xFF1B8D4B),
+                                  decoration: TextDecoration.underline,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () => launchUrl(
+                                        Uri.parse(
+                                            'https://www.myreklam.fr/confidentialite.html'),
+                                        mode: LaunchMode.externalApplication,
+                                      ),
+                              ),
+                              const TextSpan(text: '.'),
+                            ],
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
@@ -314,43 +360,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 40),
-                      // Social Login
-                      Row(
-                        children: [
-                          const Expanded(child: Divider()),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
-                            child: Text(
-                              'ou connectez-vous avec',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          const Expanded(child: Divider()),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildSocialButton(
-                            'assets/images/auth/flat-color-icons_google.png',
-                            onTap: _isLoading
-                                ? null
-                                : () => _handleGoogleLogin(),
-                          ),
-                          const SizedBox(width: 20),
-                          _buildSocialButton(
-                            'assets/images/auth/logos_facebook.png',
-                            onTap: _isLoading
-                                ? null
-                                : () => _handleFacebookLogin(),
                           ),
                         ],
                       ),

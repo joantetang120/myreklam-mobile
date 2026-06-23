@@ -55,6 +55,14 @@
 			<key>CFBundleURLName</key>
 			<string>com.myreklam.app</string>
 		</dict>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.166441708619-29cn3er22uqtg54bbeb4eqc8ap2dg5ii</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>google-sign-in</string>
+		</dict>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>
@@ -69,5 +77,11 @@
 	<string>Myreklam a besoin d'accéder à votre galerie pour que vous puissiez ajouter une storie.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Myreklam a besoin d'autorisation pour enregistrer vos stories dans votre galerie.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Myreklam a besoin d'accéder à votre caméra pour prendre des photos et vidéos pour vos stories.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Myreklam utilise votre localisation pour afficher des annonces et services proches de chez vous.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Myreklam utilise votre localisation pour afficher des annonces et services proches de chez vous, même en arrière-plan.</string>
 </dict>
 </plist>

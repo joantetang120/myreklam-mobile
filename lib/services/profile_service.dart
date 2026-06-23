@@ -198,6 +198,7 @@ class ProfileService {
     );
   }
 
+
   /// GET /api/profile/pseudo/suggestions?pseudo=xxx
   Future<List<String>> getPseudoSuggestions(String pseudo) async {
     final encodedPseudo = Uri.encodeComponent(pseudo);

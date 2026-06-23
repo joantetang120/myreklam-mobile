@@ -118,7 +118,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
-                        'Passer',
+                        'Découvrir Myreklam',
                         style: TextStyle(
                           color: Colors.black,
                           fontWeight: FontWeight.w500,
@@ -195,49 +195,72 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             // Footer (Indicators and Next Button)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Dot Indicators
-                  Row(
-                    children: List.generate(
-                      _pages.length,
-                      (index) => Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _currentPage == index
-                              ? const Color(0xFF1B8D4B)
-                              : const Color(0xFFEEEEEE),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Next Button
-                  GestureDetector(
-                    onTap: _next,
-                    child: Container(
-                      width: 56,
+              child: _currentPage == _pages.length - 1
+                  ? SizedBox(
+                      width: double.infinity,
                       height: 56,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFF1B8D4B),
-                        border: Border.all(
-                          color: const Color(0xFF1B8D4B).withOpacity(0.2),
-                          width: 4,
+                      child: ElevatedButton(
+                        onPressed: _skip,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1B8D4B),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Découvrir Myreklam',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      child: const Icon(
-                        Icons.arrow_forward,
-                        color: Colors.white,
-                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Dot Indicators
+                        Row(
+                          children: List.generate(
+                            _pages.length,
+                            (index) => Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: _currentPage == index
+                                    ? const Color(0xFF1B8D4B)
+                                    : const Color(0xFFEEEEEE),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Next Button
+                        GestureDetector(
+                          onTap: _next,
+                          child: Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFF1B8D4B),
+                              border: Border.all(
+                                color: const Color(0xFF1B8D4B).withOpacity(0.2),
+                                width: 4,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_forward,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ],
         ),

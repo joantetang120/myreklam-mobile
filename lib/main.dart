@@ -46,8 +46,12 @@ void main() async {
   print('✅ ChatNotificationService initialisé');
 
   // Initialisation du service de push notifications (FCM)
-  await PushNotificationService.instance.init();
-  print('✅ PushNotificationService initialisé');
+  try {
+    await PushNotificationService.instance.init();
+    print('✅ PushNotificationService initialisé');
+  } catch (e) {
+    print('⚠️ PushNotificationService non-fatal error: $e');
+  }
 
   // Initialisation du service de deep links
   await DeepLinkService.instance.init();
