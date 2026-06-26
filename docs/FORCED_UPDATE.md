@@ -17,8 +17,8 @@ un écran non fermable redirige l'utilisateur vers le store.
 | `force_update_title` | Texte | `Mise à jour requise` |
 | `force_update_message` | Texte | Message affiché à l'utilisateur |
 
-Le build actuellement déclaré dans `pubspec.yaml` est `11`
-(`version: 1.0.6+11`).
+Le build actuellement déclaré dans `pubspec.yaml` est `15`
+(`version: 1.1.0+15`).
 
 ## Activation
 
