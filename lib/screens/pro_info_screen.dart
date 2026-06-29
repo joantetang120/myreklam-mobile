@@ -243,7 +243,7 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const ProSubscriptionScreen(),
+          builder: (context) => const ProSubscriptionScreen(forceChoice: true),
         ),
       );
     } on ApiException catch (e) {

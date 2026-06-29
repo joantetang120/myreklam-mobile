@@ -4,33 +4,43 @@ import 'package:myreklam/services/delegation_manager.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/stripe_payment_service.dart';
 import 'package:myreklam/services/paypal_payment_service.dart';
+import 'package:myreklam/services/subscription_service.dart';
 
 class ProSubscriptionScreen extends StatelessWidget {
-  const ProSubscriptionScreen({super.key});
+  /// When true (e.g. right after creating a pro account), the user MUST pick a
+  /// plan (free or premium) — back navigation is disabled.
+  final bool forceChoice;
+
+  const ProSubscriptionScreen({super.key, this.forceChoice = false});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.grey),
-          onPressed: () => Navigator.pop(context),
-        ),
-        elevation: 0,
+    return PopScope(
+      canPop: !forceChoice,
+      child: Scaffold(
         backgroundColor: Colors.white,
-        title: const Text(
-          'Choisissez votre abonnement',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Manjari',
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          leading: forceChoice
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.grey),
+                  onPressed: () => Navigator.pop(context),
+                ),
+          elevation: 0,
+          backgroundColor: Colors.white,
+          title: const Text(
+            'Choisissez votre abonnement',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Manjari',
+            ),
           ),
+          centerTitle: true,
         ),
-        centerTitle: true,
-      ),
-      body: const Column(
+        body: const Column(
         children: [
           SizedBox(height: 14),
           Padding(
@@ -44,6 +54,7 @@ class ProSubscriptionScreen extends StatelessWidget {
           SizedBox(height: 18),
           Expanded(child: _PremiumPlan()),
         ],
+        ),
       ),
     );
   }
@@ -598,6 +609,35 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                           ),
                           onTap: _showPaymentMethodModal,
                         ),
+                        const SizedBox(height: 10),
+                        // Free plan option (limited features).
+                        Center(
+                          child: TextButton(
+                            onPressed: _isProcessingPayment ? null : _continueFree,
+                            child: const Text(
+                              'Continuer avec la version gratuite',
+                              style: TextStyle(
+                                color: Color(0xFF616161),
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 24),
+                            child: Text(
+                              "Gratuit : consultez les annonces. Publier et commenter sont possibles 30 jours, puis réservés au Premium. Messagerie, contacts et documents restent Premium.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFF9E9E9E),
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -609,6 +649,48 @@ class _PremiumPlanState extends State<_PremiumPlan> {
         ],
       ),
     );
+  }
+
+  Future<void> _continueFree() async {
+    if (!_ensureCanManageSubscription()) return;
+    if (_isProcessingPayment) return;
+
+    setState(() => _isProcessingPayment = true);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await SubscriptionService().subscribe(plan: 'free');
+      if (mounted && Navigator.canPop(context)) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Version gratuite activée.'),
+            backgroundColor: Color(0xFF3AAE5E),
+          ),
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const ParticulierMainScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted && Navigator.canPop(context)) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessingPayment = false);
+    }
   }
 }
 

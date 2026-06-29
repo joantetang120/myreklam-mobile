@@ -45,10 +45,10 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
 
       if (!mounted) return;
 
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const ProSubscriptionScreen(),
+          builder: (context) => const ProSubscriptionScreen(forceChoice: true),
         ),
       );
     } on ApiException catch (e) {

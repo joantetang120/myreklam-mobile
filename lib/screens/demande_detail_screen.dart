@@ -1344,50 +1344,39 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     return !docExts.any(path.endsWith);
   }
 
-  /// Extracts and resolves image URLs from demandeData as fallback
+  /// Image URLs for the carousel. Prefers the structured media (which carries
+  /// the `category`, so documents are excluded reliably); falls back to the
+  /// caller-provided `images` only when no structured media is available.
   List<String> _extractImagesFromDemandeData() {
-    // Drop document URLs that callers may have mixed into `images`.
-    if (widget.images.isNotEmpty) {
-      return widget.images.where(_isImageUrl).toList();
-    }
-
     final data = widget.demandeData;
-    if (data == null) return [];
+    final mediaFiles = data?['media'] ?? data?['media_files'];
 
-    final mediaFiles = data['media'] ?? data['media_files'];
-    if (mediaFiles is! List) return [];
+    if (mediaFiles is List && mediaFiles.isNotEmpty) {
+      final serverBase = ApiConfig.baseUrl.replaceFirst('/api', '');
+      final List<String> imageUrls = [];
 
-    final List<String> imageUrls = [];
-    final serverBase = ApiConfig.baseUrl.replaceFirst('/api', '');
-    const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      for (final item in mediaFiles) {
+        if (item is! Map) continue;
+        // Documents (PDFs, etc.) never belong in the photo carousel.
+        if (item['category']?.toString() == 'document') continue;
 
-    for (final item in mediaFiles) {
-      if (item is Map<String, dynamic>) {
-        // Skip documents (PDFs, etc.) — only real images belong in the gallery.
-        final category = item['category']?.toString();
-        final type = (item['type']?.toString() ?? '').toLowerCase();
-        final isImage = category == 'image' ||
-            (category != 'document' && imageTypes.contains(type));
-        if (!isImage) continue;
+        final raw = item['url']?.toString();
+        if (raw == null || raw.isEmpty) continue;
 
-        final url = item['url']?.toString();
-        if (url != null && url.isNotEmpty) {
-          if (url.startsWith('http')) {
-            imageUrls.add(url);
-          } else if (url.startsWith('/storage/')) {
-            // URL already has /storage/ prefix, just prepend server base
-            imageUrls.add('$serverBase$url');
-          } else if (url.startsWith('/')) {
-            imageUrls.add('$serverBase$url');
-          } else {
-            // Relative path without leading /
-            imageUrls.add('$serverBase/$url');
-          }
-        }
+        final String url = raw.startsWith('http')
+            ? raw
+            : raw.startsWith('/')
+                ? '$serverBase$raw'
+                : '$serverBase/$raw';
+
+        // Belt-and-suspenders: also drop anything with a document extension.
+        if (_isImageUrl(url)) imageUrls.add(url);
       }
+      return imageUrls;
     }
 
-    return imageUrls;
+    // Fallback: caller-provided images, filtered by extension.
+    return widget.images.where(_isImageUrl).toList();
   }
 
   /// Collect the demande's attached documents (resolved URLs + label).
