@@ -2710,10 +2710,14 @@ class _ParticulierPublicViewScreenState
     // Get the appropriate profile
     final profile = proProfile != null ? proProfile : particulierProfile;
 
-    // Extract name from profile or fallback to direct fields
-    final name =
-        profile?['company_name']?.toString() ??
-        '${profile?['pseudo']?.toString() ?? ''}'.trim();
+    // Name: company name for pros, pseudo for particuliers. (Particulier
+    // profiles carry an employment `company_name` that must NOT be the name.)
+    final String name = proProfile != null
+        ? (proProfile['company_name']?.toString().trim().isNotEmpty == true
+            ? proProfile['company_name'].toString()
+            : '${proProfile['first_name']?.toString() ?? ''} ${proProfile['last_name']?.toString() ?? ''}'
+                .trim())
+        : (particulierProfile?['pseudo']?.toString() ?? '');
 
     // Extract avatar from profile or fallback to direct fields
     final avatarUrl =
