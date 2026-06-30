@@ -771,7 +771,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         'training_funding': _selectedFunding,
         'price_type': _selectedPriceType ?? '4',
         'accept_messages': _acceptMessages,
-        'status': 'draft',
+        // Only send status on creation. On edit, omit it so the current status
+        // (e.g. published) is preserved and the training stays in the feed.
+        if (!_isEditMode) 'status': 'draft',
       };
 
       if (_websiteController.text.trim().isNotEmpty) {

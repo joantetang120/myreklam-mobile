@@ -1590,7 +1590,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       'nationwide': _touteLaFrance,
       'use_current_location': _useCurrentLocation,
       'show_google_location': _showGoogleLocation,
-      'status': 'pending',
+      // Only send status on creation (backend forces 'published'). On edit,
+      // omit it so the existing 'published' status is preserved (otherwise the
+      // demande would drop out of the feed which only shows 'published').
+      if (!_isEditMode) 'status': 'pending',
 
       // Variables Emploi/Stage
       if (_tempsPartielPlein != null) 'work_type': _tempsPartielPlein,
