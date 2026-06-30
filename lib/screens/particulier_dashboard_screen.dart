@@ -4468,12 +4468,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     // Get the appropriate profile
     final profile = accountType == 'pro' ? proProfile : particulierProfile;
 
-    // Extract name from profile or fallback to direct fields
-    final name =
-        profile?['company_name']?.toString() ??
-        profile?['pseudo']?.toString() ??
-        '${profile?['first_name']?.toString() ?? ''} ${profile?['last_name']?.toString() ?? ''}'
-            .trim();
+    // Name by account type: company name for pros, pseudo for particuliers.
+    // (Particulier profiles now carry an employment `company_name`, which must
+    // NOT be used as their display name.)
+    final String name = accountType == 'pro'
+        ? (proProfile?['company_name']?.toString().trim().isNotEmpty == true
+            ? proProfile!['company_name'].toString()
+            : '${proProfile?['first_name']?.toString() ?? ''} ${proProfile?['last_name']?.toString() ?? ''}'
+                .trim())
+        : (particulierProfile?['pseudo']?.toString() ?? '');
 
     // Extract avatar from profile or fallback to direct fields
     final avatarUrl =
