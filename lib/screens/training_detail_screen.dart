@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:myreklam/utils/address_formatter.dart';
+import 'package:myreklam/widgets/location_map.dart';
 import 'package:myreklam/models/delegation.dart';
 import 'package:myreklam/services/delegation_manager.dart';
 // Bouton partager masqué
@@ -1595,18 +1597,26 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        'assets/images/details_bon_plans/Rectangle 128 (1).png',
-                        width: double.infinity,
-                        height: 180,
-                        fit: BoxFit.cover,
+                    LocationMap(
+                      query: AddressFormatter.query(
+                        address: widget.addressLine1,
+                        postalCode: widget.addressZipcode,
+                        city: widget.addressCity,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      _buildLocationString(),
+                      AddressFormatter.format(
+                            address: widget.addressLine1,
+                            postalCode: widget.addressZipcode,
+                            city: widget.addressCity,
+                          ).isNotEmpty
+                          ? AddressFormatter.format(
+                              address: widget.addressLine1,
+                              postalCode: widget.addressZipcode,
+                              city: widget.addressCity,
+                            )
+                          : 'Localisation non spécifiée',
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF616161),

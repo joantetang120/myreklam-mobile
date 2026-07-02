@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:icons_launcher/cli_commands.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/utils/address_formatter.dart';
 import 'package:myreklam/screens/creer_demande_screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
@@ -1334,6 +1335,20 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     }
   }
 
+  /// Localisation text: "CP VILLE" (or the composed location), optionally
+  /// prefixed with the search radius.
+  String _demandeLocationText() {
+    final formatted = AddressFormatter.format(
+      postalCode: widget.locationPostalCode,
+      city: widget.locationCity,
+    );
+    final loc = formatted.isNotEmpty ? formatted : (widget.location ?? '');
+    if (loc.isEmpty) return 'Non spécifié';
+    return widget.searchRadiusKm != null
+        ? '${widget.searchRadiusKm}km autour de $loc'
+        : loc;
+  }
+
   /// True unless the URL points to a (non-image) document file.
   bool _isImageUrl(String url) {
     final path = Uri.tryParse(url)?.path.toLowerCase() ?? url.toLowerCase();
@@ -1761,12 +1776,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       label: 'Localisation',
                       value: widget.nationwide
                           ? 'Toute la France'
-                          : (widget.location != null &&
-                                    widget.location!.isNotEmpty
-                                ? (widget.searchRadiusKm != null
-                                      ? '${widget.searchRadiusKm}km autour de ${widget.location}'
-                                      : widget.location!)
-                                : 'Non spécifié'),
+                          : _demandeLocationText(),
                     ),
                   ],
                   // Budget

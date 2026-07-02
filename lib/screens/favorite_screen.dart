@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/utils/address_formatter.dart';
 import 'package:myreklam/screens/demande_detail_screen.dart';
 import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
@@ -2144,11 +2145,10 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       final deliveryInfo = _buildDeliveryInfo(pickupMethods);
       final locationCity = data['location_city']?.toString();
       final locationPostalCode = data['location_postal_code']?.toString();
-      final location = locationCity != null
-          ? (locationPostalCode != null
-              ? '$locationCity ($locationPostalCode)'
-              : locationCity)
-          : locationPostalCode;
+      final location = AddressFormatter.format(
+        postalCode: locationPostalCode,
+        city: locationCity,
+      );
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
       final reductionLabel = data['reduction_label']?.toString();

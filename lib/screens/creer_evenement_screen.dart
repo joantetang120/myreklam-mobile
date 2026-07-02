@@ -777,18 +777,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         break;
       
       case 3: // Step 4: Dates et horaires
-        // Only require date for one_day and multi_day, not for permanent
-        if (_selectedTimeEvenement == 'Sur une journée' && selectedDate == null) {
-          return 'Sélectionnez une date pour l\'événement.';
-        }
+        // Dates de début et de fin sont facultatives. On vérifie seulement la
+        // cohérence quand les deux sont renseignées.
         if (_selectedTimeEvenement == 'Sur plusieurs jours') {
-          if (startDate == null) {
-            return 'Sélectionnez une date de début pour l\'événement.';
-          }
-          if (endDate == null) {
-            return 'Sélectionnez une date de fin pour l\'événement.';
-          }
-          if (endDate!.isBefore(startDate!)) {
+          if (startDate != null &&
+              endDate != null &&
+              endDate!.isBefore(startDate!)) {
             return 'La date de fin doit être après la date de début.';
           }
         }
@@ -2208,6 +2202,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                     selectedDate: selectedDate,
                     onDateSelected: (date) =>
                         setState(() => selectedDate = date),
+                    onCleared: () => setState(() => selectedDate = null),
                   )
                 : const SizedBox(),
             _selectedTimeEvenement != 'Sur plusieurs jours'
@@ -2221,6 +2216,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                         selectedDate: startDate,
                         onDateSelected: (date) =>
                             setState(() => startDate = date),
+                        onCleared: () => setState(() => startDate = null),
                       ),
                       const SizedBox(height: 14),
                       _buildDateField(
@@ -2228,6 +2224,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                         selectedDate: endDate,
                         onDateSelected: (date) =>
                             setState(() => endDate = date),
+                        onCleared: () => setState(() => endDate = null),
                       ),
                       const SizedBox(height: 14),
                     ],
@@ -2275,11 +2272,22 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                                   : Colors.grey[400],
                             ),
                           ),
-                          Icon(
-                            Icons.access_time,
-                            size: 20,
-                            color: Colors.grey[400],
-                          ),
+                          _startTime != null
+                              ? GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _startTime = null),
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: Colors.grey[500],
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.access_time,
+                                  size: 20,
+                                  color: Colors.grey[400],
+                                ),
                         ],
                       ),
                     ),
@@ -2316,11 +2324,21 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                                   : Colors.grey[400],
                             ),
                           ),
-                          Icon(
-                            Icons.access_time,
-                            size: 20,
-                            color: Colors.grey[400],
-                          ),
+                          _endTime != null
+                              ? GestureDetector(
+                                  onTap: () => setState(() => _endTime = null),
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: Colors.grey[500],
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.access_time,
+                                  size: 20,
+                                  color: Colors.grey[400],
+                                ),
                         ],
                       ),
                     ),
@@ -2601,6 +2619,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     required DateTime? selectedDate,
     required Function(DateTime) onDateSelected,
     bool isRequired = false,
+    VoidCallback? onCleared,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2641,13 +2660,28 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               border: Border.all(color: Colors.grey),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              selectedDate != null
-                  ? "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}"
-                  : "Sélectionner une date",
-              style: TextStyle(
-                color: selectedDate != null ? Colors.black : Colors.grey,
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    selectedDate != null
+                        ? "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}"
+                        : "Sélectionner une date",
+                    style: TextStyle(
+                      color: selectedDate != null ? Colors.black : Colors.grey,
+                    ),
+                  ),
+                ),
+                if (selectedDate != null && onCleared != null)
+                  GestureDetector(
+                    onTap: onCleared,
+                    behavior: HitTestBehavior.opaque,
+                    child: const Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: Icon(Icons.close, size: 18, color: Colors.grey),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/main.dart' show routeObserver;
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/utils/address_formatter.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/widgets/avatars_story.dart';
 import 'package:myreklam/widgets/categories_icon.dart';
@@ -2515,10 +2516,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     final jobId = job['id']?.toString() ?? '';
     final jobTitle = job['title']?.toString() ?? 'Offre d\'emploi';
     final description = _stripHtml(job['description']?.toString() ?? '');
-    final location =
-        job['location']?.toString() ??
-        job['city']?.toString() ??
-        'Non spécifié';
+    final formattedJobLocation = AddressFormatter.format(
+      postalCode: job['location_postal_code']?.toString(),
+      city: job['location_city']?.toString(),
+    );
+    final location = formattedJobLocation.isNotEmpty
+        ? formattedJobLocation
+        : (job['location']?.toString() ??
+            job['city']?.toString() ??
+            'Non spécifié');
     final contract = job['contract_type']?.toString() ?? '';
     final experience = job['experience_level']?.toString() ?? '';
     final salary =
@@ -5670,11 +5676,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       final deliveryInfo = _buildDeliveryInfo(pickupMethods);
       final locationCity = data['location_city']?.toString();
       final locationPostalCode = data['location_postal_code']?.toString();
-      final location = locationCity != null
-          ? (locationPostalCode != null
-                ? '$locationCity ($locationPostalCode)'
-                : locationCity)
-          : locationPostalCode;
+      final location = AddressFormatter.format(
+        postalCode: locationPostalCode,
+        city: locationCity,
+      );
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
       final reductionLabel = data['reduction_label']?.toString();
@@ -6361,7 +6366,13 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       final type = data['training_category']?.toString();
       final urgent = data['urgent'] == true;
       final budgetMax = data['budget_max']?.toString();
-      final location = data['location']?.toString();
+      final formattedDemandeLocation = AddressFormatter.format(
+        postalCode: data['location_postal_code']?.toString(),
+        city: data['location_city']?.toString(),
+      );
+      final location = formattedDemandeLocation.isNotEmpty
+          ? formattedDemandeLocation
+          : data['location']?.toString();
       final nationwide = data['nationwide'] == true;
       final searchRadiusKm = data['search_radius_km'] is int
           ? data['search_radius_km'] as int
