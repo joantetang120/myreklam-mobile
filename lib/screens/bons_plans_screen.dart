@@ -15,6 +15,7 @@ import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/utils/address_formatter.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/utils/guest_access.dart';
 import 'package:myreklam/screens/profile_pro/pro_reward_screen.dart';
@@ -228,11 +229,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
       final deliveryInfo = _buildDeliveryInfo(pickupMethods);
       final locationCity = data['location_city']?.toString();
       final locationPostalCode = data['location_postal_code']?.toString();
-      final location = locationCity != null
-          ? (locationPostalCode != null
-                ? '$locationCity ($locationPostalCode)'
-                : locationCity)
-          : locationPostalCode;
+      final location = AddressFormatter.format(
+        postalCode: locationPostalCode,
+        city: locationCity,
+      );
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
       final reductionLabel = data['reduction_label']?.toString();

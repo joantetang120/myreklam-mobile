@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:myreklam/models/delegation.dart';
 import 'package:myreklam/services/delegation_manager.dart';
+import 'package:myreklam/utils/address_formatter.dart';
+import 'package:myreklam/widgets/location_map.dart';
 // Bouton partager masqué
 // import 'package:myreklam/services/share_service.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
@@ -3482,20 +3484,30 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      'assets/images/details_bon_plans/Rectangle 128 (1).png',
-                      width: double.infinity,
-                      height: 180,
-                      fit: BoxFit.cover,
-                    ),
+                  LocationMap(
+                    query: AddressFormatter.query(
+                      postalCode: widget.locationPostalCode,
+                      city: widget.locationCity,
+                    ).isNotEmpty
+                        ? AddressFormatter.query(
+                            postalCode: widget.locationPostalCode,
+                            city: widget.locationCity,
+                          )
+                        : widget.location,
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    widget.location.isNotEmpty
-                        ? widget.location
-                        : 'Localisation non spécifiée',
+                    AddressFormatter.format(
+                          postalCode: widget.locationPostalCode,
+                          city: widget.locationCity,
+                        ).isNotEmpty
+                        ? AddressFormatter.format(
+                            postalCode: widget.locationPostalCode,
+                            city: widget.locationCity,
+                          )
+                        : (widget.location.isNotEmpty
+                            ? widget.location
+                            : 'Localisation non spécifiée'),
                     style: const TextStyle(
                       fontSize: 14,
                       color: Color(0xFF616161),

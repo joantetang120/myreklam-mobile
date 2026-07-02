@@ -87,6 +87,9 @@ dependencies:
   # Geolocation
   geolocator: ^11.0.0
   geocoding: ^3.0.0
+  # Maps (OpenStreetMap, no API key)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
   # Share functionality
   share_plus: ^10.1.4
   # Deep link handling

@@ -12,6 +12,7 @@ import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/demande_card.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/utils/address_formatter.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
@@ -661,11 +662,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       final deliveryInfo = _buildDeliveryInfo(pickupMethods);
       final locationCity = data['location_city']?.toString();
       final locationPostalCode = data['location_postal_code']?.toString();
-      final location = locationCity != null
-          ? (locationPostalCode != null
-              ? '$locationCity ($locationPostalCode)'
-              : locationCity)
-          : locationPostalCode;
+      final location = AddressFormatter.format(
+        postalCode: locationPostalCode,
+        city: locationCity,
+      );
       final mediaFiles = data['media_files'] as List?;
       final images = _extractImages(mediaFiles);
       final reductionLabel = data['reduction_label']?.toString();
