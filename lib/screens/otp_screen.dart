@@ -4,6 +4,7 @@ import 'account_type_screen.dart';
 import 'reset_password_screen.dart';
 import 'package:myreklam/services/auth_service.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/biometric_service.dart';
 import 'package:myreklam/utils/auth_navigator.dart';
 
 class OtpScreen extends StatefulWidget {
@@ -117,6 +118,16 @@ class _OtpScreenState extends State<OtpScreen> {
           ),
         );
         return;
+      }
+
+      // On a fresh account verification, offer to enable biometric unlock
+      // while the session is freshly established.
+      if (widget.purpose == 'email_verification') {
+        await BiometricService.instance.maybePromptEnroll(
+          context,
+          email: widget.email ?? '',
+        );
+        if (!mounted) return;
       }
 
       if (widget.nextScreen != null) {

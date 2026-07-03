@@ -3141,7 +3141,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         left: 16,
                         right: 16,
                         top: 8,
-                        bottom: MediaQuery.of(ctx).viewInsets.bottom + 8,
+                        bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 8,
                       ),
                       decoration: BoxDecoration(
                         border: Border(
@@ -3917,7 +3917,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   // Input area
                   Padding(
                     padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(ctx).viewInsets.bottom + 8,
+                      bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 8,
                       left: 12,
                       right: 12,
                       top: 8,

@@ -1948,6 +1948,32 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Expired banner (event still consultable)
+            if (widget.eventData?['is_expired'] == true)
+              Container(
+                width: double.infinity,
+                color: const Color(0xFFFFF3E0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  children: [
+                    const Icon(Icons.event_busy,
+                        size: 18, color: Color(0xFFE65100)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Cet événement est terminé. Les informations sont indiquées à titre indicatif.',
+                        style: TextStyle(
+                          color: Colors.orange.shade900,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // 1. Image Carousel - full width
             if (widget.images.isNotEmpty) ImageCarousel(images: widget.images),
 
@@ -3545,7 +3571,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   // Input area
                   Padding(
                     padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(ctx).viewInsets.bottom + 8,
+                      bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 8,
                       left: 12,
                       right: 12,
                       top: 8,
@@ -3841,7 +3867,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom,
           ),
           child: Container(
             decoration: const BoxDecoration(

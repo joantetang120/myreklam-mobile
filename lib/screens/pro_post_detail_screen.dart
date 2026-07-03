@@ -1333,7 +1333,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom,
               ),
               child: Container(
                 constraints: BoxConstraints(
@@ -2187,25 +2187,33 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   horizontal: 16,
                 ),
                 decoration: BoxDecoration(
-                  color: Color.fromARGB(136, 231, 28, 28),
+                  color: widget.bonPlanData?['is_expired'] == true
+                      ? const Color(0xFF757575)
+                      : const Color.fromARGB(136, 231, 28, 28),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.access_time,
+                    Icon(
+                      widget.bonPlanData?['is_expired'] == true
+                          ? Icons.event_busy
+                          : Icons.access_time,
                       color: Colors.white,
                       size: 18,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      _formatExpirationDate(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                    Flexible(
+                      child: Text(
+                        widget.bonPlanData?['is_expired'] == true
+                            ? 'Ce bon plan est terminé (date de fin dépassée).'
+                            : _formatExpirationDate(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -4623,7 +4631,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         left: 16,
                         right: 16,
                         top: 12,
-                        bottom: MediaQuery.of(ctx).viewInsets.bottom + 12,
+                        bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 12,
                       ),
                       decoration: BoxDecoration(
                         border: Border(

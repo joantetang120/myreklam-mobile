@@ -13,6 +13,10 @@ class TokenStorage {
   static const String _mgrAccessKey = 'manager_access_token';
   static const String _mgrRefreshKey = 'manager_refresh_token';
 
+  // Biometric unlock (fingerprint / Face ID) preference.
+  static const String _bioEnabledKey = 'biometric_enabled';
+  static const String _bioEmailKey = 'biometric_email';
+
   static const FlutterSecureStorage _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
     iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
@@ -38,6 +42,31 @@ class TokenStorage {
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
     await _clearDelegation();
+    // Biometric unlock gates a persisted session; once the session is gone
+    // there is nothing to unlock, so disable it too.
+    await setBiometricEnabled(false);
+  }
+
+  // ─── Biometric unlock preference ────────────────────────────────────────────
+
+  static Future<void> setBiometricEnabled(bool enabled, {String? email}) async {
+    if (enabled) {
+      await _storage.write(key: _bioEnabledKey, value: 'true');
+      if (email != null && email.isNotEmpty) {
+        await _storage.write(key: _bioEmailKey, value: email);
+      }
+    } else {
+      await _storage.delete(key: _bioEnabledKey);
+      await _storage.delete(key: _bioEmailKey);
+    }
+  }
+
+  static Future<bool> isBiometricEnabled() async {
+    return (await _storage.read(key: _bioEnabledKey)) == 'true';
+  }
+
+  static Future<String?> getBiometricEmail() async {
+    return _storage.read(key: _bioEmailKey);
   }
 
   static Future<bool> hasTokens() async {

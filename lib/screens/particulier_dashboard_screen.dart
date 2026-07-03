@@ -1997,7 +1997,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       case 'post':
         return _buildPostCard(resource);
       case 'bon_plan':
-        return _buildBonPlanFeedCard(resource);
+        return _wrapExpired(
+            _buildBonPlanFeedCard(resource), resource['is_expired'] == true);
       case 'job_offer':
         return _buildJobOfferFeedCard(resource);
       case 'training':
@@ -2012,6 +2013,51 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           child: _buildUnknownFeedCard(feedType),
         );
     }
+  }
+
+  /// Wraps a feed card with a grey veil (taps pass through) + "Expirée" badge
+  /// when the announcement is expired. Keeps the card clickable/consultable.
+  Widget _wrapExpired(Widget child, bool isExpired) {
+    if (!isExpired) return child;
+    return Stack(
+      children: [
+        child,
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 20,
+          right: 30,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFF757575),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.event_busy, size: 13, color: Colors.white),
+                SizedBox(width: 4),
+                Text('Expirée',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildBonPlanFeedCard(Map<String, dynamic> bp) {
@@ -3191,6 +3237,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     }
 
     return EvenementCard(
+      isExpired: event['is_expired'] == true,
       profileImage: profileImage,
       username: ownerName,
       userType: user?['account_type']?.toString() ?? 'particulier',
@@ -4203,7 +4250,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   Expanded(
                     child: SingleChildScrollView(
                       padding: EdgeInsets.only(
-                        bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+                        bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 16,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -5213,7 +5260,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom,
               ),
               child: Container(
                 constraints: BoxConstraints(

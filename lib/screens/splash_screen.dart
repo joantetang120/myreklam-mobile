@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../widgets/dot_loader.dart';
 import 'onboarding_screen.dart';
+import 'biometric_lock_screen.dart';
 import 'package:myreklam/services/auth_service.dart';
+import 'package:myreklam/services/biometric_service.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/auth_navigator.dart';
@@ -30,6 +32,17 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
 
       if (user != null) {
+        // Gate the restored session behind a biometric check when enabled.
+        final bioEnabled = await BiometricService.instance.isEnabled();
+        if (!mounted) return;
+        if (bioEnabled) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => BiometricLockScreen(user: user),
+            ),
+          );
+          return;
+        }
         AuthNavigator.navigateAfterAuth(context, user);
         return;
       }

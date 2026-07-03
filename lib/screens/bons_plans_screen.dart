@@ -1848,7 +1848,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
 
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom,
               ),
               child: Container(
                 constraints: BoxConstraints(

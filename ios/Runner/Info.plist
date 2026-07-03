@@ -71,6 +71,8 @@
 	</array>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Myreklam utilise Face ID pour vous connecter rapidement et securiser votre compte.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Myreklam utilise votre position pour ajouter un lieu à votre story.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

@@ -671,7 +671,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom,
               ),
               child: SizedBox(
                 height: MediaQuery.of(ctx).size.height * 0.85,
@@ -3669,7 +3669,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom,
               ),
               child: Container(
                 constraints: BoxConstraints(
