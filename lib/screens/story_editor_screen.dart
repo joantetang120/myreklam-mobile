@@ -1203,7 +1203,14 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
               left: 0,
               right: 0,
               child: Container(
-                padding: const EdgeInsets.all(20),
+                // Add the system navigation-bar inset so the caption + publish
+                // controls sit above it (they were hidden low on Samsung).
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  20,
+                  20,
+                  20 + MediaQuery.paddingOf(context).bottom,
+                ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.bottomCenter,

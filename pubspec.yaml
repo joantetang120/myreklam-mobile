@@ -54,6 +54,8 @@ dependencies:
   google_sign_in: ^6.2.1
   # Secure token storage
   flutter_secure_storage: ^9.0.0
+  # Biometric authentication (fingerprint / Face ID)
+  local_auth: ^2.3.0
   # Facebook Login
   flutter_facebook_auth: ^7.1.1
   # Pusher pour chat temps réel

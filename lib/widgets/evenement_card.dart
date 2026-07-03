@@ -25,6 +25,7 @@ class EvenementCard extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback? onFavoriteToggle;
   final VoidCallback? onReport;
+  final bool isExpired;
 
   const EvenementCard({
     super.key,
@@ -49,6 +50,7 @@ class EvenementCard extends StatelessWidget {
     this.isFavorite = false,
     this.onFavoriteToggle,
     this.onReport,
+    this.isExpired = false,
   });
 
   @override
@@ -507,6 +509,38 @@ class EvenementCard extends StatelessWidget {
               ],
             ),
           ),
+          if (isExpired) ...[
+            // Grey veil (taps pass through) + "Expirée" badge.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(color: Colors.white.withOpacity(0.55)),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF757575),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.event_busy, size: 13, color: Colors.white),
+                    SizedBox(width: 4),
+                    Text('Expirée',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

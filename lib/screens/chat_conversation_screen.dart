@@ -40,6 +40,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   late ConversationProvider _conversationProvider;
   Map<String, dynamic>? _pendingAnnonce;
 
+  // Real online presence of the other participant.
+  String _statusText = '';
+  Timer? _presenceTimer;
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +51,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         ? Map<String, dynamic>.from(widget.linkedAnnonce!)
         : null;
     _loadCurrentUser();
+    _loadPresence();
+    // Refresh presence periodically while the chat is open.
+    _presenceTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _loadPresence(),
+    );
 
     // Écouter les changements de messages pour auto-scroll
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -371,9 +381,46 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       debugPrint('Error in dispose: $e');
     }
 
+    _presenceTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Fetch the other participant's real online presence.
+  Future<void> _loadPresence() async {
+    try {
+      final res = await ApiClient()
+          .authenticatedGet('/conversations/${widget.conversationId}');
+      final presence = res['partner_presence'] as Map<String, dynamic>?;
+      if (presence == null || !mounted) return;
+
+      String text;
+      if (presence['is_online'] == true) {
+        text = 'En ligne';
+      } else {
+        final la = presence['last_active_at']?.toString();
+        final dt = la != null ? DateTime.tryParse(la)?.toLocal() : null;
+        text = dt != null ? 'Vu ${_relativeSeen(dt)}' : 'Hors ligne';
+      }
+      setState(() => _statusText = text);
+    } catch (_) {
+      // Keep whatever we had; never block the chat on presence.
+    }
+  }
+
+  String _relativeSeen(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return "à l'instant";
+    if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes} min';
+    if (diff.inHours < 24 && now.day == dt.day) {
+      final hh = dt.hour.toString().padLeft(2, '0');
+      final mm = dt.minute.toString().padLeft(2, '0');
+      return 'à $hh:$mm';
+    }
+    if (diff.inDays < 7) return 'il y a ${diff.inDays}j';
+    return 'le ${dt.day}/${dt.month}';
   }
 
   @override
@@ -432,10 +479,16 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
-                  Text(
-                    widget.status,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                  ),
+                  if (_statusText.isNotEmpty)
+                    Text(
+                      _statusText,
+                      style: TextStyle(
+                        color: _statusText == 'En ligne'
+                            ? const Color(0xFFB9F6CA)
+                            : Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
                 ],
               ),
             ),

@@ -6,6 +6,7 @@ import 'package:myreklam/screens/login_screen.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/biometric_service.dart';
 import 'package:myreklam/screens/manage_users_screen.dart';
 import 'package:myreklam/screens/managed_accounts_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
@@ -36,6 +37,61 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
   bool _isAccountActionExpanded = false;
   bool _isSecurityExpanded = false;
   bool _isDeleting = false;
+
+  // Biometric unlock
+  bool _bioAvailable = false;
+  bool _bioEnabled = false;
+  bool _bioBusy = false;
+  String _bioLabel = 'la biométrie';
+  IconData _bioIcon = Icons.fingerprint;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricState();
+  }
+
+  Future<void> _loadBiometricState() async {
+    final available = await BiometricService.instance.isDeviceAvailable();
+    final enabled = await BiometricService.instance.isEnabled();
+    final desc = await BiometricService.instance.describe();
+    if (!mounted) return;
+    setState(() {
+      _bioAvailable = available;
+      _bioEnabled = enabled;
+      _bioLabel = desc.label;
+      _bioIcon = desc.icon;
+    });
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    if (_bioBusy) return;
+    setState(() => _bioBusy = true);
+    try {
+      if (value) {
+        final email = UserSession().email ?? '';
+        final ok = await BiometricService.instance.enable(
+          email: email,
+          reason: 'Confirmez pour activer la connexion biométrique',
+        );
+        if (!mounted) return;
+        setState(() => _bioEnabled = ok);
+        if (!ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Authentification biométrique annulée.'),
+            ),
+          );
+        }
+      } else {
+        await BiometricService.instance.disable();
+        if (!mounted) return;
+        setState(() => _bioEnabled = false);
+      }
+    } finally {
+      if (mounted) setState(() => _bioBusy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -410,6 +466,42 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                     ),
                   ),
                   if (_isAccountActionExpanded) ...[
+                    if (_bioAvailable) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(_bioIcon, size: 20, color: Colors.grey[700]),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Connexion biométrique',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF2D2D2D),
+                                  ),
+                                ),
+                                Text(
+                                  'Déverrouiller avec $_bioLabel',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _bioEnabled,
+                            activeColor: const Color(0xFF2E9B5B),
+                            onChanged: _bioBusy ? null : _toggleBiometric,
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     ElevatedButton.icon(
                       onPressed: _isDeleting ? null : _showDeleteAccountDialog,
