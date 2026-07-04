@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class ProPostCard extends StatelessWidget {
   final String profileImage;
@@ -16,6 +17,7 @@ class ProPostCard extends StatelessWidget {
   final int commentsCount;
   final VoidCallback? onTapCTA;
   final VoidCallback? onCommentsTap;
+  final VoidCallback? onAvatarTap;
 
   const ProPostCard({
     super.key,
@@ -34,6 +36,7 @@ class ProPostCard extends StatelessWidget {
     required this.commentsCount,
     this.onTapCTA,
     this.onCommentsTap,
+    this.onAvatarTap,
   });
 
   @override
@@ -59,21 +62,29 @@ class ProPostCard extends StatelessWidget {
           // Header
           Row(
             children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundImage: _buildImageProvider(profileImage),
+              GestureDetector(
+                onTap: onAvatarTap,
+                child: ReklamAvatar(
+                  avatarUrl: profileImage,
+                  displayName: username,
+                  radius: 24,
+                  accountType: 'pro',
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      username,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
+                    GestureDetector(
+                      onTap: onAvatarTap,
+                      child: Text(
+                        username,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF616161),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -271,12 +282,7 @@ class ProPostCard extends StatelessWidget {
                 commentsCount.toString(),
                 onTap: onCommentsTap,
               ),
-              const SizedBox(width: 20),
-              Icon(
-                Icons.share_outlined,
-                color: Colors.grey.withOpacity(0.7),
-                size: 18,
-              ),
+              // Bouton partager masqué
             ],
           ),
         ],

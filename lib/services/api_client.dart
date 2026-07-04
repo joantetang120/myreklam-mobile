@@ -4,17 +4,15 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/token_storage.dart';
+import 'package:myreklam/services/auth_state_manager.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 
 class ApiException implements Exception {
   final int statusCode;
   final String message;
   final Map<String, dynamic>? errors;
 
-  ApiException({
-    required this.statusCode,
-    required this.message,
-    this.errors,
-  });
+  ApiException({required this.statusCode, required this.message, this.errors});
 
   @override
   String toString() => message;
@@ -45,10 +43,7 @@ class ApiClient {
     };
   }
 
-  Future<Map<String, dynamic>> get(
-    String endpoint, {
-    bool auth = false,
-  }) async {
+  Future<Map<String, dynamic>> get(String endpoint, {bool auth = false}) async {
     final token = auth ? await TokenStorage.getAccessToken() : null;
     final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
 
@@ -66,7 +61,8 @@ class ApiClient {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
+        message:
+            'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
       );
     } on http.ClientException {
       throw ApiException(
@@ -102,7 +98,8 @@ class ApiClient {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
+        message:
+            'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
       );
     } on http.ClientException {
       throw ApiException(
@@ -138,7 +135,8 @@ class ApiClient {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
+        message:
+            'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
       );
     } on http.ClientException {
       throw ApiException(
@@ -212,6 +210,171 @@ class ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> authenticatedPostMultipart(
+    String endpoint, {
+    required File file,
+    required String fileField,
+    Map<String, String>? fields,
+  }) async {
+    return authenticatedMultipart(
+      endpoint,
+      file: file,
+      fileField: fileField,
+      fields: fields,
+      method: 'POST',
+    );
+  }
+
+  Future<Map<String, dynamic>> authenticatedMultipart(
+    String endpoint, {
+    required File file,
+    required String fileField,
+    String method = 'POST',
+    Map<String, String>? fields,
+  }) async {
+    try {
+      final token = await TokenStorage.getAccessToken();
+      final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+
+      final request = http.MultipartRequest(method, url);
+
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      request.headers['Accept'] = 'application/json';
+
+      if (fields != null) {
+        request.fields.addAll(fields);
+      }
+
+      // Single file - no array index
+      final multipartFile = await http.MultipartFile.fromPath(
+        fileField,
+        file.path,
+      );
+      request.files.add(multipartFile);
+
+      final streamedResponse = await request.send().timeout(
+        ApiConfig.connectTimeout,
+      );
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return _handleResponse(response);
+    } on ApiException catch (e) {
+      if (e.statusCode == 401) {
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          final token = await TokenStorage.getAccessToken();
+          final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+          final request = http.MultipartRequest(method, url);
+          request.headers['Authorization'] = 'Bearer $token';
+          request.headers['Accept'] = 'application/json';
+          if (fields != null) request.fields.addAll(fields);
+          // Single file - no array index
+          final multipartFile = await http.MultipartFile.fromPath(
+            fileField,
+            file.path,
+          );
+          request.files.add(multipartFile);
+          final streamedResponse = await request.send().timeout(
+            ApiConfig.connectTimeout,
+          );
+          final response = await http.Response.fromStream(streamedResponse);
+          return _handleResponse(response);
+        }
+      }
+      rethrow;
+    } on TimeoutException {
+      throw ApiException(
+        statusCode: 0,
+        message: 'Le serveur met trop de temps à répondre.',
+      );
+    } on SocketException {
+      throw ApiException(
+        statusCode: 0,
+        message: 'Impossible de se connecter au serveur.',
+      );
+    } on Exception {
+      throw ApiException(statusCode: 0, message: 'Erreur inattendue.');
+    }
+  }
+
+  Future<Map<String, dynamic>> authenticatedMultipartMultiple(
+    String endpoint, {
+    required List<File> files,
+    required String fileField,
+    String method = 'POST',
+    Map<String, String>? fields,
+  }) async {
+    try {
+      final token = await TokenStorage.getAccessToken();
+      final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+
+      final request = http.MultipartRequest(method, url);
+
+      if (token != null) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      request.headers['Accept'] = 'application/json';
+
+      if (fields != null) {
+        request.fields.addAll(fields);
+      }
+
+      for (var i = 0; i < files.length; i++) {
+        final multipartFile = await http.MultipartFile.fromPath(
+          '${fileField}[$i]',
+          files[i].path,
+        );
+        request.files.add(multipartFile);
+      }
+
+      final streamedResponse = await request.send().timeout(
+        ApiConfig.connectTimeout,
+      );
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return _handleResponse(response);
+    } on ApiException catch (e) {
+      if (e.statusCode == 401) {
+        final refreshed = await _tryRefreshToken();
+        if (refreshed) {
+          final token = await TokenStorage.getAccessToken();
+          final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+          final request = http.MultipartRequest(method, url);
+          request.headers['Authorization'] = 'Bearer $token';
+          request.headers['Accept'] = 'application/json';
+          if (fields != null) request.fields.addAll(fields);
+          for (var i = 0; i < files.length; i++) {
+            final multipartFile = await http.MultipartFile.fromPath(
+              '${fileField}[$i]',
+              files[i].path,
+            );
+            request.files.add(multipartFile);
+          }
+          final streamedResponse = await request.send().timeout(
+            ApiConfig.connectTimeout,
+          );
+          final response = await http.Response.fromStream(streamedResponse);
+          return _handleResponse(response);
+        }
+      }
+      rethrow;
+    } on TimeoutException {
+      throw ApiException(
+        statusCode: 0,
+        message: 'Le serveur met trop de temps à répondre.',
+      );
+    } on SocketException {
+      throw ApiException(
+        statusCode: 0,
+        message: 'Impossible de se connecter au serveur.',
+      );
+    } on Exception {
+      throw ApiException(statusCode: 0, message: 'Erreur inattendue.');
+    }
+  }
+
   Future<Map<String, dynamic>> delete(
     String endpoint, {
     bool auth = false,
@@ -233,7 +396,8 @@ class ApiClient {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
+        message:
+            'Impossible de se connecter au serveur. Vérifiez votre connexion internet.',
       );
     } on http.ClientException {
       throw ApiException(
@@ -259,8 +423,21 @@ class ApiClient {
 
   Future<bool> _tryRefreshToken() async {
     try {
+      // Delegated sessions are intentionally non-refreshable (so they can't be
+      // escalated to full owner access). If the delegated token expired, end
+      // the delegation and restore the manager's own session.
+      if (await TokenStorage.isDelegated()) {
+        await DelegationManager.instance.exitLocal();
+        AuthStateManager().setSessionExpired();
+        return false;
+      }
+
       final refreshToken = await TokenStorage.getRefreshToken();
-      if (refreshToken == null) return false;
+      if (refreshToken == null) {
+        // No refresh token, session expired
+        AuthStateManager().setSessionExpired();
+        return false;
+      }
 
       final url = Uri.parse('${ApiConfig.baseUrl}/auth/refresh-token');
       final response = await _client.post(
@@ -277,10 +454,14 @@ class ApiClient {
         return true;
       }
 
+      // Refresh failed (expired or invalid), clear tokens and notify
       await TokenStorage.clearTokens();
+      AuthStateManager().setSessionExpired();
       return false;
     } catch (_) {
+      // Any error during refresh means session is expired
       await TokenStorage.clearTokens();
+      AuthStateManager().setSessionExpired();
       return false;
     }
   }

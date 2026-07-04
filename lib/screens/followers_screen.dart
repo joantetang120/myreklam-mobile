@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
+import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
+import 'package:myreklam/services/profile_service.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
+
 class FollowersScreen extends StatefulWidget {
   final bool initialShowFollowers;
-  const FollowersScreen({super.key, this.initialShowFollowers = true});
+  final String? userId;
+
+  const FollowersScreen({
+    super.key,
+    this.initialShowFollowers = true,
+    this.userId,
+  });
 
   @override
   State<FollowersScreen> createState() => _FollowersScreenState();
@@ -10,6 +22,12 @@ class FollowersScreen extends StatefulWidget {
 class _FollowersScreenState extends State<FollowersScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final _profileService = ProfileService();
+
+  bool _isLoading = true;
+  List<dynamic> _followers = [];
+  List<dynamic> _following = [];
+  String _userName = 'Chargement...';
 
   @override
   void initState() {
@@ -19,12 +37,108 @@ class _FollowersScreenState extends State<FollowersScreen>
       vsync: this,
       initialIndex: widget.initialShowFollowers ? 0 : 1,
     );
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+    try {
+      final targetId = widget.userId;
+      if (targetId == null) {
+        // If no userId, we can't fetch. This shouldn't happen if coming from profile.
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+        return;
+      }
+
+      // Fetch name first from public profile if it's not the current user
+      final profile = await _profileService.getUserProfile(targetId);
+      if (!mounted) return;
+      final user = profile['user'] ?? profile;
+      _userName = _extractDisplayName(user);
+
+      // Fetch lists
+      final followers = await _profileService.getFollowers(targetId);
+      if (!mounted) return;
+      final following = await _profileService.getFollowing(targetId);
+      if (!mounted) return;
+
+      setState(() {
+        _followers = followers;
+        _following = following;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  String _extractDisplayName(Map<String, dynamic>? data) {
+    if (data == null) return 'Utilisateur';
+    final pro = data['pro_profile'] as Map?;
+    final part = data['particulier_profile'] as Map?;
+
+    if (part != null) return part['pseudo']?.toString() ?? 'Utilisateur';
+    if (pro != null)
+      return pro['company_name']?.toString() ??
+          '${pro['first_name'] ?? ''} ${pro['last_name'] ?? ''}'.trim();
+
+    return data['name']?.toString() ?? 'Utilisateur';
+  }
+
+  String _extractAvatar(Map<String, dynamic>? data) {
+    if (data == null)
+      return 'assets/images/dashboard_particulier/Ellipse 10.png';
+    final pro = data['pro_profile'] as Map?;
+    final part = data['particulier_profile'] as Map?;
+
+    String? url =
+        part?['avatar_url']?.toString() ??
+        pro?['avatar_url']?.toString() ??
+        data['avatar']?.toString();
+
+    if (url != null && url.isNotEmpty) {
+      if (url.startsWith('http')) return url;
+      final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
+      return '$serverBase/storage/$url';
+    }
+    return '';
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _toggleFollow(Map<String, dynamic> user) async {
+    final userId = user['id']?.toString();
+    if (userId == null) return;
+
+    final isFollowing = user['is_following'] ?? false;
+
+    try {
+      if (isFollowing) {
+        await _profileService.unfollowUser(userId);
+      } else {
+        await _profileService.followUser(userId);
+      }
+      // Refresh data
+      _loadData();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+      }
+    }
   }
 
   @override
@@ -43,9 +157,9 @@ class _FollowersScreenState extends State<FollowersScreen>
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Kristin Watson',
-          style: TextStyle(
+        title: Text(
+          _userName,
+          style: const TextStyle(
             color: Color(0xFF616161),
             fontFamily: 'Manjari',
             fontWeight: FontWeight.bold,
@@ -67,113 +181,53 @@ class _FollowersScreenState extends State<FollowersScreen>
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
-              tabs: const [
-                Tab(text: '1000 Follower(s)'),
-                Tab(text: '10 Suivie(s)'),
+              tabs: [
+                Tab(text: '${_followers.length} Follower(s)'),
+                Tab(text: '${_following.length} Suivie(s)'),
               ],
             ),
           ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildFollowersList(),
-          _buildFollowingList(),
-        ],
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _buildList(_followers, 'followers'),
+                _buildList(_following, 'following'),
+              ],
+            ),
     );
   }
 
-  Widget _buildFollowersList() {
-    return Column(
-      children: [
-        _buildSearchField(),
-        Divider(color: Colors.grey[300]),
-        _buildSectionTitle('Tous les followers'),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              _buildFollowerItem(
-                name: 'Darrell Steward veeeeeeveeveev',
-                username: 'DarrelStew 10',
-                imageUrl: 'assets/images/dashboard_particulier/Ellipse 10.png',
-                isFollowing: true,
-              ),
-              _buildFollowerItem(
-                name: 'Bessie Cooper',
-                username: 'DarrelStew 10',
-                imageUrl: 'assets/images/dashboard_particulier/Ellipse 11.png',
-                isFollowing: true,
-              ),
-              _buildFollowerItem(
-                name: 'Darrell Steward',
-                username: 'DarrelStew 10',
-                imageUrl: 'assets/images/dashboard_particulier/Ellipse 10.png',
-                isFollowing: true,
-              ),
-              _buildFollowerItem(
-                name: 'Courtney Henry',
-                username: 'DarrelStew 10',
-                imageUrl: 'assets/images/dashboard_particulier/Ellipse 11.png',
-                isFollowing: true,
-              ),
-              _buildFollowerItem(
-                name: 'Darrell Steward',
-                username: 'DarrelStew 10',
-                imageUrl: 'assets/images/dashboard_particulier/Ellipse 10.png',
-                isFollowing: true,
-              ),
-              _buildFollowerItem(
-                name: 'Esther Howard',
-                username: 'DarrelStew 10',
-                imageUrl: 'assets/images/dashboard_particulier/Ellipse 11.png',
-                isFollowing: true,
-              ),
-            ],
-          ),
+  Widget _buildList(List<dynamic> users, String type) {
+    if (users.isEmpty) {
+      return Center(
+        child: Text(
+          type == 'followers'
+              ? "Vous n'avez aucun follower pour l'instant"
+              : "Vous ne suivez personne pour l'instant",
+          style: const TextStyle(color: Colors.grey),
         ),
-      ],
-    );
-  }
+      );
+    }
 
-  Widget _buildFollowingList() {
     return Column(
       children: [
         _buildSearchField(),
         Divider(color: Colors.grey[300]),
-        _buildSectionTitle('Suivie(s)'),
+        _buildSectionTitle(
+          type == 'followers' ? 'Tous les followers' : 'Suivie(s)',
+        ),
         Expanded(
-          child: ListView(
+          child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              _buildFollowingItem(
-                name: 'Darrell Steward evevevevev',
-                username: 'DarrelStew 10',
-                imageUrl: 'assets/images/dashboard_particulier/Ellipse 10.png',
-              ),
-              _buildFollowingItem(
-                name: 'Robert Fox',
-                username: 'Robertfox',
-                imageUrl: 'assets/images/dashboard_particulier/Ellipse 11.png',
-              ),
-              _buildFollowingItem(
-                name: 'Robert Fox',
-                username: 'Robertfox',
-                imageUrl: 'assets/images/dashboard_particulier/Ellipse 10.png',
-              ),
-              _buildFollowingItem(
-                name: 'Robert Fox',
-                username: 'Robertfox',
-                imageUrl: 'assets/images/dashboard_particulier/Ellipse 11.png',
-              ),
-              _buildFollowingItem(
-                name: 'Robert Fox',
-                username: 'Robertfox',
-                imageUrl: 'assets/images/dashboard_particulier/Ellipse 10.png',
-              ),
-            ],
+            itemCount: users.length,
+            itemBuilder: (context, index) {
+              final user = users[index] as Map<String, dynamic>;
+              return _buildUserItem(user);
+            },
           ),
         ),
       ],
@@ -199,12 +253,7 @@ class _FollowersScreenState extends State<FollowersScreen>
 
   Padding _buildSearchField() {
     return Padding(
-      padding: const EdgeInsets.only(
-        top: 16,
-        left: 16,
-        right: 16,
-        bottom: 10,
-      ),
+      padding: const EdgeInsets.all(16),
       child: TextField(
         decoration: InputDecoration(
           hintText: 'Recherche',
@@ -222,44 +271,51 @@ class _FollowersScreenState extends State<FollowersScreen>
     );
   }
 
-  Widget _buildFollowerItem({
-    required String name,
-    required String username,
-    required String imageUrl,
-    required bool isFollowing,
-  }) {
+  Widget _buildUserItem(Map<String, dynamic> user) {
+    final String name = _extractDisplayName(user);
+    final String avatar = _extractAvatar(user);
+    final bool isFollowing = user['is_following'] ?? false;
+    final String userId = user['id']?.toString() ?? '';
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          CircleAvatar(radius: 26, backgroundImage: AssetImage(imageUrl)),
+          GestureDetector(
+            onTap: () => _navigateToProfile(userId, user),
+            child: ReklamAvatar(
+              avatarUrl: avatar,
+              displayName: name,
+              radius: 26,
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF333333),
+            child: GestureDetector(
+              onTap: () => _navigateToProfile(userId, user),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF333333),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  username,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           OutlinedButton(
-            onPressed: () {},
+            onPressed: () => _toggleFollow(user),
             style: OutlinedButton.styleFrom(
-              backgroundColor: const Color(0xFF04BC7B).withOpacity(0.2),
+              backgroundColor: isFollowing
+                  ? Colors.transparent
+                  : const Color(0xFF04BC7B).withOpacity(0.1),
               foregroundColor: const Color(0xFF2E9B5B),
               side: const BorderSide(color: Color(0xFF2E9B5B)),
               padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -267,16 +323,9 @@ class _FollowersScreenState extends State<FollowersScreen>
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text(
-              'Suivre en retour',
-              style: TextStyle(fontSize: 11),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 9),
-            child: InkWell(
-              onTap: () {},
-              child: const Icon(Icons.close, color: Colors.grey, size: 20),
+            child: Text(
+              isFollowing ? 'Suivi' : 'Suivre',
+              style: const TextStyle(fontSize: 11),
             ),
           ),
         ],
@@ -284,61 +333,29 @@ class _FollowersScreenState extends State<FollowersScreen>
     );
   }
 
-  Widget _buildFollowingItem({
-    required String name,
-    required String username,
-    required String imageUrl,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          CircleAvatar(radius: 26, backgroundImage: AssetImage(imageUrl)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF333333),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  username,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-          OutlinedButton(
-            onPressed: () {},
-            style: OutlinedButton.styleFrom(
-              backgroundColor: const Color(0xFF04BC7B).withOpacity(0.2),
-              foregroundColor: const Color(0xFF2E9B5B),
-              side: const BorderSide(color: Color(0xFF2E9B5B)),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Voir le profil', style: TextStyle(fontSize: 11)),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 9),
-            child: InkWell(
-              onTap: () {},
-              child: const Icon(Icons.close, color: Colors.grey, size: 20),
-            ),
-          ),
-        ],
-      ),
-    );
+  void _navigateToProfile(String userId, Map<String, dynamic> user) {
+    // Check if user is Pro or Particulier
+    final accountType = user['account_type']?.toString().toLowerCase();
+    final isProUser =
+        accountType == 'pro' ||
+        (user['pro_profile'] != null && user['particulier_profile'] == null);
+
+    if (isProUser) {
+      // Navigate to Pro public view
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProPublicViewScreen(userId: userId),
+        ),
+      );
+    } else {
+      // Navigate to Particulier public profile
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ParticulierPublicViewScreen(userId: userId),
+        ),
+      );
+    }
   }
 }

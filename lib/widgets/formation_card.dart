@@ -8,6 +8,12 @@ class FormationCard extends StatelessWidget {
   final List<FormationTag> tags;
   final String timeAgo;
   final VoidCallback? onApply;
+  final Widget? reactionBar;
+  final VoidCallback? onAvatarTap;
+  final bool isFavorited;
+  final VoidCallback? onFavoriteToggle;
+  final bool isLoadingFavorite;
+  final VoidCallback? onReport;
 
   const FormationCard({
     super.key,
@@ -18,30 +24,21 @@ class FormationCard extends StatelessWidget {
     required this.tags,
     required this.timeAgo,
     this.onApply,
+    this.reactionBar,
+    this.onAvatarTap,
+    this.isFavorited = false,
+    this.onFavoriteToggle,
+    this.isLoadingFavorite = false,
+    this.onReport,
   });
-
-  Widget _buildHeaderIcon(IconData icon, {required VoidCallback onPressed}) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(icon, color: Colors.grey.withOpacity(0.7), size: 20),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -51,21 +48,28 @@ class FormationCard extends StatelessWidget {
         ],
         border: Border.all(color: Colors.grey.withOpacity(0.1)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // Header
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                  image: DecorationImage(
-                    image: AssetImage(companyLogo),
-                    fit: BoxFit.contain,
+              GestureDetector(
+                onTap: onAvatarTap,
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    image: DecorationImage(
+                      image: companyLogo.startsWith('http')
+                          ? NetworkImage(companyLogo)
+                          : AssetImage(companyLogo) as ImageProvider,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
@@ -74,14 +78,17 @@ class FormationCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      companyName,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
+                    GestureDetector(
+                      onTap: onAvatarTap,
+                      child: Text(
+                        companyName,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF616161),
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 2),
                     Container(
@@ -108,15 +115,7 @@ class FormationCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Row(
-                children: [
-                  _buildHeaderIcon(Icons.favorite_border, onPressed: () {}),
-                  const SizedBox(width: 8),
-                  _buildHeaderIcon(Icons.share_outlined, onPressed: () {}),
-                  const SizedBox(width: 8),
-                  _buildHeaderIcon(Icons.close, onPressed: () {}),
-                ],
-              ),
+              const Spacer(),
             ],
           ),
           const SizedBox(height: 20),
@@ -151,38 +150,156 @@ class FormationCard extends StatelessWidget {
           const SizedBox(height: 15),
           const Divider(height: 1),
           const SizedBox(height: 15),
-          // Footer
-          Row(
-            children: [
-              Icon(
-                Icons.access_time,
-                color: Colors.grey.withOpacity(0.7),
-                size: 20,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                timeAgo,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const Spacer(),
-              ElevatedButton.icon(
-                onPressed: onApply,
-                icon: const Icon(Icons.school_outlined, size: 18),
-                label: const Text('Voir la formation'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF9800),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+              // Footer - button only (timeAgo moved below)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: onApply,
+                  icon: const Icon(Icons.school_outlined, size: 18),
+                  label: const Text('Voir la formation'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF9800),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 0,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
                 ),
               ),
-            ],
+          if (reactionBar != null) ...[
+            const SizedBox(height: 20),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+            reactionBar!,
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+          ],
+          // Time ago below reaction section
+          Padding(
+            padding: const EdgeInsets.only(top: 16, left: 4, right: 4),
+            child: Row(
+              children: [
+                const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  timeAgo,
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Favorite button (left of Formation tag)
+                GestureDetector(
+                  onTap: isLoadingFavorite ? null : onFavoriteToggle,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: isLoadingFavorite
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.grey[600],
+                            ),
+                          )
+                        : Icon(
+                            isFavorited ? Icons.favorite : Icons.favorite_border,
+                            color: isFavorited ? Colors.red : Colors.grey[600],
+                            size: 20,
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (onReport != null) ...[
+                  GestureDetector(
+                    onTap: onReport,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.report_outlined,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                // Formation tag
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [const Color(0xFF9C27B0), const Color(0xFF9C27B0).withOpacity(0.8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(20),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF9C27B0).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.school_outlined, size: 14, color: Colors.white),
+                      SizedBox(width: 4),
+                      Text(
+                        'Formation',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

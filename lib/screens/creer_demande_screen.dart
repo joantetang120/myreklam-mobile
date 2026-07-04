@@ -1,15 +1,24 @@
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/models/location_data.dart';
+import 'package:myreklam/widgets/location_picker_field.dart';
+import 'package:myreklam/services/location_service.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:geolocator/geolocator.dart';
 
 class CreerDemandeScreen extends StatefulWidget {
   final String? demandeId;
@@ -47,9 +56,222 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   final Map<String, String> _categoryCodeToId = {};
   final Map<String, List<Map<String, String>>> _subsByParentId = {};
 
+  // Catégories de formation statiques (codes uniques avec préfixe)
+  final List<Map<String, String>> _formationCategories = [
+    {
+      'code': 'formation_agriculture',
+      'label': 'Agriculture, Agroalimentaire, Environnement',
+    },
+    {'code': 'formation_art', 'label': 'Art, Arts appliqués, Artisanat'},
+    {'code': 'formation_commerce', 'label': 'Commerce, Vente, Marketing'},
+    {
+      'code': 'formation_communication',
+      'label': 'Communication, Information, Journalisme',
+    },
+    {
+      'code': 'formation_comptabilite',
+      'label': 'Comptabilité, Gestion, Finance, Audit',
+    },
+    {
+      'code': 'formation_construction',
+      'label': 'Construction, Bâtiment, Travaux publics',
+    },
+    {
+      'code': 'formation_developpement',
+      'label': 'Développement personnel, Coaching',
+    },
+    {'code': 'formation_droit', 'label': 'Droit, Sciences politiques'},
+    {
+      'code': 'formation_education',
+      'label': 'Éducation, Enseignement, Formation',
+    },
+    {
+      'code': 'formation_hotellerie',
+      'label': 'Hôtellerie, Restauration, Tourisme',
+    },
+    {
+      'code': 'formation_industrie',
+      'label': 'Industrie, Production, Maintenance',
+    },
+    {
+      'code': 'formation_informatique',
+      'label': 'Informatique, Numerique, Telecommunications',
+    },
+    {
+      'code': 'formation_sante',
+      'label': 'Sante, Social, Services a la personne',
+    },
+    {'code': 'formation_transport', 'label': 'Transport, Logistique, Sécurité'},
+    {
+      'code': 'formation_formations_reglementaires',
+      'label': 'Formations réglementaires',
+    },
+    {
+      'code': 'formation_energie',
+      'label': 'Énergie, Énergies renouvelables, Nucléaire',
+    },
+    {
+      'code': 'formation_mecanique',
+      'label': 'Mécanique de précision, Aéronautique, Ferroviaire',
+    },
+    {
+      'code': 'formation_fonction_publique',
+      'label': 'Fonction publique, Collectivités',
+    },
+    {
+      'code': 'formation_jeux_video',
+      'label': 'Jeux vidéo, Animation, Multimédia',
+    },
+    {'code': 'formation_sciences', 'label': 'Sciences, Recherche, Qualité'},
+    {'code': 'formation_langues', 'label': 'Langues étrangères'},
+    {
+      'code': 'formation_neurosciences',
+      'label': 'Neurosciences, Apprentissage, Pédagogie innovante',
+    },
+    {
+      'code': 'transversal',
+      'label': 'Transversal, Entrepreneuriat, Soft skills',
+    },
+    {'code': 'statuts', 'label': 'Statuts Specifique'},
+  ];
+
+  // Types de formation statiques
+  final List<Map<String, String>> _formationTypes = [
+    {'code': 'initiale', 'label': 'Formation initiale'},
+    {'code': 'continue', 'label': 'Formation continue'},
+    {'code': 'alternance', 'label': 'Formation en alternance'},
+    {'code': 'certifiante', 'label': 'Formation certifiante'},
+    {'code': 'diplomante', 'label': 'Formation diplomante'},
+    {'code': 'qualifiant', 'label': 'Programme qualifiant'},
+    {'code': 'professionnelle', 'label': 'Formation professionnelle'},
+    {'code': 'mixte', 'label': 'Formation mixte (présentiel/e-learning)'},
+    {'code': 'en_ligne', 'label': 'Formation en ligne (e-learning)'},
+    {'code': 'intensive', 'label': 'Formation intensive'},
+    {'code': 'vae', 'label': 'Validation des acquis de compétence (VAE)'},
+    {'code': 'stage', 'label': 'Stage/Immersion professionelle'},
+  ];
+
+  // Secteurs d'activité pour Emploi/Stage (codes uniques avec préfixe)
+  final List<Map<String, String>> _secteursActivite = [
+    {'code': 'secteur_achats', 'label': 'Achats'},
+    {'code': 'secteur_administratif', 'label': 'Administratif'},
+    {'code': 'secteur_aeronautique', 'label': 'Aéronautique'},
+    {'code': 'secteur_agriculture', 'label': 'Agriculture'},
+    {'code': 'secteur_agroalimentaire', 'label': 'Agroalimentaire'},
+    {'code': 'secteur_architecture', 'label': 'Architecture'},
+    {'code': 'secteur_artisanat', 'label': 'Artisanat'},
+    {'code': 'secteur_assurances', 'label': 'Assurances'},
+    {'code': 'secteur_audiovisuel', 'label': 'Audiovisuel'},
+    {'code': 'secteur_audit', 'label': 'Audit'},
+    {'code': 'secteur_automobile', 'label': 'Automobile'},
+    {'code': 'secteur_banque', 'label': 'Banque'},
+    {'code': 'secteur_batiment', 'label': 'Bâtiment'},
+    {'code': 'secteur_beaute', 'label': 'Beauté'},
+    {'code': 'secteur_bois', 'label': 'Bois'},
+    {'code': 'secteur_chimie', 'label': 'Chimie'},
+    {'code': 'secteur_commerce', 'label': 'Commerce'},
+    {'code': 'secteur_communication', 'label': 'Communication'},
+    {'code': 'secteur_comptabilite', 'label': 'Comptabilité'},
+    {'code': 'secteur_conseil', 'label': 'Conseil'},
+    {'code': 'secteur_construction', 'label': 'Construction'},
+    {'code': 'secteur_culture', 'label': 'Culture'},
+    {'code': 'secteur_defense', 'label': 'Défense'},
+    {'code': 'secteur_design', 'label': 'Design'},
+    {'code': 'secteur_distribution', 'label': 'Distribution'},
+    {'code': 'secteur_droit', 'label': 'Droit'},
+    {'code': 'secteur_edition', 'label': 'Édition'},
+    {'code': 'secteur_education', 'label': 'Éducation'},
+    {'code': 'secteur_electronique', 'label': 'Électronique'},
+    {'code': 'secteur_energie', 'label': 'Énergie'},
+    {'code': 'secteur_enseignement', 'label': 'Enseignement'},
+    {'code': 'secteur_environnement', 'label': 'Environnement'},
+    {'code': 'secteur_evenementiel', 'label': 'Événementiel'},
+    {'code': 'secteur_finance', 'label': 'Finance'},
+    {'code': 'secteur_fonction_publique', 'label': 'Fonction publique'},
+    {'code': 'secteur_hotellerie', 'label': 'Hôtellerie'},
+    {'code': 'secteur_immobilier', 'label': 'Immobilier'},
+    {'code': 'secteur_industrie', 'label': 'Industrie'},
+    {'code': 'secteur_informatique', 'label': 'Informatique'},
+    {'code': 'secteur_ingenierie', 'label': 'Ingénierie'},
+    {'code': 'secteur_internet', 'label': 'Internet'},
+    {'code': 'secteur_journalisme', 'label': 'Journalisme'},
+    {'code': 'secteur_juridique', 'label': 'Juridique'},
+    {'code': 'secteur_logistique', 'label': 'Logistique'},
+    {'code': 'secteur_luxe', 'label': 'Luxe'},
+    {'code': 'secteur_marketing', 'label': 'Marketing'},
+    {'code': 'secteur_mecanique', 'label': 'Mécanique'},
+    {'code': 'secteur_medical', 'label': 'Médical'},
+    {'code': 'secteur_mode', 'label': 'Mode'},
+    {'code': 'secteur_multimedia', 'label': 'Multimédia'},
+    {'code': 'secteur_naval', 'label': 'Naval'},
+    {'code': 'secteur_pharmaceutique', 'label': 'Pharmaceutique'},
+    {'code': 'secteur_production', 'label': 'Production'},
+    {'code': 'secteur_publicite', 'label': 'Publicité'},
+    {'code': 'secteur_qualite', 'label': 'Qualité'},
+    {'code': 'secteur_recherche', 'label': 'Recherche'},
+    {'code': 'secteur_restauration', 'label': 'Restauration'},
+    {'code': 'secteur_ressources_humaines', 'label': 'Ressources humaines'},
+    {'code': 'secteur_sante', 'label': 'Santé'},
+    {'code': 'secteur_securite', 'label': 'Sécurité'},
+    {'code': 'secteur_services', 'label': 'Services'},
+    {'code': 'secteur_social', 'label': 'Social'},
+    {'code': 'secteur_sport', 'label': 'Sport'},
+    {'code': 'secteur_telecommunication', 'label': 'Télécommunication'},
+    {'code': 'secteur_textile', 'label': 'Textile'},
+    {'code': 'secteur_tourisme', 'label': 'Tourisme'},
+    {'code': 'secteur_transport', 'label': 'Transport'},
+    {'code': 'secteur_travail_temporaire', 'label': 'Travail temporaire'},
+    {'code': 'secteur_vente', 'label': 'Vente'},
+  ];
+
+  // Secteurs d'activité pour Emploi/Stage
+  final List<Map<String, String>> _allFunction = [
+    {'code': 'administratif', 'label': 'Agent de bureau'},
+    {'code': 'aeronautique', 'label': 'Agent de liaison'},
+    {'code': 'agriculture', 'label': 'Adjoint DAF'},
+  ];
+
+  // Options pour le dropdown immobilier (codes uniques)
+  final List<Map<String, String>> _immobilierTypeOptions = [
+    {'code': 'RealEstateInvestment', 'label': 'Investissement immobilier'},
+    {'code': 'LookingForRental', 'label': 'Cherche location'},
+    {'code': 'LookingForSharedHousing', 'label': 'Cherche colocation'},
+    {
+      'code': 'LookingForProfessionalSpace',
+      'label': 'Cherche local professionel',
+    },
+  ];
+
+  // Job categories API (for Emploi/Stage forms)
+  bool _isJobCategoriesLoading = false;
+  String? _jobCategoriesLoadError;
+  List<Map<String, String>> _jobSecteursOptions = [];
+  final Map<String, String> _jobSecteursCodeToId = {};
+  final Map<String, List<Map<String, String>>> _jobFonctionsByParentId = {};
+
+  // Training categories API (for Formation forms)
+  bool _isTrainingCategoriesLoading = false;
+  String? _trainingCategoriesLoadError;
+  List<Map<String, String>> _trainingCategoriesOptions = [];
+  final Map<String, String> _trainingCategoryCodeToId = {};
+  final Map<String, List<Map<String, String>>> _trainingSecteursByParentId = {};
+  List<Map<String, String>> _trainingTypesOptions = [];
+
   // Step 1 - Nature
   String? _selectedCategory;
   String? _selectedType;
+  String? _selectedFormationType;
+  String? _selectedFormationSector;
+  String? _selectedFunction;
+
+  // Variables séparées pour Emploi/Stage afin d'éviter les conflits
+  String? _selectedSecteurActivite;
+
+  // Variable séparée pour Formation afin d'éviter les conflits
+  String? _selectedFormationCategory;
+
+  // Variable séparée pour Immobilier afin d'éviter les conflits
+  String? _selectedImmobilierType;
 
   // Step 2 - Details
   final TextEditingController _titleController = TextEditingController();
@@ -60,17 +282,126 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   final TextEditingController _prixInitialController = TextEditingController();
   final TextEditingController _prixFinalController = TextEditingController();
 
+  // Formation spécifique
+  List<String> _selectedTeachingTypes = [];
+  List<String> _selectedFinancingTypes = [];
+  final TextEditingController _nbPersonnesController = TextEditingController();
+  final TextEditingController _nbGroupesController = TextEditingController();
+  bool _dansImmediat = false;
+  bool _docCand = false;
+  bool _aDefinir = false;
+
+  // Immobilier spécifique
+  final List<String> _selectedTypeBien = [];
+  final TextEditingController _surfaceHabitableMinController =
+      TextEditingController();
+  final TextEditingController _surfaceHabitableMaxController =
+      TextEditingController();
+  final TextEditingController _surfaceTerrainMinController =
+      TextEditingController();
+  final TextEditingController _surfaceTerrainMaxController =
+      TextEditingController();
+  String? _nbPieces;
+  String? _nbChambres;
+  String? _meuble; // 'meuble', 'non_meuble', 'indifferent'
+
+  // Emploi/Stage spécifique
+  List<String> _selectedTypeContrat = [];
+  String? _tempsPartielPlein;
+  String? _trancheSalariale;
+  final TextEditingController _salaryMinController = TextEditingController();
+  final TextEditingController _salaryMaxController = TextEditingController();
+  String? _salaryNetOrBrut = 'brut'; // 'net' ou 'brut'
+  String? _salaryIndiceTemporel = 'annees'; // 'annees' ou 'heures' ou 'mois'
+  String? _niveauEtudes;
+  String? _niveauExperience;
+  bool _accepteTeletravaill = false;
+  String? _cvOption; // 'cv', 'lettre_motivation', 'portfolio'
+  final List<String> _selectedCvOptions = [];
+
   // Step 3 - Localisation
-  final TextEditingController _disponibleChezController = TextEditingController();
+  LocationData? _selectedLocation;
   bool _touteLaFrance = false;
   bool _useCurrentLocation = false;
   bool _showGoogleLocation = false;
   double _rayonRecherche = 0;
 
-  // Media
-  final List<PlatformFile> _selectedMediaFiles = [];
+  // Media (photos from _buildStepPhoto)
+  final List<GalleryMedia> _selectedMediaFiles = [];
   final List<String> _existingMediaUrls = [];
   bool _isUploadingMedia = false;
+
+  // Documents (CV, lettre de motivation, portfolio from Emploi/Stage forms)
+  final List<PlatformFile> _selectedDocumentFiles = [];
+  final Map<String, PlatformFile> _documentFilesByType = {}; // type -> file
+
+  // Candidate documents from API
+  List<Map<String, dynamic>> _candidateDocuments = [];
+  bool _isLoadingCandidateDocs = false;
+  String? _candidateDocsError;
+  final Set<String> _removedCandidateDocIds = {}; // Track removed docs
+
+  /// Fetch candidate documents from API when checkbox is checked
+  Future<void> _loadCandidateDocuments() async {
+    setState(() {
+      _isLoadingCandidateDocs = true;
+      _candidateDocsError = null;
+    });
+
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        throw Exception('Session expirée. Veuillez vous reconnecter.');
+      }
+
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/candidate-documents'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Erreur lors du chargement des documents');
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
+        throw Exception('Réponse invalide du serveur');
+      }
+
+      final docs = decoded['data'] as List? ?? [];
+      if (mounted) {
+        setState(() {
+          _candidateDocuments = List<Map<String, dynamic>>.from(docs);
+          _isLoadingCandidateDocs = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading candidate documents: $e');
+      if (mounted) {
+        setState(() {
+          _candidateDocsError = 'Impossible de charger les documents.';
+          _isLoadingCandidateDocs = false;
+        });
+      }
+    }
+  }
+
+  /// Remove a candidate document from the list
+  void _removeCandidateDocument(String docId) {
+    setState(() {
+      _removedCandidateDocIds.add(docId);
+    });
+  }
+
+  /// Get visible candidate documents (not removed)
+  List<Map<String, dynamic>> get _visibleCandidateDocuments {
+    return _candidateDocuments
+        .where((doc) => !_removedCandidateDocIds.contains(doc['id'].toString()))
+        .toList();
+  }
 
   // Review
   bool _acceptMessages = false;
@@ -78,12 +409,16 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   // Submission state
   bool _isSubmitting = false;
 
+  // User Role
+  String? userRole;
+
   bool get _isEditMode => widget.isEditMode;
 
   @override
   void initState() {
     super.initState();
     _loadDemandeCategories();
+    _loadJobCategories(); // Charger les catégories d'emploi pour les formulaires Emploi/Stage
     if (_isEditMode) {
       _prefillFromInitialData();
     } else {
@@ -96,12 +431,26 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     if (data == null) return;
 
     _titleController.text = data['title']?.toString() ?? '';
-    _disponibleChezController.text = data['location']?.toString() ?? '';
+    if (data['location'] != null || data['location_city'] != null) {
+      _selectedLocation = LocationData(
+        address: data['location']?.toString() ?? '',
+        latitude: data['latitude'] != null
+            ? double.tryParse(data['latitude'].toString())
+            : null,
+        longitude: data['longitude'] != null
+            ? double.tryParse(data['longitude'].toString())
+            : null,
+        city: data['location_city']?.toString(),
+        postalCode: data['location_postal_code']?.toString(),
+      );
+    }
     _selectedCategory = data['nature']?.toString();
     _selectedType = data['type']?.toString();
     _acceptDemand = data['urgent'] == true;
-    if (data['start_date'] != null) _startDate = DateTime.tryParse(data['start_date'].toString());
-    if (data['end_date'] != null) _endDate = DateTime.tryParse(data['end_date'].toString());
+    if (data['start_date'] != null)
+      _startDate = DateTime.tryParse(data['start_date'].toString());
+    if (data['end_date'] != null)
+      _endDate = DateTime.tryParse(data['end_date'].toString());
     _touteLaFrance = data['nationwide'] == true;
     _useCurrentLocation = data['use_current_location'] == true;
     _showGoogleLocation = data['show_google_location'] == true;
@@ -114,11 +463,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
     final radius = data['search_radius_km'];
     if (radius != null) {
-      _rayonRecherche = (radius is int) ? radius.toDouble() : (double.tryParse(radius.toString()) ?? 0);
+      _rayonRecherche = (radius is int)
+          ? radius.toDouble()
+          : (double.tryParse(radius.toString()) ?? 0);
     }
 
     // Load existing media URLs
-    final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+    final mediaFiles =
+        data['media_files'] as List? ?? data['media'] as List? ?? [];
     final serverBase = ApiConfig.baseUrl.replaceAll('/api', '');
     for (final media in mediaFiles) {
       if (media is Map && media['url'] != null) {
@@ -261,6 +613,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         'step': _currentStep,
         'category': _selectedCategory,
         'type': _selectedType,
+        'function': _selectedFunction,
         'title': _titleController.text,
         'description_delta': jsonEncode(
           _descriptionQuillController.document.toDelta().toJson(),
@@ -270,12 +623,51 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         'end_date': _endDate?.toIso8601String(),
         'budget_min': _prixInitialController.text,
         'budget_max': _prixFinalController.text,
-        'location': _disponibleChezController.text,
+        'location': _selectedLocation?.toMap(),
         'toute_la_france': _touteLaFrance,
         'use_current_location': _useCurrentLocation,
         'show_google_location': _showGoogleLocation,
         'rayon': _rayonRecherche,
         'accept_messages': _acceptMessages,
+        // Nouvelles variables pour Emploi/Stage
+        'temps_partiel_plein': _tempsPartielPlein,
+        'niveau_etudes': _niveauEtudes,
+        'niveau_experience': _niveauExperience,
+        'accepte_teletravail': _accepteTeletravaill,
+        'dans_immediat': _dansImmediat,
+        'type_contrat': _selectedTypeContrat,
+        // Nouvelles variables pour Formation
+        'formation_type': _selectedFormationType,
+        'formation_sector': _selectedFormationSector,
+        'tranche_salariale': _trancheSalariale,
+        'salary_min': _salaryMinController.text,
+        'salary_max': _salaryMaxController.text,
+        'salary_net_or_brut': _salaryNetOrBrut,
+        'salary_indice_temporel': _salaryIndiceTemporel,
+        // Variables Emploi/Stage
+        'secteur_activite': _selectedSecteurActivite,
+        // Variables Formation
+        'formation_category': _selectedFormationCategory,
+        // Variables Immobilier
+        'immobilier_type': _selectedImmobilierType,
+        'type_bien': _selectedTypeBien,
+        'surface_habitable_min': _surfaceHabitableMinController.text,
+        'surface_habitable_max': _surfaceHabitableMaxController.text,
+        'surface_terrain_min': _surfaceTerrainMinController.text,
+        'surface_terrain_max': _surfaceTerrainMaxController.text,
+        'nb_pieces': _nbPieces,
+        'nb_chambres': _nbChambres,
+        'meuble': _meuble,
+        // Documents
+        'doc_cand': _docCand,
+        'selected_cv_options': _selectedCvOptions,
+        'document_files_count': _selectedDocumentFiles.length,
+        // Formation spécifique
+        'nb_personnes': _nbPersonnesController.text,
+        'nb_groupes': _nbGroupesController.text,
+        'a_definir': _aDefinir,
+        'financingTypes': _selectedFinancingTypes,
+        'teachingTypes': _selectedTeachingTypes,
       };
       await prefs.setString(_draftKey, jsonEncode(formData));
     } catch (e) {
@@ -289,22 +681,97 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       final savedData = prefs.getString(_draftKey);
       if (savedData == null) return;
       final formData = jsonDecode(savedData) as Map<String, dynamic>;
+      if (!mounted) return;
       setState(() {
         _currentStep = formData['step'] ?? 0;
         _selectedCategory = formData['category'];
         _selectedType = formData['type'];
+        _selectedFunction = formData['function'];
         _titleController.text = formData['title'] ?? '';
         _prixInitialController.text = formData['budget_min'] ?? '';
         _prixFinalController.text = formData['budget_max'] ?? '';
-        _disponibleChezController.text = formData['location'] ?? '';
+        if (formData['location'] != null && formData['location'] is Map) {
+          _selectedLocation = LocationData.fromMap(formData['location']);
+        }
         _acceptDemand = formData['urgent'] ?? false;
-        if (formData['start_date'] != null) _startDate = DateTime.tryParse(formData['start_date'].toString());
-        if (formData['end_date'] != null) _endDate = DateTime.tryParse(formData['end_date'].toString());
+        if (formData['start_date'] != null)
+          _startDate = DateTime.tryParse(formData['start_date'].toString());
+        if (formData['end_date'] != null)
+          _endDate = DateTime.tryParse(formData['end_date'].toString());
         _touteLaFrance = formData['toute_la_france'] ?? false;
         _useCurrentLocation = formData['use_current_location'] ?? false;
         _showGoogleLocation = formData['show_google_location'] ?? false;
         _rayonRecherche = (formData['rayon'] ?? 0).toDouble();
         _acceptMessages = formData['accept_messages'] ?? false;
+
+        // Restaurer les nouvelles variables Emploi/Stage
+        _tempsPartielPlein = formData['temps_partiel_plein'];
+        _niveauEtudes = formData['niveau_etudes'];
+        _niveauExperience = formData['niveau_experience'];
+        _accepteTeletravaill = formData['accepte_teletravail'] ?? false;
+        _dansImmediat = formData['dans_immediat'] ?? false;
+        if (formData['type_contrat'] is List) {
+          _selectedTypeContrat = List<String>.from(formData['type_contrat']);
+        }
+
+        // Restaurer les nouvelles variables Formation
+        _selectedFormationType = formData['formation_type'];
+        _selectedFormationSector = formData['formation_sector'];
+        _trancheSalariale = formData['tranche_salariale'];
+        _salaryMinController.text = formData['salary_min'] ?? '';
+        _salaryMaxController.text = formData['salary_max'] ?? '';
+        _salaryNetOrBrut = formData['salary_net_or_brut'];
+        _salaryIndiceTemporel = formData['salary_indice_temporel'];
+
+        // Restaurer les variables Emploi/Stage
+        _selectedSecteurActivite = formData['secteur_activite'];
+
+        // Restaurer les variables Formation
+        _selectedFormationCategory = formData['formation_category'];
+
+        // Restaurer les variables Immobilier
+        _selectedImmobilierType = formData['immobilier_type'];
+        if (formData['type_bien'] is List) {
+          _selectedTypeBien.clear();
+          _selectedTypeBien.addAll(List<String>.from(formData['type_bien']));
+        }
+        _surfaceHabitableMinController.text =
+            formData['surface_habitable_min'] ?? '';
+        _surfaceHabitableMaxController.text =
+            formData['surface_habitable_max'] ?? '';
+        _surfaceTerrainMinController.text =
+            formData['surface_terrain_min'] ?? '';
+        _surfaceTerrainMaxController.text =
+            formData['surface_terrain_max'] ?? '';
+        _nbPieces = formData['nb_pieces'];
+        _nbChambres = formData['nb_chambres'];
+        _meuble = formData['meuble'];
+
+        if (formData['financingTypes'] is List) {
+          _selectedFinancingTypes = List<String>.from(
+            formData['financingTypes'],
+          );
+        }
+        if (formData['teachingTypes'] is List) {
+          _selectedTeachingTypes = List<String>.from(formData['teachingTypes']);
+        }
+
+        // Restaurer les nouvelles variables documents
+        _docCand = formData['doc_cand'] ?? false;
+        if (formData['selected_cv_options'] is List) {
+          _selectedCvOptions.clear();
+          _selectedCvOptions.addAll(
+            List<String>.from(formData['selected_cv_options']),
+          );
+        }
+        // Note: _selectedDocumentFiles cannot be restored from SharedPreferences
+        // as PlatformFile objects cannot be serialized. User will need to re-select files.
+
+        // Restaurer les variables spécifiques Formation
+        _nbPersonnesController.text = formData['nb_personnes'] ?? '';
+        _nbGroupesController.text = formData['nb_groupes'] ?? '';
+        _aDefinir = formData['a_definir'] ?? false;
+
         if (_selectedCategory != null) {
           _typeOptions = _getSubCategoriesForCode(_selectedCategory);
         }
@@ -336,7 +803,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             'Quitter la modification ?',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -417,7 +886,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       final decoded = jsonDecode(response.body);
       if (decoded is! Map<String, dynamic> || decoded['status'] != 'success') {
         final message = decoded is Map<String, dynamic>
-            ? decoded['message']?.toString() ?? 'Réponse invalide du service des catégories.'
+            ? decoded['message']?.toString() ??
+                  'Réponse invalide du service des catégories.'
             : 'Réponse invalide du service des catégories.';
         throw Exception(message);
       }
@@ -467,56 +937,78 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         });
       }
 
-      setState(() {
-        _natureOptions = parsedNatures;
-        _categoryCodeToId
-          ..clear()
-          ..addAll(parsedCodeToId);
-        _subsByParentId
-          ..clear()
-          ..addAll(parsedSubs);
-        _isCategoryLoading = false;
-        // In edit mode, re-populate type options from the now-loaded categories
-        if (_isEditMode && _selectedCategory != null) {
-          // Validate _selectedCategory exists in loaded nature options
-          final hasNatureCode = parsedNatures.any((o) => o['code'] == _selectedCategory);
-          if (!hasNatureCode) {
-            // Fallback: try matching by label (API may return label instead of code)
-            final matchByLabel = parsedNatures.firstWhere(
-              (o) => o['label'] == _selectedCategory,
-              orElse: () => {},
+      // Filtrer les catégories selon le type d'utilisateur
+      userRole = await _getUserRole();
+      final filteredNatures = _filterNatureByRole(parsedNatures, userRole!);
+
+      // Convertir filteredNatures en List<Map<String, String>>
+      final convertedNatures = <Map<String, String>>[];
+      for (final nature in filteredNatures) {
+        final stringNature = <String, String>{};
+        for (final key in nature.keys) {
+          stringNature[key] = nature[key]?.toString() ?? '';
+        }
+        convertedNatures.add(stringNature);
+      }
+
+      if (mounted) {
+        setState(() {
+          _natureOptions = convertedNatures;
+          print("Filtered nature for $userRole: $_natureOptions");
+          _categoryCodeToId
+            ..clear()
+            ..addAll(parsedCodeToId);
+          _subsByParentId
+            ..clear()
+            ..addAll(parsedSubs);
+          _isCategoryLoading = false;
+          // In edit mode, re-populate type options from the now-loaded categories
+          if (_isEditMode && _selectedCategory != null) {
+            // Validate _selectedCategory exists in loaded nature options
+            final hasNatureCode = parsedNatures.any(
+              (o) => o['code'] == _selectedCategory,
             );
-            if (matchByLabel.containsKey('code')) {
-              _selectedCategory = matchByLabel['code'];
-            }
-          }
-          _typeOptions = _getSubCategoriesForCode(_selectedCategory);
-          // Validate _selectedType exists in loaded options
-          if (_selectedType != null && _typeOptions.isNotEmpty) {
-            final hasCode = _typeOptions.any((o) => o['code'] == _selectedType);
-            if (!hasCode) {
+            if (!hasNatureCode) {
               // Fallback: try matching by label (API may return label instead of code)
-              final matchByLabel = _typeOptions.firstWhere(
-                (o) => o['label'] == _selectedType,
+              final matchByLabel = parsedNatures.firstWhere(
+                (o) => o['label'] == _selectedCategory,
                 orElse: () => {},
               );
               if (matchByLabel.containsKey('code')) {
-                _selectedType = matchByLabel['code'];
-              } else {
-                _selectedType = null;
+                _selectedCategory = matchByLabel['code'];
               }
             }
+            _typeOptions = _getSubCategoriesForCode(_selectedCategory);
+            // Validate _selectedType exists in loaded options
+            if (_selectedType != null && _typeOptions.isNotEmpty) {
+              final hasCode = _typeOptions.any((o) => o['code'] == _selectedType);
+              if (!hasCode) {
+                // Fallback: try matching by label (API may return label instead of code)
+                final matchByLabel = _typeOptions.firstWhere(
+                  (o) => o['label'] == _selectedType,
+                  orElse: () => {},
+                );
+                if (matchByLabel.containsKey('code')) {
+                  _selectedType = matchByLabel['code'];
+                } else {
+                  _selectedType = null;
+                }
+              }
+            }
+          } else {
+            _typeOptions = [];
           }
-        } else {
-          _typeOptions = [];
-        }
-      });
+        });
+      }
     } catch (e) {
       debugPrint('Error loading demande categories: $e');
-      setState(() {
-        _categoryLoadError = 'Impossible de charger les natures. Veuillez réessayer.';
-        _isCategoryLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _categoryLoadError =
+              'Impossible de charger les natures. Veuillez réessayer.';
+          _isCategoryLoading = false;
+        });
+      }
     }
   }
 
@@ -529,12 +1021,452 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     return List<Map<String, String>>.from(subs);
   }
 
+  // Obtenir les secteurs de formation selon la catégorie sélectionnée
+  List<Map<String, String>> _getFormationSectors(String? categoryValue) {
+    if (categoryValue == null) return [];
+
+    // Si c'est déjà un code connu, l'utiliser directement
+    String codeToUse = categoryValue;
+
+    // Sinon, chercher le code correspondant au label
+    if (!categoryValue.startsWith('formation_')) {
+      final match = _formationCategories.firstWhere(
+        (cat) => cat['label'] == categoryValue,
+        orElse: () => {},
+      );
+      if (match.isNotEmpty) {
+        codeToUse = match['code']!;
+      }
+    }
+
+    switch (codeToUse) {
+      case 'formation_agriculture':
+        return [
+          {'code': 'agriculture', 'label': 'Agriculture'},
+          {'code': 'agroalimentaire', 'label': 'Agroalimentaire'},
+          {'code': 'environnement', 'label': 'Environnement'},
+          {'code': 'agronomie', 'label': 'Agronomie'},
+        ];
+      case 'formation_art':
+        return [
+          {'code': 'arts_plastiques', 'label': 'Arts plastiques'},
+          {'code': 'arts_appliques', 'label': 'Arts appliqués'},
+          {'code': 'artisanat', 'label': 'Artisanat d\'art'},
+          {'code': 'design', 'label': 'Design'},
+        ];
+      case 'formation_commerce':
+        return [
+          {'code': 'vente', 'label': 'Techniques de vente'},
+          {'code': 'negociation', 'label': 'Négociation commerciale'},
+          {'code': 'marketing_digital', 'label': 'Marketing digital'},
+          {'code': 'relation_client', 'label': 'Relation client'},
+          {'code': 'commerce_international', 'label': 'Commerce international'},
+        ];
+      case 'formation_communication':
+        return [
+          {'code': 'communication_entreprise', 'label': 'Communication d\'entreprise'},
+          {'code': 'journalisme', 'label': 'Journalisme'},
+          {'code': 'redaction', 'label': 'Rédaction'},
+          {'code': 'media', 'label': 'Médias'},
+        ];
+      case 'formation_comptabilite':
+        return [
+          {'code': 'comptabilite', 'label': 'Comptabilité'},
+          {'code': 'gestion', 'label': 'Gestion'},
+          {'code': 'finance', 'label': 'Finance'},
+          {'code': 'audit', 'label': 'Audit et contrôle de gestion'},
+        ];
+      case 'formation_construction':
+        return [
+          {'code': 'batiment', 'label': 'Bâtiment'},
+          {'code': 'travaux_publics', 'label': 'Travaux publics'},
+          {'code': 'genie_civil', 'label': 'Génie civil'},
+          {'code': 'architecture', 'label': 'Architecture'},
+        ];
+      case 'formation_developpement':
+        return [
+          {'code': 'developpement_personnel', 'label': 'Développement personnel'},
+          {'code': 'coaching', 'label': 'Coaching'},
+          {'code': 'pnl', 'label': 'PNL'},
+        ];
+      case 'formation_droit':
+        return [
+          {'code': 'droit_prive', 'label': 'Droit privé'},
+          {'code': 'droit_public', 'label': 'Droit public'},
+          {'code': 'sciences_politiques', 'label': 'Sciences politiques'},
+          {'code': 'notariat', 'label': 'Notariat'},
+        ];
+      case 'formation_education':
+        return [
+          {'code': 'enseignement', 'label': 'Enseignement'},
+          {'code': 'pedagogie', 'label': 'Pédagogie'},
+          {'code': 'formation_adultes', 'label': 'Formation des adultes'},
+        ];
+      case 'formation_hotellerie':
+        return [
+          {'code': 'hotellerie', 'label': 'Hôtellerie'},
+          {'code': 'restauration', 'label': 'Restauration'},
+          {'code': 'tourisme', 'label': 'Tourisme'},
+          {'code': 'loisirs', 'label': 'Loisirs'},
+        ];
+      case 'formation_industrie':
+        return [
+          {'code': 'production', 'label': 'Production industrielle'},
+          {'code': 'maintenance', 'label': 'Maintenance'},
+          {'code': 'qualite', 'label': 'Qualité'},
+          {'code': 'logistique_industrielle', 'label': 'Logistique industrielle'},
+        ];
+      case 'formation_informatique':
+        return [
+          {'code': 'dev_web', 'label': 'Développement web'},
+          {'code': 'dev_mobile', 'label': 'Développement mobile'},
+          {'code': 'data_science', 'label': 'Data Science / IA'},
+          {'code': 'cybersecurite', 'label': 'Cybersécurité'},
+          {'code': 'reseaux', 'label': 'Réseaux et systèmes'},
+          {'code': 'devops', 'label': 'DevOps'},
+        ];
+      case 'formation_sante':
+        return [
+          {'code': 'soins_infirmiers', 'label': 'Soins infirmiers'},
+          {'code': 'aide_soignant', 'label': 'Aide-soignant'},
+          {'code': 'auxiliaire_vie', 'label': 'Auxiliaire de vie'},
+          {'code': 'kinesitherapie', 'label': 'Kinésithérapie'},
+          {'code': 'medicine', 'label': 'Médecine'},
+        ];
+      case 'formation_transport':
+        return [
+          {'code': 'transport_marchandises', 'label': 'Transport de marchandises'},
+          {'code': 'transport_voyageurs', 'label': 'Transport de voyageurs'},
+          {'code': 'logistique', 'label': 'Logistique'},
+          {'code': 'securite', 'label': 'Sécurité routière'},
+        ];
+      case 'formation_energie':
+        return [
+          {'code': 'energies_renouvelables', 'label': 'Énergies renouvelables'},
+          {'code': 'electricite', 'label': 'Électricité'},
+          {'code': 'nucleaire', 'label': 'Nucléaire'},
+          {'code': 'efficacite_energetique', 'label': 'Efficacité énergétique'},
+        ];
+      case 'formation_mecanique':
+        return [
+          {'code': 'aeronautique', 'label': 'Aéronautique'},
+          {'code': 'ferroviaire', 'label': 'Ferroviaire'},
+          {'code': 'automobile', 'label': 'Automobile'},
+          {'code': 'precision', 'label': 'Mécanique de précision'},
+        ];
+      case 'formation_fonction_publique':
+        return [
+          {'code': 'fonction_publique_etat', 'label': 'Fonction publique d\'État'},
+          {'code': 'fonction_publique_territoriale', 'label': 'Fonction publique territoriale'},
+          {'code': 'fonction_publique_hospitaliere', 'label': 'Fonction publique hospitalière'},
+        ];
+      case 'formation_jeux_video':
+        return [
+          {'code': 'game_design', 'label': 'Game design'},
+          {'code': 'animation_3d', 'label': 'Animation 3D'},
+          {'code': 'multimedia', 'label': 'Multimédia'},
+          {'code': 'realisation_jeux', 'label': 'Réalisation de jeux vidéo'},
+        ];
+      case 'formation_sciences':
+        return [
+          {'code': 'recherche', 'label': 'Recherche scientifique'},
+          {'code': 'biologie', 'label': 'Biologie'},
+          {'code': 'chimie', 'label': 'Chimie'},
+          {'code': 'physique', 'label': 'Physique'},
+          {'code': 'qualite', 'label': 'Qualité et normalisation'},
+        ];
+      case 'formation_langues':
+        return [
+          {'code': 'anglais', 'label': 'Anglais professionnel'},
+          {'code': 'espagnol', 'label': 'Espagnol'},
+          {'code': 'allemand', 'label': 'Allemand'},
+          {'code': 'italien', 'label': 'Italien'},
+          {'code': 'mandarin', 'label': 'Mandarin'},
+          {'code': 'arabe', 'label': 'Arabe'},
+          {'code': 'japonais', 'label': 'Japonais'},
+        ];
+      case 'formation_neurosciences':
+        return [
+          {'code': 'neurosciences_cognitives', 'label': 'Neurosciences cognitives'},
+          {'code': 'apprentissage', 'label': 'Apprentissage'},
+          {'code': 'pedagogie_innovante', 'label': 'Pédagogie innovante'},
+        ];
+      case 'transversal':
+        return [
+          {'code': 'management', 'label': 'Management'},
+          {'code': 'entrepreneuriat', 'label': 'Entrepreneuriat'},
+          {'code': 'soft_skills', 'label': 'Soft skills'},
+          {'code': 'gestion_projet', 'label': 'Gestion de projet'},
+        ];
+      case 'statuts':
+        return [
+          {'code': 'autoentrepreneur', 'label': 'Auto-entrepreneur'},
+          {'code': 'sasu', 'label': 'SASU'},
+          {'code': 'sarl', 'label': 'SARL'},
+          {'code': 'association', 'label': 'Association'},
+        ];
+      default:
+        return [];
+    }
+  }
+
+  /// Load job categories (secteurs d'activité) from API for Emploi/Stage forms
+  Future<void> _loadJobCategories() async {
+    setState(() {
+      _isJobCategoriesLoading = true;
+      _jobCategoriesLoadError = null;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(_categoriesApiUrl),
+        headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: const {'Method': 'getByType', 'type': 'offres_emploi'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Status code ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic> || decoded['status'] != 'success') {
+        final message = decoded is Map<String, dynamic>
+            ? decoded['message']?.toString() ??
+                  'Réponse invalide du service des catégories.'
+            : 'Réponse invalide du service des catégories.';
+        throw Exception(message);
+      }
+
+      final data = decoded['data'];
+      if (data is! Map<String, dynamic>) {
+        throw Exception('Structure de données inattendue.');
+      }
+
+      final mainRaw = data['main'];
+      final subsRaw = data['subs'];
+
+      final parsedSecteurs = <Map<String, String>>[];
+      final parsedCodeToId = <String, String>{};
+
+      if (mainRaw is List) {
+        for (final item in mainRaw) {
+          if (item is Map<String, dynamic>) {
+            final id = item['id']?.toString();
+            final code = item['code']?.toString();
+            final label = (item['label'] ?? item['labelEn'])?.toString();
+            if (id != null && code != null && label != null) {
+              parsedSecteurs.add({'id': id, 'code': code, 'label': label});
+              parsedCodeToId[code] = id;
+            }
+          }
+        }
+      }
+
+      final parsedFonctions = <String, List<Map<String, String>>>{};
+      if (subsRaw is Map) {
+        subsRaw.forEach((key, value) {
+          final parentId = key.toString();
+          if (value is List) {
+            final foncList = <Map<String, String>>[];
+            for (final fonc in value) {
+              if (fonc is Map<String, dynamic>) {
+                final foncCode = fonc['code']?.toString();
+                final foncLabel = (fonc['label'] ?? fonc['labelEn'])
+                    ?.toString();
+                if (foncCode != null && foncLabel != null) {
+                  foncList.add({'code': foncCode, 'label': foncLabel});
+                }
+              }
+            }
+            parsedFonctions[parentId] = foncList;
+          }
+        });
+      }
+
+      if (mounted) {
+        setState(() {
+          _jobSecteursOptions = parsedSecteurs;
+          _jobSecteursCodeToId
+            ..clear()
+            ..addAll(parsedCodeToId);
+          _jobFonctionsByParentId
+            ..clear()
+            ..addAll(parsedFonctions);
+          _isJobCategoriesLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading job categories: $e');
+      if (mounted) {
+        setState(() {
+          _jobCategoriesLoadError =
+              'Impossible de charger les secteurs d\'activité.';
+          _isJobCategoriesLoading = false;
+        });
+      }
+    }
+  }
+
+  /// Load training categories (catégories, secteurs, types) from API for Formation forms
+  Future<void> _loadTrainingCategories() async {
+    setState(() {
+      _isTrainingCategoriesLoading = true;
+      _trainingCategoriesLoadError = null;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(_categoriesApiUrl),
+        headers: const {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: const {'Method': 'getByType', 'type': 'formations'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Status code ${response.statusCode}');
+      }
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic> || decoded['status'] != 'success') {
+        final message = decoded is Map<String, dynamic>
+            ? decoded['message']?.toString() ??
+                  'Réponse invalide du service des catégories.'
+            : 'Réponse invalide du service des catégories.';
+        throw Exception(message);
+      }
+
+      final data = decoded['data'];
+      if (data is! Map<String, dynamic>) {
+        throw Exception('Structure de données inattendue.');
+      }
+
+      // Parse main categories
+      final mainRaw = data['main'];
+      final parsedCategories = <Map<String, String>>[];
+      final parsedCodeToId = <String, String>{};
+
+      if (mainRaw is List) {
+        for (final item in mainRaw) {
+          if (item is Map<String, dynamic>) {
+            final id = item['id']?.toString();
+            final code = item['code']?.toString();
+            final label = (item['label'] ?? item['labelEn'])?.toString();
+            if (id != null && code != null && label != null) {
+              parsedCategories.add({'id': id, 'code': code, 'label': label});
+              parsedCodeToId[code] = id;
+            }
+          }
+        }
+      }
+
+      // Parse sub-categories (secteurs) grouped by parentId
+      final parsedSecteursByParentId = <String, List<Map<String, String>>>{};
+      final subsRaw = data['subs'];
+      if (subsRaw is Map) {
+        subsRaw.forEach((key, value) {
+          final parentId = key.toString();
+          if (value is List) {
+            final secteurList = <Map<String, String>>[];
+            for (final secteur in value) {
+              if (secteur is Map<String, dynamic>) {
+                final secteurCode = secteur['code']?.toString();
+                final secteurLabel = (secteur['label'] ?? secteur['labelEn'])
+                    ?.toString();
+                if (secteurCode != null && secteurLabel != null) {
+                  secteurList.add({'code': secteurCode, 'label': secteurLabel});
+                }
+              }
+            }
+            parsedSecteursByParentId[parentId] = secteurList;
+          }
+        });
+      }
+
+      // Parse types from data['types'] or fallback to empty
+      final typesRaw = data['types'];
+      final parsedTypes = <Map<String, String>>[];
+      if (typesRaw is List) {
+        for (final type in typesRaw) {
+          if (type is Map<String, dynamic>) {
+            final typeCode = type['code']?.toString();
+            final typeLabel = (type['label'] ?? type['labelEn'])?.toString();
+            if (typeCode != null && typeLabel != null) {
+              parsedTypes.add({'code': typeCode, 'label': typeLabel});
+            }
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _trainingCategoriesOptions = parsedCategories;
+          _trainingCategoryCodeToId
+            ..clear()
+            ..addAll(parsedCodeToId);
+          _trainingSecteursByParentId
+            ..clear()
+            ..addAll(parsedSecteursByParentId);
+          _trainingTypesOptions = parsedTypes;
+          _isTrainingCategoriesLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading training categories: $e');
+      if (mounted) {
+        setState(() {
+          _trainingCategoriesLoadError =
+              'Impossible de charger les catégories de formation.';
+          _isTrainingCategoriesLoading = false;
+        });
+      }
+    }
+  }
+
+  /// Get fonctions (sub-categories) for a selected secteur d'activité
+  List<Map<String, String>> _getJobFonctionsForSecteur(String? secteurCode) {
+    if (secteurCode == null) return [];
+    final parentId = _jobSecteursCodeToId[secteurCode];
+    if (parentId == null) return [];
+    final fonctions = _jobFonctionsByParentId[parentId];
+    if (fonctions == null) return [];
+    return List<Map<String, String>>.from(fonctions);
+  }
+
+  /// Get secteurs de formation for a selected formation category
+  List<Map<String, String>> _getFormationSectorsForCategory(String? categoryCode) {
+    if (categoryCode == null) return [];
+    
+    // Try to find parentId by code first
+    String? parentId = _trainingCategoryCodeToId[categoryCode];
+    
+    // If not found by code, try to find by label (since we useLabelAsValue=true)
+    if (parentId == null) {
+      for (final category in _trainingCategoriesOptions) {
+        if (category['label'] == categoryCode) {
+          parentId = category['id'];
+          break;
+        }
+      }
+    }
+    
+    if (parentId == null) return [];
+    final secteurs = _trainingSecteursByParentId[parentId];
+    if (secteurs == null) return [];
+    return List<Map<String, String>>.from(secteurs);
+  }
+
   void _onNatureChanged(String? code) {
     setState(() {
       _selectedCategory = code;
-      _selectedType = null;
+      // _selectedType = null;
       _typeOptions = _getSubCategoriesForCode(code);
     });
+
+    // Load training categories from API when Formation is selected
+    if (code != null &&
+        (code.toLowerCase() == 'formation' ||
+            code.toLowerCase().contains('formation'))) {
+      _loadTrainingCategories();
+    }
   }
 
   Future<void> _submitDemande() async {
@@ -542,7 +1474,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     setState(() => _isSubmitting = true);
     try {
       final token = await TokenStorage.getAccessToken();
-      if (token == null) throw Exception('Session expirée. Veuillez vous reconnecter.');
+      if (token == null)
+        throw Exception('Session expirée. Veuillez vous reconnecter.');
 
       final payload = _buildDemandePayload();
       final uri = _isEditMode
@@ -575,17 +1508,52 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           final demandeId = _isEditMode
               ? widget.demandeId
               : (demandeData is Map ? demandeData['id']?.toString() : null);
-          if (_selectedMediaFiles.isNotEmpty && demandeId != null) {
+          if ((_selectedMediaFiles.isNotEmpty ||
+                  _selectedDocumentFiles.isNotEmpty) &&
+              demandeId != null) {
             await _uploadMediaFiles(demandeId);
           }
           await _clearSavedProgress();
           if (!mounted) return;
           setState(() => _isSubmitting = false);
           _showSuccessDialog();
+
+          // Award My's for creating a demande (only on create, not edit)
+          if (!_isEditMode) {
+            try {
+              final mysResponse = await MysEarningService().awardMys(
+                actionType: 'demande',
+                referenceId: demandeId,
+              );
+
+              if (mysResponse['success'] == true && mounted) {
+                // Update UserSession with new balance
+                final newBalance = mysResponse['earning']?['new_balance'];
+                if (newBalance != null) {
+                  UserSession().updateMys(newBalance);
+                }
+
+                // Show reward modal AFTER dialog closes - use microtask to avoid conflict
+                Future.microtask(() async {
+                  if (mounted) {
+                    await MysRewardModal.show(
+                      context,
+                      amount: mysResponse['earning']?['amount'] ?? 2,
+                      actionType: 'demande',
+                    );
+                  }
+                });
+              }
+            } catch (e) {
+              debugPrint("Error awarding My's for demande: $e");
+              // Don't block the user if awarding fails
+            }
+          }
           return;
         }
       }
-      final errorMsg = _extractErrorMessage(response.body) ??
+      final errorMsg =
+          _extractErrorMessage(response.body) ??
           (_isEditMode
               ? 'Impossible de modifier la demande (code ${response.statusCode}).'
               : 'Impossible de créer la demande (code ${response.statusCode}).');
@@ -600,11 +1568,16 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   }
 
   Map<String, dynamic> _buildDemandePayload() {
-    final description = _descriptionQuillController.document.toPlainText().trim();
-    final descriptionDelta = _descriptionQuillController.document.toDelta().toJson();
+    final description = _descriptionQuillController.document
+        .toPlainText()
+        .trim();
+    final descriptionDelta = _descriptionQuillController.document
+        .toDelta()
+        .toJson();
     final payload = <String, dynamic>{
       'nature': _selectedCategory,
       'type': _selectedType,
+      'function': _selectedFunction,
       'title': _titleController.text.trim(),
       'description': description,
       'description_delta': descriptionDelta,
@@ -617,18 +1590,96 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       'nationwide': _touteLaFrance,
       'use_current_location': _useCurrentLocation,
       'show_google_location': _showGoogleLocation,
-      'status': 'pending',
+      // Only send status on creation (backend forces 'published'). On edit,
+      // omit it so the existing 'published' status is preserved (otherwise the
+      // demande would drop out of the feed which only shows 'published').
+      if (!_isEditMode) 'status': 'pending',
+
+      // Variables Emploi/Stage
+      if (_tempsPartielPlein != null) 'work_type': _tempsPartielPlein,
+      if (_niveauEtudes != null) 'education_level': _niveauEtudes,
+      if (_niveauExperience != null) 'experience_level': _niveauExperience,
+      if (_accepteTeletravaill != null)
+        'accept_remote_work': _accepteTeletravaill,
+      if (_dansImmediat != null) 'immediate_availability': _dansImmediat,
+      if (_trancheSalariale != null) 'salary_range': _trancheSalariale,
+      if (_salaryMinController.text.trim().isNotEmpty)
+        'salary_min': int.tryParse(_salaryMinController.text.trim()),
+      if (_salaryMaxController.text.trim().isNotEmpty)
+        'salary_max': int.tryParse(_salaryMaxController.text.trim()),
+      if (_salaryNetOrBrut != null) 'salary_net_or_brut': _salaryNetOrBrut,
+      if (_salaryIndiceTemporel != null)
+        'salary_indice_temporel': _salaryIndiceTemporel,
+      if (_selectedSecteurActivite != null)
+        'activity_sector': _selectedSecteurActivite,
+      if (_selectedTypeContrat.isNotEmpty)
+        'contract_types': _selectedTypeContrat,
+
+      // Variables Formation
+      if (_selectedFormationCategory != null)
+        'training_category': _selectedFormationCategory,
+      if (_selectedFormationType != null)
+        'training_type': _selectedFormationType,
+      if (_selectedFormationSector != null)
+        'training_sector': _selectedFormationSector,
+
+      // Variables Immobilier
+      if (_selectedImmobilierType != null)
+        'real_estate_type': _selectedImmobilierType,
+      if (_selectedTypeBien.isNotEmpty) 'property_types': _selectedTypeBien,
+      if (_surfaceHabitableMinController.text.trim().isNotEmpty)
+        'surface_habitable_min': int.tryParse(
+          _surfaceHabitableMinController.text.trim(),
+        ),
+      if (_surfaceHabitableMaxController.text.trim().isNotEmpty)
+        'surface_habitable_max': int.tryParse(
+          _surfaceHabitableMaxController.text.trim(),
+        ),
+      if (_surfaceTerrainMinController.text.trim().isNotEmpty)
+        'surface_terrain_min': int.tryParse(
+          _surfaceTerrainMinController.text.trim(),
+        ),
+      if (_surfaceTerrainMaxController.text.trim().isNotEmpty)
+        'surface_terrain_max': int.tryParse(
+          _surfaceTerrainMaxController.text.trim(),
+        ),
+      if (_nbPieces != null && _nbPieces != 'Indifférent')
+        'nb_pieces': _nbPieces,
+      if (_nbChambres != null && _nbChambres != 'Indifférent')
+        'nb_chambres': _nbChambres,
+      if (_meuble != null) 'meuble': _meuble,
+      if (_selectedFinancingTypes.isNotEmpty)
+        'financing_types': _selectedFinancingTypes,
+      if (_selectedTeachingTypes.isNotEmpty)
+        'teaching_types': _selectedTeachingTypes,
+
+      // Documents
+      if (_docCand != null) 'use_candidate_documents': _docCand,
+      if (_selectedCvOptions.isNotEmpty) 'cv_options': _selectedCvOptions,
+
+      // Variables spécifiques Formation
+      if (_nbPersonnesController.text.trim().isNotEmpty)
+        'nb_personnes': int.tryParse(_nbPersonnesController.text.trim()),
+      if (_nbGroupesController.text.trim().isNotEmpty)
+        'nb_groupes': int.tryParse(_nbGroupesController.text.trim()),
+      if (_aDefinir != null) 'a_definir': _aDefinir,
     };
     if (_prixInitialController.text.trim().isNotEmpty) {
-      final v = double.tryParse(_prixInitialController.text.replaceAll(',', '.'));
+      final v = double.tryParse(
+        _prixInitialController.text.replaceAll(',', '.'),
+      );
       if (v != null && v > 0) payload['budget_min'] = v;
     }
     if (_prixFinalController.text.trim().isNotEmpty) {
       final v = double.tryParse(_prixFinalController.text.replaceAll(',', '.'));
       if (v != null && v > 0) payload['budget_max'] = v;
     }
-    if (_disponibleChezController.text.trim().isNotEmpty) {
-      payload['location'] = _disponibleChezController.text.trim();
+    if (_selectedLocation != null) {
+      payload['location'] = _selectedLocation?.address;
+      payload['latitude'] = _selectedLocation?.latitude;
+      payload['longitude'] = _selectedLocation?.longitude;
+      payload['location_city'] = _selectedLocation?.city;
+      payload['location_postal_code'] = _selectedLocation?.postalCode;
     }
     if (_rayonRecherche > 0) {
       payload['search_radius_km'] = _rayonRecherche.toInt();
@@ -655,7 +1706,6 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionQuillController.dispose();
-    _disponibleChezController.dispose();
     _prixInitialController.dispose();
     _prixFinalController.dispose();
     super.dispose();
@@ -663,14 +1713,25 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
   Future<void> _pickMedia() async {
     try {
+      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      if (files == null || files.isEmpty) return;
+      setState(() => _selectedMediaFiles.addAll(files));
+    } catch (_) {
+      _showSnack('Impossible d\'accéder à la galerie.', isError: true);
+    }
+  }
+
+  Future<void> _pickDocumentMedia() async {
+    try {
       final result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov'],
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
         withData: true,
       );
       if (result == null) return;
-      setState(() => _selectedMediaFiles.addAll(result.files));
+      setState(() => _selectedDocumentFiles.addAll(result.files));
+      _showSnack('${result.files.length} fichier(s) ajouté(s)');
     } catch (_) {
       _showSnack('Impossible d\'accéder aux fichiers.', isError: true);
     }
@@ -680,26 +1741,40 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     setState(() => _selectedMediaFiles.removeAt(index));
   }
 
-  Widget _buildMediaPreview(PlatformFile file) {
+  Widget _buildMediaPreview(GalleryMedia file) {
     final ext = file.extension?.toLowerCase();
     final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(ext);
     final isVideo = ['mp4', 'mov'].contains(ext);
     if (isImage && file.bytes != null) {
-      return Image.memory(file.bytes!, fit: BoxFit.cover, width: 100, height: 100);
+      return Image.memory(
+        file.bytes!,
+        fit: BoxFit.cover,
+        width: 100,
+        height: 100,
+      );
     } else if (isVideo) {
       return Container(
         color: Colors.black87,
-        child: const Center(child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white)),
+        child: const Center(
+          child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white),
+        ),
       );
     }
     return Container(
       color: const Color(0xFFF9FAFB),
-      child: const Center(child: Icon(Icons.insert_drive_file, size: 40, color: Color(0xFF3AAE5E))),
+      child: const Center(
+        child: Icon(
+          Icons.insert_drive_file,
+          size: 40,
+          color: Color(0xFF3AAE5E),
+        ),
+      ),
     );
   }
 
   Future<bool> _uploadMediaFiles(String demandeId) async {
-    if (_selectedMediaFiles.isEmpty) return true;
+    if (_selectedMediaFiles.isEmpty && _selectedDocumentFiles.isEmpty)
+      return true;
     setState(() => _isUploadingMedia = true);
     try {
       final token = await TokenStorage.getAccessToken();
@@ -708,24 +1783,70 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       final request = http.MultipartRequest('POST', uri)
         ..headers['Authorization'] = 'Bearer $token'
         ..headers['Accept'] = 'application/json';
+
+      // Add photos from _selectedMediaFiles
       for (final file in _selectedMediaFiles) {
         if (file.path != null) {
-          request.files.add(await http.MultipartFile.fromPath('media[]', file.path!, filename: file.name));
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'media[]',
+              file.path!,
+              filename: file.name,
+            ),
+          );
         } else if (file.bytes != null) {
-          request.files.add(http.MultipartFile.fromBytes('media[]', file.bytes!, filename: file.name ?? 'media'));
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'media[]',
+              file.bytes!,
+              filename: file.name ?? 'media',
+            ),
+          );
         }
       }
+
+      // Add documents from _selectedDocumentFiles
+      for (final file in _selectedDocumentFiles) {
+        if (file.path != null) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'documents[]',
+              file.path!,
+              filename: file.name,
+            ),
+          );
+        } else if (file.bytes != null) {
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'documents[]',
+              file.bytes!,
+              filename: file.name ?? 'document',
+            ),
+          );
+        }
+      }
+
       final streamed = await request.send();
       final body = await streamed.stream.bytesToString();
       if (streamed.statusCode >= 200 && streamed.statusCode < 300) {
-        setState(() => _selectedMediaFiles.clear());
+        setState(() {
+          _selectedMediaFiles.clear();
+          _selectedDocumentFiles.clear();
+          _documentFilesByType.clear();
+        });
         return true;
       }
-      final msg = _extractErrorMessage(body) ?? 'Impossible d\'envoyer les médias (${streamed.statusCode}).';
+      final msg =
+          _extractErrorMessage(body) ??
+          'Impossible d\'envoyer les médias (${streamed.statusCode}).';
       _showSnack(msg, isError: true);
+      print("Erreur upload: $msg");
       return false;
     } catch (_) {
-      _showSnack('Échec de l\'upload des médias. Veuillez réessayer.', isError: true);
+      _showSnack(
+        'Échec de l\'upload des médias. Veuillez réessayer.',
+        isError: true,
+      );
       return false;
     } finally {
       if (mounted) setState(() => _isUploadingMedia = false);
@@ -733,15 +1854,132 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   }
 
   void _showSnack(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: isError ? Colors.red.shade700 : const Color(0xFF3AAE5E),
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 4),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError
+            ? Colors.red.shade700
+            : const Color(0xFF3AAE5E),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  /// Handle the "Use my current location" checkbox toggle
+  Future<void> _handleUseCurrentLocationToggle(bool value) async {
+    if (!value) {
+      // Unchecked - clear location
+      setState(() {
+        _useCurrentLocation = false;
+        _selectedLocation = null;
+      });
+      return;
+    }
+
+    // Check location permission
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        _showSnack('Permission de localisation refusée', isError: true);
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _showSnack(
+        'Permission de localisation refusée définitivement. Veuillez l\'activer dans les paramètres.',
+        isError: true,
+      );
+      return;
+    }
+
+    // Show loading
+    setState(() => _useCurrentLocation = true);
+    _showSnack('Récupération de votre position...');
+
+    try {
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Reverse geocode to get address
+      final locationData = await LocationService.reverseGeocode(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (locationData != null) {
+        setState(() {
+          _useCurrentLocation = true;
+          _selectedLocation = locationData;
+        });
+        _showSnack('Position trouvée : ${locationData.address}');
+      } else {
+        setState(() => _useCurrentLocation = false);
+        _showSnack('Impossible de déterminer l\'adresse de votre position', isError: true);
+      }
+    } catch (e) {
+      setState(() => _useCurrentLocation = false);
+      _showSnack('Erreur lors de la récupération de la position : $e', isError: true);
+    }
+  }
+
+  Future<String> _getUserRole() async {
+    try {
+      final response = await ApiClient().authenticatedGet('/profile/me');
+      final userData = response['user'] as Map<String, dynamic>?;
+      final role = userData?['account_type']?.toString() ?? 'particulier';
+      return role.toLowerCase();
+    } catch (e) {
+      debugPrint('Error getting user role: $e');
+      return 'particulier'; // Valeur par défaut
+    }
+  }
+
+  List<Map<String, dynamic>> _filterNatureByRole(
+    List<Map<String, dynamic>> categories,
+    String role,
+  ) {
+    if (role == 'pro') {
+      // Pour les comptes pro, exclure "Recherche d'emploi"
+      // Pour les comptes pro, exclure "Recherche de stage"
+      return categories.where((cat) => cat['code'] != 'SearchJob').toList();
+    } else if (role == 'particulier') {
+      // Pour les comptes particuliers, vérifier si "Recherche de stage" existe
+      final hasInternship = categories.any(
+        (cat) => cat['code'] == 'Internship',
+      );
+      if (!hasInternship) {
+        // L'API ne retourne pas Internship — l'insérer après SearchJob (index 1)
+        final updatedCategories = categories.map((cat) {
+          final stringCat = <String, String>{};
+          for (final key in cat.keys) {
+            stringCat[key] = cat[key]?.toString() ?? '';
+          }
+          return stringCat;
+        }).toList();
+
+        updatedCategories.insert(0, {
+          'id': '999',
+          'code': 'Internship',
+          'label': 'Recherche de stage/Alternance',
+        });
+
+        return updatedCategories.cast<Map<String, dynamic>>();
+      }
+    }
+    return categories;
   }
 
   void _nextStep() {
+    final error = _validateCurrentStep();
+    if (error != null) {
+      _showSnack(error, isError: true);
+      return;
+    }
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
     }
@@ -751,6 +1989,78 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
     }
+  }
+
+  String? _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Step 1: Catégories
+        if (_selectedCategory == null) {
+          return 'Veuillez sélectionner la nature de la demande.';
+        }
+        break;
+
+      case 1: // Step 2: Détails selon la nature
+        if (_titleController.text.trim().length < 5) {
+          return 'Le titre doit contenir au moins 5 caractères.';
+        }
+        if (_descriptionQuillController.document.toPlainText().trim().length <
+            20) {
+          return 'La description doit contenir au moins 20 caractères.';
+        }
+
+        // Validations spécifiques selon la catégorie
+        if (_selectedCategory == 'SearchJob' ||
+            _selectedCategory == 'Internship') {
+          if (_selectedSecteurActivite == null) {
+            return 'Veuillez sélectionner un secteur d\'activité.';
+          }
+          if (_selectedFunction == null) {
+            return 'Veuillez sélectionner une fonction recherchée.';
+          }
+          if (_niveauExperience == null) {
+            return 'Veuillez sélectionner votre niveau d\'expérience.';
+          }
+          if (_selectedTypeContrat.isEmpty &&
+              _selectedCategory == 'Internship') {
+            return 'Veuillez sélectionner au moins un type de stage.';
+          }
+        }
+
+        if (_selectedCategory == 'Training') {
+          if (_selectedFormationCategory == null) {
+            return 'Veuillez sélectionner une catégorie de formation.';
+          }
+          if (_selectedFormationType == null) {
+            return 'Veuillez sélectionner un type de formation.';
+          }
+          if (_getFormationSectors(_selectedFormationCategory).isNotEmpty &&
+              _selectedFormationSector == null) {
+            return 'Veuillez sélectionner un secteur de formation.';
+          }
+          if (_selectedFinancingTypes.isEmpty) {
+            return 'Veuillez sélectionner au moins un type de financement.';
+          }
+        }
+
+        if (_selectedCategory == 'RealEstate') {
+          if (_selectedImmobilierType == null) {
+            return 'Veuillez sélectionner un type de demande immobilière.';
+          }
+        }
+        break;
+
+      case 2: // Step 3: Localisation
+        if (!_touteLaFrance &&
+            _selectedLocation == null &&
+            !_useCurrentLocation) {
+          return 'Veuillez indiquer une ville/adresse, utiliser votre position ou cocher "Toute la France".';
+        }
+        break;
+
+      case 3: // Step 4: Photos (optional)
+        break;
+    }
+    return null;
   }
 
   void _showSuccessDialog() {
@@ -772,7 +2082,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     Navigator.pop(context); // close dialog
                     Navigator.pop(context); // pop edit/create screen
                     if (widget.shouldReturnToListingOnSuccess) {
-                      Navigator.pop(context); // pop detail screen back to listing
+                      Navigator.pop(
+                        context,
+                      ); // pop detail screen back to listing
                     }
                   },
                   child: const Icon(Icons.close, color: Colors.grey, size: 22),
@@ -814,7 +2126,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Vous pouvez consulter cela au niveau de votre espace professionnel',
+                'Vous pouvez consulter cela au niveau de votre espace ',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -839,107 +2151,110 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         await _handleBackButton();
       },
       child: AppLayout(
-      backgroundColor: const Color(0xFFF9F9FB),
-      onTabTapped: (index) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (context) => ParticulierMainScreen(initialIndex: index),
-          ),
-          (route) => false,
-        );
-      },
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 12,
-                bottom: 4,
+        currentIndex: 2,
+        backgroundColor: const Color(0xFFF9F9FB),
+        onTabTapped: (index) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => ParticulierMainScreen(initialIndex: index),
+            ),
+            (route) => false,
+          );
+        },
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 12,
+                  bottom: 4,
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onTap: _handleBackButton,
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Color(0xFF616161),
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _isEditMode ? 'Modifier la demande' : 'Créer une demande',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontFamily: 'Manjari',
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF424242),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
+              // Subtitle
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  _isEditMode
+                      ? 'Modifiez les informations de votre demande'
+                      : 'Décrivez ce que vous recherchez et recevez des propositions',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Progress bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _buildProgressBar(),
+              ),
+              const SizedBox(height: 12),
+              // Previous button
+              if (_currentStep > 0)
+                Padding(
+                  padding: const EdgeInsets.only(left: 20),
+                  child: Align(
                     alignment: Alignment.centerLeft,
                     child: GestureDetector(
-                      onTap: _handleBackButton,
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Color(0xFF616161),
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    _isEditMode ? 'Modifier la demande' : 'Créer une demande',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontFamily: 'Manjari',
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF424242),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Subtitle
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                _isEditMode
-                    ? 'Modifiez les informations de votre demande'
-                    : 'Décrivez ce que vous recherchez et recevez des propositions',
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Progress bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _buildProgressBar(),
-            ),
-            const SizedBox(height: 12),
-            // Previous button
-            if (_currentStep > 0)
-              Padding(
-                padding: const EdgeInsets.only(left: 20),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: GestureDetector(
-                    onTap: _previousStep,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      child: const Text(
-                        'Précédent',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      onTap: _previousStep,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.grey.withOpacity(0.3),
+                          ),
+                        ),
+                        child: const Text(
+                          'Précédent',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
                       ),
                     ),
                   ),
                 ),
+              const SizedBox(height: 8),
+              // Step content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildCurrentStep(),
+                ),
               ),
-            const SizedBox(height: 8),
-            // Step content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _buildCurrentStep(),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -989,7 +2304,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 ),
               )
             else if (_categoryLoadError != null)
-              _buildInlineErrorBanner(_categoryLoadError!, onRetry: _loadDemandeCategories)
+              _buildInlineErrorBanner(
+                _categoryLoadError!,
+                onRetry: _loadDemandeCategories,
+              )
             else
               _buildDropdownFieldWithMap(
                 label: 'Nature de la demande*',
@@ -1010,6 +2328,23 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
   // ─── STEP 2: Details ───
   Widget _buildStep2Details() {
+    // Déterminer quel formulaire afficher selon la nature
+    if (_selectedCategory == 'Training') {
+      return _buildStep2Formation();
+    } else if (_selectedCategory == 'RealEstate') {
+      return _buildStep2Immobilier();
+    } else if (_selectedCategory == 'SearchJob') {
+      return _buildStep2Emploi();
+    } else if (_selectedCategory == 'Internship') {
+      return _buildStep2Stage();
+    }
+
+    // Formulaire par défaut
+    return _buildStep2Default();
+  }
+
+  // Formulaire par défaut
+  Widget _buildStep2Default() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1030,19 +2365,24 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               label: 'Titre de votre demande*',
               controller: _titleController,
               fieldKey: 'title',
-              helperText: 'Saisissez un titre clair et précis pour votre demande (ex: "Recherche plombier pour fuite d\'eau urgente").',
+              helperText:
+                  'Saisissez un titre clair et précis pour votre demande (ex: "Recherche plombier pour fuite d\'eau urgente").',
             ),
             const SizedBox(height: 12),
             _buildRichTextEditor(
               label: 'Description de votre demande*',
               controller: _descriptionQuillController,
               fieldKey: 'description',
-              helperText: 'Décrivez en détail ce que vous recherchez : contexte, contraintes, attentes particulières. Plus vous êtes précis, meilleures seront les réponses.',
+              helperText:
+                  'Décrivez en détail ce que vous recherchez : contexte, contraintes, attentes particulières. Plus vous êtes précis, meilleures seront les réponses.',
             ),
             const SizedBox(height: 16),
             Text(
               "Quel serait le délai idéal pour répondre à votre demande ?",
-              style: TextStyle(fontSize: 14, color: Colors.black.withOpacity(0.8)),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black.withOpacity(0.8),
+              ),
             ),
             const SizedBox(height: 8),
             _buildCheckOption("Dans l'immédiat (urgent)", _acceptDemand, () {
@@ -1062,24 +2402,40 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('À partir du :', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        const Text(
+                          'À partir du :',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () async {
                             final picked = await showDatePicker(
                               context: context,
                               initialDate: _startDate ?? DateTime.now(),
-                              firstDate: DateTime.now(),
-                              lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                              firstDate: DateTime.now().subtract(
+                                const Duration(days: 1),
+                              ),
+                              lastDate: DateTime.now().add(
+                                const Duration(days: 365 * 2),
+                              ),
                             );
-                            if (picked != null) setState(() => _startDate = picked);
+                            if (picked != null)
+                              setState(() => _startDate = picked);
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 14,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFE0E0E0)),
+                              border: Border.all(
+                                color: const Color(0xFFE0E0E0),
+                              ),
                             ),
                             child: Row(
                               children: [
@@ -1090,11 +2446,17 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                                         : 'mm/dd/yyyy',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: _startDate != null ? Colors.black87 : Colors.grey[400],
+                                      color: _startDate != null
+                                          ? Colors.black87
+                                          : Colors.grey[400],
                                     ),
                                   ),
                                 ),
-                                Icon(Icons.calendar_today, size: 18, color: Colors.grey[500]),
+                                Icon(
+                                  Icons.calendar_today,
+                                  size: 18,
+                                  color: Colors.grey[500],
+                                ),
                               ],
                             ),
                           ),
@@ -1107,24 +2469,43 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Jusqu\'au (facultatif) :', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        const Text(
+                          'Jusqu\'au (facultatif) :',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () async {
                             final picked = await showDatePicker(
                               context: context,
-                              initialDate: _endDate ?? _startDate ?? DateTime.now(),
-                              firstDate: _startDate ?? DateTime.now(),
-                              lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+                              initialDate:
+                                  _endDate ?? _startDate ?? DateTime.now(),
+                              firstDate:
+                                  _startDate ??
+                                  DateTime.now().subtract(
+                                    const Duration(days: 1),
+                                  ),
+                              lastDate: DateTime.now().add(
+                                const Duration(days: 365 * 2),
+                              ),
                             );
-                            if (picked != null) setState(() => _endDate = picked);
+                            if (picked != null)
+                              setState(() => _endDate = picked);
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 14,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFE0E0E0)),
+                              border: Border.all(
+                                color: const Color(0xFFE0E0E0),
+                              ),
                             ),
                             child: Row(
                               children: [
@@ -1135,11 +2516,17 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                                         : 'mm/dd/yyyy',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: _endDate != null ? Colors.black87 : Colors.grey[400],
+                                      color: _endDate != null
+                                          ? Colors.black87
+                                          : Colors.grey[400],
                                     ),
                                   ),
                                 ),
-                                Icon(Icons.calendar_today, size: 18, color: Colors.grey[500]),
+                                Icon(
+                                  Icons.calendar_today,
+                                  size: 18,
+                                  color: Colors.grey[500],
+                                ),
                               ],
                             ),
                           ),
@@ -1153,7 +2540,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             const SizedBox(height: 16),
             Text(
               "Quel est votre budget ?",
-              style: TextStyle(fontSize: 14, color: Colors.black.withOpacity(0.8)),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black.withOpacity(0.8),
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -1167,7 +2557,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               keyboardType: TextInputType.number,
               suffix: '€',
               fieldKey: 'budget_min',
-              helperText: 'Indiquez le montant minimum que vous êtes prêt à investir.',
+              helperText:
+                  'Indiquez le montant minimum que vous êtes prêt à investir.',
             ),
             const SizedBox(height: 12),
             _buildTextField(
@@ -1176,7 +2567,2277 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               keyboardType: TextInputType.number,
               suffix: '€',
               fieldKey: 'budget_max',
-              helperText: 'Indiquez le montant maximum que vous ne souhaitez pas dépasser.',
+              helperText:
+                  'Indiquez le montant maximum que vous ne souhaitez pas dépasser.',
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _buildNextButton(),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
+  // ─── STEP 2: Formation ───
+  Widget _buildStep2Formation() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildFormCard(
+          icon: Icons.school_outlined,
+          title: 'Détails de la formation',
+          children: [
+            // Loading or error state for training categories
+            if (_isTrainingCategoriesLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(
+                  child: SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              )
+            else if (_trainingCategoriesLoadError != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red.shade400, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _trainingCategoriesLoadError!,
+                        style: TextStyle(color: Colors.red.shade600, fontSize: 13),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _loadTrainingCategories,
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
+              )
+            else if (_trainingCategoriesOptions.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange.shade400, size: 18),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Catégories de formation non disponibles. Veuillez réessayer.',
+                        style: TextStyle(color: Colors.orange, fontSize: 13),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _loadTrainingCategories,
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
+              )
+            else
+              _buildDropdownFieldWithMap(
+                label: 'Catégorie de la formation recherchée*',
+                value: _selectedFormationCategory,
+                items: _trainingCategoriesOptions, // ONLY use API data
+                onChanged: (val) => setState(() {
+                      _selectedFormationCategory = val;
+                      _selectedFormationSector = null;
+                    }),
+                hint: _buildRequiredHint('Sélectionner une catégorie de formation'),
+                backgroundColor: const Color(0xFFF9FAFB),
+                useLabelAsValue: true,
+              ),
+            const SizedBox(height: 12),
+            // Afficher le champ Secteur - ONLY if API has loaded and has sectors for this category
+            if (_selectedFormationCategory != null &&
+                _trainingCategoriesOptions.isNotEmpty &&
+                _getFormationSectorsForCategory(_selectedFormationCategory).isNotEmpty) ...[
+              _buildDropdownFieldWithMap(
+                label: 'Secteur de formation recherché*',
+                value: _selectedFormationSector,
+                items: _getFormationSectorsForCategory(_selectedFormationCategory),
+                onChanged: (val) => setState(() => _selectedFormationSector = val),
+                hint: _buildRequiredHint('Sélectionner un secteur'),
+                backgroundColor: const Color(0xFFF9FAFB),
+              ),
+              const SizedBox(height: 12),
+            ],
+            _buildDropdownFieldWithMap(
+              label: 'Type de formation recherchée*',
+              value: _selectedFormationType,
+              items: _trainingTypesOptions.isNotEmpty
+                  ? _trainingTypesOptions
+                  : _formationTypes, // Fallback to hardcoded if API empty
+              onChanged: (val) => setState(() => _selectedFormationType = val),
+              hint: _buildRequiredHint('Sélectionner un type'),
+              backgroundColor: const Color(0xFFF9FAFB),
+            ),
+            const SizedBox(height: 12),
+
+            Text(
+              'Intitulé de la formation recherchée *',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 2),
+            _buildTextField(
+              label: 'Intitulé de la formation recherchée*',
+              controller: _titleController,
+              fieldKey: 'title',
+              helperText: 'Ex: Formation data analyste',
+            ),
+            const SizedBox(height: 16),
+
+            // Type d'enseignement (choix multiple)
+            _buildCheckboxGroup(
+              title: "Type d'enseignement* (Choix multiple possible)",
+              options: [
+                {'code': 'tout', 'label': 'Tout'},
+                {'code': 'entreprise', 'label': 'En entreprise'},
+                {'code': 'alternance', 'label': 'En alternance'},
+                {'code': 'centre', 'label': 'En centre'},
+                {'code': 'distance', 'label': 'À distance'},
+              ],
+              selectedValues: _selectedTeachingTypes,
+              onChanged: (code, checked) {
+                setState(() {
+                  if (checked) {
+                    _selectedTeachingTypes.add(code);
+                  } else {
+                    _selectedTeachingTypes.remove(code);
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Financement (choix multiple)
+            _buildCheckboxGroup(
+              title: "Financement* (Choix multiple possible)",
+              options: [
+                {'code': 'tout', 'label': 'Tout'},
+                {
+                  'code': 'conseil_regional',
+                  'label': 'Conseil régional - Collectivités territoriales',
+                },
+                {'code': 'opco', 'label': 'Opérateur de compétences (OPCO)'},
+                {'code': 'mission_locale', 'label': 'Mission Locale'},
+                {'code': 'auto_financement', 'label': 'Auto-Financement'},
+                {'code': 'agefiph', 'label': 'AGEFIPH'},
+                {'code': 'pole_emploi', 'label': 'Pôle Emploi'},
+                {'code': 'cpf', 'label': 'Compte Personnel de Formation'},
+              ],
+              selectedValues: _selectedFinancingTypes,
+              onChanged: (code, checked) {
+                setState(() {
+                  if (checked) {
+                    _selectedFinancingTypes.add(code);
+                  } else {
+                    _selectedFinancingTypes.remove(code);
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Disponibilités
+            Text(
+              "Quelles sont vos disponibilités ?",
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Theme(
+              data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
+              child: CheckboxListTile(
+                dense: true,
+                activeColor: const Color(0xFF3AAE5E),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text(
+                  "Dans l'immédiat",
+                  style: TextStyle(fontSize: 15),
+                ),
+                value: _dansImmediat,
+                onChanged: (checked) {
+                  setState(() {
+                    _dansImmediat = checked ?? false;
+                    if (_dansImmediat) {
+                      _startDate = null;
+                      _endDate = null;
+                    }
+                  });
+                },
+              ),
+            ),
+            if (!_dansImmediat) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDateField(
+                      label: 'À partir du :',
+                      selectedDate: _startDate,
+                      onDateSelected: (date) =>
+                          setState(() => _startDate = date),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDateField(
+                      label: 'Jusqu\'au (facultatif) :',
+                      selectedDate: _endDate,
+                      onDateSelected: (date) => setState(() => _endDate = date),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            _buildRichTextEditor(
+              label: 'Décrivez votre demande de formation*',
+              controller: _descriptionQuillController,
+              fieldKey: 'description',
+              helperText:
+                  'Décrivez en détail la formation que vous recherchez...',
+            ),
+            const SizedBox(height: 16),
+
+            // Ajouter des documents
+            Text(
+              "Ajouter des documents",
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "(Portfolio etc...)",
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () {
+                _pickDocumentMedia();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 40,
+                  horizontal: 20,
+                ),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.grey[300]!,
+                    width: 2,
+                    style: BorderStyle.solid,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey[50],
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF3AAE5E),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Ajouter des fichiers',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Nombre de personnes ou groupes
+            if (userRole == 'pro') ...[
+              Text(
+                "Nombre de personnes ou de groupes à former*",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                  fontFamily: 'Manjari',
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: AbsorbPointer(
+                      absorbing: _aDefinir,
+                      child: Opacity(
+                        opacity: _aDefinir ? 0.5 : 1.0,
+                        child: _buildTextField(
+                          label: 'Nb personne',
+                          controller: _nbPersonnesController,
+                          keyboardType: TextInputType.number,
+                          fieldKey: 'nb_personnes',
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AbsorbPointer(
+                      absorbing: _aDefinir,
+                      child: Opacity(
+                        opacity: _aDefinir ? 0.5 : 1.0,
+                        child: _buildTextField(
+                          label: 'Nb groupes',
+                          controller: _nbGroupesController,
+                          keyboardType: TextInputType.number,
+                          fieldKey: 'nb_groupes',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Theme(
+                data: ThemeData(
+                  visualDensity: const VisualDensity(vertical: -4),
+                ),
+                child: CheckboxListTile(
+                  dense: true,
+                  activeColor: const Color(0xFF3AAE5E),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: const Text(
+                    "À définir",
+                    style: TextStyle(fontSize: 15),
+                  ),
+                  value: _aDefinir,
+                  onChanged: (checked) {
+                    setState(() {
+                      _aDefinir = checked ?? false;
+                      if (_aDefinir) {
+                        _nbPersonnesController.clear();
+                        _nbGroupesController.clear();
+                      }
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 15),
+
+              // Partager vos réseaux sociaux professionnels
+              Text(
+                'Partager vos réseaux sociaux professionnels (Cela augmente vos chances de vous faire remarquer)',
+                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Vous n\'avez renseigné aucun réseau social. Veuillez mettre à jour votre profil pour que le réseau social s\'affiche ici',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 24),
+        _buildNextButton(),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
+  // ─── STEP 2: Immobilier ───
+  Widget _buildStep2Immobilier() {
+    // Déterminer quel formulaire afficher selon le type sélectionné
+    Widget? specificForm;
+
+    if (_selectedImmobilierType == 'RealEstateInvestment') {
+      specificForm = _buildStep2ImmobilierInvestissement();
+    } else if (_selectedImmobilierType == 'LookingForRental' ||
+        _selectedImmobilierType == 'LookingForSharedHousing') {
+      specificForm = _buildStep2ImmobilierLocation();
+    } else if (_selectedImmobilierType == 'LookingForProfessionalSpace') {
+      specificForm = _buildStep2ImmobilierLocalPro();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildFormCard(
+          icon: Icons.home_outlined,
+          title: 'Détails de votre recherche',
+          children: [
+            _buildDropdownFieldWithMap(
+              label: 'Type de demande*',
+              value: _selectedImmobilierType,
+              items: _immobilierTypeOptions,
+              onChanged: (val) => setState(() {
+                _selectedImmobilierType = val;
+                _selectedTypeBien.clear();
+              }),
+              hint: _buildRequiredHint('Sélectionner un type de demande'),
+              backgroundColor: const Color(0xFFF9FAFB),
+            ),
+          ],
+        ),
+        if (specificForm != null) ...[
+          const SizedBox(height: 16),
+          specificForm,
+        ] else ...[
+          const SizedBox(height: 24),
+          _buildNextButton(),
+          const SizedBox(height: 30),
+        ],
+      ],
+    );
+  }
+
+  // Formulaire pour Investissement immobilier
+  Widget _buildStep2ImmobilierInvestissement() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildFormCard(
+          icon: Icons.home_outlined,
+          title: 'Détails recherche immobiliere',
+          children: [
+            // Type de bien (choix multiple)
+            _buildCheckboxGroup(
+              title: "Type de bien* (Choix multiple possible)",
+              options: [
+                {'code': 'appartement', 'label': 'Appartement'},
+                {'code': 'maison', 'label': 'Maison'},
+                {'code': 'terrain', 'label': 'Terrain'},
+                {'code': 'parking_box', 'label': 'Parking/Box'},
+                {'code': 'loft_atelier', 'label': 'Loft/Atelier'},
+                {'code': 'local_professionnel', 'label': 'Local professionnel'},
+                {'code': 'bureau', 'label': 'Bureau'},
+                {'code': 'chateau', 'label': 'Château'},
+                {'code': 'hotel_particulier', 'label': 'Hôtel particulier'},
+                {'code': 'batiment', 'label': 'Bâtiment'},
+                {'code': 'boutique', 'label': 'Boutique'},
+                {'code': 'immeuble', 'label': 'Immeuble'},
+                {'code': 'peniche', 'label': 'Péniche'},
+                {'code': 'divers', 'label': 'Divers'},
+              ],
+              selectedValues: _selectedTypeBien,
+              onChanged: (code, checked) {
+                setState(() {
+                  if (checked) {
+                    _selectedTypeBien.add(code);
+                  } else {
+                    _selectedTypeBien.remove(code);
+                  }
+                });
+              },
+              scrollable: true,
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextField(
+              label: 'Quel est le titre de la demande ?*',
+              controller: _titleController,
+              fieldKey: 'title',
+              helperText: 'Ex: Appartement 3 pièces centre-ville',
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Quel est votre budget ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Vous pouvez n\'indiquer qu\'un seul des deux, les deux ou aucun',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Budget minimum',
+                    controller: _prixInitialController,
+                    keyboardType: TextInputType.number,
+                    suffix: '€',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Budget maximum',
+                    controller: _prixFinalController,
+                    keyboardType: TextInputType.number,
+                    suffix: '€',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Pour quelle surface habitable ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Minimum',
+                    controller: _surfaceHabitableMinController,
+                    keyboardType: TextInputType.number,
+                    suffix: 'm²',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Maximum',
+                    controller: _surfaceHabitableMaxController,
+                    keyboardType: TextInputType.number,
+                    suffix: 'm²',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Pour quelle surface de terrain ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Minimum',
+                    controller: _surfaceTerrainMinController,
+                    keyboardType: TextInputType.number,
+                    suffix: 'm²',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Maximum',
+                    controller: _surfaceTerrainMaxController,
+                    keyboardType: TextInputType.number,
+                    suffix: 'm²',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Combien de pièces souhaitez-vous ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  '1',
+                  _nbPieces,
+                  (val) => setState(() => _nbPieces = val),
+                ),
+                _buildNumberChip(
+                  '2',
+                  _nbPieces,
+                  (val) => setState(() => _nbPieces = val),
+                ),
+                _buildNumberChip(
+                  '3',
+                  _nbPieces,
+                  (val) => setState(() => _nbPieces = val),
+                ),
+                _buildNumberChip(
+                  '4',
+                  _nbPieces,
+                  (val) => setState(() => _nbPieces = val),
+                ),
+                _buildNumberChip(
+                  '5 ou +',
+                  _nbPieces,
+                  (val) => setState(() => _nbPieces = val),
+                ),
+                _buildNumberChip(
+                  'Indifférent',
+                  _nbPieces,
+                  (val) => setState(() => _nbPieces = val),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Combien de chambres souhaitez-vous ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  '1',
+                  _nbChambres,
+                  (val) => setState(() => _nbChambres = val),
+                ),
+                _buildNumberChip(
+                  '2',
+                  _nbChambres,
+                  (val) => setState(() => _nbChambres = val),
+                ),
+                _buildNumberChip(
+                  '3',
+                  _nbChambres,
+                  (val) => setState(() => _nbChambres = val),
+                ),
+                _buildNumberChip(
+                  '4',
+                  _nbChambres,
+                  (val) => setState(() => _nbChambres = val),
+                ),
+                _buildNumberChip(
+                  '5 ou +',
+                  _nbChambres,
+                  (val) => setState(() => _nbChambres = val),
+                ),
+                _buildNumberChip(
+                  'Indifférent',
+                  _nbChambres,
+                  (val) => setState(() => _nbChambres = val),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            _buildRichTextEditor(
+              label: 'Décrivez votre demande**',
+              controller: _descriptionQuillController,
+              fieldKey: 'description',
+              helperText: 'Décrivez en détail ce que vous recherchez...',
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _buildNextButton(),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
+  // Formulaire pour Cherche location / Cherche colocation
+  Widget _buildStep2ImmobilierLocation() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildFormCard(
+          icon: Icons.home_outlined,
+          title: 'Détails recherche immobiliere',
+          children: [
+            // Type de bien (choix multiple)
+            _buildCheckboxGroup(
+              title: "Type de bien* (Choix multiple possible)",
+              options: [
+                {'code': 'appartement', 'label': 'Appartement'},
+                {'code': 'maison', 'label': 'Maison'},
+                {'code': 'terrain', 'label': 'Terrain'},
+                {'code': 'parking_box', 'label': 'Parking/Box'},
+                {'code': 'loft_atelier', 'label': 'Loft/Atelier'},
+                {'code': 'local_professionnel', 'label': 'Local professionnel'},
+                {'code': 'bureau', 'label': 'Bureau'},
+                {'code': 'chateau', 'label': 'Château'},
+                {'code': 'hotel_particulier', 'label': 'Hôtel particulier'},
+                {'code': 'batiment', 'label': 'Bâtiment'},
+                {'code': 'boutique', 'label': 'Boutique'},
+                {'code': 'immeuble', 'label': 'Immeuble'},
+                {'code': 'peniche', 'label': 'Péniche'},
+                {'code': 'divers', 'label': 'Divers'},
+              ],
+              selectedValues: _selectedTypeBien,
+              onChanged: (code, checked) {
+                setState(() {
+                  if (checked) {
+                    _selectedTypeBien.add(code);
+                  } else {
+                    _selectedTypeBien.remove(code);
+                  }
+                });
+              },
+              scrollable: true,
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextField(
+              label: 'Quel est le titre de la demande ?*',
+              controller: _titleController,
+              fieldKey: 'title',
+              helperText: 'Ex: Appartement 3 pièces centre-ville',
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Quel est votre budget ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Vous pouvez n\'indiquer qu\'un seul des deux, les deux ou aucun',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Budget minimum',
+                    controller: _prixInitialController,
+                    keyboardType: TextInputType.number,
+                    suffix: '€',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Budget maximum',
+                    controller: _prixFinalController,
+                    keyboardType: TextInputType.number,
+                    suffix: '€',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Pour quelle surface habitable ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Minimum',
+                    controller: _surfaceHabitableMinController,
+                    keyboardType: TextInputType.number,
+                    suffix: 'm²',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Maximum',
+                    controller: _surfaceHabitableMaxController,
+                    keyboardType: TextInputType.number,
+                    suffix: 'm²',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Pour quelle surface de terrain ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Minimum',
+                    controller: _surfaceTerrainMinController,
+                    keyboardType: TextInputType.number,
+                    suffix: 'm²',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Maximum',
+                    controller: _surfaceTerrainMaxController,
+                    keyboardType: TextInputType.number,
+                    suffix: 'm²',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Combien de pièces souhaitez-vous ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  '1',
+                  _nbPieces,
+                  (val) => setState(() => _nbPieces = val),
+                ),
+                _buildNumberChip(
+                  '2',
+                  _nbPieces,
+                  (val) => setState(() => _nbPieces = val),
+                ),
+                _buildNumberChip(
+                  '3',
+                  _nbPieces,
+                  (val) => setState(() => _nbPieces = val),
+                ),
+                _buildNumberChip(
+                  '4',
+                  _nbPieces,
+                  (val) => setState(() => _nbPieces = val),
+                ),
+                _buildNumberChip(
+                  '5 ou +',
+                  _nbPieces,
+                  (val) => setState(() => _nbPieces = val),
+                ),
+                _buildNumberChip(
+                  'Indifférent',
+                  _nbPieces,
+                  (val) => setState(() => _nbPieces = val),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Combien de chambres souhaitez-vous ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  '1',
+                  _nbChambres,
+                  (val) => setState(() => _nbChambres = val),
+                ),
+                _buildNumberChip(
+                  '2',
+                  _nbChambres,
+                  (val) => setState(() => _nbChambres = val),
+                ),
+                _buildNumberChip(
+                  '3',
+                  _nbChambres,
+                  (val) => setState(() => _nbChambres = val),
+                ),
+                _buildNumberChip(
+                  '4',
+                  _nbChambres,
+                  (val) => setState(() => _nbChambres = val),
+                ),
+                _buildNumberChip(
+                  '5 ou +',
+                  _nbChambres,
+                  (val) => setState(() => _nbChambres = val),
+                ),
+                _buildNumberChip(
+                  'Indifférent',
+                  _nbChambres,
+                  (val) => setState(() => _nbChambres = val),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Meublé / Non-Meublé
+            Text(
+              'Meublé / Non-Meublé',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  'Meublé',
+                  _meuble,
+                  (val) => setState(() => _meuble = val),
+                ),
+                _buildNumberChip(
+                  'Non-Meublé',
+                  _meuble,
+                  (val) => setState(() => _meuble = val),
+                ),
+                _buildNumberChip(
+                  'Indifférent',
+                  _meuble,
+                  (val) => setState(() => _meuble = val),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            _buildRichTextEditor(
+              label: 'Décrivez votre demande**',
+              controller: _descriptionQuillController,
+              fieldKey: 'description',
+              helperText: 'Décrivez en détail ce que vous recherchez...',
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _buildNextButton(),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
+  // Formulaire pour Cherche local professionnel
+  Widget _buildStep2ImmobilierLocalPro() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildFormCard(
+          icon: Icons.home_outlined,
+          title: 'Détails recherche immobiliere',
+          children: [
+            // Type de bien (choix multiple)
+            _buildCheckboxGroup(
+              title: "Type de bien* (Choix multiple possible)",
+              options: [
+                {'code': 'bureau', 'label': 'Bureau'},
+                {'code': 'boutique', 'label': 'Boutique'},
+                {'code': 'fond_commerce', 'label': 'Fond de commerce'},
+                {'code': 'terrain', 'label': 'Terrain'},
+                {'code': 'local_commercial', 'label': 'Local commercial'},
+                {'code': 'coworking', 'label': 'Coworking'},
+              ],
+              selectedValues: _selectedTypeBien,
+              onChanged: (code, checked) {
+                setState(() {
+                  if (checked) {
+                    _selectedTypeBien.add(code);
+                  } else {
+                    _selectedTypeBien.remove(code);
+                  }
+                });
+              },
+              scrollable: true,
+            ),
+            const SizedBox(height: 16),
+
+            _buildTextField(
+              label: 'Quel est le titre de la demande ?*',
+              controller: _titleController,
+              fieldKey: 'title',
+              helperText: 'Ex: Appartement 3 pièces centre-ville',
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Quel est votre budget ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Vous pouvez n\'indiquer qu\'un seul des deux, les deux ou aucun',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Budget minimum',
+                    controller: _prixInitialController,
+                    keyboardType: TextInputType.number,
+                    suffix: '€',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Budget maximum',
+                    controller: _prixFinalController,
+                    keyboardType: TextInputType.number,
+                    suffix: '€',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Pour quelle surface habitable ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Minimum',
+                    controller: _surfaceHabitableMinController,
+                    keyboardType: TextInputType.number,
+                    suffix: 'm²',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Maximum',
+                    controller: _surfaceHabitableMaxController,
+                    keyboardType: TextInputType.number,
+                    suffix: 'm²',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Pour quelle surface de terrain ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Minimum',
+                    controller: _surfaceTerrainMinController,
+                    keyboardType: TextInputType.number,
+                    suffix: 'm²',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTextField(
+                    label: 'Maximum',
+                    controller: _surfaceTerrainMaxController,
+                    keyboardType: TextInputType.number,
+                    suffix: 'm²',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Meublé / Non-Meublé
+            Text(
+              'Meublé / Non-Meublé',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  'Meublé',
+                  _meuble,
+                  (val) => setState(() => _meuble = val),
+                ),
+                _buildNumberChip(
+                  'Non-Meublé',
+                  _meuble,
+                  (val) => setState(() => _meuble = val),
+                ),
+                _buildNumberChip(
+                  'Indifférent',
+                  _meuble,
+                  (val) => setState(() => _meuble = val),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            _buildRichTextEditor(
+              label: 'Décrivez votre demande**',
+              controller: _descriptionQuillController,
+              fieldKey: 'description',
+              helperText: 'Décrivez en détail ce que vous recherchez...',
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _buildNextButton(),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
+  // ─── STEP 2: Emploi/Stage ───
+  Widget _buildStep2Emploi() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildFormCard(
+          icon: Icons.work_outline,
+          title: 'Détails du poste recherché',
+          children: [
+            _buildDropdownFieldWithMap(
+              label: 'Secteur d\'activité*',
+              value: _selectedSecteurActivite,
+              items: _jobSecteursOptions.isNotEmpty ? _jobSecteursOptions : [],
+              onChanged: (val) {
+                setState(() {
+                  _selectedSecteurActivite = val;
+                  _selectedFunction =
+                      null; // Reset function when sector changes
+                });
+              },
+              hint: _buildRequiredHint('Sélectionner un secteur d\'activité'),
+              backgroundColor: const Color(0xFFF9FAFB),
+            ),
+            const SizedBox(height: 16),
+
+            // Afficher le champ "Fonction recherchée" seulement si un secteur est sélectionné
+            if (_selectedSecteurActivite != null) ...[
+              _buildDropdownFieldWithMap(
+                label: 'Fonction recherchée*',
+                value: _selectedFunction,
+                items: _getJobFonctionsForSecteur(_selectedSecteurActivite),
+                onChanged: (val) => setState(() => _selectedFunction = val),
+                hint: _buildRequiredHint('Sélectionner une fonction'),
+                backgroundColor: const Color(0xFFF9FAFB),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            _buildTextField(
+              label: 'Quel est le poste recherché ?*',
+              controller: _titleController,
+              fieldKey: 'title',
+              helperText: 'Titre (ex: recherche développeur)',
+            ),
+            const SizedBox(height: 16),
+
+            // Type de contrat recherché (choix multiple)
+            _buildCheckboxGroup(
+              title: "Type de contrat recherché* (Choix multiple)",
+              options: [
+                {'code': 'cdi', 'label': 'Contrat à durée indéterminée'},
+                {'code': 'cdd', 'label': 'Contrat à durée déterminée'},
+                {'code': 'interim', 'label': 'Intérim'},
+                {
+                  'code': 'independant',
+                  'label': 'Indépendant / Freelance / Franchise',
+                },
+                {'code': 'benevolat', 'label': 'Bénévolat'},
+              ],
+              selectedValues: _selectedTypeContrat,
+              onChanged: (code, checked) {
+                setState(() {
+                  if (checked) {
+                    _selectedTypeContrat.add(code);
+                  } else {
+                    _selectedTypeContrat.remove(code);
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Temps plein ou temps partiel
+            Text(
+              'Temps plein ou temps partiel ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  'Temps plein',
+                  _tempsPartielPlein,
+                  (val) => setState(() => _tempsPartielPlein = val),
+                ),
+                _buildNumberChip(
+                  'Temps partiel',
+                  _tempsPartielPlein,
+                  (val) => setState(() => _tempsPartielPlein = val),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Quel est votre niveau d'études
+            _buildDropdownFieldWithMap(
+              label: 'Quel est votre niveau d\'études ?',
+              value: _niveauEtudes,
+              items: [
+                {'code': 'sans_diplome', 'label': 'Sans diplome'},
+                {'code': 'cap_bep', 'label': 'CAP/BEP'},
+                {
+                  'code': 'bac_employe',
+                  'label': 'BAC/Employé/Ouvrier spécialisé',
+                },
+                {
+                  'code': 'bac2_technicien',
+                  'label': 'BAC+2/Technicien/Employé',
+                },
+                {
+                  'code': 'bac3_agent_maitrise',
+                  'label': 'BAC+3/Agent de maîtrise',
+                },
+                {
+                  'code': 'bac5_ingenieur',
+                  'label': 'BAC+5 ou plus/Ingénieur/Cadre',
+                },
+              ],
+              onChanged: (val) => setState(() => _niveauEtudes = val),
+              hint: const Text('Sélectionner'),
+              backgroundColor: Colors.white,
+            ),
+            const SizedBox(height: 16),
+
+            // Quel est votre niveau d'expérience
+            _buildDropdownFieldWithMap(
+              label: 'Quel est votre niveau d\'expérience ?*',
+              value: _niveauExperience,
+              items: [
+                {'code': 'debutant', 'label': 'Débutant : de 0 a 1 annee'},
+                {
+                  'code': 'intermediaire',
+                  'label': 'Intermédiaire : de 2 a 4 annee',
+                },
+                {'code': 'confirme', 'label': 'Confirme : de 5 a 9 annee'},
+                {'code': 'senior', 'label': 'Senior : de 10 annee ou plus'},
+              ],
+              onChanged: (val) => setState(() => _niveauExperience = val),
+              hint: const Text('Sélectionner'),
+              backgroundColor: Colors.white,
+            ),
+            const SizedBox(height: 16),
+
+            // Quelles sont vos disponibilités
+            Text(
+              'Quelles sont vos disponibilités ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Theme(
+              data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
+              child: CheckboxListTile(
+                dense: true,
+                activeColor: const Color(0xFF3AAE5E),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text(
+                  "Dans l'immédiat",
+                  style: TextStyle(fontSize: 15),
+                ),
+                value: _dansImmediat,
+                onChanged: (checked) {
+                  setState(() {
+                    _dansImmediat = checked ?? false;
+                    if (_dansImmediat) {
+                      _startDate = null;
+                      _endDate = null;
+                    }
+                  });
+                },
+              ),
+            ),
+            if (!_dansImmediat) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDateField(
+                      label: 'À partir du :',
+                      selectedDate: _startDate,
+                      onDateSelected: (date) =>
+                          setState(() => _startDate = date),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDateField(
+                      label: 'Jusqu\'au (facultatif) :',
+                      selectedDate: _endDate,
+                      onDateSelected: (date) => setState(() => _endDate = date),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            // Quel est votre prétention salariale
+            Text(
+              'Quel est votre prétention salariale ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  'Tranche salariale',
+                  _trancheSalariale,
+                  (val) => setState(() => _trancheSalariale = val),
+                ),
+                _buildNumberChip(
+                  'Salaire exact',
+                  _trancheSalariale,
+                  (val) => setState(() => _trancheSalariale = val),
+                ),
+                _buildNumberChip(
+                  'Aucune',
+                  _trancheSalariale,
+                  (val) => setState(() => _trancheSalariale = val),
+                ),
+              ],
+            ),
+
+            // Champs conditionnels pour "Tranche salariale"
+            if (_trancheSalariale == 'Tranche salariale') ...[
+              const SizedBox(height: 16),
+              Text(
+                'Tranche salariale',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      label: 'Min',
+                      controller: _salaryMinController,
+                      keyboardType: TextInputType.number,
+                      suffix: '€',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '-',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildTextField(
+                      label: 'Max',
+                      controller: _salaryMaxController,
+                      keyboardType: TextInputType.number,
+                      suffix: '€',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDropdownFieldWithMap(
+                      label: 'Net ou Brut ?',
+                      value: _salaryNetOrBrut,
+                      items: [
+                        {'code': 'net', 'label': 'Net'},
+                        {'code': 'brut', 'label': 'Brut'},
+                      ],
+                      onChanged: (val) =>
+                          setState(() => _salaryNetOrBrut = val),
+                      hint: const Text('Sélectionner'),
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDropdownFieldWithMap(
+                      label: 'Indice temporel',
+                      value: _salaryIndiceTemporel,
+                      items: [
+                        {'code': 'heures', 'label': 'Heures'},
+                        {'code': 'jours', 'label': 'Jours'},
+                        {'code': 'semaines', 'label': 'Semaines'},
+                        {'code': 'mois', 'label': 'Mois'},
+                        {'code': 'annees', 'label': 'Années'},
+                      ],
+                      onChanged: (val) =>
+                          setState(() => _salaryIndiceTemporel = val),
+                      hint: const Text('Sélectionner'),
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            // Acceptez-vous une offre en télétravail
+            Text(
+              'Acceptez-vous une offre en télétravail ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  'Oui',
+                  _accepteTeletravaill ? 'Oui' : null,
+                  (val) => setState(() => _accepteTeletravaill = true),
+                ),
+                _buildNumberChip(
+                  'Non',
+                  !_accepteTeletravaill && _accepteTeletravaill != null
+                      ? 'Non'
+                      : null,
+                  (val) => setState(() => _accepteTeletravaill = false),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            _buildRichTextEditor(
+              label: 'Décrivez votre demande**',
+              controller: _descriptionQuillController,
+              fieldKey: 'description',
+              helperText: 'Décrivez en détail ce que vous recherchez...',
+            ),
+            const SizedBox(height: 16),
+
+            // Utiliser les documents de l'espace candidat
+            CheckboxListTile(
+              dense: true,
+              activeColor: const Color(0xFF3AAE5E),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: const Text(
+                "Utiliser les documents de l'espace candidat",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                  fontFamily: 'Manjari',
+                ),
+              ),
+              value: _docCand,
+              onChanged: (checked) {
+                setState(() {
+                  _docCand = checked ?? false;
+                });
+                // Load candidate documents when checkbox is checked
+                if (_docCand && _candidateDocuments.isEmpty) {
+                  _loadCandidateDocuments();
+                }
+              },
+            ),
+            if (_docCand) ...[
+              const SizedBox(height: 16),
+              // Show candidate documents from API
+              if (_isLoadingCandidateDocs)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              else if (_candidateDocsError != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red.shade400, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _candidateDocsError!,
+                          style: TextStyle(color: Colors.red.shade600, fontSize: 13),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _loadCandidateDocuments,
+                        child: const Text('Réessayer'),
+                      ),
+                    ],
+                  ),
+                )
+              else if (_visibleCandidateDocuments.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Documents de l\'espace candidat:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1,
+                      ),
+                      itemCount: _visibleCandidateDocuments.length,
+                      itemBuilder: (context, index) {
+                        final doc = _visibleCandidateDocuments[index];
+                        return _buildCandidateDocumentCard(doc);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+            ],
+            if (!_docCand) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Aucun document dans l\'espace candidat',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  _buildDocumentChip('Ajouter un CV', 'cv'),
+                  _buildDocumentChip(
+                    'Ajouter une lettre de motivation',
+                    'lettre_motivation',
+                  ),
+                  _buildDocumentChip('Ajouter un portfolio', 'portfolio'),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+            // Ajouter des documents
+            Text(
+              'Ajouter des documents',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1,
+              ),
+              itemCount: _selectedDocumentFiles.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) return _buildAddDocButton();
+                final docIndex = index - 1;
+                return _buildDocumentPreviewCard(
+                  _selectedDocumentFiles[docIndex],
+                  docIndex,
+                );
+              },
+            ),
+            const SizedBox(height: 15),
+
+            // Partager vos réseaux sociaux professionnels
+            Text(
+              'Partager vos réseaux sociaux professionnels (Cela augmente vos chances de vous faire remarquer)',
+              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Vous n\'avez renseigné aucun réseau social. Veuillez mettre à jour votre profil pour que le réseau social s\'affiche ici',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _buildNextButton(),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
+  // ─── STEP 2: Stage ───
+  Widget _buildStep2Stage() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildFormCard(
+          icon: Icons.work_outline,
+          title: 'Détails du poste recherché',
+          children: [
+            _buildDropdownFieldWithMap(
+              label: 'Secteur d\'activité*',
+              value: _selectedSecteurActivite,
+              items: _jobSecteursOptions.isNotEmpty ? _jobSecteursOptions : [],
+              onChanged: (val) {
+                setState(() {
+                  _selectedSecteurActivite = val;
+                  _selectedFunction =
+                      null; // Reset function when sector changes
+                });
+              },
+              hint: _buildRequiredHint('Sélectionner un secteur d\'activité'),
+              backgroundColor: const Color(0xFFF9FAFB),
+            ),
+            const SizedBox(height: 16),
+
+            // Afficher le champ "Quel est le poste recherché ?" seulement si un secteur est sélectionné
+            if (_selectedSecteurActivite != null) ...[
+              _buildDropdownFieldWithMap(
+                label: 'Fonction recherchée*',
+                value: _selectedFunction,
+                items: _getJobFonctionsForSecteur(_selectedSecteurActivite),
+                onChanged: (val) => setState(() => _selectedFunction = val),
+                hint: _buildRequiredHint('Sélectionner une fonction'),
+                backgroundColor: const Color(0xFFF9FAFB),
+                useLabelAsValue: true,
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            _buildTextField(
+              label: 'Quel est le poste recherché ?*',
+              controller: _titleController,
+              fieldKey: 'title',
+              helperText: 'Titre de l\'annonce (ex: recherche développeur)',
+            ),
+            const SizedBox(height: 16),
+
+            // Type de contrat recherché (choix multiple)
+            _buildCheckboxGroup(
+              title: "Type de contrat recherché* (Choix multiple)",
+              options: [
+                {'code': 'apprentissage', 'label': 'Apprentissage/Alternance'},
+                {'code': 'stage', 'label': 'Stage'},
+              ],
+              selectedValues: _selectedTypeContrat,
+              onChanged: (code, checked) {
+                setState(() {
+                  if (checked) {
+                    _selectedTypeContrat.add(code);
+                  } else {
+                    _selectedTypeContrat.remove(code);
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Temps plein ou temps partiel
+            Text(
+              'Temps plein ou temps partiel ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  'Temps plein',
+                  _tempsPartielPlein,
+                  (val) => setState(() => _tempsPartielPlein = val),
+                ),
+                _buildNumberChip(
+                  'Temps partiel',
+                  _tempsPartielPlein,
+                  (val) => setState(() => _tempsPartielPlein = val),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Quel est votre niveau d'études
+            _buildDropdownFieldWithMap(
+              label: 'Quel est votre niveau d\'études ?',
+              value: _niveauEtudes,
+              items: [
+                {'code': 'sans_diplome', 'label': 'Sans diplome'},
+                {'code': 'cap_bep', 'label': 'CAP/BEP'},
+                {
+                  'code': 'bac_employe',
+                  'label': 'BAC/Employé/Ouvrier spécialisé',
+                },
+                {
+                  'code': 'bac2_technicien',
+                  'label': 'BAC+2/Technicien/Employé',
+                },
+                {
+                  'code': 'bac3_agent_maitrise',
+                  'label': 'BAC+3/Agent de maîtrise',
+                },
+                {
+                  'code': 'bac5_ingenieur',
+                  'label': 'BAC+5 ou plus/Ingénieur/Cadre',
+                },
+              ],
+              onChanged: (val) => setState(() => _niveauEtudes = val),
+              hint: const Text('Sélectionner'),
+              backgroundColor: Colors.white,
+              useLabelAsValue: true,
+            ),
+            const SizedBox(height: 16),
+
+            // Quel est votre niveau d'expérience
+            _buildDropdownFieldWithMap(
+              label: 'Quel est votre niveau d\'expérience ?*',
+              value: _niveauExperience,
+              items: [
+                {'code': 'debutant', 'label': 'Débutant : de 0 a 1 annee'},
+                {
+                  'code': 'intermediaire',
+                  'label': 'Intermédiaire : de 2 a 4 annee',
+                },
+                {'code': 'confirme', 'label': 'Confirme : de 5 a 9 annee'},
+                {'code': 'senior', 'label': 'Senior : de 10 annee ou plus'},
+              ],
+              onChanged: (val) => setState(() => _niveauExperience = val),
+              hint: const Text('Sélectionner'),
+              backgroundColor: Colors.white,
+            ),
+            const SizedBox(height: 16),
+
+            // Quelles sont vos disponibilités
+            Text(
+              'Quelles sont vos disponibilités ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            CheckboxListTile(
+              dense: true,
+              activeColor: const Color(0xFF3AAE5E),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: const Text(
+                "Dans l'immédiat",
+                style: TextStyle(fontSize: 15),
+              ),
+              value: _dansImmediat,
+              onChanged: (checked) {
+                setState(() {
+                  _dansImmediat = checked ?? false;
+                  if (_dansImmediat) {
+                    _startDate = null;
+                    _endDate = null;
+                  }
+                });
+              },
+            ),
+            if (!_dansImmediat) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDateField(
+                      label: 'À partir du :',
+                      selectedDate: _startDate,
+                      onDateSelected: (date) =>
+                          setState(() => _startDate = date),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDateField(
+                      label: 'Jusqu\'au (facultatif) :',
+                      selectedDate: _endDate,
+                      onDateSelected: (date) => setState(() => _endDate = date),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            // Quel est votre prétention salariale
+            Text(
+              'Quel est votre prétention salariale ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  'Tranche salariale',
+                  _trancheSalariale,
+                  (val) => setState(() => _trancheSalariale = val),
+                ),
+                _buildNumberChip(
+                  'Salaire exact',
+                  _trancheSalariale,
+                  (val) => setState(() => _trancheSalariale = val),
+                ),
+                _buildNumberChip(
+                  'Aucune',
+                  _trancheSalariale,
+                  (val) => setState(() => _trancheSalariale = val),
+                ),
+              ],
+            ),
+
+            // Champs conditionnels pour "Tranche salariale"
+            if (_trancheSalariale == 'Tranche salariale') ...[
+              const SizedBox(height: 16),
+              Text(
+                'Tranche salariale',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      label: 'Min',
+                      controller: _salaryMinController,
+                      keyboardType: TextInputType.number,
+                      suffix: '€',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '-',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildTextField(
+                      label: 'Max',
+                      controller: _salaryMaxController,
+                      keyboardType: TextInputType.number,
+                      suffix: '€',
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDropdownFieldWithMap(
+                      label: 'Net ou Brut ?',
+                      value: _salaryNetOrBrut,
+                      items: [
+                        {'code': 'net', 'label': 'Net'},
+                        {'code': 'brut', 'label': 'Brut'},
+                      ],
+                      onChanged: (val) =>
+                          setState(() => _salaryNetOrBrut = val),
+                      hint: const Text('Sélectionner'),
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildDropdownFieldWithMap(
+                      label: 'Indice temporel',
+                      value: _salaryIndiceTemporel,
+                      items: [
+                        {'code': 'heures', 'label': 'Heures'},
+                        {'code': 'jours', 'label': 'Jours'},
+                        {'code': 'semaines', 'label': 'Semaines'},
+                        {'code': 'mois', 'label': 'Mois'},
+                        {'code': 'annees', 'label': 'Années'},
+                      ],
+                      onChanged: (val) =>
+                          setState(() => _salaryIndiceTemporel = val),
+                      hint: const Text('Sélectionner'),
+                      backgroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            // Acceptez-vous une offre en télétravail
+            Text(
+              'Acceptez-vous une offre en télétravail ?',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: [
+                _buildNumberChip(
+                  'Oui',
+                  _accepteTeletravaill ? 'Oui' : null,
+                  (val) => setState(() => _accepteTeletravaill = true),
+                ),
+                _buildNumberChip(
+                  'Non',
+                  !_accepteTeletravaill && _accepteTeletravaill != null
+                      ? 'Non'
+                      : null,
+                  (val) => setState(() => _accepteTeletravaill = false),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            _buildRichTextEditor(
+              label: 'Décrivez votre demande**',
+              controller: _descriptionQuillController,
+              fieldKey: 'description',
+              helperText: 'Décrivez en détail ce que vous recherchez...',
+            ),
+            const SizedBox(height: 16),
+
+            // Utiliser les documents de l'espace candidat
+            CheckboxListTile(
+              dense: true,
+              activeColor: const Color(0xFF3AAE5E),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              title: const Text(
+                "Utiliser les documents de l'espace candidat",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                  fontFamily: 'Manjari',
+                ),
+              ),
+              value: _docCand,
+              onChanged: (checked) {
+                setState(() {
+                  _docCand = checked ?? false;
+                });
+                // Load candidate documents when checkbox is checked
+                if (_docCand && _candidateDocuments.isEmpty) {
+                  _loadCandidateDocuments();
+                }
+              },
+            ),
+            if (_docCand) ...[
+              const SizedBox(height: 16),
+              // Show candidate documents from API
+              if (_isLoadingCandidateDocs)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                )
+              else if (_candidateDocsError != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red.shade400, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _candidateDocsError!,
+                          style: TextStyle(color: Colors.red.shade600, fontSize: 13),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _loadCandidateDocuments,
+                        child: const Text('Réessayer'),
+                      ),
+                    ],
+                  ),
+                )
+              else if (_visibleCandidateDocuments.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Documents de l\'espace candidat:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1,
+                      ),
+                      itemCount: _visibleCandidateDocuments.length,
+                      itemBuilder: (context, index) {
+                        final doc = _visibleCandidateDocuments[index];
+                        return _buildCandidateDocumentCard(doc);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+            ],
+            if (!_docCand) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Aucun document dans l\'espace candidat',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  _buildDocumentChip('Ajouter un CV', 'cv'),
+                  _buildDocumentChip(
+                    'Ajouter une lettre de motivation',
+                    'lettre_motivation',
+                  ),
+                  _buildDocumentChip('Ajouter un portfolio', 'portfolio'),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+            // Ajouter des documents
+            Text(
+              'Ajouter des documents',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF424242),
+                fontFamily: 'Manjari',
+              ),
+            ),
+            const SizedBox(height: 8),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1,
+              ),
+              itemCount: _selectedDocumentFiles.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) return _buildAddDocButton();
+                final docIndex = index - 1;
+                return _buildDocumentPreviewCard(
+                  _selectedDocumentFiles[docIndex],
+                  docIndex,
+                );
+              },
+            ),
+            const SizedBox(height: 15),
+            // Partager vos réseaux sociaux professionnels
+            Text(
+              'Partager vos réseaux sociaux professionnels (Cela augmente vos chances de vous faire remarquer)',
+              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Vous n\'avez renseigné aucun réseau social. Veuillez mettre à jour votre profil pour que le réseau social s\'affiche ici',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ),
@@ -1201,26 +4862,41 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             }),
             if (!_touteLaFrance) ...[
               const SizedBox(height: 12),
-              _buildTextField(
+              LocationPickerField(
+                initialLocation: _selectedLocation,
                 label: 'Ville ou adresse',
-                controller: _disponibleChezController,
-                fieldKey: 'location',
-                helperText: 'Indiquez la ville ou l\'adresse où vous souhaitez que la prestation soit réalisée.',
+                helperText: 'Recherchez une ville, adresse ou code postal',
+                onLocationSelected: (location) {
+                  setState(() {
+                    _selectedLocation = location;
+                    if (location != null) {
+                      _useCurrentLocation = false;
+                    }
+                  });
+                },
               ),
               const SizedBox(height: 8),
               _buildCheckOption(
                 'Utiliser ma position actuelle',
                 _useCurrentLocation,
-                () => setState(() => _useCurrentLocation = !_useCurrentLocation),
+                () => _handleUseCurrentLocationToggle(!_useCurrentLocation),
               ),
               const SizedBox(height: 16),
               const Text(
                 'Rayon de recherche',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF424242)),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF424242),
+                ),
               ),
               Text(
                 '${_rayonRecherche.toInt()} km',
-                style: const TextStyle(fontSize: 13, color: Color(0xFFFF9800), fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFFFF9800),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 4),
               SliderTheme(
@@ -1230,7 +4906,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   thumbColor: const Color(0xFFEF8A40),
                   overlayColor: const Color(0xFFEF8A40).withOpacity(0.2),
                   trackHeight: 2,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 8,
+                  ),
                 ),
                 child: Slider(
                   value: _rayonRecherche,
@@ -1245,7 +4923,15 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: ['0 km', '50 km', '100 km', '150 km', '200 km']
-                      .map((t) => Text(t, style: TextStyle(fontSize: 11, color: Colors.grey[500])))
+                      .map(
+                        (t) => Text(
+                          t,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -1277,17 +4963,29 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             children: [
               Text(
                 'Ajoutez des photos',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF424242)),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF424242),
+                ),
               ),
               SizedBox(height: 8),
               Text(
                 'Illustrez votre demande avec des photos pour attirer plus de réponses pertinentes.',
-                style: TextStyle(fontSize: 14, color: Color(0xFF666666), height: 1.4),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF666666),
+                  height: 1.4,
+                ),
               ),
               SizedBox(height: 20),
               Text(
-                'Vos photos',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF424242)),
+                'Vos photos (non-obligatoires)',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
               ),
             ],
           ),
@@ -1307,16 +5005,60 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             if (index == 0) return _buildAddPhotoButton();
             final existingCount = _existingMediaUrls.length;
             if (index <= existingCount) {
-              return _buildExistingPhotoCard(_existingMediaUrls[index - 1], index - 1);
+              return _buildExistingPhotoCard(
+                _existingMediaUrls[index - 1],
+                index - 1,
+              );
             }
             final newIndex = index - 1 - existingCount;
-            return _buildPhotoPreviewCard(_selectedMediaFiles[newIndex], newIndex);
+            return _buildPhotoPreviewCard(
+              _selectedMediaFiles[newIndex],
+              newIndex,
+            );
           },
         ),
         const SizedBox(height: 24),
         _buildNextButton(),
         const SizedBox(height: 30),
       ],
+    );
+  }
+
+  Widget _buildAddDocButton() {
+    return GestureDetector(
+      onTap: _pickDocumentMedia,
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F9F4),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF3AAE5E), width: 2),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3AAE5E).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.add, size: 40, color: Color(0xFF3AAE5E)),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _selectedDocumentFiles.isEmpty
+                  ? 'Ajouter des documents'
+                  : 'Ajouter plus',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF3AAE5E),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1338,12 +5080,22 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 color: const Color(0xFF3AAE5E).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.camera_alt, size: 40, color: Color(0xFF3AAE5E)),
+              child: const Icon(
+                Icons.camera_alt,
+                size: 40,
+                color: Color(0xFF3AAE5E),
+              ),
             ),
             const SizedBox(height: 12),
             Text(
-              _selectedMediaFiles.isEmpty ? 'Ajouter des photos' : 'Ajouter plus',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF3AAE5E)),
+              _selectedMediaFiles.isEmpty
+                  ? 'Ajouter des photos'
+                  : 'Ajouter plus',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF3AAE5E),
+              ),
             ),
           ],
         ),
@@ -1356,7 +5108,13 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -1375,7 +5133,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 loadingBuilder: (_, child, loadingProgress) {
                   if (loadingProgress == null) return child;
                   return const Center(
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFFF9800)),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFFFF9800),
+                    ),
                   );
                 },
               ),
@@ -1383,19 +5144,32 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           ),
           if (isCover)
             Positioned(
-              bottom: 0, left: 0, right: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 decoration: const BoxDecoration(
                   color: Color(0xFF3AAE5E),
-                  borderRadius: BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
                 ),
-                child: const Text('Photo de couverture', textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                child: const Text(
+                  'Photo de couverture',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           Positioned(
-            top: 8, right: 8,
+            top: 8,
+            right: 8,
             child: GestureDetector(
               onTap: () => setState(() => _existingMediaUrls.removeAt(index)),
               child: Container(
@@ -1403,9 +5177,19 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.close, size: 18, color: Color(0xFF666666)),
+                child: const Icon(
+                  Icons.close,
+                  size: 18,
+                  color: Color(0xFF666666),
+                ),
               ),
             ),
           ),
@@ -1414,12 +5198,204 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     );
   }
 
-  Widget _buildPhotoPreviewCard(PlatformFile file, int index) {
+  Widget _buildDocumentPreviewCard(PlatformFile file, int index) {
+    final ext = file.extension?.toLowerCase();
+    final isPdf = ext == 'pdf';
+    final isDoc = ext == 'doc' || ext == 'docx';
+    final isImage = ['jpg', 'jpeg', 'png'].contains(ext);
+
+    Widget contentWidget;
+
+    if (isImage && file.bytes != null) {
+      contentWidget = ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.memory(
+          file.bytes!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+        ),
+      );
+    } else {
+      IconData iconData;
+      Color iconColor;
+      if (isPdf) {
+        iconData = Icons.picture_as_pdf;
+        iconColor = Colors.red;
+      } else if (isDoc) {
+        iconData = Icons.description;
+        iconColor = Colors.blue;
+      } else if (isImage) {
+        iconData = Icons.image;
+        iconColor = Colors.green;
+      } else {
+        iconData = Icons.insert_drive_file;
+        iconColor = Colors.grey;
+      }
+
+      contentWidget = Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(iconData, size: 48, color: iconColor),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                file.name,
+                style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+        color: Colors.grey[50],
+      ),
+      child: Stack(
+        children: [
+          contentWidget,
+          Positioned(
+            top: 8,
+            right: 8,
+            child: GestureDetector(
+              onTap: () => _removeDocument(index),
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: 18,
+                  color: Color(0xFF666666),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build a card for candidate documents from API
+  Widget _buildCandidateDocumentCard(Map<String, dynamic> doc) {
+    final docId = doc['id'].toString();
+    final fileName = doc['original_name'] as String? ?? 'Document';
+    final fileType = doc['type'] as String? ?? '';
+    final fileUrl = doc['url'] as String? ?? '';
+    final mimeType = doc['mime_type'] as String? ?? '';
+    final isPdf = mimeType.contains('pdf');
+    final isDoc = mimeType.contains('msword') || mimeType.contains('officedocument');
+
+    IconData iconData;
+    Color iconColor;
+    if (isPdf) {
+      iconData = Icons.picture_as_pdf;
+      iconColor = Colors.red;
+    } else if (isDoc) {
+      iconData = Icons.description;
+      iconColor = Colors.blue;
+    } else if (fileType == 'cv') {
+      iconData = Icons.badge;
+      iconColor = const Color(0xFF3AAE5E);
+    } else if (fileType == 'lettre' || fileType == 'lettre_motivation') {
+      iconData = Icons.mail;
+      iconColor = Colors.blue;
+    } else if (fileType == 'portfolio') {
+      iconData = Icons.folder;
+      iconColor = Colors.orange;
+    } else {
+      iconData = Icons.insert_drive_file;
+      iconColor = Colors.grey;
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF3AAE5E).withOpacity(0.3)),
+        color: const Color(0xFFF0F9F2),
+      ),
+      child: Stack(
+        children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(iconData, size: 40, color: iconColor),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    fileName,
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 6,
+            right: 6,
+            child: GestureDetector(
+              onTap: () => _removeCandidateDocument(docId),
+              child: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: 16,
+                  color: Color(0xFF666666),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoPreviewCard(GalleryMedia file, int index) {
     final isCover = index == 0 && _existingMediaUrls.isEmpty;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -1434,19 +5410,32 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           ),
           if (isCover)
             Positioned(
-              bottom: 0, left: 0, right: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 decoration: const BoxDecoration(
                   color: Color(0xFF3AAE5E),
-                  borderRadius: BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
+                  ),
                 ),
-                child: const Text('Photo de couverture', textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                child: const Text(
+                  'Photo de couverture',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           Positioned(
-            top: 8, right: 8,
+            top: 8,
+            right: 8,
             child: GestureDetector(
               onTap: () => _removeMedia(index),
               child: Container(
@@ -1454,15 +5443,311 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.close, size: 18, color: Color(0xFF666666)),
+                child: const Icon(
+                  Icons.close,
+                  size: 18,
+                  color: Color(0xFF666666),
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Helper pour obtenir le label à partir d'un code dans une liste de maps
+  String _getLabelFromCode(List<Map<String, String>> items, String? code) {
+    if (code == null) return '-';
+    final match = items.firstWhere(
+      (o) => o['code'] == code,
+      orElse: () => {'label': code},
+    );
+    return match['label'] ?? code;
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '-';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  List<Widget> _buildReviewRowsForCategory() {
+    final rows = <Widget>[];
+
+    // Titre (commun à tous)
+    rows.add(
+      _buildReviewRow(
+        'Titre',
+        _titleController.text.trim().isEmpty
+            ? '-'
+            : _titleController.text.trim(),
+      ),
+    );
+
+    // Description (commun à tous)
+    final descText = _descriptionQuillController.document.toPlainText().trim();
+    rows.add(_buildReviewRow('Description', descText.isEmpty ? '-' : descText));
+
+    // ─── Emploi / Stage ───
+    if (_selectedCategory == 'SearchJob' || _selectedCategory == 'Internship') {
+      rows.add(
+        _buildReviewRow(
+          'Secteur d\'activité',
+          // _getLabelFromCode(_secteursActivite, _selectedSecteurActivite),
+          _selectedSecteurActivite!,
+        ),
+      );
+      rows.add(
+        _buildReviewRow(
+          'Fonction recherchée',
+          // _getLabelFromCode(_allFunction, _selectedFunction),
+          _selectedFunction!,
+        ),
+      );
+      if (_tempsPartielPlein != null) {
+        rows.add(_buildReviewRow('Temps de travail', _tempsPartielPlein!));
+      }
+      if (_niveauEtudes != null) {
+        rows.add(_buildReviewRow('Niveau d\'études', _niveauEtudes!));
+      }
+      if (_niveauExperience != null) {
+        rows.add(_buildReviewRow('Niveau d\'expérience', _niveauExperience!));
+      }
+      if (_trancheSalariale != null) {
+        if (_trancheSalariale == 'Tranche salariale' &&
+            (_salaryMinController.text.trim().isNotEmpty ||
+                _salaryMaxController.text.trim().isNotEmpty)) {
+          String salaryRange = '';
+          if (_salaryMinController.text.trim().isNotEmpty) {
+            salaryRange += _salaryMinController.text.trim();
+          }
+          salaryRange += ' - ';
+          if (_salaryMaxController.text.trim().isNotEmpty) {
+            salaryRange += _salaryMaxController.text.trim();
+          }
+          salaryRange += ' €';
+          if (_salaryNetOrBrut != null) {
+            salaryRange += ' (${_salaryNetOrBrut == 'net' ? 'Net' : 'Brut'})';
+          }
+          if (_salaryIndiceTemporel != null) {
+            salaryRange +=
+                ' / ${_salaryIndiceTemporel != null ? '$_salaryIndiceTemporel' : 'Années'}';
+          }
+          rows.add(_buildReviewRow('Tranche salariale', salaryRange));
+        } else {
+          rows.add(_buildReviewRow('Prétention salariale', _trancheSalariale!));
+        }
+      }
+      rows.add(
+        _buildReviewRow(
+          'Télétravail accepté',
+          _accepteTeletravaill ? 'Oui' : 'Non',
+        ),
+      );
+      rows.add(
+        _buildReviewRow('Dans l\'immédiat', _dansImmediat ? 'Oui' : 'Non'),
+      );
+      if (!_dansImmediat) {
+        rows.add(_buildReviewRow('À partir du', _formatDate(_startDate)));
+        rows.add(_buildReviewRow('Jusqu\'au', _formatDate(_endDate)));
+      }
+      if (_selectedTypeContrat.isNotEmpty) {
+        rows.add(
+          _buildReviewRow('Type de contrat', _selectedTypeContrat.join(', ')),
+        );
+      }
+      if (_prixInitialController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Budget min',
+            '${_prixInitialController.text.trim()} €',
+          ),
+        );
+      }
+      if (_prixFinalController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Budget max',
+            '${_prixFinalController.text.trim()} €',
+          ),
+        );
+      }
+      // Documents
+      // if (_selectedDocumentFiles.isNotEmpty) {
+      //   final docNames = _selectedDocumentFiles.map((f) => f.name).join(', ');
+      //   rows.add(_buildReviewRow('Documents ajoutés', docNames));
+      // }
+    }
+    // ─── Formation ───
+    else if (_selectedCategory == 'Training') {
+      rows.add(
+        _buildReviewRow(
+          'Catégorie',
+          _getLabelFromCode(
+            _trainingCategoriesOptions.isNotEmpty
+                ? _trainingCategoriesOptions
+                : _formationCategories,
+            _selectedFormationCategory,
+          ),
+        ),
+      );
+      if (_selectedFormationType != null) {
+        rows.add(_buildReviewRow('Type de formation', _selectedFormationType!));
+      }
+      if (_selectedFormationSector != null) {
+        rows.add(
+          _buildReviewRow('Secteur de formation', _selectedFormationSector!),
+        );
+      }
+      if (_selectedFinancingTypes.isNotEmpty) {
+        rows.add(
+          _buildReviewRow('Financement', _selectedFinancingTypes.join(', ')),
+        );
+      }
+      if (_selectedTeachingTypes.isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Type d\'enseignement',
+            _selectedTeachingTypes.join(', '),
+          ),
+        );
+      }
+      if (_nbPersonnesController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Nombre de personnes',
+            _nbPersonnesController.text.trim(),
+          ),
+        );
+      }
+      if (_nbGroupesController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Nombre de groupes',
+            _nbGroupesController.text.trim(),
+          ),
+        );
+      }
+      rows.add(_buildReviewRow('À définir', _aDefinir ? 'Oui' : 'Non'));
+      rows.add(
+        _buildReviewRow('Dans l\'immédiat', _dansImmediat ? 'Oui' : 'Non'),
+      );
+      if (!_dansImmediat) {
+        rows.add(_buildReviewRow('À partir du', _formatDate(_startDate)));
+        rows.add(_buildReviewRow('Jusqu\'au', _formatDate(_endDate)));
+      }
+    }
+    // ─── Immobilier ───
+    else if (_selectedCategory == 'RealEstate') {
+      rows.add(
+        _buildReviewRow(
+          'Type de demande',
+          _getLabelFromCode(_immobilierTypeOptions, _selectedImmobilierType),
+        ),
+      );
+      if (_selectedTypeBien.isNotEmpty) {
+        rows.add(_buildReviewRow('Type de bien', _selectedTypeBien.join(', ')));
+      }
+      if (_prixInitialController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Budget min',
+            '${_prixInitialController.text.trim()} €',
+          ),
+        );
+      }
+      if (_prixFinalController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Budget max',
+            '${_prixFinalController.text.trim()} €',
+          ),
+        );
+      }
+      if (_surfaceHabitableMinController.text.trim().isNotEmpty ||
+          _surfaceHabitableMaxController.text.trim().isNotEmpty) {
+        final shMin = _surfaceHabitableMinController.text.trim();
+        final shMax = _surfaceHabitableMaxController.text.trim();
+
+        String surfaceText;
+        if (shMin.isNotEmpty && shMax.isNotEmpty) {
+          surfaceText = 'Min: $shMin m² - Max: $shMax m²';
+        } else if (shMin.isNotEmpty) {
+          surfaceText = 'Min: $shMin m²';
+        } else {
+          surfaceText = 'Max: $shMax m²';
+        }
+
+        rows.add(_buildReviewRow('Surface habitable', surfaceText));
+      }
+      if (_surfaceTerrainMinController.text.trim().isNotEmpty ||
+          _surfaceTerrainMaxController.text.trim().isNotEmpty) {
+        final stMin = _surfaceTerrainMinController.text.trim();
+        final stMax = _surfaceTerrainMaxController.text.trim();
+
+        String terrainText;
+        if (stMin.isNotEmpty && stMax.isNotEmpty) {
+          terrainText = 'Min: $stMin m² - Max: $stMax m²';
+        } else if (stMin.isNotEmpty) {
+          terrainText = 'Min: $stMin m²';
+        } else {
+          terrainText = 'Max: $stMax m²';
+        }
+
+        rows.add(_buildReviewRow('Surface terrain', terrainText));
+      }
+      if (_nbPieces != null) {
+        rows.add(_buildReviewRow('Nombre de pièces', _nbPieces!));
+      }
+      if (_nbChambres != null) {
+        rows.add(_buildReviewRow('Nombre de chambres', _nbChambres!));
+      }
+      if (_meuble != null) {
+        rows.add(_buildReviewRow('Meublé', _meuble!));
+      }
+    }
+    // ─── Défaut (autres catégories) ───
+    else {
+      if (_selectedType != null) {
+        rows.add(
+          _buildReviewRow(
+            'Type',
+            _getLabelFromCode(_typeOptions, _selectedType),
+          ),
+        );
+      }
+      rows.add(_buildReviewRow('Urgent', _acceptDemand ? 'Oui' : 'Non'));
+      if (!_acceptDemand) {
+        rows.add(_buildReviewRow('À partir du', _formatDate(_startDate)));
+        rows.add(_buildReviewRow('Jusqu\'au', _formatDate(_endDate)));
+      }
+      if (_prixInitialController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Budget min',
+            '${_prixInitialController.text.trim()} €',
+          ),
+        );
+      }
+      if (_prixFinalController.text.trim().isNotEmpty) {
+        rows.add(
+          _buildReviewRow(
+            'Budget max',
+            '${_prixFinalController.text.trim()} €',
+          ),
+        );
+      }
+    }
+
+    return rows;
   }
 
   // ─── STEP 4: Review ───
@@ -1485,7 +5770,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         const SizedBox(height: 12),
         Center(
           child: Text(
-            _isEditMode ? 'Vérifiez vos modifications' : 'Vérifiez votre demande',
+            _isEditMode
+                ? 'Vérifiez vos modifications'
+                : 'Vérifiez votre demande',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -1512,51 +5799,23 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             _buildReviewRow(
               'Nature',
               _natureOptions.firstWhere(
-                (o) => o['code'] == _selectedCategory,
-                orElse: () => {'label': '-'},
-              )['label'] ?? '-',
+                    (o) => o['code'] == _selectedCategory,
+                    orElse: () => {'label': '-'},
+                  )['label'] ??
+                  '-',
             ),
           ],
         ),
         const SizedBox(height: 12),
 
-        // Étape 2 - Détails
+        // Étape 2 - Détails (dynamique selon la catégorie)
         _buildReviewSection(
           title: 'Étape 2 — Détails',
           onEdit: () => setState(() => _currentStep = 1),
-          rows: [
-            _buildReviewRow(
-              'Type',
-              _typeOptions.firstWhere(
-                (o) => o['code'] == _selectedType,
-                orElse: () => {'label': '-'},
-              )['label'] ?? '-',
-            ),
-            _buildReviewRow(
-              'Titre',
-              _titleController.text.trim().isEmpty ? '-' : _titleController.text.trim(),
-            ),
-            _buildReviewRow(
-              'Description',
-              _descriptionQuillController.document.toPlainText().trim().isEmpty
-                  ? '-'
-                  : _descriptionQuillController.document.toPlainText().trim(),
-            ),
-            _buildReviewRow('Urgent', _acceptDemand ? 'Oui' : 'Non'),
-            if (!_acceptDemand) ...[
-              _buildReviewRow('À partir du', _startDate != null ? '${_startDate!.day.toString().padLeft(2, '0')}/${_startDate!.month.toString().padLeft(2, '0')}/${_startDate!.year}' : '-'),
-              _buildReviewRow('Jusqu\'au', _endDate != null ? '${_endDate!.day.toString().padLeft(2, '0')}/${_endDate!.month.toString().padLeft(2, '0')}/${_endDate!.year}' : '-'),
-            ],
-            _buildReviewRow(
-              'Budget min',
-              _prixInitialController.text.trim().isEmpty ? '-' : '${_prixInitialController.text.trim()} €',
-            ),
-            _buildReviewRow(
-              'Budget max',
-              _prixFinalController.text.trim().isEmpty ? '-' : '${_prixFinalController.text.trim()} €',
-            ),
-          ],
+          rows: _buildReviewRowsForCategory(),
         ),
+        if (_selectedDocumentFiles.isNotEmpty) const SizedBox(height: 8),
+        if (_selectedDocumentFiles.isNotEmpty) _buildDocumentReviewCards(),
         const SizedBox(height: 12),
 
         // Étape 3 - Localisation
@@ -1564,14 +5823,26 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           title: 'Étape 3 — Localisation',
           onEdit: () => setState(() => _currentStep = 2),
           rows: [
-            _buildReviewRow('Toute la France', _touteLaFrance ? 'Oui' : 'Non'),
+            if (_touteLaFrance) _buildReviewRow('Toute la France', 'Oui'),
+            if (!_touteLaFrance) ...[
+              _buildReviewRow(
+                'Ville / Adresse',
+                _selectedLocation?.address ?? '-',
+              ),
+            ],
             _buildReviewRow(
-              'Ville / Adresse',
-              _disponibleChezController.text.trim().isEmpty ? '-' : _disponibleChezController.text.trim(),
+              'Utiliser ma position',
+              _useCurrentLocation ? 'Oui' : 'Non',
             ),
-            _buildReviewRow('Utiliser ma position', _useCurrentLocation ? 'Oui' : 'Non'),
-            _buildReviewRow('Rayon de recherche', _rayonRecherche > 0 ? '${_rayonRecherche.toInt()} km' : '-'),
-            _buildReviewRow('Afficher localisation', _showGoogleLocation ? 'Oui' : 'Non'),
+            if (!_touteLaFrance)
+              _buildReviewRow(
+                'Rayon de recherche',
+                _rayonRecherche > 0 ? '${_rayonRecherche.toInt()} km' : '-',
+              ),
+            _buildReviewRow(
+              'Afficher localisation',
+              _showGoogleLocation ? 'Oui' : 'Non',
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -1589,6 +5860,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             ),
           ],
         ),
+        if (_selectedMediaFiles.isNotEmpty || _existingMediaUrls.isNotEmpty)
+          const SizedBox(height: 8),
+        if (_selectedMediaFiles.isNotEmpty || _existingMediaUrls.isNotEmpty)
+          _buildPhotoReviewCards(),
         const SizedBox(height: 20),
 
         // Accept messages
@@ -1601,7 +5876,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           child: Column(
             children: [
               const Text(
-                'Accepter de recevoir des messages concernant cette annonce',
+                'Accepter de recevoir des messages à propos de cette demande',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -1611,7 +5886,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Les autres utilisateurs pourront vous contacter pour poser des questions sur ce bon plan',
+                'Les utilisateurs intéressés pourront vous écrire pour clarifier un besoin ou proposer une solution adaptée.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
@@ -1657,8 +5932,13 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     ),
                   )
                 : Text(
-                    _isEditMode ? 'Enregistrer les modifications' : 'Publier la demande',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    _isEditMode
+                        ? 'Enregistrer les modifications'
+                        : 'Publier la demande',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
           ),
         ),
@@ -1684,10 +5964,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                color: Colors.red.shade900,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Colors.red.shade900, fontSize: 13),
             ),
           ),
           if (onRetry != null)
@@ -1781,6 +6058,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     required ValueChanged<String?> onChanged,
     Widget? hint,
     Color? backgroundColor,
+    bool useLabelAsValue = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1807,10 +6085,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               isExpanded: true,
               hint: hint,
               items: items
-                  .map((item) => DropdownMenuItem(
-                        value: item['code'],
-                        child: Text(item['label'] ?? ''),
-                      ))
+                  .map(
+                    (item) => DropdownMenuItem(
+                      value: useLabelAsValue ? item['label'] : item['code'],
+                      child: Text(item['label'] ?? ''),
+                    ),
+                  )
                   .toList(),
               onChanged: onChanged,
             ),
@@ -1860,7 +6140,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           Expanded(
             child: Text(
               helperText,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF2E7D32), height: 1.4),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF2E7D32),
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -1892,14 +6176,20 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.only(left: 14, top: 10),
-                  child: Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[400])),
+                  child: Text(
+                    label,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                  ),
                 ),
                 Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   child: QuillSimpleToolbar(
                     controller: controller,
                     config: const QuillSimpleToolbarConfig(
@@ -2009,6 +6299,285 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     );
   }
 
+  Widget _buildRadioGroup<T>({
+    required String title,
+    required List<T> values,
+    required T? selectedValue,
+    required Function(T?) onChanged,
+    required String Function(T) labelBuilder,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF424242),
+            fontFamily: 'Manjari',
+          ),
+        ),
+        ...values.map(
+          (value) => Theme(
+            data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
+            child: RadioListTile<T>(
+              dense: true,
+              activeColor: const Color(0xFF3AAE5E),
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                labelBuilder(value),
+                style: const TextStyle(fontSize: 15),
+              ),
+              value: value,
+              groupValue: selectedValue,
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCheckboxGroup({
+    required String title,
+    required List<Map<String, String>> options,
+    required List<String> selectedValues,
+    required Function(String, bool) onChanged,
+    bool scrollable = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF424242),
+            fontFamily: 'Manjari',
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (scrollable)
+          Container(
+            height: 300, // Shows ~5 items, scrollable for more
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                children: options
+                    .map(
+                      (option) => Theme(
+                        data: ThemeData(
+                          visualDensity: const VisualDensity(vertical: -4),
+                        ),
+                        child: CheckboxListTile(
+                          dense: true,
+                          activeColor: const Color(0xFF3AAE5E),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          title: Text(
+                            option['label']!,
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                          value: selectedValues.contains(option['code']),
+                          onChanged: (checked) {
+                            onChanged(option['code']!, checked ?? false);
+                          },
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          )
+        else
+          ...options.map(
+            (option) => Theme(
+              data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
+              child: CheckboxListTile(
+                dense: true,
+                activeColor: const Color(0xFF3AAE5E),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text(
+                  option['label']!,
+                  style: const TextStyle(fontSize: 15),
+                ),
+                value: selectedValues.contains(option['code']),
+                onChanged: (checked) {
+                  onChanged(option['code']!, checked ?? false);
+                },
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDateField({
+    required String label,
+    required DateTime? selectedDate,
+    required Function(DateTime?) onDateSelected,
+  }) {
+    return GestureDetector(
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: selectedDate ?? DateTime.now(),
+          firstDate: DateTime.now(),
+          lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: const ColorScheme.light(
+                  primary: Color(0xFFFF9800),
+                ),
+              ),
+              child: child!,
+            );
+          },
+        );
+        if (picked != null) {
+          onDateSelected(picked);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                selectedDate != null
+                    ? DateFormat('dd/MM/yyyy').format(selectedDate)
+                    : label,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: selectedDate != null
+                      ? Colors.black87
+                      : Colors.grey[400],
+                ),
+              ),
+            ),
+            Icon(Icons.calendar_today, size: 18, color: Colors.grey[600]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNumberChip(
+    String label,
+    String? selectedValue,
+    Function(String) onSelected,
+  ) {
+    final isSelected = selectedValue == label;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        onSelected(selected ? label : '');
+      },
+      selectedColor: const Color(0xFFFF9800).withOpacity(0.2),
+      checkmarkColor: const Color(0xFFFF9800),
+      backgroundColor: Colors.white,
+      side: BorderSide(
+        color: isSelected ? const Color(0xFFFF9800) : Colors.grey[300]!,
+        width: isSelected ? 2 : 1,
+      ),
+      labelStyle: TextStyle(
+        color: isSelected ? const Color(0xFFFF9800) : Colors.grey[700],
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+      ),
+    );
+  }
+
+  Widget _buildDocumentChip(String label, String type) {
+    final isSelected = _selectedCvOptions.contains(type);
+    return ActionChip(
+      label: Text(label),
+      avatar: Icon(
+        isSelected ? Icons.check_circle : Icons.add_circle_outline,
+        size: 20,
+        color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[600],
+      ),
+      onPressed: () async {
+        if (isSelected) {
+          setState(() {
+            _selectedCvOptions.remove(type);
+          });
+        } else {
+          await _pickDocumentFile(type, label);
+        }
+      },
+      backgroundColor: isSelected
+          ? const Color(0xFF3AAE5E).withOpacity(0.1)
+          : Colors.white,
+      side: BorderSide(
+        color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[300]!,
+        width: isSelected ? 2 : 1,
+      ),
+      labelStyle: TextStyle(
+        color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[700],
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+      ),
+    );
+  }
+
+  Future<void> _pickDocumentFile(String type, String label) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      setState(() {
+        _selectedCvOptions.add(type);
+        final file = result.files.first;
+        _selectedDocumentFiles.add(file);
+        _documentFilesByType[type] = file;
+      });
+
+      _showSnack('$label ajouté avec succès');
+    } catch (e) {
+      _showSnack('Impossible de sélectionner le fichier', isError: true);
+    }
+  }
+
+  void _removeDocument(int index) {
+    setState(() {
+      final file = _selectedDocumentFiles[index];
+
+      // Find and remove the type from _selectedCvOptions BEFORE removing from _documentFilesByType
+      final typeToRemove = _documentFilesByType.entries
+          .where((entry) => entry.value == file)
+          .map((entry) => entry.key)
+          .toList();
+      for (final type in typeToRemove) {
+        _selectedCvOptions.remove(type);
+      }
+
+      // Remove from _selectedDocumentFiles
+      _selectedDocumentFiles.removeAt(index);
+
+      // Remove from _documentFilesByType
+      _documentFilesByType.removeWhere((key, value) => value == file);
+    });
+  }
+
   Widget _buildNextButton() {
     return SizedBox(
       width: double.infinity,
@@ -2103,6 +6672,156 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPhotoReviewCards() {
+    if (_selectedMediaFiles.isEmpty && _existingMediaUrls.isEmpty)
+      return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text('Photos', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            // Existing photos from URLs
+            ..._existingMediaUrls.map((url) {
+              return Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: Colors.grey[200],
+                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                    ),
+                  ),
+                ),
+              );
+            }),
+            // New photos from files
+            ..._selectedMediaFiles.map((file) {
+              if (file.bytes != null) {
+                return Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(file.bytes!, fit: BoxFit.cover),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDocumentReviewCards() {
+    if (_selectedDocumentFiles.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text(
+          'Documents ajoutés',
+          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _selectedDocumentFiles.map((file) {
+            final ext = file.extension?.toLowerCase();
+            final isPdf = ext == 'pdf';
+            final isDoc = ext == 'doc' || ext == 'docx';
+            final isImage = ['jpg', 'jpeg', 'png'].contains(ext);
+
+            Widget content;
+
+            if (isImage && file.bytes != null) {
+              // Afficher le preview de l'image
+              content = ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(
+                  file.bytes!,
+                  fit: BoxFit.cover,
+                  width: 80,
+                  height: 80,
+                ),
+              );
+            } else {
+              // Afficher l'icône pour les autres types
+              IconData iconData;
+              Color iconColor;
+              if (isPdf) {
+                iconData = Icons.picture_as_pdf;
+                iconColor = Colors.red;
+              } else if (isDoc) {
+                iconData = Icons.description;
+                iconColor = Colors.blue;
+              } else if (isImage) {
+                iconData = Icons.image;
+                iconColor = Colors.green;
+              } else {
+                iconData = Icons.insert_drive_file;
+                iconColor = Colors.grey;
+              }
+
+              content = Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(iconData, size: 32, color: iconColor),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      file.name,
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: Color(0xFF666666),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                color: Colors.grey[50],
+              ),
+              child: content,
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 

@@ -105,7 +105,7 @@ interface Job {
   userId?: string
   createdat?: string
   endDate?: string
-  activity?: string
+  activity?: string | any
   business?: string
   benefit?: string
   companyData?: {
@@ -879,6 +879,13 @@ export default function JobsPage() {
 
   const [selectedContractType, setSelectedContractType] = useState("all")
   const [selectedOccupationTime, setSelectedOccupationTime] = useState("all")
+  const [selectedActivity, setSelectedActivity] = useState("all")
+  const [selectedFunction, setSelectedFunction] = useState("all")
+  const [selectedExperience, setSelectedExperience] = useState("all")
+  const [selectedRemote, setSelectedRemote] = useState("all")
+  const [selectedDateRange, setSelectedDateRange] = useState("all")
+  const [minSalary, setMinSalary] = useState("")
+  const [hasDocuments, setHasDocuments] = useState(false)
   const [selectedCity, setSelectedCity] = useState(params.get("location") || "")
   const [searchRadius, setSearchRadius] = useState(parseInt(params.get("radius") || "50"))
   const [searchAllFrance, setSearchAllFrance] = useState(params.get("allFrance") === "true")
@@ -1099,6 +1106,52 @@ export default function JobsPage() {
 
       if (selectedContractType !== "all" && job.contractType !== selectedContractType) return false
       if (selectedOccupationTime !== "all" && job.occupationTime !== selectedOccupationTime) return false
+      
+      // Filtre par secteur d'activité
+      if (selectedActivity !== "all") {
+        const jobActivity = (job.activity || "").toString().toLowerCase()
+        const selectedActivityLower = selectedActivity.toLowerCase()
+        if (!jobActivity.includes(selectedActivityLower)) return false
+      }
+
+      // Filtre par fonction (job title/role)
+      if (selectedFunction !== "all") {
+        const jobTitle = (job.title || "").toString().toLowerCase()
+        const selectedFunctionLower = selectedFunction.toLowerCase()
+        if (!jobTitle.includes(selectedFunctionLower)) return false
+      }
+
+      // Filtre par niveau d'expérience
+      if (selectedExperience !== "all" && job.xpLevel !== selectedExperience) return false
+
+      // Filtre par télétravail
+      if (selectedRemote !== "all") {
+        const isRemote = job.remote === 't' || job.remote === true || job.remote === 'true'
+        if (selectedRemote === "remote" && !isRemote) return false
+        if (selectedRemote === "onsite" && isRemote) return false
+      }
+
+      // Filtre par date
+      if (selectedDateRange !== "all") {
+        const jobDate = new Date(job.createdat || 0)
+        const now = new Date()
+        const diffInDays = (now.getTime() - jobDate.getTime()) / (1000 * 3600 * 24)
+        if (selectedDateRange === "today" && diffInDays > 1) return false
+        if (selectedDateRange === "week" && diffInDays > 7) return false
+        if (selectedDateRange === "month" && diffInDays > 30) return false
+      }
+
+      // Filtre par salaire
+      if (minSalary) {
+        const minVal = parseFloat(minSalary)
+        const jobMinSalary = parseFloat(job.minSalary || job.salary || "0")
+        const jobMaxSalary = parseFloat(job.maxSalary || "0")
+        if (jobMaxSalary > 0 && jobMaxSalary < minVal) return false
+        if (jobMaxSalary === 0 && jobMinSalary > 0 && jobMinSalary < minVal) return false
+      }
+
+      // Filtre par documents (si applicable dans le futur)
+      if (hasDocuments && !job.documents) return false
 
       // Filtre par localisation avec calcul de distance
       if (selectedCity && !searchAllFrance) {
@@ -1347,11 +1400,30 @@ export default function JobsPage() {
                 <Button variant="outline" onClick={() => setShowFilters(!showFilters)} className="gap-2 text-sm" size="sm">
                   <Filter className="w-4 h-4" />
                   Filtres
-                  {(selectedContractType !== "all" || selectedOccupationTime !== "all" || selectedCity) && (
+                  {(selectedContractType !== "all" || 
+                    selectedOccupationTime !== "all" || 
+                    selectedCity || 
+                    selectedActivity !== "all" || 
+                    selectedFunction !== "all" || 
+                    selectedExperience !== "all" || 
+                    selectedRemote !== "all" || 
+                    selectedDateRange !== "all" || 
+                    minSalary !== "" || 
+                    hasDocuments) && (
                     <Badge className="ml-1 bg-blue-500">
                       {
-                        [selectedContractType !== "all", selectedOccupationTime !== "all", selectedCity].filter(Boolean)
-                          .length
+                        [
+                          selectedContractType !== "all", 
+                          selectedOccupationTime !== "all", 
+                          selectedCity,
+                          selectedActivity !== "all",
+                          selectedFunction !== "all",
+                          selectedExperience !== "all",
+                          selectedRemote !== "all",
+                          selectedDateRange !== "all",
+                          minSalary !== "",
+                          hasDocuments
+                        ].filter(Boolean).length
                       }
                     </Badge>
                   )}
@@ -1593,6 +1665,138 @@ export default function JobsPage() {
                         <SelectItem value="PartialTime">{getLabel("PartialTime")}</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Secteur d'activité</label>
+                    <Select value={selectedActivity} onValueChange={setSelectedActivity}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tous les secteurs" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les secteurs</SelectItem>
+                        <SelectItem value="ITInternet">{getLabel("ITInternet")}</SelectItem>
+                        <SelectItem value="Sales">{getLabel("Sales")}</SelectItem>
+                        <SelectItem value="HealthcareMedicine">{getLabel("HealthcareMedicine")}</SelectItem>
+                        <SelectItem value="HospitalityRestaurant">{getLabel("HospitalityRestaurant")}</SelectItem>
+                        <SelectItem value="LogisticsPurchasingTransportation">{getLabel("LogisticsPurchasingTransportation")}</SelectItem>
+                        <SelectItem value="Construction">{getLabel("Construction")}</SelectItem>
+                        <SelectItem value="HumanResources">{getLabel("HumanResources")}</SelectItem>
+                        <SelectItem value="PublicService">{getLabel("PublicService")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Fonction</label>
+                    <Select value={selectedFunction} onValueChange={setSelectedFunction}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Toutes les fonctions" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Toutes les fonctions</SelectItem>
+                        <SelectItem value="Manager">{getLabel("Manager")}</SelectItem>
+                        <SelectItem value="Technician">{getLabel("Technician")}</SelectItem>
+                        <SelectItem value="Assistant">{getLabel("Assistant")}</SelectItem>
+                        <SelectItem value="Director">{getLabel("Director")}</SelectItem>
+                        <SelectItem value="Engineer">{getLabel("Engineer")}</SelectItem>
+                        <SelectItem value="Consultant">{getLabel("Consultant")}</SelectItem>
+                        <SelectItem value="Salesperson">{getLabel("Salesperson")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Niveau d'expérience</label>
+                    <Select value={selectedExperience} onValueChange={setSelectedExperience}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Tous niveaux" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous niveaux</SelectItem>
+                        <SelectItem value="Beginner0To1Year">{getLabel("Beginner0To1Year")}</SelectItem>
+                        <SelectItem value="Intermediate2To4Years">{getLabel("Intermediate2To4Years")}</SelectItem>
+                        <SelectItem value="Experienced5To9Years">{getLabel("Experienced5To9Years")}</SelectItem>
+                        <SelectItem value="Senior10YearsOrMore">{getLabel("Senior10YearsOrMore")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Date de publication</label>
+                    <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Toutes les dates" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Toutes les dates</SelectItem>
+                        <SelectItem value="today">Dernières 24h</SelectItem>
+                        <SelectItem value="week">Dernière semaine</SelectItem>
+                        <SelectItem value="month">Dernier mois</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Télétravail</label>
+                    <Select value={selectedRemote} onValueChange={setSelectedRemote}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Indifférent" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Indifférent</SelectItem>
+                        <SelectItem value="remote">Télétravail possible</SelectItem>
+                        <SelectItem value="onsite">Sur site uniquement</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Salaire minimum</label>
+                    <div className="relative">
+                      <Euro className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input 
+                        type="number" 
+                        placeholder="Ex: 30000" 
+                        className="pl-10"
+                        value={minSalary}
+                        onChange={(e) => setMinSalary(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-end pb-1">
+                    <label className="flex items-center text-sm text-gray-600 cursor-pointer">
+                      <Checkbox
+                        checked={hasDocuments}
+                        onCheckedChange={(checked) => setHasDocuments(checked as boolean)}
+                        className="mr-2"
+                      />
+                      Offres avec documents
+                    </label>
+                  </div>
+
+                  <div className="flex items-end">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-gray-500 hover:text-red-500 text-xs"
+                      onClick={() => {
+                        setSelectedContractType("all")
+                        setSelectedOccupationTime("all")
+                        setSelectedActivity("all")
+                        setSelectedFunction("all")
+                        setSelectedExperience("all")
+                        setSelectedRemote("all")
+                        setSelectedDateRange("all")
+                        setMinSalary("")
+                        setHasDocuments(false)
+                        setSelectedCity("")
+                        setSearchAllFrance(false)
+                      }}
+                    >
+                      Réinitialiser les filtres
+                    </Button>
                   </div>
                 </div>
               </div>

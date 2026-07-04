@@ -13,19 +13,50 @@ class UserSession {
   bool _isEmailVerified = false;
   bool _profileCompleted = false;
   Map<String, dynamic>? _subscription;
+  String? _parrainageCode;
+  double _mys = 0;
+  bool _isGuest = false;
 
   String get userType => _userType;
   String? get id => _id;
   String? get email => _email;
   bool get isEmailVerified => _isEmailVerified;
   bool get profileCompleted => _profileCompleted;
+  bool get isGuest => _isGuest;
+  bool get isAuthenticated => !_isGuest && _id != null;
   Map<String, dynamic>? get subscription => _subscription;
   String? get subscriptionPlan => _subscription?['plan'];
   String? get subscriptionStatus => _subscription?['status'];
-  bool get hasActiveSubscription => _subscription != null && _subscription!.isNotEmpty;
+  Map<String, dynamic> get subscriptionPermissions {
+    final permissions = _subscription?['permissions'];
+    if (permissions is Map) {
+      return Map<String, dynamic>.from(permissions);
+    }
+    return const {};
+  }
+
+  bool get hasActiveSubscription {
+    if (_subscription == null || _subscription!.isEmpty) return false;
+    final status = subscriptionStatus;
+    if (status != 'active') return false;
+
+    final endDate = _subscription!['end_date'];
+    if (endDate == null) return true;
+    final parsed = DateTime.tryParse(endDate.toString());
+    if (parsed == null) return true;
+    return DateTime.now().isBefore(parsed);
+  }
+
+  String? get parrainageCode => _parrainageCode;
+  double get mys => _mys;
 
   void setUserType(String type) {
     _userType = type;
+  }
+
+  void startGuestMode() {
+    clear();
+    _isGuest = true;
   }
 
   bool get isParticulier => _userType == 'particulier';
@@ -38,13 +69,32 @@ class UserSession {
     bool? isEmailVerified,
     bool? profileCompleted,
     Map<String, dynamic>? subscription,
+    String? parrainageCode,
+    dynamic mys,
   }) {
+    _isGuest = false;
     if (id != null) _id = id;
     if (email != null) _email = email;
     if (accountType != null) _userType = accountType;
     if (isEmailVerified != null) _isEmailVerified = isEmailVerified;
     if (profileCompleted != null) _profileCompleted = profileCompleted;
     _subscription = subscription;
+    if (parrainageCode != null) _parrainageCode = parrainageCode;
+    if (mys != null) updateMys(mys);
+  }
+
+  void updateMys(dynamic mys) {
+    if (mys is String) {
+      _mys = double.tryParse(mys) ?? 0.0;
+    } else if (mys is num) {
+      _mys = mys.toDouble();
+    } else {
+      _mys = 0.0;
+    }
+  }
+
+  void updateParrainageCode(String? code) {
+    _parrainageCode = code;
   }
 
   void clear() {
@@ -54,9 +104,14 @@ class UserSession {
     _isEmailVerified = false;
     _profileCompleted = false;
     _subscription = null;
+    _parrainageCode = null;
+    _mys = 0;
+    _isGuest = false;
   }
 
-  bool get needsAccountType => _userType.isEmpty || _userType == 'particulier' && _id != null && !_profileCompleted;
+  bool get needsAccountType =>
+      _userType.isEmpty ||
+      _userType == 'particulier' && _id != null && !_profileCompleted;
   bool get needsProfileCompletion => !_profileCompleted;
   bool get needsSubscription => isPro && !hasActiveSubscription;
 }

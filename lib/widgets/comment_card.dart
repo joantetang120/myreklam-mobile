@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/widgets/reklam_avatar.dart';
 
 enum CommentType { comment, reply }
 
@@ -48,9 +50,10 @@ class CommentCard extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
+                    ReklamAvatar(
+                      avatarUrl: avatar,
+                      displayName: name,
                       radius: 18,
-                      backgroundImage: AssetImage(avatar),
                     ),
                     const SizedBox(width: 12),
                     Expanded(

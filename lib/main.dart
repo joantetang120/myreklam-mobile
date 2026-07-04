@@ -1,9 +1,65 @@
+import 'dart:async';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:myreklam/firebase_options.dart';
+import 'package:myreklam/screens/profile_pro/pro_profile_screen.dart';
 import 'package:myreklam/screens/splash_screen.dart';
+import 'package:myreklam/services/chat_service.dart';
+import 'package:myreklam/services/chat_notification_service.dart';
+import 'package:myreklam/services/push_notification_service.dart';
+import 'package:myreklam/screens/login_screen.dart';
+import 'package:myreklam/providers/conversation_provider.dart';
+import 'package:myreklam/services/auth_state_manager.dart';
+import 'package:myreklam/services/deep_link_service.dart';
+import 'package:myreklam/services/delegation_manager.dart';
+import 'package:myreklam/widgets/delegation_banner.dart';
+import 'package:myreklam/services/stripe_payment_service.dart';
+import 'package:myreklam/widgets/force_update_gate.dart';
+import 'package:provider/provider.dart';
 
-void main() {
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase FIRST before any other service
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print('✅ Firebase initialisé');
+
+  // Initialize Stripe for payments
+  await StripePaymentService.initialize();
+  print('✅ Stripe initialisé');
+
+  // Set navigator key for AuthStateManager
+  AuthStateManager().setNavigatorKey(navigatorKey);
+
+  // Initialisation de pusher
+  await ChatService.initializePusher();
+  print('✅ Pusher initialisé');
+
+  // Initialisation du service de notifications chat
+  await ChatNotificationService.instance.init();
+  print('✅ ChatNotificationService initialisé');
+
+  // Initialisation du service de push notifications (FCM)
+  try {
+    await PushNotificationService.instance.init();
+    print('✅ PushNotificationService initialisé');
+  } catch (e) {
+    print('⚠️ PushNotificationService non-fatal error: $e');
+  }
+
+  // Initialisation du service de deep links
+  await DeepLinkService.instance.init();
+  print('✅ DeepLinkService initialisé');
+
+  // Restaurer l'état de délégation (si un manager gérait un compte)
+  await DelegationManager.instance.init();
+
   runApp(const MyApp());
 }
 
@@ -12,25 +68,45 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Myreklam',
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        FlutterQuillLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('fr'),
-        Locale('en'),
-      ],
-      locale: const Locale('fr'),
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B8D4B)),
-        useMaterial3: true,
+    return ChangeNotifierProvider(
+      create: (_) => ConversationProvider(),
+      child: MaterialApp(
+        navigatorKey: navigatorKey,
+        navigatorObservers: [routeObserver],
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) {
+          return AnimatedBuilder(
+            animation: DelegationManager.instance,
+            builder: (context, _) {
+              if (!DelegationManager.instance.isActive || child == null) {
+                return child ?? const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  const DelegationBanner(),
+                  Expanded(child: child),
+                ],
+              );
+            },
+          );
+        },
+        title: 'Myreklam',
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          FlutterQuillLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('fr'), Locale('en')],
+        locale: const Locale('fr'),
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B8D4B)),
+          useMaterial3: true,
+        ),
+        // Define routes for navigation
+        routes: {'/login': (context) => const LoginScreen()},
+        home: const ForceUpdateGate(child: SplashScreen()),
       ),
-      home: const SplashScreen(),
     );
   }
 }

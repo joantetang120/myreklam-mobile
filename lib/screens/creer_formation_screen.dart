@@ -3,10 +3,16 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/training_service.dart';
+import 'package:myreklam/models/location_data.dart';
+import 'package:myreklam/widgets/location_picker_field.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -92,10 +98,8 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   final TextEditingController _websiteController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
-  final TextEditingController _addressLine1Controller = TextEditingController();
-  final TextEditingController _addressLine2Controller = TextEditingController();
-  final TextEditingController _addressCityController = TextEditingController();
-  final TextEditingController _addressZipcodeController = TextEditingController();
+
+  LocationData? _selectedLocation;
 
   List<String> _selectedTeachingStyles = [];
   List<String> _selectedTargetPublics = [];
@@ -121,7 +125,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   bool _acceptMessages = true;
 
   // Step 4 - Media & Documents
-  List<PlatformFile> _selectedMediaFiles = [];
+  List<GalleryMedia> _selectedMediaFiles = [];
   List<PlatformFile> _selectedDocumentFiles = [];
   List<_TrainingMediaFile> _existingMedia = [];
   List<_TrainingDocumentFile> _existingDocuments = [];
@@ -150,10 +154,6 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     _websiteController.dispose();
     _priceController.dispose();
     _durationController.dispose();
-    _addressLine1Controller.dispose();
-    _addressLine2Controller.dispose();
-    _addressCityController.dispose();
-    _addressZipcodeController.dispose();
     _customLevelController.dispose();
     _customCertificationController.dispose();
     super.dispose();
@@ -207,10 +207,19 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       }
 
       // Location
-      _addressLine1Controller.text = data['address_line1']?.toString() ?? '';
-      _addressLine2Controller.text = data['address_line2']?.toString() ?? '';
-      _addressCityController.text = data['address_city']?.toString() ?? '';
-      _addressZipcodeController.text = data['address_zipcode']?.toString() ?? '';
+      if (data['location_lat'] != null || data['location_city'] != null || data['address_city'] != null) {
+        _selectedLocation = LocationData(
+          address: data['address_line1']?.toString() ?? data['location_city']?.toString() ?? '',
+          latitude: data['location_lat'] != null
+              ? double.tryParse(data['location_lat'].toString())
+              : null,
+          longitude: data['location_lng'] != null
+              ? double.tryParse(data['location_lng'].toString())
+              : null,
+          city: data['location_city']?.toString() ?? data['address_city']?.toString(),
+          postalCode: data['location_postal_code']?.toString() ?? data['address_zipcode']?.toString(),
+        );
+      }
       _showLocation = data['show_location'] != false;
       _acceptMessages = data['accept_messages'] != false;
 
@@ -429,10 +438,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         'date_to_define': _dateToDefine,
         'start_date': _startDate?.toIso8601String(),
         'end_date': _endDate?.toIso8601String(),
-        'address_line1': _addressLine1Controller.text,
-        'address_line2': _addressLine2Controller.text,
-        'address_city': _addressCityController.text,
-        'address_zipcode': _addressZipcodeController.text,
+        'location': _selectedLocation?.toMap(),
         'show_location': _showLocation,
         'accept_messages': _acceptMessages,
       };
@@ -574,10 +580,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           _websiteController.text = formData['website'] ?? '';
           _linkController.text = formData['link'] ?? '';
           _dateToDefine = formData['date_to_define'] ?? false;
-          _addressLine1Controller.text = formData['address_line1'] ?? '';
-          _addressLine2Controller.text = formData['address_line2'] ?? '';
-          _addressCityController.text = formData['address_city'] ?? '';
-          _addressZipcodeController.text = formData['address_zipcode'] ?? '';
+          if (formData['location'] != null && formData['location'] is Map) {
+            _selectedLocation = LocationData.fromMap(formData['location']);
+          }
           _showLocation = formData['show_location'] ?? true;
           _acceptMessages = formData['accept_messages'] ?? true;
         });
@@ -623,23 +628,11 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
   Future<void> _pickMedia() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'],
-        allowMultiple: true,
-        withData: true,
-      );
-
-      if (result != null) {
-        final validFiles = result.files.where((file) {
-          final extension = file.extension?.toLowerCase();
-          return ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'].contains(extension);
-        }).toList();
-
-        setState(() {
-          _selectedMediaFiles.addAll(validFiles);
-        });
-      }
+      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      if (files == null || files.isEmpty) return;
+      setState(() {
+        _selectedMediaFiles.addAll(files);
+      });
     } catch (e) {
       debugPrint('Error picking media: $e');
     }
@@ -677,6 +670,11 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   }
 
   void _nextStep() {
+    final error = _validateCurrentStep();
+    if (error != null) {
+      _showSnack(error, isError: true);
+      return;
+    }
     _saveDraft();
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
@@ -687,6 +685,38 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
     }
+  }
+
+  String? _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Step 1: Type
+        if (_selectedTrainingType == null) {
+          return 'Veuillez sélectionner un type de formation.';
+        }
+        break;
+      
+      case 1: // Step 2: Lien France Travail (optional)
+        break;
+      
+      case 2: // Step 3: Description
+        return _validateStep3();
+      
+      case 3: // Step 4: Médias et documents (optional)
+        break;
+      
+      case 4: // Step 5: Review (no validation needed)
+        break;
+    }
+    return null;
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? Colors.red.shade700 : const Color(0xFF3AAE5E),
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 4),
+    ));
   }
 
   String? _validateStep3() {
@@ -720,7 +750,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       return;
     }
 
-    setState(() => _isSubmitting = true);
+    if (mounted) {
+      setState(() => _isSubmitting = true);
+    }
 
     try {
       final descriptionDelta = _descriptionQuillController.document.toDelta().toJson();
@@ -739,7 +771,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         'training_funding': _selectedFunding,
         'price_type': _selectedPriceType ?? '4',
         'accept_messages': _acceptMessages,
-        'status': 'draft',
+        // Only send status on creation. On edit, omit it so the current status
+        // (e.g. published) is preserved and the training stays in the feed.
+        if (!_isEditMode) 'status': 'draft',
       };
 
       if (_websiteController.text.trim().isNotEmpty) {
@@ -777,17 +811,12 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         }
       }
 
-      if (_addressLine1Controller.text.trim().isNotEmpty) {
-        trainingData['address_line1'] = _addressLine1Controller.text.trim();
-      }
-      if (_addressLine2Controller.text.trim().isNotEmpty) {
-        trainingData['address_line2'] = _addressLine2Controller.text.trim();
-      }
-      if (_addressCityController.text.trim().isNotEmpty) {
-        trainingData['address_city'] = _addressCityController.text.trim();
-      }
-      if (_addressZipcodeController.text.trim().isNotEmpty) {
-        trainingData['address_zipcode'] = _addressZipcodeController.text.trim();
+      if (_selectedLocation != null) {
+        trainingData['address_line1'] = _selectedLocation?.address;
+        trainingData['location_lat'] = _selectedLocation?.latitude;
+        trainingData['location_lng'] = _selectedLocation?.longitude;
+        trainingData['location_city'] = _selectedLocation?.city;
+        trainingData['location_postal_code'] = _selectedLocation?.postalCode;
       }
       trainingData['address_country'] = 'FR';
       trainingData['show_location'] = _showLocation;
@@ -841,13 +870,49 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         }
 
         if (!_isEditMode) await _clearDraft();
-        setState(() => _isSubmitting = false);
+        if (mounted) {
+          setState(() => _isSubmitting = false);
+        }
         _showSuccessDialog();
+
+        // Award My's for creating a formation (only on create, not edit)
+        if (!_isEditMode) {
+          try {
+            final mysResponse = await MysEarningService().awardMys(
+              actionType: 'formation',
+              referenceId: trainingId,
+            );
+            
+            if (mysResponse['success'] == true && mounted) {
+              // Update UserSession with new balance
+              final newBalance = mysResponse['earning']?['new_balance'];
+              if (newBalance != null) {
+                UserSession().updateMys(newBalance);
+              }
+              
+              // Show reward modal AFTER dialog closes - use microtask to avoid conflict
+              Future.microtask(() async {
+                if (mounted) {
+                  await MysRewardModal.show(
+                    context,
+                    amount: mysResponse['earning']?['amount'] ?? 2,
+                    actionType: 'formation',
+                  );
+                }
+              });
+            }
+          } catch (e) {
+            debugPrint("Error awarding My's for formation: $e");
+            // Don't block the user if awarding fails
+          }
+        }
       } else {
         throw Exception(response['message'] ?? (_isEditMode ? 'Erreur lors de la mise à jour' : 'Erreur lors de la création'));
       }
     } catch (e) {
-      setState(() => _isSubmitting = false);
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur: ${e.toString()}'),
@@ -920,7 +985,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               Text(
                 _isEditMode
                     ? 'Votre formation a été mise à jour avec succès'
-                    : 'Vous pouvez consulter cela au niveau de votre espace professionnel',
+                    : 'Vous pouvez consulter cela au niveau de votre espace  ',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -1057,15 +1122,19 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     final key = media.id ?? media.url;
     if (_deletingMediaKeys.contains(key)) return;
 
-    setState(() => _deletingMediaKeys.add(key));
+    if (mounted) {
+      setState(() => _deletingMediaKeys.add(key));
+    }
 
     try {
       if (_isEditMode && widget.trainingId != null && media.id != null) {
         await _trainingService.deleteMedia(widget.trainingId!, media.id!);
       }
-      setState(() {
-        _existingMedia.removeWhere((m) => m.url == media.url && m.id == media.id);
-      });
+      if (mounted) {
+        setState(() {
+          _existingMedia.removeWhere((m) => m.url == media.url && m.id == media.id);
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1155,16 +1224,20 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     final key = doc.id ?? doc.url;
     if (_deletingDocumentKeys.contains(key)) return;
 
-    setState(() => _deletingDocumentKeys.add(key));
+    if (mounted) {
+      setState(() => _deletingDocumentKeys.add(key));
+    }
 
     try {
       if (_isEditMode && widget.trainingId != null && doc.id != null) {
         await _trainingService.deleteDocument(widget.trainingId!, doc.id!);
       }
 
-      setState(() {
-        _existingDocuments.removeWhere((d) => d.url == doc.url && d.id == doc.id);
-      });
+      if (mounted) {
+        setState(() {
+          _existingDocuments.removeWhere((d) => d.url == doc.url && d.id == doc.id);
+        });
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1266,6 +1339,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         await _handleBackButton();
       },
       child: AppLayout(
+      currentIndex: 2,
       backgroundColor: const Color(0xFFF9F9FB),
       onTabTapped: (index) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -1406,28 +1480,38 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE6F7EF),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.perm_media_outlined,
-                  color: Color(0xFF3AAE5E),
-                  size: 20,
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE6F7EF),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.perm_media_outlined,
+                      color: Color(0xFF3AAE5E),
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Photos et vidéos (non-obligatoires)',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF424242),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 12),
-              const Text(
-                'Photos et vidéos',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
-                ),
+              const SizedBox(height: 6),
+              Text(
+                'Ajoutez des visuels de votre formation (salles, intervenants, participants) pour projeter les apprenants dans l’expérience.',
+                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -1601,7 +1685,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     );
   }
 
-  Widget _buildMediaPreviewCard(PlatformFile file, int index) {
+  Widget _buildMediaPreviewCard(GalleryMedia file, int index) {
     final isCoverPhoto = index == 0;
     
     return Container(
@@ -1681,7 +1765,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     );
   }
 
-  Widget _buildMediaPreview(PlatformFile file) {
+  Widget _buildMediaPreview(GalleryMedia file) {
     final extension = file.extension?.toLowerCase();
     final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(extension);
     final isVideo = ['mp4', 'mov', 'avi'].contains(extension);
@@ -1811,16 +1895,16 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       children: [
         _buildFormCard(
           icon: Icons.link,
-          title: 'Lien France Travail (Optionnel)',
+          title: 'Lien ',
           subtitle:
-              "Entrez le lien de la page de la formation pour récupérer automatiquement les informations.",
+              "Collez le lien France Travail de la formation. Nous l'utiliserons pour récupérer automatiquement les informations et pré-remplir votre annonce.",
           children: [
             _buildTextField(
               label: 'Ajouter un lien',
               controller: _linkController,
               keyboardType: TextInputType.url,
               fieldKey: 'link',
-              helperText: 'Collez ici le lien France Travail de la formation pour importer automatiquement les informations.',
+              helperText: 'Le lien permettra d\'extraire automatiquement le titre, la description, les dates, le lieu, le prix et autres détails de la formation pour faciliter la création de votre annonce.',
             ),
           ],
         ),
@@ -2199,12 +2283,13 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           style: TextStyle(fontSize: 11, color: Colors.grey[500]),
         ),
         const SizedBox(height: 8),
-        _buildTextField(
+        LocationPickerField(
+          initialLocation: _selectedLocation,
           label: 'Rechercher par ville ou code postal...',
-          controller: _addressCityController,
-          prefixIcon: Icons.search,
-          fieldKey: 'location',
           helperText: 'Saisissez le nom de la ville ou le code postal où la formation se déroule.',
+          onLocationSelected: (location) {
+            setState(() => _selectedLocation = location);
+          },
         ),
         const SizedBox(height: 12),
         _buildCheckOption(
@@ -2420,9 +2505,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           rows: [
             _buildReviewRow(
               'Adresse',
-              _addressLine1Controller.text.isEmpty && _addressCityController.text.isEmpty
-                  ? '-'
-                  : '${_addressLine1Controller.text}${_addressCityController.text.isNotEmpty ? ", " + _addressCityController.text : ""}',
+              _selectedLocation?.address ?? '-',
             ),
             _buildReviewRow(
               'Afficher localisation',
@@ -2477,7 +2560,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           child: Column(
             children: [
               const Text(
-                'Accepter de recevoir des messages concernant cette annonce',
+                'Accepter de recevoir des messages à propos de cette formation',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -2487,7 +2570,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Les autres utilisateurs pourront vous contacter pour poser des questions sur ce bon plan',
+                'Les candidats pourront vous écrire pour obtenir des précisions sur le programme, les financements ou les modalités d’inscription.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
@@ -2712,18 +2795,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             child: Icon(Icons.cloud_upload_outlined, color: color, size: 28),
           ),
           const SizedBox(height: 16),
-          // Texte principal
-          const Text(
-            'Glissez-déposez vos fichiers ici',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF424242),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text('ou', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
-          const SizedBox(height: 12),
+
           // Bouton parcourir
           InkWell(
             onTap: onTap ?? () {
@@ -2791,7 +2863,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             DateTime? pickedDate = await showDatePicker(
               context: context,
               initialDate: selectedDate ?? DateTime.now(),
-              firstDate: DateTime(1900),
+              firstDate: DateTime.now().subtract(const Duration(days: 1)),
               lastDate: DateTime(2100),
             );
 

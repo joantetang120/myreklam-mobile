@@ -13,17 +13,25 @@ class MyPostsScreen extends StatefulWidget {
   State<MyPostsScreen> createState() => _MyPostsScreenState();
 }
 
-class _MyPostsScreenState extends State<MyPostsScreen> {
+class _MyPostsScreenState extends State<MyPostsScreen>
+    with SingleTickerProviderStateMixin {
   List<Map<String, dynamic>> _myPosts = [];
   bool _isLoadingPosts = true;
   String? _postsError;
+  late final TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadMyPosts();
   }
 
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   Future<void> _loadMyPosts({bool showLoader = true}) async {
     if (showLoader) {
@@ -68,8 +76,24 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
 
   Future<void> _refreshPosts() => _loadMyPosts(showLoader: false);
 
+  bool _isRepost(Map<String, dynamic> post) {
+    final originalPostId = post['original_post_id'];
+    return originalPostId != null && originalPostId.toString().isNotEmpty;
+  }
+
+  Map<String, dynamic> _displayPostForCard(Map<String, dynamic> rawPost) {
+    final original = rawPost['original_post'];
+    if (_isRepost(rawPost) && original is Map<String, dynamic>) {
+      return original;
+    }
+    return rawPost;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final myPostsOnly = _myPosts.where((p) => !_isRepost(p)).toList();
+    final repostsOnly = _myPosts.where(_isRepost).toList();
+
     return AppLayout(
       currentIndex: 4,
       onTabTapped: (index) {
@@ -95,9 +119,8 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => const ParticulierMainScreen(
-                  initialIndex: 4,
-                ),
+                builder: (context) =>
+                    const ParticulierMainScreen(initialIndex: 4),
               ),
             );
           },
@@ -111,49 +134,68 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
           ),
         ),
         centerTitle: true,
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: const Color(0xFF616161),
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: const Color(0xFF3AAE5E),
+          tabs: [
+            Tab(text: 'Posts (${myPostsOnly.length})'),
+            Tab(text: 'Republier (${repostsOnly.length})'),
+          ],
+        ),
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshPosts,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Mes posts (${_myPosts.length})',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF616161),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                if (_isLoadingPosts)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else if (_postsError != null)
-                  _buildErrorState(_postsError!)
-                else if (_myPosts.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Text(
-                      'Vous n\'avez pas encore publié de post.',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  )
-                else ...[
-                  for (final post in _myPosts) _buildPostCard(post),
-                ],
-              ],
-            ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildBody(postsOverride: myPostsOnly),
+          _buildBody(postsOverride: repostsOnly),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody({required List<Map<String, dynamic>> postsOverride}) {
+    if (_isLoadingPosts) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 40),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_postsError != null) {
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: _buildErrorState(_postsError!),
+        ),
+      );
+    }
+
+    if (postsOverride.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 40),
+          child: Text(
+            'Aucun post disponible',
+            style: TextStyle(color: Colors.grey),
           ),
         ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _refreshPosts,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(12),
+        itemCount: postsOverride.length,
+        itemBuilder: (context, index) {
+          return _buildPostCard(postsOverride[index]);
+        },
       ),
     );
   }
@@ -162,15 +204,9 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          message,
-          style: const TextStyle(color: Colors.red),
-        ),
+        Text(message, style: const TextStyle(color: Colors.red)),
         const SizedBox(height: 8),
-        TextButton(
-          onPressed: _loadMyPosts,
-          child: const Text('Réessayer'),
-        ),
+        TextButton(onPressed: _loadMyPosts, child: const Text('Réessayer')),
       ],
     );
   }
@@ -182,21 +218,22 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
     return '$serverBase$url';
   }
 
-  String? _extractPostImageUrl(Map<String, dynamic> post) {
+  List<String> _extractPostMediaUrls(Map<String, dynamic> post) {
     final media = post['media_files'] as List? ?? post['media'] as List? ?? [];
-    if (media.isNotEmpty) {
-      final first = media.first;
-      if (first is Map<String, dynamic>) {
-        final url = first['url']?.toString();
-        if (url != null && url.isNotEmpty) return _buildStorageUrl(url);
-      }
-    }
-    return null;
+    if (media.isEmpty) return [];
+    return media
+        .whereType<Map<String, dynamic>>()
+        .map((m) => _buildStorageUrl(m['url']?.toString() ?? ''))
+        .whereType<String>()
+        .where((url) => url.isNotEmpty)
+        .toList();
   }
 
   void _showPostMenu(Map<String, dynamic> post) {
     final postId = post['id']?.toString();
     if (postId == null) return;
+
+    final isRepost = _isRepost(post);
 
     showModalBottomSheet(
       context: context,
@@ -209,23 +246,34 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
           children: [
             const SizedBox(height: 8),
             Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
                 color: Colors.grey[300],
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
+            if (!isRepost)
+              ListTile(
+                leading: const Icon(
+                  Icons.edit_outlined,
+                  color: Color(0xFFFF9800),
+                ),
+                title: const Text('Modifier'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _editPost(post);
+                },
+              ),
             ListTile(
-              leading: const Icon(Icons.edit_outlined, color: Color(0xFFFF9800)),
-              title: const Text('Modifier'),
-              onTap: () {
-                Navigator.pop(context);
-                _editPost(post);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              title: const Text('Supprimer', style: TextStyle(color: Colors.redAccent)),
+              leading: const Icon(
+                Icons.delete_outline,
+                color: Colors.redAccent,
+              ),
+              title: const Text(
+                'Supprimer',
+                style: TextStyle(color: Colors.redAccent),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _confirmDeletePost(postId);
@@ -257,7 +305,9 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Supprimer le post'),
-        content: const Text('Êtes-vous sûr de vouloir supprimer ce post ? Cette action est irréversible.'),
+        content: const Text(
+          'Êtes-vous sûr de vouloir supprimer ce post ? Cette action est irréversible.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -303,15 +353,19 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
   Widget _buildPostCard(Map<String, dynamic> rawPost) {
     final user = rawPost['user'] as Map<String, dynamic>?;
     final userType = user?['account_type']?.toString() ?? 'Particulier';
-    final postText = rawPost['content']?.toString() ?? '';
     final createdAt = rawPost['created_at']?.toString();
-    final imageUrl = _extractPostImageUrl(rawPost);
+
+    final displayPost = _displayPostForCard(rawPost);
+    final postText = displayPost['content']?.toString() ?? '';
+    final mediaUrls = _extractPostMediaUrls(displayPost);
 
     final tags = <PostTag>[
       PostTag(
         title: userType,
         icon: userType.toUpperCase() == 'PRO' ? Icons.business : Icons.person,
-        color: userType.toUpperCase() == 'PRO' ? const Color(0xFF2E9B5B) : const Color(0xFF3AAE5E),
+        color: userType.toUpperCase() == 'PRO'
+            ? const Color(0xFF2E9B5B)
+            : const Color(0xFF3AAE5E),
       ),
     ];
 
@@ -319,7 +373,7 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
       tags: tags,
       title: postText.isNotEmpty ? postText : 'Post sans contenu',
       time: _buildTimeAgo(createdAt),
-      imageUrl: imageUrl,
+      imageUrls: mediaUrls,
       onLike: () {},
       onShare: () {},
       onMorePressed: () => _showPostMenu(rawPost),

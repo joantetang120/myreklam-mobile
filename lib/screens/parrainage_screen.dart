@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/config/api_config.dart';
 
 class ParrainageScreen extends StatefulWidget {
   const ParrainageScreen({super.key});
@@ -10,6 +14,70 @@ class ParrainageScreen extends StatefulWidget {
 }
 
 class _ParrainageScreenState extends State<ParrainageScreen> {
+  bool _isLoading = true;
+  Map<String, dynamic> _stats = {};
+  List<dynamic> _history = [];
+  String? _parrainageCode;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReferralData();
+  }
+
+  Future<void> _loadReferralData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // Get parrainage code from user session
+      _parrainageCode = UserSession().parrainageCode;
+
+      // Fetch stats and history in parallel
+      final results = await Future.wait([
+        ApiClient().authenticatedGet('/referral/stats'),
+        ApiClient().authenticatedGet('/referral/history'),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _stats = results[0]['stats'] ?? {};
+          _history = results[1]['history'] ?? [];
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  String get _referralLink {
+    final baseUrl = ApiConfig.baseUrl.replaceAll('/api', '');
+    return '$baseUrl?ref-parrain=$_parrainageCode';
+  }
+
+  Future<void> _copyToClipboard(String text, String message) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: const Color(0xFF3AAE5E),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return AppLayout(
@@ -67,40 +135,64 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Summary cards row
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    _buildSummaryCard(
-                      icon: Icons.group,
-                      label: 'Particulier parrainé',
-                      reward: '2 My\'s',
-                      color: const Color(0xFF2196F3),
-                      bgColor: const Color(0xFFE3F2FD),
-                      borderColor: const Color(0xFFBBDEFB),
+              // Summary stats row
+              if (_isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: CircularProgressIndicator(color: Color(0xFF3AAE5E)),
+                  ),
+                )
+              else if (_error != null)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        Text('Erreur: $_error', textAlign: TextAlign.center),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: _loadReferralData,
+                          child: const Text('Réessayer'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 10),
-                    _buildSummaryCard(
-                      icon: Icons.card_giftcard,
-                      label: 'Entreprise gratuite',
-                      reward: '2 My\'s',
-                      color: const Color(0xFFFF9800),
-                      bgColor: const Color(0xFFFFF3E0),
-                      borderColor: const Color(0xFFFFE0B2),
-                    ),
-                    const SizedBox(width: 10),
-                    _buildSummaryCard(
-                      icon: Icons.stars,
-                      label: 'Entreprise Premium',
-                      reward: '5 My\'s',
-                      color: const Color(0xFF4CAF50),
-                      bgColor: const Color(0xFFE8F5E9),
-                      borderColor: const Color(0xFFC8E6C9),
-                    ),
-                  ],
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      _buildSummaryCard(
+                        icon: Icons.group,
+                        label: 'Parrainés',
+                        value: '${_stats['total_referred'] ?? 0}',
+                        color: const Color(0xFF2196F3),
+                        bgColor: const Color(0xFFE3F2FD),
+                        borderColor: const Color(0xFFBBDEFB),
+                      ),
+                      const SizedBox(width: 10),
+                      _buildSummaryCard(
+                        icon: Icons.check_circle,
+                        label: 'Complétés',
+                        value: '${_stats['completed'] ?? 0}',
+                        color: const Color(0xFF4CAF50),
+                        bgColor: const Color(0xFFE8F5E9),
+                        borderColor: const Color(0xFFC8E6C9),
+                      ),
+                      const SizedBox(width: 10),
+                      _buildSummaryCard(
+                        icon: Icons.stars,
+                        label: 'My\'s gagnés',
+                        value: '${_stats['rewards_points'] ?? 0}',
+                        color: const Color(0xFFFF9800),
+                        bgColor: const Color(0xFFFFF3E0),
+                        borderColor: const Color(0xFFFFE0B2),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
               const SizedBox(height: 24),
 
@@ -108,31 +200,34 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
               _buildReferralSection(
                 icon: Icons.group_outlined,
                 title: 'Votre code de parrainage',
-                content: '33587869',
+                content: _parrainageCode ?? 'Chargement...',
                 buttonLabel: 'Copier le code',
                 description: 'Partagez ce code avec vos amis pour qu\'ils puissent s\'inscrire et vous faire gagner des My\'s',
+                onCopy: () {
+                  if (_parrainageCode != null) {
+                    _copyToClipboard(_parrainageCode!, 'Code copié !');
+                  }
+                },
               ),
 
               const SizedBox(height: 16),
 
               // Referral Link Section
               _buildReferralSection(
-                icon: Icons.sell_outlined,
+                icon: Icons.link_outlined,
                 title: 'Votre lien de parrainage',
-                content: 'https://www.myreklam.fr/?ref-parrain=38684657',
+                content: _referralLink,
                 buttonLabel: 'Copier le lien',
-                description: 'Partagez ce code avec vos amis pour qu\'ils puissent s\'inscrire et vous faire gagner des My\'s',
+                description: 'Partagez ce lien avec vos amis pour qu\'ils puissent s\'inscrire et vous faire gagner des My\'s',
+                onCopy: () => _copyToClipboard(_referralLink, 'Lien copié !'),
               ),
 
-              const SizedBox(height: 16),
-
-              // Share Message Section
-              _buildShareMessageSection(),
 
               const SizedBox(height: 24),
 
               // History list at bottom
-              _buildHistorySection(),
+              if (!_isLoading && _error == null)
+                _buildHistorySection(),
 
               const SizedBox(height: 40),
             ],
@@ -145,7 +240,7 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
   Widget _buildSummaryCard({
     required IconData icon,
     required String label,
-    required String reward,
+    required String value,
     required Color color,
     required Color bgColor,
     required Color borderColor,
@@ -180,7 +275,7 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              reward,
+              value,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
@@ -199,6 +294,7 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
     required String content,
     required String buttonLabel,
     required String description,
+    required VoidCallback onCopy,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -250,22 +346,25 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3E0),
-                          borderRadius: BorderRadius.circular(8),
+                  GestureDetector(
+                    onTap: onCopy,
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF3E0),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.copy, color: Color(0xFFFF9800), size: 20),
                         ),
-                        child: const Icon(Icons.copy, color: Color(0xFFFF9800), size: 20),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        buttonLabel,
-                        style: TextStyle(fontSize: 10, color: Colors.grey[500]),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          buttonLabel,
+                          style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -283,88 +382,6 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
     );
   }
 
-  Widget _buildShareMessageSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF2196F3).withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE3F2FD).withOpacity(0.5),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(11),
-                  topRight: Radius.circular(11),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.share, color: Color(0xFF2196F3), size: 20),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Message de partage',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF2196F3),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[100]!),
-                ),
-                child: Text(
-                  'Bonjour, j\'utilise myreklam et j\'en suis vraiment satisfait. Voici un lien de parrainage qui te permet de t\'inscrire et de bénéficier de nombreux avantages. En utilisant ce lien, tu m\'aideras à gagner des points My\'s que je pourrai échanger contre des récompenses ! Merci d\'avance ! https://www.myreklam.fr/?ref-parrain=38684657',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[600],
-                    height: 1.5,
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.copy, size: 18),
-                  label: const Text(
-                    'Copier le message',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFF3E0),
-                    foregroundColor: const Color(0xFFFF9800),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildHistorySection() {
     return Padding(
@@ -384,23 +401,45 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
           ],
         ),
         child: Column(
-          children: [
-            _buildHistoryRow('Enterprise Sarl', '30/12/2025', '+ 2 My\'s', 'Particulier'),
-            const SizedBox(height: 12),
-            _buildHistoryRow('Enterprise Sarl', '30/12/2025', '+ 2 My\'s', 'Particulier'),
-            const SizedBox(height: 12),
-            _buildHistoryRow('Enterprise Sarl', '30/12/2025', '+ 2 My\'s', 'Particulier'),
-            const SizedBox(height: 12),
-            _buildHistoryRow('Enterprise Sarl', '30/12/2025', '+ 2 My\'s', 'Particulier'),
-            const SizedBox(height: 12),
-            _buildHistoryRow('Enterprise Sarl', '30/12/2025', '+ 2 My\'s', 'Particulier'),
-          ],
+          children: _history.isEmpty
+              ? [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Aucun parrainage pour le moment',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ),
+                ]
+              : _history.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  final row = _buildHistoryRow(
+                    item['referred_name'] ?? 'Utilisateur',
+                    item['created_at'] ?? '',
+                    '+ ${item['reward_points'] ?? 0} My\'s',
+                    item['account_type'] == 'pro' ? 'Pro' : 'Particulier',
+                    status: item['status'] ?? 'pending',
+                  );
+                  if (index < _history.length - 1) {
+                    return Column(
+                      children: [
+                        row,
+                        const SizedBox(height: 12),
+                      ],
+                    );
+                  }
+                  return row;
+                }).toList(),
         ),
       ),
     );
   }
 
-  Widget _buildHistoryRow(String name, String date, String amount, String type) {
+  Widget _buildHistoryRow(String name, String date, String amount, String type, {String status = 'pending'}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(

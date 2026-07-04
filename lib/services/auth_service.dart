@@ -1,4 +1,6 @@
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/push_notification_service.dart';
+import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/utils/user_session.dart';
 
@@ -13,17 +15,25 @@ class AuthService {
   Future<Map<String, dynamic>> register({
     required String email,
     required String password,
-    String? referralCode,
+    String? parrainageCode,
   }) async {
-    final body = <String, dynamic>{
-      'email': email,
-      'password': password,
-    };
-    if (referralCode != null && referralCode.isNotEmpty) {
-      body['referral_code'] = referralCode;
+    final body = <String, dynamic>{'email': email, 'password': password};
+    if (parrainageCode != null && parrainageCode.isNotEmpty) {
+      body['parrainage_code'] = parrainageCode;
     }
 
     final response = await _api.post('/auth/register', body: body);
+    return response;
+  }
+
+  /// POST /api/referral/validate
+  Future<Map<String, dynamic>> validateParrainageCode({
+    required String parrainageCode,
+  }) async {
+    final response = await _api.post(
+      '/referral/validate',
+      body: {'parrainage_code': parrainageCode},
+    );
     return response;
   }
 
@@ -32,10 +42,10 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final response = await _api.post('/auth/login', body: {
-      'email': email,
-      'password': password,
-    });
+    final response = await _api.post(
+      '/auth/login',
+      body: {'email': email, 'password': password},
+    );
 
     if (response['token'] != null) {
       await TokenStorage.saveTokens(
@@ -46,6 +56,7 @@ class AuthService {
 
     if (response['user'] != null) {
       _updateSessionFromUser(response['user']);
+      await _registerPushToken();
     }
 
     return response;
@@ -53,12 +64,18 @@ class AuthService {
 
   /// POST /api/auth/logout
   Future<Map<String, dynamic>> logout() async {
+    // Unregister the device's FCM token first, while the auth token is still
+    // valid, so this device stops receiving this user's push notifications.
+    await PushNotificationService.instance.unregisterToken();
     try {
       final response = await _api.authenticatedPost('/auth/logout');
       return response;
     } finally {
       await TokenStorage.clearTokens();
+      await ReactionCacheService.clearCurrentUserCache();
       UserSession().clear();
+      // Note: We do NOT clear onboarding flags here
+      // Onboarding modal should only show once for new users
     }
   }
 
@@ -67,10 +84,10 @@ class AuthService {
     required String email,
     required String purpose,
   }) async {
-    return await _api.post('/auth/otp/send', body: {
-      'email': email,
-      'purpose': purpose,
-    });
+    return await _api.post(
+      '/auth/otp/send',
+      body: {'email': email, 'purpose': purpose},
+    );
   }
 
   /// POST /api/auth/otp/verify
@@ -79,11 +96,10 @@ class AuthService {
     required String code,
     required String purpose,
   }) async {
-    final response = await _api.post('/auth/otp/verify', body: {
-      'email': email,
-      'code': code,
-      'purpose': purpose,
-    });
+    final response = await _api.post(
+      '/auth/otp/verify',
+      body: {'email': email, 'code': code, 'purpose': purpose},
+    );
 
     if (response['token'] != null) {
       await TokenStorage.saveTokens(
@@ -94,6 +110,7 @@ class AuthService {
 
     if (response['user'] != null) {
       _updateSessionFromUser(response['user']);
+      await _registerPushToken();
     }
 
     return response;
@@ -104,19 +121,15 @@ class AuthService {
     required String email,
     required String purpose,
   }) async {
-    return await _api.post('/auth/otp/resend', body: {
-      'email': email,
-      'purpose': purpose,
-    });
+    return await _api.post(
+      '/auth/otp/resend',
+      body: {'email': email, 'purpose': purpose},
+    );
   }
 
   /// POST /api/auth/forgot-password
-  Future<Map<String, dynamic>> forgotPassword({
-    required String email,
-  }) async {
-    return await _api.post('/auth/forgot-password', body: {
-      'email': email,
-    });
+  Future<Map<String, dynamic>> forgotPassword({required String email}) async {
+    return await _api.post('/auth/forgot-password', body: {'email': email});
   }
 
   /// POST /api/auth/reset-password
@@ -125,11 +138,10 @@ class AuthService {
     required String otpCode,
     required String newPassword,
   }) async {
-    return await _api.post('/auth/reset-password', body: {
-      'email': email,
-      'otp_code': otpCode,
-      'new_password': newPassword,
-    });
+    return await _api.post(
+      '/auth/reset-password',
+      body: {'email': email, 'otp_code': otpCode, 'new_password': newPassword},
+    );
   }
 
   /// POST /api/auth/social/google
@@ -138,10 +150,7 @@ class AuthService {
     required String token,
     String? email,
   }) async {
-    final body = <String, dynamic>{
-      'provider': provider,
-      'token': token,
-    };
+    final body = <String, dynamic>{'provider': provider, 'token': token};
     if (email != null) body['email'] = email;
 
     final response = await _api.post('/auth/social/$provider', body: body);
@@ -155,6 +164,7 @@ class AuthService {
 
     if (response['user'] != null) {
       _updateSessionFromUser(response['user']);
+      await _registerPushToken();
     }
 
     return response;
@@ -164,9 +174,10 @@ class AuthService {
   Future<Map<String, dynamic>> setAccountType({
     required String accountType,
   }) async {
-    final response = await _api.authenticatedPut('/auth/account-type', body: {
-      'account_type': accountType,
-    });
+    final response = await _api.authenticatedPut(
+      '/auth/account-type',
+      body: {'account_type': accountType},
+    );
 
     UserSession().setUserType(accountType);
     return response;
@@ -183,15 +194,29 @@ class AuthService {
 
       final user = Map<String, dynamic>.from(response['user']);
       if (response['subscription'] is Map) {
-        user['subscription'] = Map<String, dynamic>.from(response['subscription']);
+        user['subscription'] = Map<String, dynamic>.from(
+          response['subscription'],
+        );
       }
 
       _updateSessionFromUser(user);
+      // Re-register the FCM token on cold start for an already-logged-in user.
+      await _registerPushToken();
       return user;
     } on ApiException {
       rethrow;
     } catch (_) {
       rethrow;
+    }
+  }
+
+  /// Register this device's FCM token with the backend. Best-effort: never
+  /// throws, so a push-registration failure can't break the auth flow.
+  Future<void> _registerPushToken() async {
+    try {
+      await PushNotificationService.instance.registerToken();
+    } catch (_) {
+      // Ignored — registration is retried on next auth / token refresh.
     }
   }
 
@@ -214,6 +239,8 @@ class AuthService {
       isEmailVerified: user['is_email_verified'],
       profileCompleted: user['profile_completed'],
       subscription: subscription,
+      parrainageCode: user['parrainage_code'],
+      mys: user['mys'],
     );
   }
 }

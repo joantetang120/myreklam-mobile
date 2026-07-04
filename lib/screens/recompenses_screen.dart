@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/screens/mys_history_screen.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
+import 'package:myreklam/utils/subscription_helper.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/services/api_client.dart';
+import 'package:intl/intl.dart';
 
 class RecompensesScreen extends StatefulWidget {
   const RecompensesScreen({super.key});
@@ -10,8 +16,263 @@ class RecompensesScreen extends StatefulWidget {
 }
 
 class _RecompensesScreenState extends State<RecompensesScreen> {
+  // Historique state
+  List<Map<String, dynamic>> _earnings = [];
+  bool _isLoadingEarnings = true;
+  bool _isConverting = false;
+  double _currentMys = 0;
+
+  // Level thresholds
+  static const int SILVER_MIN = 0;
+  static const int SILVER_MAX = 50;
+  static const int GOLD_MIN = 51;
+  static const int GOLD_MAX = 200;
+  static const int PLATINUM_MIN = 201;
+
+  // Calculate current level based on My's count
+  Map<String, dynamic> _calculateLevel(double mys) {
+    String level;
+    Color color;
+    int currentMin;
+    int currentMax;
+    int nextLevelMin;
+    String nextLevel;
+
+    if (mys <= SILVER_MAX) {
+      level = 'Silver';
+      color = Colors.grey[400]!;
+      currentMin = SILVER_MIN;
+      currentMax = SILVER_MAX;
+      nextLevelMin = GOLD_MIN;
+      nextLevel = 'Gold';
+    } else if (mys <= GOLD_MAX) {
+      level = 'Gold';
+      color = const Color(0xFFFF9800);
+      currentMin = GOLD_MIN;
+      currentMax = GOLD_MAX;
+      nextLevelMin = PLATINUM_MIN;
+      nextLevel = 'Platinum';
+    } else {
+      level = 'Platinum';
+      color = const Color(0xFF4DB6AC);
+      currentMin = PLATINUM_MIN;
+      currentMax = PLATINUM_MIN + 300; // Arbitrary max for display
+      nextLevelMin = currentMax;
+      nextLevel = 'Max';
+    }
+
+    // Calculate progress within current level
+    double progress;
+    double remaining;
+    if (level == 'Platinum') {
+      progress = 1.0;
+      remaining = 0;
+    } else {
+      double levelRange = (currentMax - currentMin + 1).toDouble();
+      double currentProgress = mys - currentMin;
+      progress = currentProgress / levelRange;
+      remaining = nextLevelMin - mys;
+    }
+
+    return {
+      'level': level,
+      'color': color,
+      'progress': progress,
+      'remaining': remaining,
+      'nextLevel': nextLevel,
+      'currentMin': currentMin,
+      'currentMax': currentMax,
+      'mys': mys,
+    };
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+    _loadEarningsHistory();
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final response = await ApiClient().authenticatedGet('/profile/me');
+      if (response['user'] != null) {
+        final mys = response['user']['mys'];
+        if (mys != null) {
+          final mysValue = mys is int
+              ? mys.toDouble()
+              : double.tryParse(mys.toString()) ?? 0.0;
+          setState(() => _currentMys = mysValue);
+          UserSession().updateMys(mysValue);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+    }
+  }
+
+  Future<void> _loadEarningsHistory() async {
+    setState(() => _isLoadingEarnings = true);
+    try {
+      final response = await ApiClient().authenticatedGet(
+        '/mys/history?per_page=5',
+      );
+      if (response['success'] == true) {
+        final earningsData = response['earnings'];
+        if (earningsData is Map && earningsData.containsKey('data')) {
+          _earnings = List<Map<String, dynamic>>.from(earningsData['data']);
+        } else if (earningsData is List) {
+          _earnings = List<Map<String, dynamic>>.from(earningsData);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading earnings history: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingEarnings = false);
+    }
+  }
+
+  Future<void> _handleConvertMys() async {
+    if (!SubscriptionHelper.canAccessFeature(ProFeature.convertMysToRewards)) {
+      SubscriptionHelper.showPremiumRequiredDialog(
+        context,
+        featureName: 'Conversion des My\'s en récompense',
+      );
+      return;
+    }
+
+    final availableMys = _currentMys > 0 ? _currentMys : UserSession().mys;
+    if (availableMys < 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vous devez avoir au moins 1 My\'s à convertir.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final controller = TextEditingController(
+      text: availableMys.toStringAsFixed(availableMys % 1 == 0 ? 0 : 2),
+    );
+
+    final amount = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Convertir vos My\'s'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Solde disponible: $availableMys My\'s'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Montant à convertir',
+                suffixText: 'My\'s',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final parsed = double.tryParse(
+                controller.text.trim().replaceAll(',', '.'),
+              );
+              if (parsed == null || parsed < 1 || parsed > availableMys) {
+                return;
+              }
+              Navigator.pop(ctx, parsed);
+            },
+            child: const Text('Convertir'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+    if (amount == null) return;
+
+    setState(() => _isConverting = true);
+    try {
+      final response = await MysEarningService().convertMys(amount: amount);
+      final conversion = response['conversion'];
+      final newBalance = conversion is Map
+          ? double.tryParse(conversion['new_balance'].toString())
+          : null;
+
+      if (newBalance != null) {
+        setState(() => _currentMys = newBalance);
+        UserSession().updateMys(newBalance);
+      }
+
+      await _loadEarningsHistory();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            response['message']?.toString() ??
+                'Conversion enregistrée avec succès.',
+          ),
+          backgroundColor: const Color(0xFF3AAE5E),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isConverting = false);
+    }
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('dd/MM/yyyy').format(date);
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  String _getActionLabel(String? actionType) {
+    if (actionType == null) return 'Action';
+    return switch (actionType) {
+      'bon_plan' => 'Bon plan',
+      'demande' => 'Demande',
+      'evenement' => 'Événement',
+      'formation' => 'Formation',
+      'job_offer' => 'Offre d\'emploi',
+      'profile_complete' => 'Profil complété',
+      'comment' => 'Commentaire',
+      'review' => 'Avis',
+      'share' => 'Partage',
+      'event_participation' => 'Participation événement',
+      'training_subscription' => 'Inscription formation',
+      'job_application' => 'Candidature',
+      'referral_particulier' => 'Parrainage particulier',
+      'referral_pro' => 'Parrainage entreprise',
+      'mys_conversion' => 'Conversion récompense',
+      _ => actionType,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final double userMys = _currentMys > 0 ? _currentMys : UserSession().mys;
+    final levelInfo = _calculateLevel(userMys);
     return AppLayout(
       currentIndex: 4,
       onTabTapped: (index) {
@@ -19,8 +280,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  ParticulierMainScreen(initialIndex: index),
+              builder: (context) => ParticulierMainScreen(initialIndex: index),
             ),
           );
         }
@@ -65,16 +325,13 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
               const SizedBox(height: 20),
 
               // Balance card
-              _buildBalanceCard(),
+              _buildBalanceCard(levelInfo, userMys),
 
               const SizedBox(height: 12),
-              
+
               Text(
                 'Echangez vos My\'s contre des avantages exclusifs',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
 
               const SizedBox(height: 12),
@@ -85,11 +342,16 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: _isConverting ? null : _handleConvertMys,
                     icon: const Icon(Icons.swap_horiz, size: 18),
-                    label: const Text(
-                      'Convertir en récompenses',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    label: Text(
+                      _isConverting
+                          ? 'Conversion...'
+                          : 'Convertir en récompenses',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF9800),
@@ -113,7 +375,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                   children: [
                     _buildTierBadge(
                       icon: Icons.show_chart,
-                      label: '10%',
+                      label: '${(levelInfo['progress'] * 100).toInt()}%',
                       sublabel: 'Progression',
                       color: const Color(0xFF2196F3),
                       borderColor: const Color(0xFFBBDEFB),
@@ -122,20 +384,38 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                     const SizedBox(width: 8),
                     _buildTierBadge(
                       icon: Icons.emoji_events_outlined,
-                      label: 'Gold',
+                      label: levelInfo['level'],
                       sublabel: 'Niveau actuel',
-                      color: const Color(0xFFFF9800),
-                      borderColor: const Color(0xFFFFE0B2),
-                      iconBg: const Color(0xFFFFF3E0),
+                      color: levelInfo['color'],
+                      borderColor: levelInfo['level'] == 'Silver'
+                          ? Colors.grey[300]!
+                          : (levelInfo['level'] == 'Gold'
+                                ? const Color(0xFFFFE0B2)
+                                : const Color(0xFFB2DFDB)),
+                      iconBg: levelInfo['level'] == 'Silver'
+                          ? const Color(0xFFF0F0F0)
+                          : (levelInfo['level'] == 'Gold'
+                                ? const Color(0xFFFFF3E0)
+                                : const Color(0xFFE8F5F3)),
                     ),
                     const SizedBox(width: 8),
                     _buildTierBadge(
-                      icon: Icons.diamond_outlined,
-                      label: 'Platinum',
-                      sublabel: 'Prochain niveau',
-                      color: const Color(0xFFFFD600),
-                      borderColor: const Color(0xFFFFF9C4),
-                      iconBg: const Color(0xFFFFFDE7),
+                      icon: levelInfo['nextLevel'] == 'Max'
+                          ? Icons.star
+                          : Icons.diamond_outlined,
+                      label: levelInfo['nextLevel'],
+                      sublabel: levelInfo['nextLevel'] == 'Max'
+                          ? 'Niveau max'
+                          : 'Prochain niveau',
+                      color: levelInfo['nextLevel'] == 'Max'
+                          ? const Color(0xFF4DB6AC)
+                          : const Color(0xFFFFD600),
+                      borderColor: levelInfo['nextLevel'] == 'Max'
+                          ? const Color(0xFFB2DFDB)
+                          : const Color(0xFFFFF9C4),
+                      iconBg: levelInfo['nextLevel'] == 'Max'
+                          ? const Color(0xFFE8F5F3)
+                          : const Color(0xFFFFFDE7),
                     ),
                   ],
                 ),
@@ -144,12 +424,12 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
               const SizedBox(height: 24),
 
               // Ambassador section with tier cards
-              _buildAmbassadorSection(),
+              _buildAmbassadorSection(levelInfo),
 
               const SizedBox(height: 24),
 
               // Tab bar (moved or adjusted if needed, but the user image shows history below)
-              _buildHistoriqueTab(),
+              _buildHistoriqueTab(userMys),
 
               const SizedBox(height: 24),
 
@@ -164,7 +444,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
     );
   }
 
-  Widget _buildBalanceCard() {
+  Widget _buildBalanceCard(Map<String, dynamic> levelInfo, double userMys) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Stack(
@@ -194,8 +474,8 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text(
-                      '180',
+                    Text(
+                      userMys.toString(),
                       style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
@@ -209,8 +489,12 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                       decoration: const BoxDecoration(
                         color: Colors.amber,
                         shape: BoxShape.circle,
-                      ),  
-                      child:  Image.asset('assets/images/image-removebg-preview 2.png', width: 14, height: 14)
+                      ),
+                      child: Image.asset(
+                        'assets/images/image-removebg-preview 2.png',
+                        width: 14,
+                        height: 14,
+                      ),
                     ),
                   ],
                 ),
@@ -219,11 +503,13 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Niveau Gold',
+                      'Niveau ${levelInfo['level']}',
                       style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                     ),
                     Text(
-                      '30 My\'s jusqu\'au PLATINUM',
+                      levelInfo['remaining'] > 0
+                          ? '${levelInfo['remaining']} My\'s jusqu\'au ${levelInfo['nextLevel'].toUpperCase()}'
+                          : 'Niveau maximum atteint',
                       style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                     ),
                   ],
@@ -232,23 +518,33 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
-                    value: 0.6,
+                    value: levelInfo['progress'],
                     minHeight: 8,
                     backgroundColor: Colors.white,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF9800)),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      levelInfo['color'],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 6),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      '22 My\'s',
-                      style: TextStyle(fontSize: 11, color: Color(0xFFFF9800), fontWeight: FontWeight.w500),
+                    Text(
+                      '${levelInfo['currentMin']} My\'s',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: levelInfo['color'],
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                    const Text(
-                      '200 My\'s',
-                      style: TextStyle(fontSize: 11, color: Color(0xFFFF9800), fontWeight: FontWeight.w500),
+                    Text(
+                      '${levelInfo['currentMax']} My\'s',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: levelInfo['color'],
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -270,7 +566,11 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                   ),
                 ],
               ),
-              child: const Icon(Icons.emoji_events, color: Colors.white, size: 28),
+              child: const Icon(
+                Icons.emoji_events,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
           ),
         ],
@@ -342,7 +642,12 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
     );
   }
 
-  Widget _buildAmbassadorSection() {
+  Widget _buildAmbassadorSection(Map<String, dynamic> levelInfo) {
+    final double userMys = UserSession().mys;
+    final String currentLevel = levelInfo['level'];
+    final bool isSilver = currentLevel == 'Silver';
+    final bool isGold = currentLevel == 'Gold';
+    final bool isPlatinum = currentLevel == 'Platinum';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -363,8 +668,11 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                     color: Color(0xFFFFF3E0),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.emoji_events_outlined,
-                      color: Color(0xFFFF9800), size: 16),
+                  child: const Icon(
+                    Icons.emoji_events_outlined,
+                    color: Color(0xFFFF9800),
+                    size: 16,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -424,13 +732,16 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                             color: Colors.amber,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.monetization_on,
-                              color: Colors.white, size: 35),
+                          child: const Icon(
+                            Icons.monetization_on,
+                            color: Colors.white,
+                            size: 35,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 10),
-                      const Text(
-                        '180 My\'s',
+                      Text(
+                        '$userMys My\'s',
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
@@ -445,30 +756,55 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
             const SizedBox(height: 32),
 
             // Silver Card
-            _buildTierStatusCard(
-              title: 'Silver',
-              subtitle: '0 - 50 My\'s',
-              icon: Icons.check_circle,
-              color: Colors.grey[400]!,
-              bgColor: const Color(0xFFF0F0F0),
-              borderColor: Colors.grey[300]!,
-            ),
+            isSilver
+                ? _buildActiveTierCard(levelInfo)
+                : _buildTierStatusCard(
+                    title: 'Silver',
+                    subtitle: '0 - 50 My\'s',
+                    icon: userMys > SILVER_MAX
+                        ? Icons.check_circle
+                        : Icons.lock_outline,
+                    color: userMys > SILVER_MAX
+                        ? Colors.grey[400]!
+                        : Colors.grey[300]!,
+                    bgColor: const Color(0xFFF0F0F0),
+                    borderColor: Colors.grey[300]!,
+                  ),
             const SizedBox(height: 12),
 
-            // Gold Card (Active)
-            _buildActiveTierCard(),
+            // Gold Card
+            isGold
+                ? _buildActiveTierCard(levelInfo)
+                : _buildTierStatusCard(
+                    title: 'Gold',
+                    subtitle: '51 - 200 My\'s',
+                    icon: userMys > GOLD_MAX
+                        ? Icons.check_circle
+                        : Icons.lock_outline,
+                    color: userMys > GOLD_MAX
+                        ? const Color(0xFFFF9800)
+                        : Colors.grey[300]!,
+                    bgColor: userMys > GOLD_MAX
+                        ? const Color(0xFFFFF7EE)
+                        : const Color(0xFFF0F0F0),
+                    borderColor: userMys > GOLD_MAX
+                        ? const Color(0xFFFFE0B2)
+                        : Colors.grey[300]!,
+                  ),
 
             const SizedBox(height: 12),
 
             // Platinum Card
-            _buildTierStatusCard(
-              title: 'PLATINUM',
-              subtitle: '201+ My\'s',
-              icon: Icons.check_circle,
-              color: const Color(0xFF4DB6AC),
-              bgColor: const Color(0xFFE8F5F3),
-              borderColor: const Color(0xFFB2DFDB),
-            ),
+            isPlatinum
+                ? _buildActiveTierCard(levelInfo)
+                : _buildTierStatusCard(
+                    title: 'PLATINUM',
+                    subtitle: '201+ My\'s',
+                    icon: Icons.lock_outline,
+                    color: Colors.grey[300]!,
+                    bgColor: const Color(0xFFF0F0F0),
+                    borderColor: Colors.grey[300]!,
+                  ),
           ],
         ),
       ),
@@ -502,7 +838,9 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: color == const Color(0xFF4DB6AC) ? const Color(0xFF26A69A) : Colors.grey[700],
+                  color: color == const Color(0xFF4DB6AC)
+                      ? const Color(0xFF26A69A)
+                      : Colors.grey[700],
                 ),
               ),
               const SizedBox(height: 2),
@@ -521,43 +859,52 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
     );
   }
 
-  Widget _buildActiveTierCard() {
+  Widget _buildActiveTierCard(Map<String, dynamic> levelInfo) {
+    final String level = levelInfo['level'];
+    final Color color = levelInfo['color'];
+    final double progress = levelInfo['progress'];
+    final double remaining = levelInfo['remaining'];
+    final String nextLevel = levelInfo['nextLevel'];
+    final int currentMin = levelInfo['currentMin'];
+    final int currentMax = levelInfo['currentMax'];
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF7EE),
+            color: level == 'Silver'
+                ? const Color(0xFFF0F0F0)
+                : (level == 'Gold'
+                      ? const Color(0xFFFFF7EE)
+                      : const Color(0xFFE8F5F3)),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFF9800).withOpacity(0.5)),
+            border: Border.all(color: color.withOpacity(0.5)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(Icons.check_circle,
-                      color: Color(0xFFFF9800), size: 28),
+                  Icon(Icons.check_circle, color: color, size: 28),
                   const SizedBox(width: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Gold',
+                      Text(
+                        level,
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFFFF9800),
+                          color: color,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '51My\'s - 200 My\'s',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[600],
-                        ),
+                        level == 'Platinum'
+                            ? '201+ My\'s'
+                            : '$currentMin - $currentMax My\'s',
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -567,16 +914,17 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: LinearProgressIndicator(
-                  value: 0.7,
+                  value: progress,
                   minHeight: 6,
                   backgroundColor: Colors.white,
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(Color(0xFFFF9800)),
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
                 ),
               ),
               const SizedBox(height: 10),
               Text(
-                'Plus que 56 My\'s pour PLATINUM',
+                remaining > 0
+                    ? 'Plus que $remaining My\'s pour ${nextLevel.toUpperCase()}'
+                    : 'Niveau maximum atteint !',
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.grey[500],
@@ -592,7 +940,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF9800),
+              color: color,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -616,7 +964,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
     );
   }
 
-  Widget _buildHistoriqueTab() {
+  Widget _buildHistoriqueTab(double userMys) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -642,8 +990,11 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.emoji_events_outlined,
-                        size: 20, color: Colors.grey),
+                    const Icon(
+                      Icons.emoji_events_outlined,
+                      size: 20,
+                      color: Colors.grey,
+                    ),
                     const SizedBox(width: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -657,9 +1008,9 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
-                          '24 My\'s gagnés',
-                          style: TextStyle(
+                        Text(
+                          '$userMys My\'s gagnés',
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF3AAE5E),
@@ -669,25 +1020,6 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                     ),
                   ],
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Tout',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.keyboard_arrow_down,
-                          size: 16, color: Colors.grey[400]),
-                    ],
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -695,40 +1027,77 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
             const SizedBox(height: 16),
 
             // History rows
-            _buildHistoryRow('Enterprise Sarl', '30/12/2025', '+ 2 My\'s', 'Particulier'),
-            const SizedBox(height: 8),
-            _buildHistoryRow('Enterprise Sarl', '30/12/2025', '+ 2 My\'s', 'Particulier'),
-            const SizedBox(height: 8),
-            _buildHistoryRow('Enterprise Sarl', '30/12/2025', '+ 2 My\'s', 'Particulier'),
-            const SizedBox(height: 8),
-            _buildHistoryRow('Enterprise Sarl', '30/12/2025', '+ 2 My\'s', 'Particulier'),
-            const SizedBox(height: 8),
-            _buildHistoryRow('Enterprise Sarl', '30/12/2025', '+ 2 My\'s', 'Particulier'),
+            if (_isLoadingEarnings)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_earnings.isEmpty)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    'Aucun historique disponible',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                  ),
+                ),
+              )
+            else
+              ..._earnings.asMap().entries.map((entry) {
+                final earning = entry.value;
+                final isLast = entry.key == _earnings.length - 1;
+                return Padding(
+                  padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
+                  child: _buildHistoryRow(
+                    earning['description'] ??
+                        _getActionLabel(earning['action_type']),
+                    _formatDate(earning['created_at']),
+                    _formatMysAmount(earning['amount']),
+                    _getActionLabel(earning['action_type']),
+                  ),
+                );
+              }).toList(),
 
             const SizedBox(height: 16),
 
             // Voir plus
-            Align(
-              alignment: Alignment.centerRight,
-              child: GestureDetector(
-                onTap: () {},
-                child: const Text(
-                  'Voir plus',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF2D2D2D),
+            if (_earnings.isNotEmpty)
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            MysHistoryScreen(totalMys: userMys),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Voir plus',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF2D2D2D),
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHistoryRow(String name, String date, String amount, String type) {
+  Widget _buildHistoryRow(
+    String name,
+    String date,
+    String amount,
+    String type,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -761,10 +1130,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                 const SizedBox(height: 2),
                 Text(
                   date,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
                 ),
               ],
             ),
@@ -783,16 +1149,19 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
               const SizedBox(height: 2),
               Text(
                 type,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
               ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  String _formatMysAmount(dynamic rawAmount) {
+    final amount = double.tryParse(rawAmount.toString()) ?? 0;
+    final formatted = amount.abs().toStringAsFixed(amount % 1 == 0 ? 0 : 2);
+    return amount < 0 ? '- $formatted My\'s' : '+ $formatted My\'s';
   }
 
   Widget _buildEarnMoreSection() {
@@ -812,8 +1181,11 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  const Icon(Icons.lightbulb_outline,
-                      color: Color(0xFFFFCCBC), size: 20),
+                  const Icon(
+                    Icons.lightbulb_outline,
+                    color: Color(0xFFFFCCBC),
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   const Text(
                     'Comment gagner plus de My\'s',
@@ -831,15 +1203,15 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
               padding: const EdgeInsets.only(left: 40, bottom: 12),
               child: Row(
                 children: [
-                  const Icon(Icons.lightbulb_outline,
-                      color: Colors.grey, size: 18),
+                  const Icon(
+                    Icons.lightbulb_outline,
+                    color: Colors.grey,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   const Text(
                     'Tips',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
                   ),
                 ],
               ),
@@ -855,58 +1227,74 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
             _buildEarnItem(
               icon: Icons.campaign_outlined,
               title: 'Publication d\'une annonce',
-              subtitle: 'Publiez une annonce et recevez une récompense immédiate !',
+              subtitle:
+                  'Publiez une annonce et recevez une récompense immédiate !',
               reward: '2 My\'s',
               index: 1,
             ),
             _buildEarnItem(
               icon: Icons.chat_bubble_outline,
               title: 'Commenter une annonce',
-              subtitle: 'Laissez un commentaire et gagnez des points à chaque interaction !',
+              subtitle:
+                  'Laissez un commentaire et gagnez des points à chaque interaction !',
               reward: '1 My\'s',
               index: 2,
             ),
             _buildEarnItem(
               icon: Icons.star_outline,
               title: 'Laisser un avis sur un profil entreprise',
-              subtitle: 'Donnez votre avis sur une entreprise et soyez récompensé pour votre contribution !',
+              subtitle:
+                  'Donnez votre avis sur une entreprise et soyez récompensé pour votre contribution !',
               reward: '1 My\'s',
               index: 3,
             ),
             _buildEarnItem(
               icon: Icons.smartphone_outlined,
               title: 'Recommander une annonce',
-              subtitle: 'Partagez une annonce sur vos réseaux et empochez des points en un clic !',
+              subtitle:
+                  'Partagez une annonce sur vos réseaux et empochez des points en un clic !',
               reward: '1 My\'s',
               index: 4,
             ),
             _buildEarnItem(
               icon: Icons.email_outlined,
               title: 'Postuler à une offre d\'emploi ou de formation',
-              subtitle: 'Postulez à une offre et recevez des points pour chaque candidature !',
+              subtitle:
+                  'Postulez à une offre et recevez des points pour chaque candidature !',
               reward: '1 My\'s',
               index: 5,
             ),
             _buildEarnItem(
               icon: Icons.calendar_today_outlined,
               title: 'Participer à un événement',
-              subtitle: 'Inscrivez-vous à un événement et gagnez des récompenses en participant !',
+              subtitle:
+                  'Inscrivez-vous à un événement et gagnez des récompenses en participant !',
               reward: '1 My\'s',
               index: 6,
             ),
             _buildEarnItem(
               icon: Icons.group_outlined,
               title: 'Parrainage particulier',
-              subtitle: 'Parrainez un particulier et gagnez à chaque nouvelle inscription !',
+              subtitle:
+                  'Parrainez un particulier et gagnez à chaque nouvelle inscription !',
               reward: '2 My\'s',
               index: 7,
             ),
             _buildEarnItem(
               icon: Icons.card_giftcard_outlined,
               title: 'Parrainage d\'entreprise version gratuite',
-              subtitle: 'Parrainez une entreprise et gagnez vos premiers My\'s dès son inscription !',
+              subtitle:
+                  'Parrainez une entreprise et gagnez vos premiers My\'s dès son inscription !',
               reward: '2 My\'s',
               index: 8,
+            ),
+            _buildEarnItem(
+              icon: Icons.diamond_outlined,
+              title: 'Parrainage d\'entreprise Premium',
+              subtitle:
+                  'Parrainez une entreprise Premium et recevez un bonus renforce.',
+              reward: '5 My\'s',
+              index: 9,
               isLast: true,
             ),
           ],

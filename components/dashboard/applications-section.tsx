@@ -11,6 +11,7 @@ import { SearchInput } from "@/components/ui/search-input"
 import { CategoryFilter } from "@/components/ui/category-filter"
 import { LoadingContent } from "@/components/ui/loading-content"
 import { getApplicationAdsByInterestedUserId } from "@/lib/api"
+import { fetchAnnouncementDetail } from "@/lib/api/deals"
 import { formatDate } from "@/lib/utils"
 import { Calendar, ExternalLink, Briefcase, GraduationCap, Send, MessageCircle, Trash2, MapPin, Clock, User, Building2 } from "lucide-react"
 import Link from "next/link"
@@ -103,14 +104,24 @@ export function ApplicationsSection({
 
     setContactingId(announcementId)
     try {
-      const conversationId = await startConversation(announcementId)
+      // First, fetch the announcement details to get the author user ID
+      const announcement = await fetchAnnouncementDetail(announcementId)
+      
+      if (!announcement || !announcement.userId) {
+        toast.error("Impossible de récupérer les informations de l'annonce")
+        setContactingId(null)
+        return
+      }
+
+      // Now create conversation with the author user ID
+      const conversationId = await startConversation(announcement.userId)
 
       if (!conversationId) {
         toast.error("Erreur lors du démarrage de la conversation")
         return
       }
 
-      router.push(`/messages?conversation=${conversationId}`)
+      router.push(`/messages?action=conversation&conversationId=${conversationId}`)
       toast.success("Conversation démarrée")
     } catch (error) {
       console.error("Erreur lors du contact:", error)

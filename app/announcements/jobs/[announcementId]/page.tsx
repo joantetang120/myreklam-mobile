@@ -854,14 +854,19 @@ export default function JobPage({ params }: { params: { announcementId: string }
 
     setIsContactingLoading(true)
     try {
-      const conversationId = await startConversation(announcementId)
+      if (!job?.userId) {
+        toastError("Impossible de contacter cet utilisateur")
+        return
+      }
+      
+      const conversationId = await startConversation(job.userId)
 
       if (!conversationId) {
         toastError("Erreur lors du démarrage de la conversation")
         return
       }
 
-      router.push(`/messages?conversation=${conversationId}`)
+      router.push(`/messages?action=conversation&conversationId=${conversationId}`)
       toastSuccess("Conversation démarrée")
     } catch (error) {
       toastError("Erreur lors du démarrage de la conversation")

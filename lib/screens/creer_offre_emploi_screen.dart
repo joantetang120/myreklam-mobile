@@ -1,13 +1,18 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/models/location_data.dart';
+import 'package:myreklam/widgets/location_picker_field.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/token_storage.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/config/api_config.dart';
 
 class CreerOffreEmploiScreen extends StatefulWidget {
@@ -71,7 +76,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
   DateTime? _availableUntilDate;
   List<String> _selectedAdvantages = [];
   bool _teleworkPossible = false;
-  final TextEditingController _locationController = TextEditingController();
+  LocationData? _selectedLocation;
   bool _nationwide = false;
   bool _showGoogleMap = false;
   final TextEditingController _companyNameController = TextEditingController();
@@ -84,7 +89,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
   final QuillController _profileDescQuillController = QuillController.basic();
 
   // Step 5 - Media
-  List<PlatformFile> _selectedMediaFiles = [];
+  List<GalleryMedia> _selectedMediaFiles = [];
   final List<String> _existingMediaUrls = [];
   List<Map<String, dynamic>> _uploadedMedia = [];
 
@@ -119,7 +124,24 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     // Profile description will be restored in _restoreProfileDescription after frame
     final profileDescPlain = (data['profile_description'] ?? (data['profile'] is Map ? data['profile']['description'] : null))?.toString() ?? '';
     final profileDescDelta = data['profile_description_delta'] ?? (data['profile'] is Map ? data['profile']['description_delta'] : null);
-    _locationController.text = (data['location'] is Map ? (data['location']['city'] ?? '') : (data['location'] ?? '')).toString();
+    // Restore location data
+    if (data['location'] is Map) {
+      final locationMap = data['location'] as Map<String, dynamic>;
+      _selectedLocation = LocationData(
+        address: locationMap['city']?.toString() ?? '',
+        latitude: locationMap['lat'] != null
+            ? double.tryParse(locationMap['lat'].toString())
+            : null,
+        longitude: locationMap['lng'] != null
+            ? double.tryParse(locationMap['lng'].toString())
+            : null,
+        city: locationMap['location_city']?.toString(),
+        postalCode: locationMap['location_postal_code']?.toString(),
+      );
+    } else if (data['location'] != null) {
+      // Legacy location string
+      _selectedLocation = LocationData(address: data['location'].toString());
+    }
     _nationwide = (data['all_france'] ?? data['nationwide'] ?? (data['location'] is Map ? data['location']['nationwide'] : null)) == true;
     _showGoogleMap = (data['show_google_location'] ?? (data['location'] is Map ? data['location']['show_google_map'] : null)) == true;
     _teleworkPossible = (data['remote_work'] ?? data['telework_possible']) == true;
@@ -391,7 +413,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         'salary_min': _salaryMinController.text,
         'salary_max': _salaryMaxController.text,
         'salary_exact': _salaryExactController.text,
-        'location': _locationController.text,
+        'location': _selectedLocation?.toMap(),
         'education_level': _selectedEducationLevel,
         'experience_level': _selectedExperienceLevel,
         'profile_description': _profileDescQuillController.document.toPlainText().trim(),
@@ -428,7 +450,9 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         _salaryMinController.text = formData['salary_min'] ?? '';
         _salaryMaxController.text = formData['salary_max'] ?? '';
         _salaryExactController.text = formData['salary_exact'] ?? '';
-        _locationController.text = formData['location'] ?? '';
+        if (formData['location'] != null && formData['location'] is Map) {
+          _selectedLocation = LocationData.fromMap(formData['location']);
+        }
         _selectedEducationLevel = formData['education_level'];
         _selectedExperienceLevel = formData['experience_level'];
         // Restore rich text description
@@ -544,7 +568,6 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     _salaryMinController.dispose();
     _salaryMaxController.dispose();
     _salaryExactController.dispose();
-    _locationController.dispose();
     _companyNameController.dispose();
     _companyWebsiteController.dispose();
     _profileDescQuillController.dispose();
@@ -893,6 +916,11 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     });
   }
   void _nextStep() {
+    final error = _validateCurrentStep();
+    if (error != null) {
+      _showSnack(error, isError: true);
+      return;
+    }
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
     }
@@ -904,29 +932,87 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     }
   }
 
+  String? _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Step 1: Informations
+        if (_selectedCategoryId == null) {
+          return 'Veuillez sélectionner une catégorie.';
+        }
+        if (_selectedFunctionId == null) {
+          return 'Veuillez sélectionner une fonction.';
+        }
+        break;
+      
+      case 1: // Step 2: Lien (optional)
+        break;
+      
+      case 2: // Step 3: Description
+        if (_titleController.text.trim().length < 5) {
+          return 'Le titre doit contenir au moins 5 caractères.';
+        }
+        if (_descriptionQuillController.document.toPlainText().trim().length < 20) {
+          return 'La description doit contenir au moins 20 caractères.';
+        }
+        if (_selectedContractType == null) {
+          return 'Veuillez sélectionner un type de contrat.';
+        }
+        if (_selectedWorkTime == null) {
+          return 'Veuillez sélectionner un temps de travail.';
+        }
+        if (_selectedSalaryType == null) {
+          return 'Veuillez indiquer le type de rémunération.';
+        }
+        if (_selectedSalaryType == 'RANGE') {
+          if (_salaryMinController.text.trim().isEmpty) {
+            return 'Veuillez indiquer le salaire minimum.';
+          }
+          if (_salaryMaxController.text.trim().isEmpty) {
+            return 'Veuillez indiquer le salaire maximum.';
+          }
+        }
+        if (_selectedSalaryType == 'EXACT' && _salaryExactController.text.trim().isEmpty) {
+          return 'Veuillez indiquer le salaire exact.';
+        }
+        if (_selectedAvailabilityType == null) {
+          return 'Veuillez préciser la disponibilité souhaitée.';
+        }
+        if (_selectedLocation == null && !_nationwide) {
+          return 'Renseignez une ville ou activez "Toute la France".';
+        }
+        if (_companyNameController.text.trim().isEmpty) {
+          return 'Veuillez indiquer le nom de l\'entreprise.';
+        }
+        break;
+      
+      case 3: // Step 4: Profil
+        if (_selectedEducationLevel == null) {
+          return 'Veuillez sélectionner un niveau d\'études requis.';
+        }
+        if (_selectedExperienceLevel == null) {
+          return 'Veuillez sélectionner un niveau d\'expérience requis.';
+        }
+        break;
+      
+      case 4: // Step 5: Médias (optional)
+        break;
+    }
+    return null;
+  }
+
   Future<void> _pickMedia() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov'],
-        allowMultiple: true,
-        withData: true,
-      );
-
-      if (result != null && result.files.isNotEmpty) {
-        final validFiles = result.files.where((file) {
-          final sizeInMB = (file.size) / (1024 * 1024);
-          return sizeInMB <= 20;
-        }).toList();
-
-        if (validFiles.length < result.files.length) {
-          _showSnack('Certains fichiers dépassent 20 MB et ont été ignorés', isError: true);
-        }
-
-        setState(() {
-          _selectedMediaFiles.addAll(validFiles);
-        });
+      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      if (files == null || files.isEmpty) return;
+      final validFiles = files.where((file) {
+        final sizeInMB = file.size / (1024 * 1024);
+        return sizeInMB <= 20;
+      }).toList();
+      if (validFiles.length < files.length) {
+        _showSnack('Certains fichiers dépassent 20 MB et ont été ignorés', isError: true);
       }
+      setState(() {
+        _selectedMediaFiles.addAll(validFiles);
+      });
     } catch (e) {
       debugPrint('Error picking media: $e');
       _showSnack('Erreur lors de la sélection des fichiers', isError: true);
@@ -1033,7 +1119,11 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         'telework_possible': _teleworkPossible,
         'location': {
           'country': 'FR',
-          if (_locationController.text.isNotEmpty) 'city': _locationController.text,
+          if (_selectedLocation?.address != null && _selectedLocation!.address.isNotEmpty) 'city': _selectedLocation!.address,
+          if (_selectedLocation?.latitude != null) 'lat': _selectedLocation!.latitude,
+          if (_selectedLocation?.longitude != null) 'lng': _selectedLocation!.longitude,
+          if (_selectedLocation?.city != null) 'location_city': _selectedLocation!.city,
+          if (_selectedLocation?.postalCode != null) 'location_postal_code': _selectedLocation!.postalCode,
           'nationwide': _nationwide,
           'show_google_map': _showGoogleMap,
         },
@@ -1080,7 +1170,44 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       // Clear saved progress after successful submission
       await _clearSavedProgress();
       
+      // Get job offer ID for My's awarding
+      final jobOfferId = _isEditMode
+          ? widget.jobOfferId
+          : (response['data']?['id'] ?? response['id'] ?? response['job_offer']?['id'])?.toString();
+      
       _showSuccessDialog();
+
+      // Award My's for creating a job offer (only on create, not edit)
+      if (!_isEditMode && jobOfferId != null) {
+        try {
+          final mysResponse = await MysEarningService().awardMys(
+            actionType: 'job_offer',
+            referenceId: jobOfferId,
+          );
+          
+          if (mysResponse['success'] == true && mounted) {
+            // Update UserSession with new balance
+            final newBalance = mysResponse['earning']?['new_balance'];
+            if (newBalance != null) {
+              UserSession().updateMys(newBalance);
+            }
+            
+            // Show reward modal AFTER dialog closes - use microtask to avoid conflict
+            Future.microtask(() async {
+              if (mounted) {
+                await MysRewardModal.show(
+                  context,
+                  amount: mysResponse['earning']?['amount'] ?? 2,
+                  actionType: 'job_offer',
+                );
+              }
+            });
+          }
+        } catch (e) {
+          debugPrint("Error awarding My's for job offer: $e");
+          // Don't block the user if awarding fails
+        }
+      }
     } on ApiException catch (e) {
       debugPrint('ApiException submitting job offer: ${e.message}');
       debugPrint('Validation errors: ${e.errors}');
@@ -1210,7 +1337,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Vous pouvez consulter cela au niveau de votre espace professionnel',
+                'Vous pouvez consulter cela au niveau de votre espace ',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -1235,6 +1362,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         await _handleBackButton();
       },
       child: AppLayout(
+        currentIndex: 2,
         backgroundColor: const Color(0xFFF9F9FB),
         onTabTapped: (index) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -1420,7 +1548,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               ),
               SizedBox(height: 8),
               Text(
-                'Ajoutez un maximum de photos pour augmenter le nombre de contacts',
+                'Ajoutez des photos de votre entreprise ou de l’équipe pour donner un aperçu concret aux candidats.',
                 style: TextStyle(
                   fontSize: 14,
                   color: Color(0xFF666666),
@@ -1429,7 +1557,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               ),
               SizedBox(height: 20),
               Text(
-                'Vos photos *',
+                'Vos photos (non-obligatoires)',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1518,7 +1646,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     );
   }
 
-  Widget _buildPhotoPreviewCard(PlatformFile file, int index) {
+  Widget _buildPhotoPreviewCard(GalleryMedia file, int index) {
     final isCoverPhoto = index == 0;
     
     return Container(
@@ -1686,7 +1814,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     );
   }
 
-  Widget _buildMediaPreview(PlatformFile file) {
+  Widget _buildMediaPreview(GalleryMedia file) {
     final extension = file.extension?.toLowerCase();
     final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(extension);
     final isVideo = ['mp4', 'mov'].contains(extension);
@@ -1801,13 +1929,13 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           icon: Icons.link,
           title: 'Lien',
           subtitle:
-              "Entrez le lien de la page où vous pouvez bénéficier de ce bon plan ou obtenir plus d'informations à son sujet.",
+              "Collez le lien de la page de l'offre d'emploi. Nous l'utiliserons pour récupérer automatiquement les informations et pré-remplir votre annonce.",
           children: [
             _buildTextField(
               label: 'Ajouter un lien',
               controller: _linkController,
               fieldKey: 'link',
-              helperText: 'Ajoutez l\'URL de la page de candidature ou d\'informations complémentaires.',
+              helperText: 'Le lien permettra d\'extraire automatiquement le titre, la description, le salaire, le type de contrat et autres détails de l\'offre pour faciliter la création de votre annonce.',
             ),
           ],
         ),
@@ -1873,7 +2001,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Décrivez le profil idéal pour ce poste: compétences techniques, qualités humaines, expériences spécifiques',
+                      'Décrivez le poste, les missions et l\'environnement de travail.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
@@ -2006,17 +2134,39 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               () => setState(() => _teleworkPossible = !_teleworkPossible),
             ),
             const SizedBox(height: 16),
-            _buildTextField(
-              label: 'Précisez la ville/région où cette offre est valide',
-              controller: _locationController,
-              fieldKey: 'location',
-              helperText: 'Indiquez la ville ou la région où le poste est basé.',
+            AbsorbPointer(
+              absorbing: _nationwide,
+              child: Opacity(
+                opacity: _nationwide ? 0.5 : 1.0,
+                child: LocationPickerField(
+                  initialLocation: _selectedLocation,
+                  label: 'Précisez la ville/région où cette offre est valide',
+                  helperText: 'Recherchez une ville, région ou adresse',
+                  onLocationSelected: (location) {
+                    setState(() {
+                      _selectedLocation = location;
+                      if (location != null && _nationwide) {
+                        _nationwide = false;
+                      }
+                    });
+                  },
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             _buildCheckOption(
               'Toute la France',
               _nationwide,
-              () => setState(() => _nationwide = !_nationwide),
+              _selectedLocation?.address == null || _selectedLocation!.address.isEmpty
+                  ? () {
+                      setState(() {
+                        _nationwide = !_nationwide;
+                        if (_nationwide) {
+                          _selectedLocation = null;
+                        }
+                      });
+                    }
+                  : null,
             ),
             const SizedBox(height: 16),
             _buildCheckOption(
@@ -2129,6 +2279,32 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               fieldKey: 'profile_description',
               helperText: 'Décrivez les compétences, qualités et expériences recherchées pour ce poste.',
             ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Décrivez le profil idéal pour ce poste: compétences techniques, qualités humaines, expériences spécifiques',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 24),
@@ -2235,7 +2411,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             ),
             _buildReviewRow('Avantages', _selectedAdvantages.isEmpty ? '-' : _selectedAdvantages.join(', ')),
             _buildReviewRow('Télétravail possible', _teleworkPossible ? 'Oui' : 'Non'),
-            _buildReviewRow('Localisation', _locationController.text.isEmpty ? '-' : _locationController.text),
+            _buildReviewRow('Localisation', _selectedLocation?.address ?? '-'),
             _buildReviewRow('Toute la France', _nationwide ? 'Oui' : 'Non'),
             _buildReviewRow('Afficher localisation Google', _showGoogleMap ? 'Oui' : 'Non'),
             _buildReviewRow('Nom de l\'entreprise', _companyNameController.text.isEmpty ? '-' : _companyNameController.text),
@@ -2287,7 +2463,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           child: Column(
             children: [
               const Text(
-                'Accepter de recevoir des messages concernant cette annonce',
+                'Accepter de recevoir des messages à propos de cette offre',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -2297,7 +2473,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Les autres utilisateurs pourront vous contacter pour poser des questions sur ce bon plan',
+                'Les candidats pourront vous contacter pour en savoir plus sur le poste, le processus de recrutement ou les conditions proposées.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
@@ -2516,7 +2692,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             DateTime? pickedDate = await showDatePicker(
               context: context,
               initialDate: selectedDate ?? DateTime.now(),
-              firstDate: DateTime(1900),
+              firstDate: DateTime.now().subtract(const Duration(days: 1)),
               lastDate: DateTime(2100),
             );
 
@@ -2763,6 +2939,8 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     String? suffix,
     String? fieldKey,
     String? helperText,
+    bool enabled = true,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2778,6 +2956,8 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             controller: controller,
             maxLines: maxLines,
             keyboardType: keyboardType,
+            enabled: enabled,
+            onChanged: onChanged,
             onTap: () {
               if (fieldKey != null) {
                 setState(() => _focusedField = fieldKey);
@@ -2998,9 +3178,9 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     );
   }
 
-  Widget _buildCheckOption(String label, bool isSelected, VoidCallback onTap) {
+  Widget _buildCheckOption(String label, bool isSelected, VoidCallback? onTap) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap ?? () {},
       child: Row(
         children: [
           Container(

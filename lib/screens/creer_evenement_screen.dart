@@ -1,6 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:http/http.dart' as http;
@@ -8,8 +9,13 @@ import 'package:http_parser/http_parser.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/token_storage.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/models/location_data.dart';
+import 'package:myreklam/widgets/location_picker_field.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _EventMediaFile {
@@ -67,20 +73,20 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   // Focus tracking for helper text
   String? _focusedField;
   final TextEditingController _organizerNameController = TextEditingController();
-  final TextEditingController _disponibleChezController =
-      TextEditingController();
-  String? _selectedDisponibleLocation;
+  LocationData? _selectedLocation;
   String? selectedOptionOrg = "Oui";
   bool _touteLaFrance = false;
   String? _selectedPrixEntree = "Gratuit";
+  String? _selectedPricingMode; // 'Prix unique' or 'Catégories'
   final TextEditingController _prixEntreeController = TextEditingController();
+  List<Map<String, TextEditingController>> _priceCategories = [];
   String? _selectedModeReservation = "Sans inscription";
   final TextEditingController _siteWebController = TextEditingController();
   bool _isSubmitting = false;
   String? _submitError;
 
   // Media
-  final List<PlatformFile> _selectedMediaFiles = [];
+  final List<GalleryMedia> _selectedMediaFiles = [];
   List<_EventMediaFile> _existingMedia = [];
   final Set<String> _deletingMediaKeys = {};
 
@@ -94,13 +100,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   TimeOfDay? _startTime;
   TimeOfDay? _endTime;
   DateTime? selectedDate;
+  DateTime? startDate;
+  DateTime? endDate;
 
   bool _acceptMessages = false;
+  List<String> _selectedDaysOfWeek = [];
 
   bool get _isEditMode => widget.eventId != null && widget.eventId!.isNotEmpty;
 
   final List<String> _types = [
-    'Présentielonline',
+    'Présentiel',
     'En ligne',
     'Hybride',
   ];
@@ -139,14 +148,56 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     _titleController.dispose();
     _descriptionQuillController.dispose();
     _organizerNameController.dispose();
-    _disponibleChezController.dispose();
     _linkController.dispose();
     _prixInitialController.dispose();
     _prixFinalController.dispose();
     _reductionController.dispose();
     _prixEntreeController.dispose();
+    for (final cat in _priceCategories) {
+      cat['name']!.dispose();
+      cat['price']!.dispose();
+    }
     _siteWebController.dispose();
     super.dispose();
+  }
+
+  void _addPriceCategory() {
+    setState(() {
+      _priceCategories.add({
+        'name': TextEditingController(),
+        'price': TextEditingController(),
+      });
+    });
+  }
+
+  void _removePriceCategory(int index) {
+    setState(() {
+      _priceCategories[index]['name']!.dispose();
+      _priceCategories[index]['price']!.dispose();
+      _priceCategories.removeAt(index);
+    });
+  }
+
+  void _toggleDayOfWeek(String day) {
+    setState(() {
+      if (_selectedDaysOfWeek.contains(day)) {
+        _selectedDaysOfWeek.remove(day);
+      } else {
+        _selectedDaysOfWeek.add(day);
+      }
+    });
+  }
+
+  void _clearDaysOfWeek() {
+    setState(() {
+      _selectedDaysOfWeek.clear();
+    });
+  }
+
+  void _selectAllDaysOfWeek() {
+    setState(() {
+      _selectedDaysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    });
   }
 
   Future<void> _checkForSavedProgress() async {
@@ -183,20 +234,46 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         selectedOptionOrg = 'Oui';
       }
 
-      // Coverage
-      _disponibleChezController.text = data['coverage_area']?.toString() ?? '';
+      // Coverage / Location
       _touteLaFrance = data['is_nationwide'] == true || data['is_nationwide'] == 1;
+      if (data['coverage_area'] != null || data['location_city'] != null) {
+        _selectedLocation = LocationData(
+          address: data['coverage_area']?.toString() ?? '',
+          latitude: data['location_lat'] != null
+              ? double.tryParse(data['location_lat'].toString())
+              : null,
+          longitude: data['location_lng'] != null
+              ? double.tryParse(data['location_lng'].toString())
+              : null,
+          city: data['location_city']?.toString(),
+          postalCode: data['location_postal_code']?.toString(),
+        );
+      }
 
       // Price
       final priceType = data['price_type']?.toString();
       if (priceType == 'payant') {
         _selectedPrixEntree = 'Payant';
-        final amount = data['price_amount'];
-        if (amount != null) {
-          _prixEntreeController.text = amount.toString().replaceAll(RegExp(r'\.00$'), '');
+        final pricingMode = data['pricing_mode']?.toString();
+        if (pricingMode == 'categories') {
+          _selectedPricingMode = 'Catégories';
+          final cats = data['price_categories'] as List? ?? [];
+          _priceCategories = cats.map<Map<String, TextEditingController>>((c) {
+            return {
+              'name': TextEditingController(text: c['name']?.toString() ?? ''),
+              'price': TextEditingController(text: c['price']?.toString().replaceAll(RegExp(r'\.00$'), '') ?? ''),
+            };
+          }).toList();
+        } else {
+          _selectedPricingMode = 'Prix unique';
+          final amount = data['price_amount'];
+          if (amount != null) {
+            _prixEntreeController.text = amount.toString().replaceAll(RegExp(r'\.00$'), '');
+          }
         }
       } else {
         _selectedPrixEntree = 'Gratuit';
+        _selectedPricingMode = null;
       }
 
       // Reservation mode
@@ -224,11 +301,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
       // Dates
       final eventDate = data['event_date']?.toString();
-      final startDate = data['start_date']?.toString();
+      final startDateStr = data['start_date']?.toString();
+      final endDateStr = data['end_date']?.toString();
       if (eventDate != null && eventDate.isNotEmpty) {
         try { selectedDate = DateTime.parse(eventDate); } catch (_) {}
-      } else if (startDate != null && startDate.isNotEmpty) {
-        try { selectedDate = DateTime.parse(startDate); } catch (_) {}
+      }
+      if (startDateStr != null && startDateStr.isNotEmpty) {
+        try { startDate = DateTime.parse(startDateStr); } catch (_) {}
+      }
+      if (endDateStr != null && endDateStr.isNotEmpty) {
+        try { endDate = DateTime.parse(endDateStr); } catch (_) {}
       }
 
       // Times
@@ -262,6 +344,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       }
 
       _acceptMessages = data['accept_messages'] == true || data['accept_messages'] == 1;
+
+      // Days of week
+      final daysOfWeek = data['days_of_week'] as List? ?? [];
+      _selectedDaysOfWeek = daysOfWeek.map<String>((d) => d.toString()).toList();
 
       // Existing media
       final mediaFiles = data['media_files'] as List? ?? [];
@@ -418,19 +504,27 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         'link': _linkController.text,
         'organizer': selectedOptionOrg,
         'organizer_name': _organizerNameController.text,
-        'disponible_chez': _disponibleChezController.text,
+        'location': _selectedLocation?.toMap(),
         'toute_la_france': _touteLaFrance,
         'prix_entree': _selectedPrixEntree,
+        'pricing_mode': _selectedPricingMode,
         'prix_entree_montant': _prixEntreeController.text,
+        'price_categories': _priceCategories.map((c) => {
+          'name': c['name']!.text,
+          'price': c['price']!.text,
+        }).toList(),
         'mode_reservation': _selectedModeReservation,
         'site_web': _siteWebController.text,
         'duree': _selectedTimeEvenement,
         'date': selectedDate?.toIso8601String(),
+        'start_date': startDate?.toIso8601String(),
+        'end_date': endDate?.toIso8601String(),
         'start_time_hour': _startTime?.hour,
         'start_time_minute': _startTime?.minute,
         'end_time_hour': _endTime?.hour,
         'end_time_minute': _endTime?.minute,
         'accept_messages': _acceptMessages,
+        'days_of_week': _selectedDaysOfWeek,
       };
       await prefs.setString('evenement_draft', jsonEncode(formData));
     } catch (e) {
@@ -455,17 +549,40 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         _linkController.text = formData['link'] ?? '';
         selectedOptionOrg = formData['organizer'] ?? 'Oui';
         _organizerNameController.text = formData['organizer_name'] ?? '';
-        _disponibleChezController.text = formData['disponible_chez'] ?? '';
+        if (formData['location'] != null) {
+          _selectedLocation = LocationData.fromMap(formData['location']);
+        }
         _touteLaFrance = formData['toute_la_france'] ?? false;
         _selectedPrixEntree = formData['prix_entree'] ?? 'Gratuit';
+        _selectedPricingMode = formData['pricing_mode'];
         _prixEntreeController.text = formData['prix_entree_montant'] ?? '';
+        // Restore price categories
+        for (final cat in _priceCategories) {
+          cat['name']!.dispose();
+          cat['price']!.dispose();
+        }
+        _priceCategories = [];
+        final savedCats = formData['price_categories'] as List? ?? [];
+        for (final c in savedCats) {
+          _priceCategories.add({
+            'name': TextEditingController(text: c['name']?.toString() ?? ''),
+            'price': TextEditingController(text: c['price']?.toString() ?? ''),
+          });
+        }
         _selectedModeReservation = formData['mode_reservation'] ?? 'Sans inscription';
         _siteWebController.text = formData['site_web'] ?? '';
         _selectedTimeEvenement = formData['duree'] ?? 'Sur une journée';
         _acceptMessages = formData['accept_messages'] ?? false;
+        _selectedDaysOfWeek = (formData['days_of_week'] as List? ?? []).map<String>((d) => d.toString()).toList();
 
         if (formData['date'] != null) {
           selectedDate = DateTime.parse(formData['date']);
+        }
+        if (formData['start_date'] != null) {
+          startDate = DateTime.parse(formData['start_date']);
+        }
+        if (formData['end_date'] != null) {
+          endDate = DateTime.parse(formData['end_date']);
         }
         if (formData['start_time_hour'] != null) {
           _startTime = TimeOfDay(hour: formData['start_time_hour'], minute: formData['start_time_minute'] ?? 0);
@@ -573,20 +690,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
   Future<void> _pickMediaFiles() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'mov', 'avi'],
-        allowMultiple: true,
-        withData: true,
-      );
-
-      if (result != null && result.files.isNotEmpty) {
-        setState(() {
-          _selectedMediaFiles.addAll(result.files);
-        });
-      }
+      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      if (files == null || files.isEmpty) return;
+      setState(() {
+        _selectedMediaFiles.addAll(files);
+      });
     } catch (e) {
-      debugPrint('Error picking media files: $e');
+      debugPrint('Error picking media: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Erreur lors de la sélection des fichiers.')),
       );
@@ -600,6 +710,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   }
 
   void _nextStep() {
+    final error = _validateCurrentStep();
+    if (error != null) {
+      _showSnack(error, isError: true);
+      return;
+    }
     if (_currentStep < _totalSteps) {
       setState(() => _currentStep++);
     }
@@ -609,6 +724,83 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     if (_currentStep > 0) {
       setState(() => _currentStep--);
     }
+  }
+
+  String? _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Step 1: Catégories
+        if (_selectedCategory == null) {
+          return 'Veuillez sélectionner une catégorie.';
+        }
+        if (_selectedSubCategory == null) {
+          return 'Veuillez sélectionner une sous-catégorie.';
+        }
+        break;
+      
+      case 1: // Step 2: Lien (optional)
+        break;
+      
+      case 2: // Step 3: Description
+        if (_titleController.text.trim().length < 5) {
+          return 'Le titre doit contenir au moins 5 caractères.';
+        }
+        if (_descriptionQuillController.document.toPlainText().trim().length < 20) {
+          return 'La description doit contenir au moins 20 caractères.';
+        }
+        if (_selectedLocation == null && !_touteLaFrance) {
+          return 'Indiquez le lieu de l\'événement.';
+        }
+        if (_selectedPrixEntree == null) {
+          return 'Précisez si l\'événement est gratuit ou payant.';
+        }
+        if (_selectedPrixEntree == 'Payant') {
+          if (_selectedPricingMode == null) {
+            return 'Veuillez choisir un type de tarification.';
+          }
+          if (_selectedPricingMode == 'Prix unique' && _prixEntreeController.text.trim().isEmpty) {
+            return 'Indiquez le prix d\'entrée.';
+          }
+          if (_selectedPricingMode == 'Catégories') {
+            if (_priceCategories.isEmpty) {
+              return 'Ajoutez au moins une catégorie de prix.';
+            }
+            for (int i = 0; i < _priceCategories.length; i++) {
+              if (_priceCategories[i]['name']!.text.trim().isEmpty) {
+                return 'Indiquez le nom de la catégorie de prix ${i + 1}.';
+              }
+              if (_priceCategories[i]['price']!.text.trim().isEmpty) {
+                return 'Indiquez le prix de la catégorie "${_priceCategories[i]['name']!.text.trim()}".';
+              }
+            }
+          }
+        }
+        break;
+      
+      case 3: // Step 4: Dates et horaires
+        // Dates de début et de fin sont facultatives. On vérifie seulement la
+        // cohérence quand les deux sont renseignées.
+        if (_selectedTimeEvenement == 'Sur plusieurs jours') {
+          if (startDate != null &&
+              endDate != null &&
+              endDate!.isBefore(startDate!)) {
+            return 'La date de fin doit être après la date de début.';
+          }
+        }
+        break;
+      
+      case 4: // Step 5: Médias (optional)
+        break;
+    }
+    return null;
+  }
+
+  void _showSnack(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? Colors.red.shade700 : const Color(0xFF3AAE5E),
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(seconds: 4),
+    ));
   }
 
   Future<void> _selectTime(BuildContext context, bool isStartTime) async {
@@ -689,7 +881,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               Text(
                 _isEditMode
                     ? 'Votre événement a été mis à jour avec succès'
-                    : 'Vous pouvez consulter cela au niveau de votre espace professionnel',
+                    : 'Vous pouvez consulter cela au niveau de votre espace ',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -729,26 +921,43 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       'landing_url': _linkController.text.trim().isEmpty ? null : _linkController.text.trim(),
       'is_organizer': selectedOptionOrg == 'Oui',
       'organizer_name': selectedOptionOrg == 'Non' ? _organizerNameController.text.trim() : null,
-      'coverage_area': _disponibleChezController.text.trim(),
+      'coverage_area': _selectedLocation?.address,
+      'location_lat': _selectedLocation?.latitude,
+      'location_lng': _selectedLocation?.longitude,
+      'location_city': _selectedLocation?.city,
+      'location_postal_code': _selectedLocation?.postalCode,
       'is_nationwide': _touteLaFrance,
       'price_type': priceType,
-      'price_amount': priceType == 'payant'
+      'price_amount': priceType == 'payant' && _selectedPricingMode == 'Prix unique'
           ? double.tryParse(_prixEntreeController.text.replaceAll(',', '.'))
           : null,
+      // New pricing fields — only sent when using categories
+      if (priceType == 'payant') ...{
+        'pricing_mode': _selectedPricingMode == 'Catégories' ? 'categories' : 'unique',
+      },
+      if (priceType == 'payant' && _selectedPricingMode == 'Catégories') ...{
+        'price_categories': _priceCategories.map((c) => {
+              'name': c['name']!.text.trim(),
+              'price': double.tryParse(c['price']!.text.replaceAll(',', '.')),
+            }).toList(),
+      },
       'reservation_mode': reservationMode,
       'website_url': _siteWebController.text.trim().isEmpty ? null : _siteWebController.text.trim(),
       'duration_type': durationType,
       'event_date': durationType == 'one_day' && selectedDate != null
           ? selectedDate!.toIso8601String().split('T').first
           : null,
-      'start_date': durationType == 'multi_day' && selectedDate != null
-          ? selectedDate!.toIso8601String().split('T').first
+      'start_date': durationType == 'multi_day' && startDate != null
+          ? startDate!.toIso8601String().split('T').first
           : null,
-      'end_date': durationType == 'multi_day' && selectedDate != null
-          ? selectedDate!.toIso8601String().split('T').first
+      'end_date': durationType == 'multi_day' && endDate != null
+          ? endDate!.toIso8601String().split('T').first
           : null,
       'start_time': _startTime != null ? _formatTime(_startTime) : null,
       'end_time': _endTime != null ? _formatTime(_endTime) : null,
+      'days_of_week': (durationType == 'multi_day' || durationType == 'permanent') && _selectedDaysOfWeek.isNotEmpty
+          ? _selectedDaysOfWeek
+          : null,
       'initial_price': _prixInitialController.text.trim().isNotEmpty
           ? double.tryParse(_prixInitialController.text.replaceAll(',', '.'))
           : null,
@@ -770,6 +979,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
     try {
       final payload = _buildEventPayload();
+      debugPrint('========== EVENT SUBMIT PAYLOAD ==========');
+      payload.forEach((key, value) {
+        debugPrint('  $key: $value (${value.runtimeType})');
+      });
+      debugPrint('==========================================');
       Map<String, dynamic> response;
 
       if (_isEditMode) {
@@ -799,6 +1013,38 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         if (mounted) {
           setState(() => _isSubmitting = false);
           _showSuccessDialog();
+        }
+
+        // Award My's for creating an event (only on create, not edit)
+        if (!_isEditMode) {
+          try {
+            final mysResponse = await MysEarningService().awardMys(
+              actionType: 'evenement',
+              referenceId: eventId,
+            );
+            
+            if (mysResponse['success'] == true && mounted) {
+              // Update UserSession with new balance
+              final newBalance = mysResponse['earning']?['new_balance'];
+              if (newBalance != null) {
+                UserSession().updateMys(newBalance);
+              }
+              
+              // Show reward modal AFTER dialog closes - use microtask to avoid conflict
+              Future.microtask(() async {
+                if (mounted) {
+                  await MysRewardModal.show(
+                    context,
+                    amount: mysResponse['earning']?['amount'] ?? 2,
+                    actionType: 'evenement',
+                  );
+                }
+              });
+            }
+          } catch (e) {
+            debugPrint("Error awarding My's for event: $e");
+            // Don't block the user if awarding fails
+          }
         }
       } else {
         throw ApiException(
@@ -1016,6 +1262,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         await _handleBackButton();
       },
       child: AppLayout(
+      currentIndex: 2,
       backgroundColor: const Color(0xFFF9F9FB),
       onTabTapped: (index) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -1167,7 +1414,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               ),
               SizedBox(height: 8),
               Text(
-                'Ajoutez un maximum de photos pour augmenter le nombre de contacts',
+                'Ajoutez des photos de votre événement pour donner envie aux participants et mettre l’ambiance en avant.',
                 style: TextStyle(
                   fontSize: 14,
                   color: Color(0xFF666666),
@@ -1176,7 +1423,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               ),
               SizedBox(height: 20),
               Text(
-                'Vos photos *',
+                'Vos photos (non-obligatoires)',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1265,7 +1512,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     );
   }
 
-  Widget _buildPhotoPreviewCard(PlatformFile file, int index) {
+  Widget _buildPhotoPreviewCard(GalleryMedia file, int index) {
     final isCoverPhoto = index == 0;
 
     return Container(
@@ -1470,19 +1717,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     );
   }
 
-  Widget _buildMediaPreview(PlatformFile file) {
+  Widget _buildMediaPreview(GalleryMedia file) {
     final extension = file.extension?.toLowerCase();
-    final isImage = ['jpg', 'jpeg', 'png', 'gif'].contains(extension);
-    final isVideo = ['mp4', 'mov', 'avi'].contains(extension);
+    final isVideo =
+        ['mp4', 'mov', 'avi', 'mkv', 'webm', '3gp'].contains(extension);
 
-    if (isImage && file.bytes != null) {
-      return Image.memory(
-        file.bytes!,
-        fit: BoxFit.cover,
-        width: 100,
-        height: 100,
-      );
-    } else if (isVideo) {
+    if (isVideo) {
       return Container(
         color: Colors.black87,
         child: const Center(
@@ -1493,18 +1733,42 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           ),
         ),
       );
-    } else {
-      return Container(
-        color: const Color(0xFFF9FAFB),
-        child: const Center(
-          child: Icon(
-            Icons.insert_drive_file,
-            size: 40,
-            color: Color(0xFF3AAE5E),
-          ),
-        ),
+    }
+
+    const fileIcon = Center(
+      child: Icon(Icons.insert_drive_file, size: 40, color: Color(0xFF3AAE5E)),
+    );
+
+    // Treat anything that isn't a known video as an image. The picked file's
+    // extension can be missing or non-standard (webp/heic, or a cache path with
+    // no extension on Android), so don't gate the preview on the extension.
+    if (file.bytes != null) {
+      return Image.memory(
+        file.bytes!,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => file.path.isNotEmpty
+            ? Image.file(File(file.path),
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                errorBuilder: (_, __, ___) =>
+                    Container(color: const Color(0xFFF9FAFB), child: fileIcon))
+            : Container(color: const Color(0xFFF9FAFB), child: fileIcon),
       );
     }
+    if (file.path.isNotEmpty) {
+      return Image.file(
+        File(file.path),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) =>
+            Container(color: const Color(0xFFF9FAFB), child: fileIcon),
+      );
+    }
+    return Container(color: const Color(0xFFF9FAFB), child: fileIcon);
   }
 
   // ─── STEP 1: Informations ───
@@ -1612,13 +1876,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           icon: Icons.link,
           title: 'Lien',
           subtitle:
-              "Entrez le lien de la page où se trouve les informations de l'événement.",
+              "Collez le lien de la page de l'événement. Nous l'utiliserons pour récupérer automatiquement les informations et pré-remplir votre annonce.",
           children: [
             _buildTextField(
               label: 'Ajouter un lien',
               controller: _linkController,
               fieldKey: 'link',
-              helperText: 'Ajoutez l\'URL complète de la page de l\'événement (ex: https://www.exemple.fr/evenement).',
+              helperText: 'Le lien permettra d\'extraire automatiquement le titre, la description, les dates, le lieu et autres détails de l\'événement pour faciliter la création de votre annonce.',
             ),
           ],
         ),
@@ -1686,11 +1950,18 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 helperText: 'Indiquez le nom de la personne ou de l\'organisme qui organise cet événement.',
               ),
             const SizedBox(height: 12),
-            _buildTextField(
-              label: 'Précisez la ville/région où cette offre est valide',
-              controller: _disponibleChezController,
-              fieldKey: 'disponible_chez',
-              helperText: 'Indiquez la ville, la région ou le lieu précis de l\'événement.',
+            LocationPickerField(
+              initialLocation: _selectedLocation,
+              label: 'Lieu de l\'événement',
+              helperText: 'Recherchez une ville, adresse ou code postal',
+              onLocationSelected: (location) {
+                setState(() {
+                  _selectedLocation = location;
+                  if (location != null && _touteLaFrance) {
+                    _touteLaFrance = false;
+                  }
+                });
+              },
             ),
             const SizedBox(height: 16),
             // Toute la France switch
@@ -1710,7 +1981,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   ),
                   Switch(
                     value: _touteLaFrance,
-                    onChanged: (val) => setState(() => _touteLaFrance = val),
+                    onChanged: _selectedLocation == null
+                        ? (val) {
+                            setState(() {
+                              _touteLaFrance = val;
+                              if (val) {
+                                _selectedLocation = null;
+                              }
+                            });
+                          }
+                        : null,
                     activeThumbColor: Colors.white,
                     activeTrackColor: const Color(0xFFEF8A40),
                   ),
@@ -1722,46 +2002,143 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               title: "Prix d'entrée: *",
               values: ["Gratuit", "Payant"],
               selectedValue: _selectedPrixEntree,
-              onChanged: (val) => setState(() => _selectedPrixEntree = val),
+              onChanged: (val) => setState(() {
+                _selectedPrixEntree = val;
+                if (val == 'Gratuit') {
+                  _selectedPricingMode = null;
+                }
+              }),
               labelBuilder: (value) => value,
             ),
-            const SizedBox(width: 16),
-            // Champ prix
-            if (_selectedPrixEntree == "Payant")
-              Row(
-                children: [
-                  Container(
-                    width: 250,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                    ),
-                    child: TextField(
-                      controller: _prixEntreeController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        hintText: '',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
-                  ),
-
-                  const Padding(
-                    padding: EdgeInsets.only(left: 8),
-                    child: Text(
-                      '€',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF2E9B5B),
-                      ),
-                    ),
-                  ),
-                ],
+            if (_selectedPrixEntree == "Payant") ...[
+              const SizedBox(height: 16),
+              _buildRadioGroup(
+                title: "Type de tarification: *",
+                values: ["Prix unique", "Catégories"],
+                selectedValue: _selectedPricingMode,
+                onChanged: (val) => setState(() {
+                  _selectedPricingMode = val;
+                  if (val == 'Catégories' && _priceCategories.isEmpty) {
+                    _addPriceCategory();
+                  }
+                }),
+                labelBuilder: (value) => value,
               ),
+              const SizedBox(height: 12),
+              // Prix unique input
+              if (_selectedPricingMode == "Prix unique")
+                Row(
+                  children: [
+                    Container(
+                      width: 250,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      ),
+                      child: TextField(
+                        controller: _prixEntreeController,
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                        decoration: const InputDecoration(
+                          hintText: 'Prix',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: Text(
+                        '€',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF2E9B5B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              // Catégories de prix
+              if (_selectedPricingMode == "Catégories") ...[
+                ...List.generate(_priceCategories.length, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                            ),
+                            child: TextField(
+                              controller: _priceCategories[index]['name'],
+                              decoration: InputDecoration(
+                                hintText: 'ex: Enfant, VIP...',
+                                hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 100,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                            ),
+                            child: TextField(
+                              controller: _priceCategories[index]['price'],
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(
+                                hintText: '€',
+                                hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Text('€', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF2E9B5B))),
+                        if (_priceCategories.length > 1)
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 22),
+                            onPressed: () => _removePriceCategory(index),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: _addPriceCategory,
+                    icon: const Icon(Icons.add_circle_outline, size: 20, color: Color(0xFFEF8A40)),
+                    label: const Text(
+                      'Ajouter une catégorie de prix',
+                      style: TextStyle(color: Color(0xFFEF8A40), fontSize: 13),
+                    ),
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  ),
+                ),
+              ],
+            ],
 
             const SizedBox(height: 20),
             // Mode de reservation
@@ -1807,7 +2184,15 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               title: "Durée de l'évènement :*",
               values: ['Sur une journée', 'Sur plusieurs jours', 'Permanent'],
               selectedValue: _selectedTimeEvenement,
-              onChanged: (val) => setState(() => _selectedTimeEvenement = val),
+              onChanged: (val) {
+                setState(() {
+                  _selectedTimeEvenement = val;
+                  // Clear days of week when selecting "Sur une journée"
+                  if (val == 'Sur une journée') {
+                    _selectedDaysOfWeek.clear();
+                  }
+                });
+              },
               labelBuilder: (value) => value,
             ),
             const SizedBox(height: 10),
@@ -1817,6 +2202,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                     selectedDate: selectedDate,
                     onDateSelected: (date) =>
                         setState(() => selectedDate = date),
+                    onCleared: () => setState(() => selectedDate = null),
                   )
                 : const SizedBox(),
             _selectedTimeEvenement != 'Sur plusieurs jours'
@@ -1827,16 +2213,18 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                     children: [
                       _buildDateField(
                         title: "A partir de:",
-                        selectedDate: selectedDate,
+                        selectedDate: startDate,
                         onDateSelected: (date) =>
-                            setState(() => selectedDate = date),
+                            setState(() => startDate = date),
+                        onCleared: () => setState(() => startDate = null),
                       ),
                       const SizedBox(height: 14),
                       _buildDateField(
                         title: "Jusqu'à:",
-                        selectedDate: selectedDate,
+                        selectedDate: endDate,
                         onDateSelected: (date) =>
-                            setState(() => selectedDate = date),
+                            setState(() => endDate = date),
+                        onCleared: () => setState(() => endDate = null),
                       ),
                       const SizedBox(height: 14),
                     ],
@@ -1884,11 +2272,22 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                                   : Colors.grey[400],
                             ),
                           ),
-                          Icon(
-                            Icons.access_time,
-                            size: 20,
-                            color: Colors.grey[400],
-                          ),
+                          _startTime != null
+                              ? GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _startTime = null),
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: Colors.grey[500],
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.access_time,
+                                  size: 20,
+                                  color: Colors.grey[400],
+                                ),
                         ],
                       ),
                     ),
@@ -1925,11 +2324,21 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                                   : Colors.grey[400],
                             ),
                           ),
-                          Icon(
-                            Icons.access_time,
-                            size: 20,
-                            color: Colors.grey[400],
-                          ),
+                          _endTime != null
+                              ? GestureDetector(
+                                  onTap: () => setState(() => _endTime = null),
+                                  behavior: HitTestBehavior.opaque,
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: Colors.grey[500],
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.access_time,
+                                  size: 20,
+                                  color: Colors.grey[400],
+                                ),
                         ],
                       ),
                     ),
@@ -1938,6 +2347,19 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               ],
             ),
             const SizedBox(height: 16),
+            // Days of week selection (for multi_day and permanent)
+            if (_selectedTimeEvenement == 'Sur plusieurs jours' || _selectedTimeEvenement == 'Permanent') ...[
+              const Text(
+                'Jours de la semaine :',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF424242),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildDaysOfWeekSelector(),
+            ],
           ],
         ),
         const SizedBox(height: 24),
@@ -1989,8 +2411,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           title: 'Étape 1 - Catégorie',
           onEdit: () => setState(() => _currentStep = 0),
           rows: [
-            _buildReviewRow('Catégorie', _selectedCategory ?? '-'),
-            _buildReviewRow('Sous-catégorie', _selectedSubCategory ?? '-'),
+            _buildReviewRow('Catégorie', _getCategoryLabel(_selectedCategory)),
+            _buildReviewRow('Sous-catégorie', _getSubCategoryLabel(_selectedSubCategory)),
             _buildReviewRow('Format', _selectedType ?? '-'),
           ],
         ),
@@ -2032,12 +2454,19 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             ),
             _buildReviewRow(
               'Lieu',
-              _disponibleChezController.text.isEmpty ? '-' : _disponibleChezController.text,
+              _selectedLocation?.address ?? '-',
             ),
             _buildReviewRow('Toute la France', _touteLaFrance ? 'Oui' : 'Non'),
             _buildReviewRow('Prix d\'entrée', _selectedPrixEntree ?? '-'),
-            if (_selectedPrixEntree == 'Payant')
-              _buildReviewRow('Montant', '${_prixEntreeController.text} €'),
+            if (_selectedPrixEntree == 'Payant') ...[
+              _buildReviewRow('Type de tarification', _selectedPricingMode ?? '-'),
+              if (_selectedPricingMode == 'Prix unique')
+                _buildReviewRow('Montant', '${_prixEntreeController.text} €'),
+              if (_selectedPricingMode == 'Catégories')
+                ..._priceCategories.map((c) =>
+                  _buildReviewRow(c['name']!.text.isEmpty ? '-' : c['name']!.text, '${c['price']!.text} €'),
+                ),
+            ],
             _buildReviewRow('Mode de réservation', _selectedModeReservation ?? '-'),
             _buildReviewRow(
               'Site web',
@@ -2053,12 +2482,27 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           onEdit: () => setState(() => _currentStep = 3),
           rows: [
             _buildReviewRow('Durée', _selectedTimeEvenement ?? '-'),
-            if (selectedDate != null)
+            if (_selectedTimeEvenement == 'Sur une journée' && selectedDate != null)
               _buildReviewRow(
                 'Date',
                 '${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}',
               ),
+            if (_selectedTimeEvenement == 'Sur plusieurs jours') ...[
+              if (startDate != null)
+                _buildReviewRow(
+                  'Date de début',
+                  '${startDate!.day.toString().padLeft(2, '0')}/${startDate!.month.toString().padLeft(2, '0')}/${startDate!.year}',
+                ),
+              if (endDate != null)
+                _buildReviewRow(
+                  'Date de fin',
+                  '${endDate!.day.toString().padLeft(2, '0')}/${endDate!.month.toString().padLeft(2, '0')}/${endDate!.year}',
+                ),
+            ],
             _buildReviewRow('Horaire', '${_formatTime(_startTime)} - ${_formatTime(_endTime)}'),
+            if ((_selectedTimeEvenement == 'Sur plusieurs jours' || _selectedTimeEvenement == 'Permanent') &&
+                _selectedDaysOfWeek.isNotEmpty)
+              _buildReviewRow('Jours', _formatSelectedDaysOfWeek()),
           ],
         ),
         const SizedBox(height: 16),
@@ -2088,7 +2532,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           child: Column(
             children: [
               const Text(
-                'Accepter de recevoir des messages concernant cette annonce',
+                'Accepter de recevoir des messages à propos de cet événement',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -2098,7 +2542,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Les autres utilisateurs pourront vous contacter pour poser des questions sur cet événement',
+                'Les intéressés pourront vous contacter pour connaître le programme, l’accès ou les modalités pratiques de l’événement.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
@@ -2175,6 +2619,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     required DateTime? selectedDate,
     required Function(DateTime) onDateSelected,
     bool isRequired = false,
+    VoidCallback? onCleared,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2200,7 +2645,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             DateTime? pickedDate = await showDatePicker(
               context: context,
               initialDate: selectedDate ?? DateTime.now(),
-              firstDate: DateTime(1900),
+              firstDate: DateTime.now().subtract(const Duration(days: 1)),
               lastDate: DateTime(2100),
             );
 
@@ -2215,13 +2660,28 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               border: Border.all(color: Colors.grey),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              selectedDate != null
-                  ? "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}"
-                  : "Sélectionner une date",
-              style: TextStyle(
-                color: selectedDate != null ? Colors.black : Colors.grey,
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    selectedDate != null
+                        ? "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}"
+                        : "Sélectionner une date",
+                    style: TextStyle(
+                      color: selectedDate != null ? Colors.black : Colors.grey,
+                    ),
+                  ),
+                ),
+                if (selectedDate != null && onCleared != null)
+                  GestureDetector(
+                    onTap: onCleared,
+                    behavior: HitTestBehavior.opaque,
+                    child: const Padding(
+                      padding: EdgeInsets.only(left: 8),
+                      child: Icon(Icons.close, size: 18, color: Colors.grey),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -2475,6 +2935,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     IconData? prefixIcon,
     String? fieldKey,
     String? helperText,
+    bool enabled = true,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2490,6 +2952,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             controller: controller,
             maxLines: maxLines,
             keyboardType: keyboardType,
+            enabled: enabled,
+            onChanged: onChanged,
             onTap: () {
               if (fieldKey != null) {
                 setState(() => _focusedField = fieldKey);
@@ -2740,5 +3204,114 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildDaysOfWeekSelector() {
+    final days = [
+      {'code': 'monday', 'label': 'L', 'name': 'Lundi'},
+      {'code': 'tuesday', 'label': 'Ma', 'name': 'Mardi'},
+      {'code': 'wednesday', 'label': 'Me', 'name': 'Mercredi'},
+      {'code': 'thursday', 'label': 'J', 'name': 'Jeudi'},
+      {'code': 'friday', 'label': 'V', 'name': 'Vendredi'},
+      {'code': 'saturday', 'label': 'S', 'name': 'Samedi'},
+      {'code': 'sunday', 'label': 'D', 'name': 'Dimanche'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: days.map((day) {
+            final isSelected = _selectedDaysOfWeek.contains(day['code']);
+            return GestureDetector(
+              onTap: () => _toggleDayOfWeek(day['code']!),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF3AAE5E) : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    day['label']!,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : const Color(0xFF424242),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: _selectAllDaysOfWeek,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE6F7EF),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF3AAE5E)),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.select_all, size: 18, color: Color(0xFF3AAE5E)),
+                SizedBox(width: 8),
+                Text(
+                  'Tout sélectionner',
+                  style: TextStyle(
+                    color: Color(0xFF3AAE5E),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getCategoryLabel(String? code) {
+    if (code == null) return '-';
+    final category = _categoryOptions.firstWhere(
+      (c) => c['code'] == code,
+      orElse: () => {},
+    );
+    return category.isNotEmpty ? (category['label'] ?? code) : code;
+  }
+
+  String _getSubCategoryLabel(String? code) {
+    if (code == null) return '-';
+    final subCategory = _subCategoryOptions.firstWhere(
+      (s) => s['code'] == code,
+      orElse: () => {},
+    );
+    return subCategory.isNotEmpty ? (subCategory['label'] ?? code) : code;
+  }
+
+  String _formatSelectedDaysOfWeek() {
+    final dayNames = {
+      'monday': 'Lun',
+      'tuesday': 'Mar',
+      'wednesday': 'Mer',
+      'thursday': 'Jeu',
+      'friday': 'Ven',
+      'saturday': 'Sam',
+      'sunday': 'Dim',
+    };
+    final days = _selectedDaysOfWeek.map((d) => dayNames[d] ?? d).toList();
+    return days.join(', ');
   }
 }

@@ -1,4 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:myreklam/screens/login_screen.dart';
+import 'package:myreklam/services/token_storage.dart';
+import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/biometric_service.dart';
+import 'package:myreklam/screens/manage_users_screen.dart';
+import 'package:myreklam/screens/managed_accounts_screen.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class ProSettingsScreen extends StatefulWidget {
   const ProSettingsScreen({super.key});
@@ -21,6 +32,66 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
   bool commentairesMobile = true;
   bool avisMobile = true;
   bool newsletterMobile = true;
+
+  // Account action expansion
+  bool _isAccountActionExpanded = false;
+  bool _isSecurityExpanded = false;
+  bool _isDeleting = false;
+
+  // Biometric unlock
+  bool _bioAvailable = false;
+  bool _bioEnabled = false;
+  bool _bioBusy = false;
+  String _bioLabel = 'la biométrie';
+  IconData _bioIcon = Icons.fingerprint;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometricState();
+  }
+
+  Future<void> _loadBiometricState() async {
+    final available = await BiometricService.instance.isDeviceAvailable();
+    final enabled = await BiometricService.instance.isEnabled();
+    final desc = await BiometricService.instance.describe();
+    if (!mounted) return;
+    setState(() {
+      _bioAvailable = available;
+      _bioEnabled = enabled;
+      _bioLabel = desc.label;
+      _bioIcon = desc.icon;
+    });
+  }
+
+  Future<void> _toggleBiometric(bool value) async {
+    if (_bioBusy) return;
+    setState(() => _bioBusy = true);
+    try {
+      if (value) {
+        final email = UserSession().email ?? '';
+        final ok = await BiometricService.instance.enable(
+          email: email,
+          reason: 'Confirmez pour activer la connexion biométrique',
+        );
+        if (!mounted) return;
+        setState(() => _bioEnabled = ok);
+        if (!ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Authentification biométrique annulée.'),
+            ),
+          );
+        }
+      } else {
+        await BiometricService.instance.disable();
+        if (!mounted) return;
+        setState(() => _bioEnabled = false);
+      }
+    } finally {
+      if (mounted) setState(() => _bioBusy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +124,36 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
               style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
             const SizedBox(height: 20),
+
+            // Gestion multi-utilisateurs (pro)
+            _buildSectionCard(
+              icon: Icons.group_add_outlined,
+              iconColor: const Color(0xFF1B8D4B),
+              iconBgColor: const Color(0xFF1B8D4B).withOpacity(0.1),
+              title: 'Ajouter utilisateurs',
+              subtitle: 'Autorisez des personnes à gérer votre compte',
+              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ManageUsersScreen()),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Comptes gérés (tous les utilisateurs)
+            _buildSectionCard(
+              icon: Icons.supervisor_account_outlined,
+              iconColor: const Color(0xFF2196F3),
+              iconBgColor: const Color(0xFF2196F3).withOpacity(0.1),
+              title: 'Gérer compte',
+              subtitle: 'Comptes auxquels vous avez accès',
+              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ManagedAccountsScreen()),
+              ),
+            ),
+            const SizedBox(height: 12),
 
             // Section Réseaux sociaux
             _buildSectionCard(
@@ -170,7 +271,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                 children: [
                   // Sécurité du compte
                   InkWell(
-                    onTap: () {},
+                    onTap: () => setState(() => _isSecurityExpanded = !_isSecurityExpanded),
                     child: Row(
                       children: [
                         Container(
@@ -210,9 +311,44 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                             ],
                           ),
                         ),
+                        AnimatedRotation(
+                          turns: _isSecurityExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 20,
+                            color: Colors.grey[400],
+                          ),
+                        ),
                       ],
                     ),
                   ),
+                  if (_isSecurityExpanded) ...[
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () => _showChangePasswordDialog(),
+                      icon: const Icon(Icons.lock, size: 18),
+                      label: const Text(
+                        'Changer votre mot de passe',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF8A40),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Divider(height: 1, color: Colors.grey[300]),
                   const SizedBox(height: 16),
@@ -255,7 +391,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Email@gmail.com',
+                                UserSession().email ?? 'Non disponible',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -278,7 +414,9 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Professionnel',
+                                UserSession().userType == 'pro'
+                                    ? 'Professionnel'
+                                    : 'Particulier',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -296,52 +434,108 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                   const SizedBox(height: 16),
 
                   // Action du compte
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.person_outline,
-                        size: 20,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Action du compte',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF333333),
+                  InkWell(
+                    onTap: () => setState(() => _isAccountActionExpanded = !_isAccountActionExpanded),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.settings_outlined,
+                          size: 20,
+                          color: Colors.grey[600],
                         ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Action du compte',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF333333),
+                          ),
+                        ),
+                        const Spacer(),
+                        AnimatedRotation(
+                          turns: _isAccountActionExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            Icons.keyboard_arrow_down,
+                            size: 20,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_isAccountActionExpanded) ...[
+                    if (_bioAvailable) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(_bioIcon, size: 20, color: Colors.grey[700]),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Connexion biométrique',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF2D2D2D),
+                                  ),
+                                ),
+                                Text(
+                                  'Déverrouiller avec $_bioLabel',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _bioEnabled,
+                            activeColor: const Color(0xFF2E9B5B),
+                            onChanged: _bioBusy ? null : _toggleBiometric,
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () => _showDeleteAccountDialog(),
-                    icon: Image.asset(
-                      'assets/images/profil_pro/btn-delete.png',
-                      width: 18,
-                      height: 18,
-                    ),
-                    label: const Text(
-                      'Supprimer mon compte',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: _isDeleting ? null : _showDeleteAccountDialog,
+                      icon: _isDeleting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.delete_outline, size: 18),
+                      label: Text(
+                        _isDeleting ? 'Suppression...' : 'Supprimer mon compte',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF8A40),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -408,6 +602,8 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
     required String title,
     required String subtitle,
     Widget? child,
+    VoidCallback? onTap,
+    Widget? trailing,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -427,6 +623,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
         children: [
           InkWell(
             borderRadius: BorderRadius.circular(12),
+            onTap: onTap,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -464,6 +661,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                       ],
                     ),
                   ),
+                  if (trailing != null) trailing,
                 ],
               ),
             ),
@@ -491,7 +689,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
             ),
           ),
           content: const Text(
-            'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.',
+            'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront perdues.',
             style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
           ),
           shape: RoundedRectangleBorder(
@@ -512,6 +710,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                _deleteAccount();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFF44336),
@@ -528,6 +727,302 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
           ],
         );
       },
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    setState(() => _isDeleting = true);
+    try {
+      final token = await TokenStorage.getAccessToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez vous connecter')),
+        );
+        return;
+      }
+
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.baseUrl}/user/account'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Clear onboarding flags before deleting
+        final userId = UserSession().id;
+        if (userId != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('onboarding_completed_$userId');
+          await prefs.remove('welcome_bonus_shown_$userId');
+        }
+        await TokenStorage.clearTokens();
+        UserSession().clear();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Compte supprimé avec succès'),
+              backgroundColor: Color(0xFF3AAE5E),
+            ),
+          );
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
+          );
+        }
+      } else {
+        final data = jsonDecode(response.body);
+        throw Exception(data['message'] ?? 'Erreur lors de la suppression');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() => _isDeleting = false);
+    }
+  }
+
+  void _showChangePasswordDialog() {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool isLoading = false;
+    String? errorMessage;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setState) => SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 15,
+              left: 16,
+              right: 16,
+              top: 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const Text(
+                  'Modifier le mot de passe',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: currentPasswordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Mot de passe actuel',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: newPasswordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Nouveau mot de passe',
+                    prefixIcon: const Icon(Icons.lock),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    helperText: 'Minimum 8 caractères',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmPasswordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Confirmer le mot de passe',
+                    prefixIcon: const Icon(Icons.lock),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                if (errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          color: Colors.red[700],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            errorMessage!,
+                            style: TextStyle(
+                              color: Colors.red[700],
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () => Navigator.pop(sheetContext),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Annuler'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                final currentPassword =
+                                    currentPasswordController.text.trim();
+                                final newPassword = newPasswordController.text
+                                    .trim();
+                                final confirmPassword =
+                                    confirmPasswordController.text.trim();
+
+                                if (currentPassword.isEmpty ||
+                                    newPassword.isEmpty ||
+                                    confirmPassword.isEmpty) {
+                                  setState(
+                                    () => errorMessage =
+                                        'Veuillez remplir tous les champs',
+                                  );
+                                  return;
+                                }
+
+                                if (newPassword.length < 8) {
+                                  setState(
+                                    () => errorMessage =
+                                        'Le mot de passe doit contenir au moins 8 caractères',
+                                  );
+                                  return;
+                                }
+
+                                if (newPassword != confirmPassword) {
+                                  setState(
+                                    () => errorMessage =
+                                        'Les mots de passe ne correspondent pas',
+                                  );
+                                  return;
+                                }
+
+                                setState(() {
+                                  isLoading = true;
+                                  errorMessage = null;
+                                });
+
+                                try {
+                                  final response = await ApiClient()
+                                      .authenticatedPost(
+                                        '/profile/me/password',
+                                        body: {
+                                          'current_password': currentPassword,
+                                          'new_password': newPassword,
+                                          'new_password_confirmation':
+                                              confirmPassword,
+                                        },
+                                      );
+
+                                  if (response['success'] == true) {
+                                    Navigator.pop(sheetContext);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Mot de passe modifié avec succès',
+                                        ),
+                                        backgroundColor: Color(0xFF2E9B5B),
+                                      ),
+                                    );
+                                  } else {
+                                    setState(
+                                      () => errorMessage =
+                                          response['message'] ??
+                                          'Erreur lors de la modification',
+                                    );
+                                  }
+                                } catch (e) {
+                                  setState(() => errorMessage = e.toString());
+                                } finally {
+                                  setState(() => isLoading = false);
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E9B5B),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : const Text('Modifier'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

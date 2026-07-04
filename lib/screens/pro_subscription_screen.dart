@@ -1,305 +1,88 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/services/delegation_manager.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
+import 'package:myreklam/services/stripe_payment_service.dart';
+import 'package:myreklam/services/paypal_payment_service.dart';
 import 'package:myreklam/services/subscription_service.dart';
-import 'package:myreklam/services/api_client.dart';
 
-class ProSubscriptionScreen extends StatefulWidget {
-  const ProSubscriptionScreen({super.key});
+class ProSubscriptionScreen extends StatelessWidget {
+  /// When true (e.g. right after creating a pro account), the user MUST pick a
+  /// plan (free or premium) — back navigation is disabled.
+  final bool forceChoice;
 
-  @override
-  State<ProSubscriptionScreen> createState() => _ProSubscriptionScreenState();
-}
+  const ProSubscriptionScreen({super.key, this.forceChoice = false});
 
-class _ProSubscriptionScreenState extends State<ProSubscriptionScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-  final _subscriptionService = SubscriptionService();
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this, initialIndex: 1);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  /// Back that never lands on a black screen: pop if there's something
+  /// underneath, otherwise fall back to the main screen. This screen is often
+  /// reached via `pushAndRemoveUntil` (empty stack below), so a plain
+  /// `Navigator.pop` would pop the only route and leave a black screen.
+  void _safeBack(BuildContext context) {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const ParticulierMainScreen()),
+        (route) => false,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.grey),
-          onPressed: () => Navigator.pop(context),
-        ),
-        elevation: 0,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (forceChoice) return; // must pick a plan — block back
+        _safeBack(context);
+      },
+      child: Scaffold(
         backgroundColor: Colors.white,
-        title: const Text(
-          'Choisissez votre abonnement',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Manjari',
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF4E7),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: SizedBox(
-                height: 40,
-                child: TabBar(
-                  controller: _tabController,
-                  indicator: BoxDecoration(
-                    color: const Color(0xFFFF8600),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x33FF8600),
-                        blurRadius: 8,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  labelPadding: EdgeInsets.zero,
-                  indicatorPadding: EdgeInsets.zero,
-                  dividerColor: Colors.transparent,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: const Color(0xFF7E6B5C),
-                  labelStyle: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
-                  tabs: const [
-                    Tab(
-                      child: SizedBox.expand(
-                        child: Center(child: Text('Version GRATUITE')),
-                      ),
-                    ),
-                    Tab(
-                      child: SizedBox.expand(
-                        child: Center(child: Text('Version PREMIUM')),
-                      ),
-                    ),
-                  ],
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          leading: forceChoice
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.grey),
+                  onPressed: () => _safeBack(context),
                 ),
-              ),
+          elevation: 0,
+          backgroundColor: Colors.white,
+          title: const Text(
+            'Choisissez votre abonnement',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Manjari',
             ),
           ),
-          const SizedBox(height: 14),
-          const Padding(
+          centerTitle: true,
+        ),
+        body: const Column(
+        children: [
+          SizedBox(height: 14),
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 24),
             child: Text(
               'Développez votre activité avec Myreklam : choisissez l\'offre qui correspond à vos ambitions.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: Color(0xFF8D8D8D),
-              ),
+              style: TextStyle(fontSize: 13, color: Color(0xFF8D8D8D)),
             ),
           ),
-          const SizedBox(height: 18),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _FreePlan(onContinue: () => _handleSubscribe('free')),
-                _PremiumPlan(onContinue: (billingCycle) => _handleSubscribe('premium', billingCycle: billingCycle)),
-              ],
-            ),
-          ),
+          SizedBox(height: 18),
+          Expanded(child: _PremiumPlan()),
         ],
-      ),
-    );
-  }
-
-  Future<void> _handleSubscribe(String plan, {String? billingCycle}) async {
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
-
-    try {
-      await _subscriptionService.subscribe(
-        plan: plan,
-        billingCycle: billingCycle,
-      );
-
-      if (!mounted) return;
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const ParticulierMainScreen(),
         ),
-        (route) => false,
-      );
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Une erreur est survenue. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-}
-
-class _FreePlan extends StatelessWidget {
-  const _FreePlan({required this.onContinue});
-
-  final VoidCallback onContinue;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE9DED2)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _FreePlanHeader(),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(0),
-                        topRight: Radius.circular(20),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: const [
-                            Text(
-                              '0€',
-                              style: TextStyle(
-                                fontSize: 38,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFFF9800),
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Padding(
-                              padding: EdgeInsets.only(bottom: 6),
-                              child: Text('/mois',
-                                  style: TextStyle(color: Color(0xFF8D8D8D))),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Gratuit à vie · sans engagement',
-                          style: TextStyle(color: Color(0xFF8D8D8D)),
-                        ),
-                        const SizedBox(height: 26),
-                        _buildFeatureGroup(
-                          title: 'TROUVER',
-                          items: const [
-                            FeatureItem('Consulter les annonces (illimité)', FeatureStatus.warning),
-                            FeatureItem('Commenter et réagir aux annonces (1 mois)', FeatureStatus.warning),
-                            FeatureItem('Obtenir un numéro ou email de contact', FeatureStatus.unavailable, strike: true),
-                            FeatureItem('Voir les documents partagés', FeatureStatus.unavailable, strike: true),
-                            FeatureItem('Télécharger les programmes de formations', FeatureStatus.unavailable, strike: true),
-                          ],
-                          headerColor: const Color(0xFFFF9800),
-                        ),
-                        _buildFeatureGroup(
-                          title: 'PROMOUVOIR',
-                          items: const [
-                            FeatureItem('Poster une annonce (1 mois)', FeatureStatus.warning),
-                            FeatureItem('Partager mes coordonnées sur mes annonces', FeatureStatus.unavailable, strike: true),
-                          ],
-                          headerColor: const Color(0xFFFF9800),
-                        ),
-                        _buildFeatureGroup(
-                          title: 'COMMUNIQUER',
-                          items: const [
-                            FeatureItem('Accès à la messagerie', FeatureStatus.unavailable, strike: true),
-                            FeatureItem('Convertir mes My\'s en récompense', FeatureStatus.unavailable, strike: true),
-                          ],
-                          headerColor: const Color(0xFFFF9800),
-                        ),
-                        _buildFeatureGroup(
-                          title: 'DIFFUSER',
-                          items: const [
-                            FeatureItem('Profil (Basique)', FeatureStatus.warning),
-                            FeatureItem('Répondre aux avis', FeatureStatus.unavailable, strike: true),
-                          ],
-                          headerColor: const Color(0xFFFF9800),
-                        ),
-                        const SizedBox(height: 16),
-                        _GradientButton(
-                          label: 'Continuer en gratuit',
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFFB347), Color(0xFFFF8C1A)],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          onTap: onContinue,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 30),
-        ],
       ),
     );
   }
 }
 
 class _PremiumPlan extends StatefulWidget {
-  const _PremiumPlan({required this.onContinue});
-
-  final void Function(String billingCycle) onContinue;
+  const _PremiumPlan();
 
   @override
   State<_PremiumPlan> createState() => _PremiumPlanState();
@@ -309,6 +92,338 @@ enum _BillingCycle { monthly, annual }
 
 class _PremiumPlanState extends State<_PremiumPlan> {
   _BillingCycle _cycle = _BillingCycle.annual;
+  final StripePaymentService _stripeService = StripePaymentService();
+  final PayPalPaymentService _paypalService = PayPalPaymentService();
+  bool _isProcessingPayment = false;
+
+  // Promo code (Stripe promotion code) state.
+  final TextEditingController _promoController = TextEditingController();
+  String? _appliedPromoCode;
+  String? _promoFeedback; // success or error message shown under the field
+  bool _promoValid = false;
+  bool _checkingPromo = false;
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
+  }
+
+  void _resetPromo() {
+    _appliedPromoCode = null;
+    _promoFeedback = null;
+    _promoValid = false;
+  }
+
+  void _showPaymentMethodModal() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 24,
+              bottom: 24 + MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const Text(
+                  'Choisir votre méthode de paiement',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Abonnement Premium - ${_cycle == _BillingCycle.monthly ? 'Mensuel' : 'Annuel'}',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                // Promo / reduction code
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _promoController,
+                        enabled: !_promoValid,
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: InputDecoration(
+                          hintText: 'Code de réduction',
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          suffixIcon: _promoValid
+                              ? IconButton(
+                                  icon: const Icon(Icons.close, size: 18),
+                                  onPressed: () {
+                                    _promoController.clear();
+                                    setModalState(() {
+                                      setState(_resetPromo);
+                                    });
+                                  },
+                                )
+                              : null,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 46,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1B8D4B),
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: (_checkingPromo || _promoValid)
+                            ? null
+                            : () => _applyPromo(setModalState),
+                        child: _checkingPromo
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : const Text('Appliquer'),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_promoFeedback != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    _promoFeedback!,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: _promoValid ? const Color(0xFF1B8D4B) : Colors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                _PaymentOptionTile(
+                  icon: Icons.payment,
+                  label: 'PayPal',
+                  color: const Color(0xFF0070BA),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _processPayPalPayment();
+                  },
+                ),
+                const SizedBox(height: 12),
+                _PaymentOptionTile(
+                  icon: Icons.credit_card,
+                  label: 'Stripe (Carte bancaire)',
+                  color: const Color(0xFF635BFF),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _processStripePayment();
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Annuler'),
+                ),
+              ],
+            ),
+          ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _applyPromo(StateSetter setModalState) async {
+    final code = _promoController.text.trim();
+    if (code.isEmpty) return;
+    setModalState(() => setState(() => _checkingPromo = true));
+
+    final billingCycle = _cycle == _BillingCycle.monthly ? 'monthly' : 'annual';
+    final result = await _stripeService.validatePromo(
+      billingCycle: billingCycle,
+      code: code,
+    );
+
+    setModalState(() {
+      setState(() {
+        _checkingPromo = false;
+        if (result['valid'] == true) {
+          _promoValid = true;
+          _appliedPromoCode = code;
+          final disc = result['discount'] as Map<String, dynamic>?;
+          final amount = result['discounted_amount'];
+          final label = disc?['label']?.toString();
+          _promoFeedback =
+              '✓ Code appliqué${label != null && label.isNotEmpty ? ' ($label)' : ''} — nouveau prix : ${amount}€';
+        } else {
+          _promoValid = false;
+          _appliedPromoCode = null;
+          _promoFeedback = result['error']?.toString() ?? 'Code invalide';
+        }
+      });
+    });
+  }
+
+  bool _ensureCanManageSubscription() {
+    if (DelegationManager.instance
+        .can(DelegationPermission.manageSubscription)) {
+      return true;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+            "Vous n'avez pas l'autorisation de gérer l'abonnement de ce compte."),
+      ),
+    );
+    return false;
+  }
+
+  Future<void> _processStripePayment() async {
+    if (!_ensureCanManageSubscription()) return;
+    if (_isProcessingPayment) return;
+
+    setState(() => _isProcessingPayment = true);
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final billingCycle = _cycle == _BillingCycle.monthly ? 'monthly' : 'annual';
+
+    try {
+      final success = await _stripeService.processPayment(
+        billingCycle: billingCycle,
+        context: context,
+        promoCode: _appliedPromoCode,
+      );
+
+      // Hide loading indicator
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (success && mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Paiement réussi ! Abonnement Premium activé.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to main screen
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const ParticulierMainScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      // Hide loading indicator
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur de paiement: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingPayment = false);
+      }
+    }
+  }
+
+  Future<void> _processPayPalPayment() async {
+    if (!_ensureCanManageSubscription()) return;
+    if (_isProcessingPayment) return;
+
+    setState(() => _isProcessingPayment = true);
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final billingCycle = _cycle == _BillingCycle.monthly ? 'monthly' : 'annual';
+
+    try {
+      final success = await _paypalService.processPayment(
+        billingCycle: billingCycle,
+        context: context,
+      );
+
+      // Hide loading indicator
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (success && mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Paiement réussi ! Abonnement Premium activé.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to main screen
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const ParticulierMainScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      // Hide loading indicator
+      if (mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur de paiement PayPal: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingPayment = false);
+      }
+    }
+  }
 
   static final Map<_BillingCycle, _PremiumPricing> _pricing = {
     _BillingCycle.monthly: const _PremiumPricing(
@@ -392,7 +507,9 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                                     padding: const EdgeInsets.only(bottom: 6),
                                     child: Text(
                                       pricing.cadence,
-                                      style: const TextStyle(color: Color(0xFF6D7278)),
+                                      style: const TextStyle(
+                                        color: Color(0xFF6D7278),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -400,13 +517,18 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                               const SizedBox(height: 6),
                               Text(
                                 pricing.subLabel,
-                                style: const TextStyle(color: Color(0xFF6D7278)),
+                                style: const TextStyle(
+                                  color: Color(0xFF6D7278),
+                                ),
                                 textAlign: TextAlign.center,
                               ),
                               if (pricing.savingsLabel != null) ...[
                                 const SizedBox(height: 10),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 18,
+                                    vertical: 10,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFE0F7EA),
                                     borderRadius: BorderRadius.circular(30),
@@ -429,36 +551,72 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                         _buildFeatureGroup(
                           title: 'TROUVER',
                           items: const [
-                            FeatureItem('Consulter les annonces (illimité)', FeatureStatus.available),
-                            FeatureItem('Commenter et réagir aux annonces (illimité)', FeatureStatus.available),
-                            FeatureItem('Obtenir un numéro ou email de contact', FeatureStatus.available),
-                            FeatureItem('Voir les documents partagés', FeatureStatus.available),
-                            FeatureItem('Télécharger les programmes de formations', FeatureStatus.available),
+                            FeatureItem(
+                              'Consulter les annonces (illimité)',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Commenter et réagir aux annonces (illimité)',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Obtenir un numéro ou email de contact',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Voir les documents partagés',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Télécharger les programmes de formations',
+                              FeatureStatus.available,
+                            ),
                           ],
                           headerColor: const Color(0xFF2E9B5B),
                         ),
                         _buildFeatureGroup(
                           title: 'PROMOUVOIR',
                           items: const [
-                            FeatureItem('Poster une annonce (illimité)', FeatureStatus.available),
-                            FeatureItem('Partager mes coordonnées sur mes annonces', FeatureStatus.available),
+                            FeatureItem(
+                              'Poster une annonce (illimité)',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Partager mes coordonnées sur mes annonces',
+                              FeatureStatus.available,
+                            ),
                           ],
                           headerColor: const Color(0xFF2E9B5B),
                         ),
                         _buildFeatureGroup(
                           title: 'COMMUNIQUER',
                           items: const [
-                            FeatureItem('Accès à la messagerie', FeatureStatus.available),
-                            FeatureItem('Convertir mes My\'s en récompense', FeatureStatus.available),
+                            FeatureItem(
+                              'Accès à la messagerie',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Convertir mes My\'s en récompense',
+                              FeatureStatus.available,
+                            ),
                           ],
                           headerColor: const Color(0xFF2E9B5B),
                         ),
                         _buildFeatureGroup(
                           title: 'DIFFUSER',
                           items: const [
-                            FeatureItem('Profil (Premium)', FeatureStatus.available),
-                            FeatureItem('Badge "Profil vérifié"', FeatureStatus.available),
-                            FeatureItem('Répondre aux avis', FeatureStatus.available),
+                            FeatureItem(
+                              'Profil (Premium)',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Badge "Profil vérifié"',
+                              FeatureStatus.available,
+                            ),
+                            FeatureItem(
+                              'Répondre aux avis',
+                              FeatureStatus.available,
+                            ),
                           ],
                           headerColor: const Color(0xFF2E9B5B),
                         ),
@@ -466,15 +624,39 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                         _GradientButton(
                           label: 'Continuer en Premium',
                           gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFF04BC7B),
-                              Color(0xFF03CD85),
-                            ],
+                            colors: [Color(0xFF04BC7B), Color(0xFF03CD85)],
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
                           ),
-                          onTap: () => widget.onContinue(
-                            _cycle == _BillingCycle.monthly ? 'monthly' : 'annual',
+                          onTap: _showPaymentMethodModal,
+                        ),
+                        const SizedBox(height: 10),
+                        // Free plan option (limited features).
+                        Center(
+                          child: TextButton(
+                            onPressed: _isProcessingPayment ? null : _continueFree,
+                            child: const Text(
+                              'Continuer avec la version gratuite',
+                              style: TextStyle(
+                                color: Color(0xFF616161),
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 24),
+                            child: Text(
+                              "Gratuit : consultez les annonces. Publier et commenter sont possibles 30 jours, puis réservés au Premium. Messagerie, contacts et documents restent Premium.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFF9E9E9E),
+                                height: 1.4,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -488,6 +670,48 @@ class _PremiumPlanState extends State<_PremiumPlan> {
         ],
       ),
     );
+  }
+
+  Future<void> _continueFree() async {
+    if (!_ensureCanManageSubscription()) return;
+    if (_isProcessingPayment) return;
+
+    setState(() => _isProcessingPayment = true);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await SubscriptionService().subscribe(plan: 'free');
+      if (mounted && Navigator.canPop(context)) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Version gratuite activée.'),
+            backgroundColor: Color(0xFF3AAE5E),
+          ),
+        );
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const ParticulierMainScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted && Navigator.canPop(context)) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessingPayment = false);
+    }
   }
 }
 
@@ -506,10 +730,7 @@ class _PremiumPricing {
 }
 
 class _BillingToggle extends StatelessWidget {
-  const _BillingToggle({
-    required this.activeCycle,
-    required this.onChanged,
-  });
+  const _BillingToggle({required this.activeCycle, required this.onChanged});
 
   final _BillingCycle activeCycle;
   final ValueChanged<_BillingCycle> onChanged;
@@ -569,7 +790,9 @@ class _BillingToggle extends StatelessWidget {
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                color: isActive ? const Color(0xFF2E9B5B) : const Color(0xFF6D7278),
+                color: isActive
+                    ? const Color(0xFF2E9B5B)
+                    : const Color(0xFF6D7278),
               ),
             ),
           ),
@@ -586,14 +809,14 @@ class _CenteredPremiumIntro extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
-      children: const [
-        Text(
-          '1 mois offert. Vous serez facturé à la fin du mois. Vous pouvez annuler à tout moment pendant la période d’essai.',
+      children: [
+        const Text(
+          'Choisissez une formule et un moyen de paiement pour activer Premium.',
           style: TextStyle(color: Color(0xFF6D7278)),
           textAlign: TextAlign.center,
         ),
-        SizedBox(height: 18),
-        _PremiumHighlights(),
+        const SizedBox(height: 18),
+        const _PremiumHighlights(),
       ],
     );
   }
@@ -657,7 +880,9 @@ class _HighlightTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: const Color(0xFFDFF5E8),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF2E9B5B).withOpacity(0.25)),
+            border: Border.all(
+              color: const Color(0xFF2E9B5B).withOpacity(0.25),
+            ),
           ),
           child: Icon(item.icon, color: const Color(0xFF24A05B), size: 16),
         ),
@@ -727,59 +952,55 @@ class _GradientButton extends StatelessWidget {
   }
 }
 
-class _FreePlanHeader extends StatelessWidget {
-  const _FreePlanHeader();
+class _PaymentOptionTile extends StatelessWidget {
+  const _PaymentOptionTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(20),
-        topRight: Radius.circular(20),
-      ),
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
-        height: 130,
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFFFB347), Color(0xFFFF8C1A)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.3)),
         ),
-        child: Stack(
+        child: Row(
           children: [
-            Positioned(
-              right: -30,
-              top: -20,
-              child: SizedBox(
-                width: 160,
-                height: 160,
-                child: CustomPaint(
-                  painter: _SwirlPainter(opacity: 0.25),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: color,
                 ),
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  '| Version GRATUITE',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  'Découvrez la plateforme avec des fonctionnalités de base.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
+            Icon(
+              Icons.arrow_forward_ios,
+              color: color.withOpacity(0.6),
+              size: 16,
             ),
           ],
         ),
@@ -803,10 +1024,7 @@ class _PremiumPlanHeader extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-            Color(0xFF04BC7B),
-            Color(0xFF03CD85),
-          ],
+            colors: [Color(0xFF04BC7B), Color(0xFF03CD85)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -819,16 +1037,17 @@ class _PremiumPlanHeader extends StatelessWidget {
               child: SizedBox(
                 width: 200,
                 height: 200,
-                child: CustomPaint(
-                  painter: _SwirlPainter(opacity: 0.18),
-                ),
+                child: CustomPaint(painter: _SwirlPainter(opacity: 0.18)),
               ),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
@@ -867,10 +1086,7 @@ class _PremiumPlanHeader extends StatelessWidget {
                 const SizedBox(height: 6),
                 const Text(
                   'Maximisez votre visibilité et développez votre activité sans limites.',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 13),
                 ),
               ],
             ),
@@ -928,7 +1144,7 @@ Widget _buildFeatureGroup({
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-           color: Color(0xFF04BC7B),
+            color: Color(0xFF04BC7B),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -990,8 +1206,9 @@ Widget _buildFeatureLine(FeatureItem item) {
             style: TextStyle(
               fontSize: 12,
               color: const Color(0xFF4A4A4A),
-              decoration:
-                  item.strike ? TextDecoration.lineThrough : TextDecoration.none,
+              decoration: item.strike
+                  ? TextDecoration.lineThrough
+                  : TextDecoration.none,
             ),
           ),
         ),

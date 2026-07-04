@@ -8,20 +8,44 @@ import 'package:myreklam/screens/search_screen.dart';
 import 'package:myreklam/screens/search_results_screen.dart';
 import 'package:myreklam/screens/profile_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_profile_screen.dart';
+import 'package:myreklam/services/chat_notification_service.dart';
 import 'package:myreklam/widgets/app_layout.dart';
+import 'package:myreklam/utils/guest_access.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:provider/provider.dart';
 
 class ParticulierMainScreen extends StatefulWidget {
+  static const String routeName = '/particulier_main';
   final int initialIndex;
   final bool showPublishOptions;
   final bool showCreatePost;
   final bool showSearchResults;
+  final String? searchQuery;
+  final String? searchCategory;
+  final String? searchLocation;
+  final double? searchLocationLat;
+  final double? searchLocationLng;
+  final String? searchLocationCity;
+  final String? searchLocationPostalCode;
+  final double? searchRadius;
+  final bool? searchAllFrance;
+  final String? searchType;
   const ParticulierMainScreen({
     super.key,
     this.initialIndex = 0,
     this.showPublishOptions = false,
     this.showCreatePost = false,
     this.showSearchResults = false,
+    this.searchQuery,
+    this.searchCategory,
+    this.searchLocation,
+    this.searchLocationLat,
+    this.searchLocationLng,
+    this.searchLocationCity,
+    this.searchLocationPostalCode,
+    this.searchRadius,
+    this.searchAllFrance,
+    this.searchType,
   });
 
   @override
@@ -33,25 +57,67 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
   late bool _showPublishOptions;
   late bool _showCreatePost;
   late bool _showSearchResults;
+  int _dashboardRefreshKey = 0;
+  int _profileRefreshKey = 0;
 
   @override
   void initState() {
     super.initState();
+
     _currentIndex = widget.initialIndex;
     _showPublishOptions = widget.showPublishOptions;
     _showCreatePost = widget.showCreatePost;
     _showSearchResults = widget.showSearchResults;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!UserSession().isGuest) {
+        ChatNotificationService.instance.init();
+      }
+    });
   }
 
-  List<Widget> get _pages => [
-    const ParticulierDashboardScreen(),
-    const MessageScreen(),
-    const Scaffold(body: Center(child: Text('Publier Screen'))),
-    const SearchScreen(),
-    UserSession().isPro ? const ProfileProScreen() : const ProfileScreen(),
-  ];
+  void _handlePostCreated() {
+    setState(() {
+      _showCreatePost = false;
+      _currentIndex = 0;
+      _dashboardRefreshKey++;
+    });
+  }
+
+  void _handleCreatePostBack() {
+    setState(() {
+      _showCreatePost = false;
+      _currentIndex = 0;
+    });
+  }
+
+  List<Widget> get _pages {
+    if (UserSession().isGuest) {
+      return [
+        ParticulierDashboardScreen(key: ValueKey(_dashboardRefreshKey)),
+      ];
+    }
+
+    return [
+      ParticulierDashboardScreen(key: ValueKey(_dashboardRefreshKey)),
+      const MessageScreen(),
+      const Scaffold(body: Center(child: Text('Publier Screen'))),
+      const SearchScreen(),
+      UserSession().isPro
+          ? ProfileProScreen(key: ValueKey(_profileRefreshKey))
+          : ProfileScreen(key: ValueKey(_profileRefreshKey)),
+    ];
+  }
 
   void _handleTabTapped(int index) {
+    if (UserSession().isGuest && index != 0) {
+      GuestAccess.showLoginRequiredDialog(
+        context,
+        featureName: 'cette section',
+      );
+      return;
+    }
+
     if (index == 2) {
       Navigator.push(
         context,
@@ -60,6 +126,25 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
           fullscreenDialog: true,
         ),
       );
+    } else if (index == 0 && _currentIndex == 0) {
+      // Refresh dashboard when Accueil is tapped again (visible refresh)
+      setState(() {
+        _dashboardRefreshKey++;
+      });
+    } else if (index == 0 && _currentIndex != 0) {
+      // Silent refresh dashboard when switching back from another tab
+      ParticulierDashboardScreen.refreshFeedNotifier.value = true;
+      setState(() {
+        _currentIndex = index;
+        _showPublishOptions = false;
+        _showCreatePost = false;
+        _showSearchResults = false;
+      });
+    } else if (index == 4 && _currentIndex == 4) {
+      // Refresh profile when Profile is tapped again
+      setState(() {
+        _profileRefreshKey++;
+      });
     } else {
       setState(() {
         _currentIndex = index;
@@ -79,13 +164,30 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
       body = const PublishOptionsScreen();
       displayIndex = 2;
     } else if (_showCreatePost) {
-      body = const CreatePostScreen();
+      body = CreatePostScreen(
+        onPostCreated: _handlePostCreated,
+        onBackPressed: _handleCreatePostBack,
+      );
       displayIndex = 2;
     } else if (_showSearchResults) {
-      body = const SearchResultsScreen();
+      body = SearchResultsScreen(
+        query: widget.searchQuery ?? '',
+        category: widget.searchCategory,
+        location: widget.searchLocation ?? '',
+        locationLat: widget.searchLocationLat,
+        locationLng: widget.searchLocationLng,
+        locationCity: widget.searchLocationCity,
+        locationPostalCode: widget.searchLocationPostalCode,
+        radius: widget.searchRadius ?? 0,
+        allFrance: widget.searchAllFrance ?? false,
+        searchType: widget.searchType,
+      );
       displayIndex = 3;
     } else {
-      body = IndexedStack(index: _currentIndex, children: _pages);
+      body = IndexedStack(
+        index: UserSession().isGuest ? 0 : _currentIndex,
+        children: _pages,
+      );
     }
 
     return AppLayout(

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'package:myreklam/services/auth_service.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/google_sign_in_service.dart';
 import 'package:myreklam/services/facebook_sign_in_service.dart';
+import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/utils/auth_navigator.dart';
+import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/screens/particulier_main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -45,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (response['user'] != null) {
-        AuthNavigator.navigateAfterAuth(context, response['user']);
+        AuthNavigator.navigateToMain(context);
       }
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -65,6 +70,18 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _handleGuestAccess() async {
+    await TokenStorage.clearTokens();
+    UserSession().startGuestMode();
+
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const ParticulierMainScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
             top: 0,
             left: 0,
             right: 0,
-            height: MediaQuery.of(context).size.height * 0.4,
+            height: MediaQuery.of(context).size.height * 0.3,
             child: Container(
               color: const Color(0xFF1B8D4B),
               child: Image.asset(
@@ -90,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
           SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 110),
+                const SizedBox(height: 40),
                 Center(
                   child: Image.asset(
                     'assets/images/LOGO VERT.png',
@@ -105,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: MediaQuery.of(context).size.height * 0.72,
+              height: MediaQuery.of(context).size.height * 0.8,
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
@@ -156,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             return 'Veuillez entrer votre email';
                           }
                           if (!RegExp(
-                            r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
                           ).hasMatch(value)) {
                             return 'Veuillez entrer un email valide';
                           }
@@ -235,40 +252,74 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                         ),
                       ),
-                      const SizedBox(height: 40),
-                      // Social Login
-                      Row(
-                        children: [
-                          const Expanded(child: Divider()),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
-                            child: Text(
-                              'ou connectez-vous avec',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
+                            children: [
+                              const TextSpan(
+                                  text:
+                                      'En vous connectant, vous acceptez nos '),
+                              TextSpan(
+                                text: "Conditions d'Utilisation",
+                                style: const TextStyle(
+                                  color: Color(0xFF1B8D4B),
+                                  decoration: TextDecoration.underline,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () => launchUrl(
+                                        Uri.parse(
+                                            'https://www.myreklam.fr/conditions.html'),
+                                        mode: LaunchMode.externalApplication,
+                                      ),
                               ),
-                            ),
+                              const TextSpan(text: ' et notre '),
+                              TextSpan(
+                                text: 'Politique de Confidentialité',
+                                style: const TextStyle(
+                                  color: Color(0xFF1B8D4B),
+                                  decoration: TextDecoration.underline,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () => launchUrl(
+                                        Uri.parse(
+                                            'https://www.myreklam.fr/confidentialite.html'),
+                                        mode: LaunchMode.externalApplication,
+                                      ),
+                              ),
+                              const TextSpan(text: '.'),
+                            ],
                           ),
-                          const Expanded(child: Divider()),
-                        ],
+                        ),
                       ),
                       const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildSocialButton(
-                            'assets/images/auth/flat-color-icons_google.png',
-                            onTap: _isLoading ? null : () => _handleGoogleLogin(),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF1B8D4B),
+                            side: const BorderSide(color: Color(0xFF1B8D4B)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
-                          const SizedBox(width: 20),
-                          _buildSocialButton(
-                            'assets/images/auth/logos_facebook.png',
-                            onTap: _isLoading ? null : () => _handleFacebookLogin(),
+                          onPressed: _isLoading ? null : _handleGuestAccess,
+                          icon: const Icon(Icons.visibility_outlined),
+                          label: const Text(
+                            'Acces invite',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ],
+                        ),
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 20),
                       // Footer
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -282,19 +333,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   transitionDuration: const Duration(
                                     milliseconds: 500,
                                   ),
-                                  pageBuilder:
-                                      (
-                                        context,
-                                        animation,
-                                        secondaryAnimation,
-                                      ) => const RegisterScreen(),
-                                  transitionsBuilder:
-                                      (
-                                        context,
-                                        animation,
-                                        secondaryAnimation,
-                                        child,
-                                      ) {
+                                  pageBuilder: (context, animation,
+                                          secondaryAnimation) =>
+                                      const RegisterScreen(),
+                                  transitionsBuilder: (context, animation,
+                                          secondaryAnimation, child) {
                                         var begin = const Offset(1.0, 0.0);
                                         var end = Offset.zero;
                                         var curve = Curves.easeInOut;
@@ -379,24 +422,15 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: Color(0xFF1B8D4B),
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFF1B8D4B), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: Color(0xFFD32F2F),
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: Color(0xFFD32F2F),
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
         ),
         errorStyle: const TextStyle(
           fontSize: 12,

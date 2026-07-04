@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.1.0+14
 
 environment:
   sdk: ^3.9.2
@@ -34,6 +34,8 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  # Stripe payments
+  flutter_stripe: ^11.1.0
   # font_awesome_flutter -> icons
   font_awesome_flutter: ^10.1.0
   # marquee -> text animation
@@ -52,8 +54,48 @@ dependencies:
   google_sign_in: ^6.2.1
   # Secure token storage
   flutter_secure_storage: ^9.0.0
+  # Biometric authentication (fingerprint / Face ID)
+  local_auth: ^2.3.0
   # Facebook Login
   flutter_facebook_auth: ^7.1.1
+  # Pusher pour chat temps réel
+  pusher_channels_flutter: ^2.4.0
+  # Provider pour gestion d'état
+  provider: ^6.1.5
+  # Time formatting
+  intl: ^0.20.2
+  #Package Notifications
+  firebase_core: ^3.13.0
+  firebase_messaging: ^15.2.5
+  firebase_remote_config: ^5.5.0
+  package_info_plus: ^9.0.1
+  # File download
+  dio: ^5.8.0
+  path_provider: ^2.1.5
+  flutter_pdfview: ^1.3.4
+  # Download notifications
+  flutter_local_notifications: ^18.0.1
+  # Local database for offline messages
+  sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0
+  path: ^1.8.3
+  image_picker: ^1.2.1
+  image_cropper: ^12.0.0
+  permission_handler: ^12.0.1
+  # Video thumbnail generation
+  video_thumbnail: ^0.5.3
+  # Video preview
+  video_player: ^2.9.3
+  # Geolocation
+  geolocator: ^11.0.0
+  geocoding: ^3.0.0
+  # Maps (OpenStreetMap, no API key)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  # Share functionality
+  share_plus: ^10.1.4
+  # Deep link handling
+  app_links: ^6.3.4
 
 dev_dependencies:
   flutter_test:
@@ -90,6 +132,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/onboarding/
+    - assets/images/home_modal/
     - assets/images/auth/
     - assets/images/auth/register/otp/
     - assets/images/lang/

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:myreklam/screens/story_editor_screen.dart';
 
@@ -11,7 +12,16 @@ class AddStoryScreen extends StatefulWidget {
   State<AddStoryScreen> createState() => _AddStoryScreenState();
 }
 
-class _AddStoryScreenState extends State<AddStoryScreen> {
+class _AddStoryScreenState extends State<AddStoryScreen>
+    with WidgetsBindingObserver {
+  static const PermissionRequestOption _permissionRequestOption =
+      PermissionRequestOption(
+        androidPermission: AndroidPermission(
+          type: RequestType.common,
+          mediaLocation: false,
+        ),
+      );
+
   bool _isLoading = true;
   bool _hasAccess = false;
   List<AssetEntity> _assets = [];
@@ -19,33 +29,67 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initGallery();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshPermissionState();
+    }
+  }
+
   Future<void> _initGallery() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
 
-    final PermissionState status = await PhotoManager.requestPermissionExtend();
-    if (status.isAuth) {
+    final PermissionState status = await PhotoManager.requestPermissionExtend(
+      requestOption: _permissionRequestOption,
+    );
+    if (status.hasAccess) {
       await _loadRecentAssets();
     } else {
+      if (!mounted) return;
       setState(() {
         _hasAccess = false;
+        _assets = [];
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _refreshPermissionState() async {
+    final PermissionState status = await PhotoManager.getPermissionState(
+      requestOption: _permissionRequestOption,
+    );
+    if (!mounted) return;
+
+    if (status.hasAccess) {
+      await _loadRecentAssets();
+      return;
+    }
+
+    setState(() {
+      _hasAccess = false;
+      _assets = [];
+      _isLoading = false;
+    });
   }
 
   Future<void> _loadRecentAssets() async {
     try {
       final filterOption = FilterOptionGroup()
         ..addOrderOption(
-          const OrderOption(
-            type: OrderOptionType.createDate,
-            asc: false,
-          ),
+          const OrderOption(type: OrderOptionType.createDate, asc: false),
         );
 
       final List<AssetPathEntity> albums = await PhotoManager.getAssetPathList(
@@ -54,6 +98,7 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
         filterOption: filterOption,
       );
 
+      if (!mounted) return;
       if (albums.isEmpty) {
         setState(() {
           _assets = [];
@@ -69,6 +114,7 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
         size: 40,
       );
 
+      if (!mounted) return;
       setState(() {
         _assets = assets;
         _hasAccess = true;
@@ -76,6 +122,7 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
       });
     } catch (e) {
       debugPrint('Failed to load gallery assets: $e');
+      if (!mounted) return;
       setState(() {
         _assets = [];
         _hasAccess = true;
@@ -89,7 +136,11 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF616161)),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 18,
+            color: Color(0xFF616161),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -108,7 +159,7 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStoryModes(),
+          // _buildStoryModes(),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Text(
@@ -126,59 +177,59 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
     );
   }
 
-  Widget _buildStoryModes() {
-    final List<_StoryMode> modes = [
-      _StoryMode('Texte', Icons.text_fields_outlined),
-      _StoryMode('Galerie', Icons.photo_library_outlined),
-      _StoryMode('Videos', Icons.video_collection_outlined),
-      _StoryMode('Photos', Icons.camera_alt_outlined),
-    ];
+  // Widget _buildStoryModes() {
+  //   final List<_StoryMode> modes = [
+  //     _StoryMode('Texte', Icons.text_fields_outlined),
+  //     _StoryMode('Galerie', Icons.photo_library_outlined),
+  //     _StoryMode('Videos', Icons.video_collection_outlined),
+  //     _StoryMode('Photos', Icons.camera_alt_outlined),
+  //   ];
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      child: Row(
-        children: modes
-            .map(
-              (mode) => Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: mode.label == 'Galerie'
-                        ? const Color(0xFF2E9B5B).withOpacity(0.08)
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE0E0E0)),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        mode.icon,
-                        size: 22,
-                        color: mode.label == 'Galerie'
-                            ? const Color(0xFF2E9B5B)
-                            : const Color(0xFF616161),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        mode.label,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: mode.label == 'Galerie'
-                              ? const Color(0xFF2E9B5B)
-                              : const Color(0xFF616161),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+  //     child: Row(
+  //       children: modes
+  //           .map(
+  //             (mode) => Expanded(
+  //               child: Container(
+  //                 margin: const EdgeInsets.symmetric(horizontal: 4),
+  //                 padding: const EdgeInsets.symmetric(vertical: 12),
+  //                 decoration: BoxDecoration(
+  //                   color: mode.label == 'Galerie'
+  //                       ? const Color(0xFF2E9B5B).withValues(alpha: 0.08)
+  //                       : Colors.white,
+  //                   borderRadius: BorderRadius.circular(12),
+  //                   border: Border.all(color: const Color(0xFFE0E0E0)),
+  //                 ),
+  //                 child: Column(
+  //                   children: [
+  //                     Icon(
+  //                       mode.icon,
+  //                       size: 22,
+  //                       color: mode.label == 'Galerie'
+  //                           ? const Color(0xFF2E9B5B)
+  //                           : const Color(0xFF616161),
+  //                     ),
+  //                     const SizedBox(height: 6),
+  //                     Text(
+  //                       mode.label,
+  //                       style: TextStyle(
+  //                         fontSize: 13,
+  //                         fontWeight: FontWeight.w600,
+  //                         color: mode.label == 'Galerie'
+  //                             ? const Color(0xFF2E9B5B)
+  //                             : const Color(0xFF616161),
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
+  //             ),
+  //           )
+  //           .toList(),
+  //     ),
+  //   );
+  // }
 
   Widget _buildGallerySection() {
     if (_isLoading) {
@@ -199,7 +250,7 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.only(left: 12, right: 12, bottom: 16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 6,
@@ -217,27 +268,93 @@ class _AddStoryScreenState extends State<AddStoryScreen> {
   }
 
   Widget _buildCameraTile() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.photo_camera_outlined, color: Color(0xFF2E9B5B)),
-          SizedBox(height: 6),
-          Text(
-            'Caméra',
-            style: TextStyle(
-              color: Color(0xFF616161),
-              fontSize: 12,
+    return GestureDetector(
+      onTap: _openCamera,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.photo_camera_outlined, color: Color(0xFF2E9B5B)),
+            SizedBox(height: 6),
+            Text(
+              'Caméra',
+              style: TextStyle(color: Color(0xFF616161), fontSize: 12),
             ),
-          )
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _openCamera() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_camera_outlined,
+                  color: Color(0xFF2E9B5B),
+                ),
+                title: const Text('Prendre une photo'),
+                onTap: () => Navigator.pop(ctx, 'photo'),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.videocam_outlined,
+                  color: Color(0xFF2E9B5B),
+                ),
+                title: const Text('Enregistrer une vidéo'),
+                onTap: () => Navigator.pop(ctx, 'video'),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (choice == null) return;
+
+    final picker = ImagePicker();
+    XFile? file;
+    if (choice == 'video') {
+      file = await picker.pickVideo(source: ImageSource.camera);
+    } else {
+      file = await picker.pickImage(source: ImageSource.camera);
+    }
+
+    if (file != null && mounted) {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => StoryEditorScreen(cameraFile: file),
+        ),
+      );
+      if (result != null && mounted) {
+        Navigator.pop(context, result);
+      }
+    }
   }
 }
 
@@ -260,7 +377,11 @@ class _PermissionPrompt extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.photo_library_outlined, size: 48, color: Color(0xFF2E9B5B)),
+          const Icon(
+            Icons.photo_library_outlined,
+            size: 48,
+            color: Color(0xFF2E9B5B),
+          ),
           const SizedBox(height: 16),
           const Text(
             'Autorisez l\'accès à votre galerie pour ajouter une storie.',
@@ -271,18 +392,18 @@ class _PermissionPrompt extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               await PhotoManager.openSetting();
+              await onRetry();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2E9B5B),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
             ),
             child: const Text('Ouvrir les réglages'),
           ),
-          TextButton(
-            onPressed: onRetry,
-            child: const Text('Ressayer'),
-          )
+          TextButton(onPressed: onRetry, child: const Text('Ressayer')),
         ],
       ),
     );
@@ -296,6 +417,8 @@ class _GalleryAssetTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isVideo = asset.type == AssetType.video;
+
     return GestureDetector(
       onTap: () async {
         final result = await Navigator.push(
@@ -310,23 +433,63 @@ class _GalleryAssetTile extends StatelessWidget {
       },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: FutureBuilder<Uint8List?>(
-          future: asset.thumbnailDataWithSize(const ThumbnailSize(400, 400)),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Container(color: Colors.grey[200]);
-            }
-            final data = snapshot.data;
-            if (data == null) {
-              return Container(color: Colors.grey[300]);
-            }
-            return Image.memory(
-              data,
-              fit: BoxFit.cover,
-            );
-          },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            FutureBuilder<Uint8List?>(
+              future: asset.thumbnailDataWithSize(
+                const ThumbnailSize(400, 400),
+              ),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Container(color: Colors.grey[200]);
+                }
+                final data = snapshot.data;
+                if (data == null) {
+                  return Container(color: Colors.grey[300]);
+                }
+                return Image.memory(data, fit: BoxFit.cover);
+              },
+            ),
+            if (isVideo) ...[
+              Positioned(
+                right: 6,
+                bottom: 6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.55),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _formatDuration(asset.videoDuration),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const Positioned(
+                left: 6,
+                bottom: 6,
+                child: Icon(Icons.videocam, size: 16, color: Colors.white),
+              ),
+            ],
+          ],
         ),
       ),
     );
+  }
+
+  String _formatDuration(Duration d) {
+    final totalSeconds = d.inSeconds;
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 }
