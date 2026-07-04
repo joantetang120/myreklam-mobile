@@ -13,10 +13,31 @@ class ProSubscriptionScreen extends StatelessWidget {
 
   const ProSubscriptionScreen({super.key, this.forceChoice = false});
 
+  /// Back that never lands on a black screen: pop if there's something
+  /// underneath, otherwise fall back to the main screen. This screen is often
+  /// reached via `pushAndRemoveUntil` (empty stack below), so a plain
+  /// `Navigator.pop` would pop the only route and leave a black screen.
+  void _safeBack(BuildContext context) {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const ParticulierMainScreen()),
+        (route) => false,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !forceChoice,
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (forceChoice) return; // must pick a plan — block back
+        _safeBack(context);
+      },
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
@@ -25,7 +46,7 @@ class ProSubscriptionScreen extends StatelessWidget {
               ? null
               : IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.grey),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => _safeBack(context),
                 ),
           elevation: 0,
           backgroundColor: Colors.white,
