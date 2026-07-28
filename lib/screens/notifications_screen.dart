@@ -50,12 +50,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _loadNotifications() async {
     setState(() => _isLoading = true);
     try {
-      final response = await ApiClient().authenticatedGet('/notifications?page=1&per_page=20');
+      final response = await ApiClient().authenticatedGet(
+        '/notifications?page=1&per_page=20',
+      );
       if (response['success'] == true) {
         final data = response['notifications'];
         if (data is Map && data.containsKey('data')) {
           _notifications = List<Map<String, dynamic>>.from(data['data']);
-          _hasMorePages = (data['current_page'] ?? 1) < (data['last_page'] ?? 1);
+          _hasMorePages =
+              (data['current_page'] ?? 1) < (data['last_page'] ?? 1);
           _currentPage = data['current_page'] ?? 1;
         } else if (data is List) {
           _notifications = List<Map<String, dynamic>>.from(data);
@@ -77,14 +80,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     setState(() => _isLoadingMore = true);
     try {
       final nextPage = _currentPage + 1;
-      final response = await ApiClient().authenticatedGet('/notifications?page=$nextPage&per_page=20');
+      final response = await ApiClient().authenticatedGet(
+        '/notifications?page=$nextPage&per_page=20',
+      );
       if (response['success'] == true) {
         final data = response['notifications'];
         if (data is Map && data.containsKey('data')) {
           final newItems = List<Map<String, dynamic>>.from(data['data']);
           setState(() {
             _notifications.addAll(newItems);
-            _hasMorePages = (data['current_page'] ?? 1) < (data['last_page'] ?? 1);
+            _hasMorePages =
+                (data['current_page'] ?? 1) < (data['last_page'] ?? 1);
             _currentPage = data['current_page'] ?? _currentPage;
           });
         }
@@ -98,9 +104,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _markAsRead(String notificationId) async {
     try {
-      await ApiClient().authenticatedPut('/notifications/$notificationId/read', body: {});
+      await ApiClient().authenticatedPut(
+        '/notifications/$notificationId/read',
+        body: {},
+      );
       setState(() {
-        final index = _notifications.indexWhere((n) => n['id'] == notificationId);
+        final index = _notifications.indexWhere(
+          (n) => n['id'] == notificationId,
+        );
         if (index != -1) {
           _notifications[index]['read_at'] = DateTime.now().toIso8601String();
           _unreadCount = (_unreadCount - 1).clamp(0, _unreadCount);
@@ -129,9 +140,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Future<void> _navigateToFollowerProfile(
-    Map<String, dynamic> notif,
-  ) async {
+  Future<void> _navigateToFollowerProfile(Map<String, dynamic> notif) async {
     final data = notif['data'] as Map<String, dynamic>?;
     final followerId =
         data?['follower_id']?.toString() ?? notif['reference_id']?.toString();
@@ -161,7 +170,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return _notifications.where((n) => n['read_at'] == null).toList();
   }
 
-  Map<String, List<Map<String, dynamic>>> _groupNotifications(List<Map<String, dynamic>> notifications) {
+  Map<String, List<Map<String, dynamic>>> _groupNotifications(
+    List<Map<String, dynamic>> notifications,
+  ) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -172,7 +183,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final createdAt = DateTime.tryParse(notif['created_at'] ?? '');
       if (createdAt == null) continue;
 
-      final notifDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
+      final notifDate = DateTime(
+        createdAt.year,
+        createdAt.month,
+        createdAt.day,
+      );
       String label;
 
       if (notifDate == today) {
@@ -261,7 +276,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             // Header with back arrow and title
             Padding(
               padding: const EdgeInsets.only(
-                  left: 16, right: 16, top: 12, bottom: 8),
+                left: 16,
+                right: 16,
+                top: 12,
+                bottom: 8,
+              ),
               child: Stack(
                 alignment: Alignment.center,
                 children: [
@@ -269,8 +288,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     alignment: Alignment.centerLeft,
                     child: GestureDetector(
                       onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.arrow_back,
-                          color: Color(0xFF616161), size: 24),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Color(0xFF616161),
+                        size: 24,
+                      ),
                     ),
                   ),
                   const Text(
@@ -315,65 +337,67 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : filtered.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.notifications_none,
+                            size: 64,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _selectedTab == 0
+                                ? 'Aucune notification'
+                                : 'Aucune notification non lue',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _loadNotifications,
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount:
+                            grouped.keys.length + (_hasMorePages ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == grouped.keys.length) {
+                            return const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
+
+                          final groupLabel = grouped.keys.elementAt(index);
+                          final groupItems = grouped[groupLabel]!;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.notifications_none,
-                                  size: 64, color: Colors.grey[400]),
                               const SizedBox(height: 16),
                               Text(
-                                _selectedTab == 0
-                                    ? 'Aucune notification'
-                                    : 'Aucune notification non lue',
+                                groupLabel,
                                 style: TextStyle(
-                                    color: Colors.grey[500], fontSize: 14),
+                                  fontSize: 12,
+                                  color: Colors.grey[500],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              ...groupItems.map(
+                                (notif) => _buildNotificationTile(notif),
                               ),
                             ],
-                          ),
-                        )
-                      : RefreshIndicator(
-                          onRefresh: _loadNotifications,
-                          child: ListView.builder(
-                            controller: _scrollController,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 20),
-                            itemCount: grouped.keys.length +
-                                (_hasMorePages ? 1 : 0),
-                            itemBuilder: (context, index) {
-                              if (index == grouped.keys.length) {
-                                return const Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: Center(
-                                      child: CircularProgressIndicator()),
-                                );
-                              }
-
-                              final groupLabel =
-                                  grouped.keys.elementAt(index);
-                              final groupItems = grouped[groupLabel]!;
-
-                              return Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    groupLabel,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[500],
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  ...groupItems.map((notif) =>
-                                      _buildNotificationTile(notif)),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
+                          );
+                        },
+                      ),
+                    ),
             ),
           ],
         ),
@@ -393,7 +417,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           border: Border.all(
             color: isSelected
                 ? const Color(0xFF3AAE5E)
-                : Colors.grey.withOpacity(0.3),
+                : Colors.grey.withValues(alpha: 0.3),
           ),
         ),
         child: Text(
@@ -427,7 +451,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         decoration: BoxDecoration(
-          color: isRead ? Colors.transparent : color.withOpacity(0.05),
+          color: isRead ? Colors.transparent : color.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -437,7 +461,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 22),
@@ -458,20 +482,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   const SizedBox(height: 2),
                   Text(
                     notif['body'] ?? '',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _formatTime(notif['created_at']),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[400],
-                    ),
+                    style: TextStyle(fontSize: 11, color: Colors.grey[400]),
                   ),
                 ],
               ),
@@ -481,10 +499,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 width: 8,
                 height: 8,
                 margin: const EdgeInsets.only(top: 6),
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
           ],
         ),

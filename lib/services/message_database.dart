@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart';
 import 'package:myreklam/models/chat_message.dart';
@@ -67,11 +66,19 @@ class MessageDatabase {
 
   Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      await db.execute('ALTER TABLE messages ADD COLUMN is_edited INTEGER NOT NULL DEFAULT 0');
+      await db.execute(
+        'ALTER TABLE messages ADD COLUMN is_edited INTEGER NOT NULL DEFAULT 0',
+      );
       await db.execute('ALTER TABLE messages ADD COLUMN edited_at TEXT');
-      await db.execute('ALTER TABLE messages ADD COLUMN deleted_for_everyone INTEGER NOT NULL DEFAULT 0');
-      await db.execute('ALTER TABLE messages ADD COLUMN deleted_for_sender INTEGER NOT NULL DEFAULT 0');
-      await db.execute('ALTER TABLE messages ADD COLUMN deleted_for_receiver INTEGER NOT NULL DEFAULT 0');
+      await db.execute(
+        'ALTER TABLE messages ADD COLUMN deleted_for_everyone INTEGER NOT NULL DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE messages ADD COLUMN deleted_for_sender INTEGER NOT NULL DEFAULT 0',
+      );
+      await db.execute(
+        'ALTER TABLE messages ADD COLUMN deleted_for_receiver INTEGER NOT NULL DEFAULT 0',
+      );
     }
   }
 
@@ -90,11 +97,39 @@ class MessageDatabase {
 
   Future<void> saveMessage(ChatMessage message, int currentUserId) async {
     final db = await database;
-    await db.insert(
-      'messages',
-      {
+    await db.insert('messages', {
+      'id': message.id,
+      'conversation_id': message.conversationId,
+      'sender_id': message.senderId,
+      'text': message.text,
+      'created_at': message.createdAt.toIso8601String(),
+      'is_read': message.isRead ? 1 : 0,
+      'sender_name': message.senderName,
+      'sender_avatar': message.senderAvatar,
+      'attachments': message.attachments != null
+          ? _encodeAttachments(message.attachments!)
+          : null,
+      'is_pending': 0,
+      'is_edited': message.isEdited ? 1 : 0,
+      'edited_at': message.editedAt?.toIso8601String(),
+      'deleted_for_everyone': message.deletedForEveryone ? 1 : 0,
+      'deleted_for_sender': message.deletedForSender ? 1 : 0,
+      'deleted_for_receiver': message.deletedForReceiver ? 1 : 0,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<void> saveMessages(
+    List<ChatMessage> messages,
+    int conversationId,
+    int currentUserId,
+  ) async {
+    final db = await database;
+    final batch = db.batch();
+
+    for (final message in messages) {
+      batch.insert('messages', {
         'id': message.id,
-        'conversation_id': message.conversationId,
+        'conversation_id': conversationId,
         'sender_id': message.senderId,
         'text': message.text,
         'created_at': message.createdAt.toIso8601String(),
@@ -110,43 +145,7 @@ class MessageDatabase {
         'deleted_for_everyone': message.deletedForEveryone ? 1 : 0,
         'deleted_for_sender': message.deletedForSender ? 1 : 0,
         'deleted_for_receiver': message.deletedForReceiver ? 1 : 0,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  Future<void> saveMessages(
-    List<ChatMessage> messages,
-    int conversationId,
-    int currentUserId,
-  ) async {
-    final db = await database;
-    final batch = db.batch();
-
-    for (final message in messages) {
-      batch.insert(
-        'messages',
-        {
-          'id': message.id,
-          'conversation_id': conversationId,
-          'sender_id': message.senderId,
-          'text': message.text,
-          'created_at': message.createdAt.toIso8601String(),
-          'is_read': message.isRead ? 1 : 0,
-          'sender_name': message.senderName,
-          'sender_avatar': message.senderAvatar,
-          'attachments': message.attachments != null
-              ? _encodeAttachments(message.attachments!)
-              : null,
-          'is_pending': 0,
-          'is_edited': message.isEdited ? 1 : 0,
-          'edited_at': message.editedAt?.toIso8601String(),
-          'deleted_for_everyone': message.deletedForEveryone ? 1 : 0,
-          'deleted_for_sender': message.deletedForSender ? 1 : 0,
-          'deleted_for_receiver': message.deletedForReceiver ? 1 : 0,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     }
 
     await batch.commit(noResult: true);
@@ -181,8 +180,9 @@ class MessageDatabase {
       'text': text,
       'created_at': DateTime.now().toIso8601String(),
       'is_read': 0,
-      'attachments':
-          attachments != null ? _encodeAttachments(attachments) : null,
+      'attachments': attachments != null
+          ? _encodeAttachments(attachments)
+          : null,
       'is_pending': 1,
     });
   }

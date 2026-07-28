@@ -2,20 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/screens/followers_screen.dart';
-import 'package:myreklam/screens/demande_detail_screen.dart';
-import 'package:myreklam/screens/event_detail_screen.dart';
-import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/utils/blocked_users_manager.dart';
-import 'package:myreklam/widgets/demande_card.dart';
-import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:myreklam/widgets/likers_modal.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class PublicProfileScreen extends StatefulWidget {
   final String? userId;
@@ -393,16 +387,18 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     final part = data['particulier_profile'] as Map?;
 
     if (part != null) return part['pseudo']?.toString() ?? 'Utilisateur';
-    if (pro != null)
+    if (pro != null) {
       return pro['company_name']?.toString() ??
           '${pro['first_name'] ?? ''} ${pro['last_name'] ?? ''}'.trim();
+    }
 
     return data['name']?.toString() ?? 'Utilisateur';
   }
 
   String _extractAvatar(Map<String, dynamic>? data) {
-    if (data == null)
+    if (data == null) {
       return 'assets/images/dashboard_particulier/Ellipse 10.png';
+    }
 
     final pro = data['pro_profile'] as Map?;
     final part = data['particulier_profile'] as Map?;
@@ -451,7 +447,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           ),
         ),
         centerTitle: true,
-        actions: (widget.userId == null && widget.initialData?['id'] == null) ||
+        actions:
+            (widget.userId == null && widget.initialData?['id'] == null) ||
                 _isOwnProfile
             ? null
             : [
@@ -471,8 +468,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                         children: [
                           Icon(Icons.block, color: Colors.orange, size: 20),
                           SizedBox(width: 8),
-                          Text('Bloquer cet utilisateur',
-                              style: TextStyle(color: Colors.orange)),
+                          Text(
+                            'Bloquer cet utilisateur',
+                            style: TextStyle(color: Colors.orange),
+                          ),
                         ],
                       ),
                     ),
@@ -815,7 +814,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -923,7 +922,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           else if (_myPosts.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 40),
-              child: Center(child: Text('Pas de post', style: TextStyle(color: Colors.grey))),
+              child: Center(
+                child: Text(
+                  'Pas de post',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
             )
           else
             for (final post in _myPosts) ...[
@@ -1048,7 +1052,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       final response = await ApiClient().authenticatedGet(
         '/users/$targetUserId/posts',
       );
-      final data = response is Map ? response['data'] : null;
+      final data = response['data'];
       final posts = data is List
           ? List<Map<String, dynamic>>.from(data)
           : <Map<String, dynamic>>[];
@@ -1157,7 +1161,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF3AAE5E).withOpacity(0.1),
+                      color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -1276,7 +1280,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     Icon(Icons.event, color: Colors.blue[700], size: 18),
                     const SizedBox(width: 4),
                     Text(
-                      isPaid && price != null ? '${price}€' : 'Gratuit',
+                      isPaid && price != null ? '$price€' : 'Gratuit',
                       style: TextStyle(
                         color: Colors.blue[700],
                         fontWeight: FontWeight.w600,
@@ -1397,7 +1401,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: _categoryColor(nature).withOpacity(0.1),
+                    color: _categoryColor(nature).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(

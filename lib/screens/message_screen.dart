@@ -493,9 +493,14 @@ class _MessageScreenState extends State<MessageScreen> {
                                           ),
                                           child: hasOwnStories
                                               ? ReklamAvatar(
-                                                  avatarUrl: _currentUserAvatar != null &&
-                                                          _currentUserAvatar!.isNotEmpty
-                                                      ? _buildAvatarUrl(_currentUserAvatar)
+                                                  avatarUrl:
+                                                      _currentUserAvatar !=
+                                                              null &&
+                                                          _currentUserAvatar!
+                                                              .isNotEmpty
+                                                      ? _buildAvatarUrl(
+                                                          _currentUserAvatar,
+                                                        )
                                                       : null,
                                                   displayName: 'Vous',
                                                   radius: 22,
@@ -870,7 +875,7 @@ class _MessageScreenState extends State<MessageScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF9800).withOpacity(0.1),
+                  color: const Color(0xFFFF9800).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Icon(
@@ -893,10 +898,7 @@ class _MessageScreenState extends State<MessageScreen> {
               const Text(
                 'Passez à la version Premium pour accéder à la messagerie et communiquer avec les autres utilisateurs.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF8D8D8D),
-                ),
+                style: TextStyle(fontSize: 14, color: Color(0xFF8D8D8D)),
               ),
               const SizedBox(height: 32),
               SizedBox(
@@ -920,10 +922,7 @@ class _MessageScreenState extends State<MessageScreen> {
                   ),
                   child: const Text(
                     'Passer Premium',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

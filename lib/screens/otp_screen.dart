@@ -86,10 +86,10 @@ class _OtpScreenState extends State<OtpScreen> {
     }
 
     if (widget.email == null || widget.purpose == null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => widget.nextScreen ?? const AccountTypeScreen(),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Session de vérification invalide. Recommencez.'),
+          backgroundColor: Colors.red,
         ),
       );
       return;
@@ -111,10 +111,8 @@ class _OtpScreenState extends State<OtpScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => ResetPasswordScreen(
-              email: widget.email,
-              otpCode: code,
-            ),
+            builder: (context) =>
+                ResetPasswordScreen(email: widget.email, otpCode: code),
           ),
         );
         return;

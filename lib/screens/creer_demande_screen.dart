@@ -447,10 +447,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     _selectedCategory = data['nature']?.toString();
     _selectedType = data['type']?.toString();
     _acceptDemand = data['urgent'] == true;
-    if (data['start_date'] != null)
+    if (data['start_date'] != null) {
       _startDate = DateTime.tryParse(data['start_date'].toString());
-    if (data['end_date'] != null)
+    }
+    if (data['end_date'] != null) {
       _endDate = DateTime.tryParse(data['end_date'].toString());
+    }
     _touteLaFrance = data['nationwide'] == true;
     _useCurrentLocation = data['use_current_location'] == true;
     _showGoogleLocation = data['show_google_location'] == true;
@@ -694,10 +696,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           _selectedLocation = LocationData.fromMap(formData['location']);
         }
         _acceptDemand = formData['urgent'] ?? false;
-        if (formData['start_date'] != null)
+        if (formData['start_date'] != null) {
           _startDate = DateTime.tryParse(formData['start_date'].toString());
-        if (formData['end_date'] != null)
+        }
+        if (formData['end_date'] != null) {
           _endDate = DateTime.tryParse(formData['end_date'].toString());
+        }
         _touteLaFrance = formData['toute_la_france'] ?? false;
         _useCurrentLocation = formData['use_current_location'] ?? false;
         _showGoogleLocation = formData['show_google_location'] ?? false;
@@ -954,7 +958,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       if (mounted) {
         setState(() {
           _natureOptions = convertedNatures;
-          print("Filtered nature for $userRole: $_natureOptions");
+          debugPrint("Filtered nature for $userRole: $_natureOptions");
           _categoryCodeToId
             ..clear()
             ..addAll(parsedCodeToId);
@@ -981,7 +985,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             _typeOptions = _getSubCategoriesForCode(_selectedCategory);
             // Validate _selectedType exists in loaded options
             if (_selectedType != null && _typeOptions.isNotEmpty) {
-              final hasCode = _typeOptions.any((o) => o['code'] == _selectedType);
+              final hasCode = _typeOptions.any(
+                (o) => o['code'] == _selectedType,
+              );
               if (!hasCode) {
                 // Fallback: try matching by label (API may return label instead of code)
                 final matchByLabel = _typeOptions.firstWhere(
@@ -1064,7 +1070,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         ];
       case 'formation_communication':
         return [
-          {'code': 'communication_entreprise', 'label': 'Communication d\'entreprise'},
+          {
+            'code': 'communication_entreprise',
+            'label': 'Communication d\'entreprise',
+          },
           {'code': 'journalisme', 'label': 'Journalisme'},
           {'code': 'redaction', 'label': 'Rédaction'},
           {'code': 'media', 'label': 'Médias'},
@@ -1085,7 +1094,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         ];
       case 'formation_developpement':
         return [
-          {'code': 'developpement_personnel', 'label': 'Développement personnel'},
+          {
+            'code': 'developpement_personnel',
+            'label': 'Développement personnel',
+          },
           {'code': 'coaching', 'label': 'Coaching'},
           {'code': 'pnl', 'label': 'PNL'},
         ];
@@ -1114,7 +1126,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           {'code': 'production', 'label': 'Production industrielle'},
           {'code': 'maintenance', 'label': 'Maintenance'},
           {'code': 'qualite', 'label': 'Qualité'},
-          {'code': 'logistique_industrielle', 'label': 'Logistique industrielle'},
+          {
+            'code': 'logistique_industrielle',
+            'label': 'Logistique industrielle',
+          },
         ];
       case 'formation_informatique':
         return [
@@ -1135,7 +1150,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         ];
       case 'formation_transport':
         return [
-          {'code': 'transport_marchandises', 'label': 'Transport de marchandises'},
+          {
+            'code': 'transport_marchandises',
+            'label': 'Transport de marchandises',
+          },
           {'code': 'transport_voyageurs', 'label': 'Transport de voyageurs'},
           {'code': 'logistique', 'label': 'Logistique'},
           {'code': 'securite', 'label': 'Sécurité routière'},
@@ -1156,9 +1174,18 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         ];
       case 'formation_fonction_publique':
         return [
-          {'code': 'fonction_publique_etat', 'label': 'Fonction publique d\'État'},
-          {'code': 'fonction_publique_territoriale', 'label': 'Fonction publique territoriale'},
-          {'code': 'fonction_publique_hospitaliere', 'label': 'Fonction publique hospitalière'},
+          {
+            'code': 'fonction_publique_etat',
+            'label': 'Fonction publique d\'État',
+          },
+          {
+            'code': 'fonction_publique_territoriale',
+            'label': 'Fonction publique territoriale',
+          },
+          {
+            'code': 'fonction_publique_hospitaliere',
+            'label': 'Fonction publique hospitalière',
+          },
         ];
       case 'formation_jeux_video':
         return [
@@ -1187,7 +1214,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         ];
       case 'formation_neurosciences':
         return [
-          {'code': 'neurosciences_cognitives', 'label': 'Neurosciences cognitives'},
+          {
+            'code': 'neurosciences_cognitives',
+            'label': 'Neurosciences cognitives',
+          },
           {'code': 'apprentissage', 'label': 'Apprentissage'},
           {'code': 'pedagogie_innovante', 'label': 'Pédagogie innovante'},
         ];
@@ -1432,12 +1462,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   }
 
   /// Get secteurs de formation for a selected formation category
-  List<Map<String, String>> _getFormationSectorsForCategory(String? categoryCode) {
+  List<Map<String, String>> _getFormationSectorsForCategory(
+    String? categoryCode,
+  ) {
     if (categoryCode == null) return [];
-    
+
     // Try to find parentId by code first
     String? parentId = _trainingCategoryCodeToId[categoryCode];
-    
+
     // If not found by code, try to find by label (since we useLabelAsValue=true)
     if (parentId == null) {
       for (final category in _trainingCategoriesOptions) {
@@ -1447,7 +1479,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         }
       }
     }
-    
+
     if (parentId == null) return [];
     final secteurs = _trainingSecteursByParentId[parentId];
     if (secteurs == null) return [];
@@ -1474,8 +1506,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     setState(() => _isSubmitting = true);
     try {
       final token = await TokenStorage.getAccessToken();
-      if (token == null)
+      if (token == null) {
         throw Exception('Session expirée. Veuillez vous reconnecter.');
+      }
 
       final payload = _buildDemandePayload();
       final uri = _isEditMode
@@ -1508,15 +1541,16 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           final demandeId = _isEditMode
               ? widget.demandeId
               : (demandeData is Map ? demandeData['id']?.toString() : null);
-          if ((_selectedMediaFiles.isNotEmpty ||
-                  _selectedDocumentFiles.isNotEmpty) &&
-              demandeId != null) {
-            await _uploadMediaFiles(demandeId);
+          var mediaSuccess = true;
+          if (_selectedMediaFiles.isNotEmpty ||
+              _selectedDocumentFiles.isNotEmpty) {
+            mediaSuccess =
+                demandeId != null && await _uploadMediaFiles(demandeId);
           }
           await _clearSavedProgress();
           if (!mounted) return;
           setState(() => _isSubmitting = false);
-          _showSuccessDialog();
+          _showSuccessDialog(mediaSuccess: mediaSuccess);
 
           // Award My's for creating a demande (only on create, not edit)
           if (!_isEditMode) {
@@ -1599,9 +1633,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       if (_tempsPartielPlein != null) 'work_type': _tempsPartielPlein,
       if (_niveauEtudes != null) 'education_level': _niveauEtudes,
       if (_niveauExperience != null) 'experience_level': _niveauExperience,
-      if (_accepteTeletravaill != null)
-        'accept_remote_work': _accepteTeletravaill,
-      if (_dansImmediat != null) 'immediate_availability': _dansImmediat,
+      'accept_remote_work': _accepteTeletravaill,
+      'immediate_availability': _dansImmediat,
       if (_trancheSalariale != null) 'salary_range': _trancheSalariale,
       if (_salaryMinController.text.trim().isNotEmpty)
         'salary_min': int.tryParse(_salaryMinController.text.trim()),
@@ -1654,7 +1687,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         'teaching_types': _selectedTeachingTypes,
 
       // Documents
-      if (_docCand != null) 'use_candidate_documents': _docCand,
+      'use_candidate_documents': _docCand,
       if (_selectedCvOptions.isNotEmpty) 'cv_options': _selectedCvOptions,
 
       // Variables spécifiques Formation
@@ -1662,7 +1695,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         'nb_personnes': int.tryParse(_nbPersonnesController.text.trim()),
       if (_nbGroupesController.text.trim().isNotEmpty)
         'nb_groupes': int.tryParse(_nbGroupesController.text.trim()),
-      if (_aDefinir != null) 'a_definir': _aDefinir,
+      'a_definir': _aDefinir,
     };
     if (_prixInitialController.text.trim().isNotEmpty) {
       final v = double.tryParse(
@@ -1713,7 +1746,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
   Future<void> _pickMedia() async {
     try {
-      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      final files = await GalleryPicker.pickImagesFromGallery(
+        allowMultiple: true,
+      );
       if (files == null || files.isEmpty) return;
       setState(() => _selectedMediaFiles.addAll(files));
     } catch (_) {
@@ -1773,8 +1808,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   }
 
   Future<bool> _uploadMediaFiles(String demandeId) async {
-    if (_selectedMediaFiles.isEmpty && _selectedDocumentFiles.isEmpty)
+    if (_selectedMediaFiles.isEmpty && _selectedDocumentFiles.isEmpty) {
       return true;
+    }
     setState(() => _isUploadingMedia = true);
     try {
       final token = await TokenStorage.getAccessToken();
@@ -1786,23 +1822,13 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
       // Add photos from _selectedMediaFiles
       for (final file in _selectedMediaFiles) {
-        if (file.path != null) {
-          request.files.add(
-            await http.MultipartFile.fromPath(
-              'media[]',
-              file.path!,
-              filename: file.name,
-            ),
-          );
-        } else if (file.bytes != null) {
-          request.files.add(
-            http.MultipartFile.fromBytes(
-              'media[]',
-              file.bytes!,
-              filename: file.name ?? 'media',
-            ),
-          );
-        }
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'media[]',
+            file.path,
+            filename: file.name,
+          ),
+        );
       }
 
       // Add documents from _selectedDocumentFiles
@@ -1820,7 +1846,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             http.MultipartFile.fromBytes(
               'documents[]',
               file.bytes!,
-              filename: file.name ?? 'document',
+              filename: file.name,
             ),
           );
         }
@@ -1840,7 +1866,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           _extractErrorMessage(body) ??
           'Impossible d\'envoyer les médias (${streamed.statusCode}).';
       _showSnack(msg, isError: true);
-      print("Erreur upload: $msg");
+      debugPrint("Erreur upload: $msg");
       return false;
     } catch (_) {
       _showSnack(
@@ -1919,11 +1945,17 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         _showSnack('Position trouvée : ${locationData.address}');
       } else {
         setState(() => _useCurrentLocation = false);
-        _showSnack('Impossible de déterminer l\'adresse de votre position', isError: true);
+        _showSnack(
+          'Impossible de déterminer l\'adresse de votre position',
+          isError: true,
+        );
       }
     } catch (e) {
       setState(() => _useCurrentLocation = false);
-      _showSnack('Erreur lors de la récupération de la position : $e', isError: true);
+      _showSnack(
+        'Erreur lors de la récupération de la position : $e',
+        isError: true,
+      );
     }
   }
 
@@ -2063,7 +2095,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     return null;
   }
 
-  void _showSuccessDialog() {
+  void _showSuccessDialog({bool mediaSuccess = true}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -2096,7 +2128,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               //   height: 120,
               //   decoration: BoxDecoration(
               //     shape: BoxShape.circle,
-              //     color: const Color(0xFFFFF3E0).withOpacity(0.5),
+              //     color: const Color(0xFFFFF3E0).withValues(alpha: 0.5),
               //   ),
               //   child: Center(
               //     child: Container(
@@ -2126,11 +2158,13 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Vous pouvez consulter cela au niveau de votre espace ',
+                mediaSuccess
+                    ? 'Vous pouvez consulter cela au niveau de votre espace.'
+                    : 'La demande est enregistrée, mais certaines photos ou certains documents n\'ont pas été envoyés.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: mediaSuccess ? Colors.grey[600] : Colors.red[700],
                   height: 1.4,
                 ),
               ),
@@ -2232,7 +2266,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: Colors.grey.withOpacity(0.3),
+                            color: Colors.grey.withValues(alpha: 0.3),
                           ),
                         ),
                         child: const Text(
@@ -2381,7 +2415,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               "Quel serait le délai idéal pour répondre à votre demande ?",
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.black.withOpacity(0.8),
+                color: Colors.black.withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 8),
@@ -2422,8 +2456,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                                 const Duration(days: 365 * 2),
                               ),
                             );
-                            if (picked != null)
+                            if (picked != null) {
                               setState(() => _startDate = picked);
+                            }
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -2492,8 +2527,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                                 const Duration(days: 365 * 2),
                               ),
                             );
-                            if (picked != null)
+                            if (picked != null) {
                               setState(() => _endDate = picked);
+                            }
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -2542,7 +2578,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               "Quel est votre budget ?",
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.black.withOpacity(0.8),
+                color: Colors.black.withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 4),
@@ -2605,12 +2641,19 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: Colors.red.shade400, size: 18),
+                    Icon(
+                      Icons.error_outline,
+                      color: Colors.red.shade400,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _trainingCategoriesLoadError!,
-                        style: TextStyle(color: Colors.red.shade600, fontSize: 13),
+                        style: TextStyle(
+                          color: Colors.red.shade600,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                     TextButton(
@@ -2625,7 +2668,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.orange.shade400, size: 18),
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.orange.shade400,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
@@ -2646,10 +2693,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 value: _selectedFormationCategory,
                 items: _trainingCategoriesOptions, // ONLY use API data
                 onChanged: (val) => setState(() {
-                      _selectedFormationCategory = val;
-                      _selectedFormationSector = null;
-                    }),
-                hint: _buildRequiredHint('Sélectionner une catégorie de formation'),
+                  _selectedFormationCategory = val;
+                  _selectedFormationSector = null;
+                }),
+                hint: _buildRequiredHint(
+                  'Sélectionner une catégorie de formation',
+                ),
                 backgroundColor: const Color(0xFFF9FAFB),
                 useLabelAsValue: true,
               ),
@@ -2657,12 +2706,17 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Afficher le champ Secteur - ONLY if API has loaded and has sectors for this category
             if (_selectedFormationCategory != null &&
                 _trainingCategoriesOptions.isNotEmpty &&
-                _getFormationSectorsForCategory(_selectedFormationCategory).isNotEmpty) ...[
+                _getFormationSectorsForCategory(
+                  _selectedFormationCategory,
+                ).isNotEmpty) ...[
               _buildDropdownFieldWithMap(
                 label: 'Secteur de formation recherché*',
                 value: _selectedFormationSector,
-                items: _getFormationSectorsForCategory(_selectedFormationCategory),
-                onChanged: (val) => setState(() => _selectedFormationSector = val),
+                items: _getFormationSectorsForCategory(
+                  _selectedFormationCategory,
+                ),
+                onChanged: (val) =>
+                    setState(() => _selectedFormationSector = val),
                 hint: _buildRequiredHint('Sélectionner un secteur'),
                 backgroundColor: const Color(0xFFF9FAFB),
               ),
@@ -4132,9 +4186,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 ),
                 _buildNumberChip(
                   'Non',
-                  !_accepteTeletravaill && _accepteTeletravaill != null
-                      ? 'Non'
-                      : null,
+                  !_accepteTeletravaill ? 'Non' : null,
                   (val) => setState(() => _accepteTeletravaill = false),
                 ),
               ],
@@ -4157,7 +4209,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               controlAffinity: ListTileControlAffinity.leading,
               title: const Text(
                 "Utiliser les documents de l'espace candidat",
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF424242),
@@ -4194,12 +4246,19 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red.shade400, size: 18),
+                      Icon(
+                        Icons.error_outline,
+                        color: Colors.red.shade400,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _candidateDocsError!,
-                          style: TextStyle(color: Colors.red.shade600, fontSize: 13),
+                          style: TextStyle(
+                            color: Colors.red.shade600,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                       TextButton(
@@ -4225,12 +4284,13 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 1,
+                          ),
                       itemCount: _visibleCandidateDocuments.length,
                       itemBuilder: (context, index) {
                         final doc = _visibleCandidateDocuments[index];
@@ -4660,9 +4720,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 ),
                 _buildNumberChip(
                   'Non',
-                  !_accepteTeletravaill && _accepteTeletravaill != null
-                      ? 'Non'
-                      : null,
+                  !_accepteTeletravaill ? 'Non' : null,
                   (val) => setState(() => _accepteTeletravaill = false),
                 ),
               ],
@@ -4685,7 +4743,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               controlAffinity: ListTileControlAffinity.leading,
               title: const Text(
                 "Utiliser les documents de l'espace candidat",
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF424242),
@@ -4722,12 +4780,19 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red.shade400, size: 18),
+                      Icon(
+                        Icons.error_outline,
+                        color: Colors.red.shade400,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _candidateDocsError!,
-                          style: TextStyle(color: Colors.red.shade600, fontSize: 13),
+                          style: TextStyle(
+                            color: Colors.red.shade600,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                       TextButton(
@@ -4753,12 +4818,13 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 1,
+                          ),
                       itemCount: _visibleCandidateDocuments.length,
                       itemBuilder: (context, index) {
                         final doc = _visibleCandidateDocuments[index];
@@ -4904,7 +4970,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   activeTrackColor: const Color(0xFFEF8A40),
                   inactiveTrackColor: Colors.grey[300],
                   thumbColor: const Color(0xFFEF8A40),
-                  overlayColor: const Color(0xFFEF8A40).withOpacity(0.2),
+                  overlayColor: const Color(0xFFEF8A40).withValues(alpha: 0.2),
                   trackHeight: 2,
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: 8,
@@ -5039,7 +5105,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withOpacity(0.1),
+                color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.add, size: 40, color: Color(0xFF3AAE5E)),
@@ -5077,7 +5143,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withOpacity(0.1),
+                color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -5110,7 +5176,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -5179,7 +5245,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -5257,7 +5323,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
         color: Colors.grey[50],
       ),
       child: Stack(
@@ -5275,7 +5341,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -5302,7 +5368,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     final fileUrl = doc['url'] as String? ?? '';
     final mimeType = doc['mime_type'] as String? ?? '';
     final isPdf = mimeType.contains('pdf');
-    final isDoc = mimeType.contains('msword') || mimeType.contains('officedocument');
+    final isDoc =
+        mimeType.contains('msword') || mimeType.contains('officedocument');
 
     IconData iconData;
     Color iconColor;
@@ -5329,7 +5396,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF3AAE5E).withOpacity(0.3)),
+        border: Border.all(
+          color: const Color(0xFF3AAE5E).withValues(alpha: 0.3),
+        ),
         color: const Color(0xFFF0F9F2),
       ),
       child: Stack(
@@ -5344,7 +5413,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
                     fileName,
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF666666),
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
@@ -5365,7 +5437,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -5391,7 +5463,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -5445,7 +5517,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -5996,10 +6068,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -6077,7 +6149,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           decoration: BoxDecoration(
             color: backgroundColor ?? Colors.white,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.withOpacity(0.3)),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -6130,7 +6202,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFE8F5E9),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.3)),
+        border: Border.all(
+          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -6169,7 +6243,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -6264,7 +6338,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
           ),
           child: TextField(
             controller: controller,
@@ -6363,7 +6437,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           Container(
             height: 300, // Shows ~5 items, scrollable for more
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: SingleChildScrollView(
@@ -6453,7 +6527,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
@@ -6489,7 +6563,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       onSelected: (selected) {
         onSelected(selected ? label : '');
       },
-      selectedColor: const Color(0xFFFF9800).withOpacity(0.2),
+      selectedColor: const Color(0xFFFF9800).withValues(alpha: 0.2),
       checkmarkColor: const Color(0xFFFF9800),
       backgroundColor: Colors.white,
       side: BorderSide(
@@ -6522,7 +6596,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         }
       },
       backgroundColor: isSelected
-          ? const Color(0xFF3AAE5E).withOpacity(0.1)
+          ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
           : Colors.white,
       side: BorderSide(
         color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[300]!,
@@ -6617,7 +6691,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.withOpacity(0.15)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -6676,8 +6750,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
   }
 
   Widget _buildPhotoReviewCards() {
-    if (_selectedMediaFiles.isEmpty && _existingMediaUrls.isEmpty)
+    if (_selectedMediaFiles.isEmpty && _existingMediaUrls.isEmpty) {
       return const SizedBox.shrink();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -6696,7 +6771,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 height: 80,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
@@ -6719,7 +6794,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   height: 80,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    border: Border.all(
+                      color: Colors.grey.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
@@ -6814,7 +6891,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               height: 80,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                 color: Colors.grey[50],
               ),
               child: content,
@@ -6838,11 +6915,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               border: Border.all(
                 color: isSelected
                     ? const Color(0xFF3AAE5E)
-                    : Colors.grey.withOpacity(0.4),
+                    : Colors.grey.withValues(alpha: 0.4),
                 width: 1.5,
               ),
               color: isSelected
-                  ? const Color(0xFF3AAE5E).withOpacity(0.1)
+                  ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
                   : Colors.transparent,
             ),
             child: isSelected

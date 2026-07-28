@@ -34,6 +34,7 @@ class ApiClient {
   ApiClient._internal();
 
   final http.Client _client = http.Client();
+  Future<bool>? _refreshInProgress;
 
   Map<String, String> _headers({String? token}) {
     return {
@@ -146,21 +147,8 @@ class ApiClient {
     }
   }
 
-  Map<String, dynamic> _handleResponse(http.Response response) {
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return body;
-    }
-
-    throw ApiException(
-      statusCode: response.statusCode,
-      message: body['message'] ?? 'Une erreur est survenue.',
-      errors: body['errors'] != null
-          ? Map<String, dynamic>.from(body['errors'])
-          : null,
-    );
-  }
+  Map<String, dynamic> _handleResponse(http.Response response) =>
+      parseApiResponse(response);
 
   Future<Map<String, dynamic>> authenticatedGet(String endpoint) async {
     try {
@@ -323,7 +311,7 @@ class ApiClient {
 
       for (var i = 0; i < files.length; i++) {
         final multipartFile = await http.MultipartFile.fromPath(
-          '${fileField}[$i]',
+          '$fileField[$i]',
           files[i].path,
         );
         request.files.add(multipartFile);
@@ -347,7 +335,7 @@ class ApiClient {
           if (fields != null) request.fields.addAll(fields);
           for (var i = 0; i < files.length; i++) {
             final multipartFile = await http.MultipartFile.fromPath(
-              '${fileField}[$i]',
+              '$fileField[$i]',
               files[i].path,
             );
             request.files.add(multipartFile);
@@ -422,6 +410,21 @@ class ApiClient {
   }
 
   Future<bool> _tryRefreshToken() async {
+    final pendingRefresh = _refreshInProgress;
+    if (pendingRefresh != null) return pendingRefresh;
+
+    final refresh = _performTokenRefresh();
+    _refreshInProgress = refresh;
+    try {
+      return await refresh;
+    } finally {
+      if (identical(_refreshInProgress, refresh)) {
+        _refreshInProgress = null;
+      }
+    }
+  }
+
+  Future<bool> _performTokenRefresh() async {
     try {
       // Delegated sessions are intentionally non-refreshable (so they can't be
       // escalated to full owner access). If the delegated token expired, end
@@ -440,16 +443,25 @@ class ApiClient {
       }
 
       final url = Uri.parse('${ApiConfig.baseUrl}/auth/refresh-token');
-      final response = await _client.post(
-        url,
-        headers: _headers(token: refreshToken),
-      );
+      final response = await _client
+          .post(url, headers: _headers(token: refreshToken))
+          .timeout(ApiConfig.connectTimeout);
 
       if (response.statusCode == 200) {
-        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final body = parseApiResponse(response);
+        final accessToken = body['token']?.toString();
+        final newRefreshToken = body['refresh_token']?.toString();
+        if (accessToken == null ||
+            accessToken.isEmpty ||
+            newRefreshToken == null ||
+            newRefreshToken.isEmpty) {
+          await TokenStorage.clearTokens();
+          AuthStateManager().setSessionExpired();
+          return false;
+        }
         await TokenStorage.saveTokens(
-          accessToken: body['token'],
-          refreshToken: body['refresh_token'],
+          accessToken: accessToken,
+          refreshToken: newRefreshToken,
         );
         return true;
       }
@@ -458,11 +470,52 @@ class ApiClient {
       await TokenStorage.clearTokens();
       AuthStateManager().setSessionExpired();
       return false;
+    } on TimeoutException {
+      return false;
+    } on SocketException {
+      return false;
+    } on http.ClientException {
+      return false;
     } catch (_) {
-      // Any error during refresh means session is expired
       await TokenStorage.clearTokens();
       AuthStateManager().setSessionExpired();
       return false;
     }
   }
+}
+
+Map<String, dynamic> parseApiResponse(http.Response response) {
+  final isSuccess = response.statusCode >= 200 && response.statusCode < 300;
+  final rawBody = response.body.trim();
+
+  if (rawBody.isEmpty) {
+    if (isSuccess) return <String, dynamic>{};
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: 'Une erreur est survenue.',
+    );
+  }
+
+  dynamic decoded;
+  try {
+    decoded = jsonDecode(rawBody);
+  } on FormatException {
+    if (isSuccess) return <String, dynamic>{'data': rawBody};
+    throw ApiException(
+      statusCode: response.statusCode,
+      message: 'Réponse invalide du serveur.',
+    );
+  }
+
+  final body = decoded is Map
+      ? Map<String, dynamic>.from(decoded)
+      : <String, dynamic>{'data': decoded};
+  if (isSuccess) return body;
+
+  final rawErrors = body['errors'];
+  throw ApiException(
+    statusCode: response.statusCode,
+    message: body['message']?.toString() ?? 'Une erreur est survenue.',
+    errors: rawErrors is Map ? Map<String, dynamic>.from(rawErrors) : null,
+  );
 }

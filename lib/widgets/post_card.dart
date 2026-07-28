@@ -35,12 +35,12 @@ class PostCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,7 +52,9 @@ class PostCard extends StatelessWidget {
                 avatarUrl: profileImage,
                 displayName: username,
                 radius: 24,
-                accountType: userType.toLowerCase() == 'professionnel' ? 'pro' : 'particulier',
+                accountType: userType.toLowerCase() == 'professionnel'
+                    ? 'pro'
+                    : 'particulier',
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -76,7 +78,9 @@ class PostCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5F5F5),
                         borderRadius: BorderRadius.circular(5),
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                        border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: Text(
                         userType,
@@ -94,19 +98,19 @@ class PostCard extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.favorite_border,
-                    color: Colors.grey.withOpacity(0.7),
+                    color: Colors.grey.withValues(alpha: 0.7),
                     size: 20,
                   ),
                   const SizedBox(width: 10),
                   Icon(
                     Icons.more_horiz,
-                    color: Colors.grey.withOpacity(0.7),
+                    color: Colors.grey.withValues(alpha: 0.7),
                     size: 20,
                   ),
                   const SizedBox(width: 10),
                   Icon(
                     Icons.close,
-                    color: Colors.grey.withOpacity(0.7),
+                    color: Colors.grey.withValues(alpha: 0.7),
                     size: 20,
                   ),
                 ],
@@ -137,7 +141,7 @@ class PostCard extends StatelessWidget {
             padding: const EdgeInsets.only(top: 10),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                top: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
               ),
             ),
             child: Row(
@@ -158,7 +162,7 @@ class PostCard extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.access_time,
-                      color: Colors.grey.withOpacity(0.7),
+                      color: Colors.grey.withValues(alpha: 0.7),
                       size: 16,
                     ),
                     const SizedBox(width: 4),
@@ -179,7 +183,7 @@ class PostCard extends StatelessWidget {
   Widget _buildAction(IconData icon, String count, {VoidCallback? onTap}) {
     final content = Row(
       children: [
-        Icon(icon, color: Colors.grey.withOpacity(0.7), size: 18),
+        Icon(icon, color: Colors.grey.withValues(alpha: 0.7), size: 18),
         const SizedBox(width: 6),
         Text(
           count,
@@ -217,9 +221,12 @@ class PostCard extends StatelessWidget {
                 width: double.infinity,
                 height: 200,
                 child: Center(
-                  child: CircularProgressIndicator(value: progress.expectedTotalBytes != null
-                      ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes!
-                      : null),
+                  child: CircularProgressIndicator(
+                    value: progress.expectedTotalBytes != null
+                        ? progress.cumulativeBytesLoaded /
+                              progress.expectedTotalBytes!
+                        : null,
+                  ),
                 ),
               );
             },
@@ -239,7 +246,11 @@ class PostCard extends StatelessWidget {
       width: double.infinity,
       height: 200,
       color: Colors.grey[200],
-      child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 40),
+      child: const Icon(
+        Icons.image_not_supported,
+        color: Colors.grey,
+        size: 40,
+      ),
     );
   }
 }

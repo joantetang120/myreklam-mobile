@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
@@ -80,7 +79,9 @@ class StoryService {
       }
 
       // Structured overlays (stickers, drawing, location) as a JSON string.
-      if (overlaysJson != null && overlaysJson.isNotEmpty && overlaysJson != '[]') {
+      if (overlaysJson != null &&
+          overlaysJson.isNotEmpty &&
+          overlaysJson != '[]') {
         request.fields['overlays'] = overlaysJson;
       }
 
@@ -243,7 +244,9 @@ class StoryService {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         if (body['success'] == true && body['data'] != null) {
           return (body['data'] as List)
-              .map((u) => MentionUser.fromFollowerJson(u as Map<String, dynamic>))
+              .map(
+                (u) => MentionUser.fromFollowerJson(u as Map<String, dynamic>),
+              )
               .where((u) => u.id > 0)
               .toList();
         }

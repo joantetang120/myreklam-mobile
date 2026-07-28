@@ -1,32 +1,29 @@
-# Mise à jour forcée
+# Mise à jour obligatoire via Google Play
 
-L'application vérifie Firebase Remote Config avant d'afficher le splash de
-connexion. Si la version installée est inférieure à la version minimale active,
-un écran non fermable redirige l'utilisateur vers le store.
+MyReklam utilise l’API officielle Google Play In-App Updates. Au démarrage,
+l’application demande directement à Google Play si une version plus récente est
+disponible pour l’utilisateur.
 
-## Paramètres Firebase Remote Config
+Lorsqu’une mise à jour est disponible :
 
-| Clé | Type | Exemple |
-| --- | --- | --- |
-| `force_update_android` | Booléen | `true` |
-| `minimum_android_build_number` | Nombre | `12` |
-| `android_store_url` | Texte | `https://play.google.com/store/apps/details?id=com.myreklam.app` |
-| `force_update_ios` | Booléen | `true` |
-| `minimum_ios_build_number` | Nombre | `12` |
-| `ios_store_url` | Texte | `https://apps.apple.com/app/idVOTRE_APP_ID` |
-| `force_update_title` | Texte | `Mise à jour requise` |
-| `force_update_message` | Texte | Message affiché à l'utilisateur |
+- l’accès à l’application reste bloqué ;
+- le bouton lance le flux Android de mise à jour immédiate ;
+- si le flux immédiat n’est pas autorisé, le bouton ouvre la fiche Google Play ;
+- aucune valeur Firebase ou backend ne doit être modifiée.
 
-Le build actuellement déclaré dans `pubspec.yaml` est `15`
-(`version: 1.1.0+15`).
+## Publication
 
-## Activation
+1. Augmenter le `versionCode` dans `pubspec.yaml`.
+2. Générer et téléverser le nouveau bundle sur Google Play.
+3. Publier la version sur le canal souhaité.
 
-1. Publier la nouvelle version sur Google Play et/ou l'App Store.
-2. Renseigner l'URL exacte du store et son nouveau numéro de build.
-3. Publier les paramètres Remote Config.
-4. Activer `force_update_android` ou `force_update_ios`.
+Google Play détermine automatiquement quels utilisateurs disposent d’une mise à
+jour. Pendant un déploiement progressif, seuls les utilisateurs inclus dans le
+déploiement la verront.
 
-Toujours publier la nouvelle application sur le store avant d'activer le
-blocage. Pour désactiver immédiatement la mise à jour forcée, remettre le
-booléen de la plateforme à `false` et publier la configuration.
+## Test
+
+Le mécanisme ne fonctionne pas avec un APK installé par câble ou avec
+`flutter run`. Il doit être testé avec une application installée depuis Google
+Play, idéalement via le partage interne d’applications ou une piste de test
+interne, puis avec un second bundle ayant un `versionCode` supérieur.

@@ -49,8 +49,8 @@ class MessageBubble extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: deletedForEveryone
                       ? (isSent
-                            ? const Color(0xFFFFB74D).withOpacity(0.4)
-                            : const Color(0xFFF5F5F5).withOpacity(0.6))
+                            ? const Color(0xFFFFB74D).withValues(alpha: 0.4)
+                            : const Color(0xFFF5F5F5).withValues(alpha: 0.6))
                       : (isSent
                             ? const Color(0xFFFFB74D)
                             : const Color(0xFFF5F5F5)),
@@ -78,7 +78,7 @@ class MessageBubble extends StatelessWidget {
                             Icons.block,
                             size: 14,
                             color: isSent
-                                ? Colors.white.withOpacity(0.7)
+                                ? Colors.white.withValues(alpha: 0.7)
                                 : Colors.grey[500],
                           ),
                           const SizedBox(width: 6),
@@ -88,7 +88,7 @@ class MessageBubble extends StatelessWidget {
                               fontSize: 13,
                               fontStyle: FontStyle.italic,
                               color: isSent
-                                  ? Colors.white.withOpacity(0.7)
+                                  ? Colors.white.withValues(alpha: 0.7)
                                   : Colors.grey[500],
                             ),
                           ),
@@ -137,7 +137,7 @@ class MessageBubble extends StatelessWidget {
                               fontSize: 10,
                               fontStyle: FontStyle.italic,
                               color: isSent
-                                  ? Colors.white.withOpacity(0.6)
+                                  ? Colors.white.withValues(alpha: 0.6)
                                   : Colors.grey[500],
                             ),
                           ),
@@ -152,7 +152,7 @@ class MessageBubble extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             color: isSent
-                                ? Colors.white.withOpacity(0.8)
+                                ? Colors.white.withValues(alpha: 0.8)
                                 : Colors.grey[600],
                           ),
                         ),
@@ -163,7 +163,7 @@ class MessageBubble extends StatelessWidget {
                             size: 14,
                             color: isRead
                                 ? const Color(0xFF2196F3)
-                                : Colors.white.withOpacity(0.6),
+                                : Colors.white.withValues(alpha: 0.6),
                           ),
                         ],
                       ],
@@ -200,13 +200,13 @@ class _AnnoncePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = isSent
-        ? Colors.white.withOpacity(0.4)
-        : const Color(0xFF3AAE5E).withOpacity(0.4);
+        ? Colors.white.withValues(alpha: 0.4)
+        : const Color(0xFF3AAE5E).withValues(alpha: 0.4);
     final labelColor = isSent
-        ? Colors.white.withOpacity(0.85)
+        ? Colors.white.withValues(alpha: 0.85)
         : const Color(0xFF3AAE5E);
     final subtitleColor = isSent
-        ? Colors.white.withOpacity(0.7)
+        ? Colors.white.withValues(alpha: 0.7)
         : Colors.grey[600];
 
     return Container(
@@ -290,10 +290,10 @@ class _StoryReplyPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = isSent
-        ? Colors.white.withOpacity(0.4)
-        : Colors.grey.withOpacity(0.4);
+        ? Colors.white.withValues(alpha: 0.4)
+        : Colors.grey.withValues(alpha: 0.4);
     final labelColor = isSent
-        ? Colors.white.withOpacity(0.85)
+        ? Colors.white.withValues(alpha: 0.85)
         : const Color(0xFF3AAE5E);
 
     return Container(
@@ -334,7 +334,7 @@ class _StoryReplyPreview extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     color: isSent
-                        ? Colors.white.withOpacity(0.7)
+                        ? Colors.white.withValues(alpha: 0.7)
                         : Colors.grey[600],
                   ),
                 ),

@@ -595,7 +595,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
           border: Border.all(color: borderColor, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -696,7 +696,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 15,
                     offset: const Offset(0, 5),
                   ),
@@ -712,7 +712,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFFFF9800).withOpacity(0.4),
+                        color: const Color(0xFFFF9800).withValues(alpha: 0.4),
                         width: 1.5,
                       ),
                     ),
@@ -879,7 +879,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                       ? const Color(0xFFFFF7EE)
                       : const Color(0xFFE8F5F3)),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.5)),
+            border: Border.all(color: color.withValues(alpha: 0.5)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -944,7 +944,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -975,7 +975,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
           border: Border.all(color: Colors.grey[200]!),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -1058,7 +1058,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
                     _getActionLabel(earning['action_type']),
                   ),
                 );
-              }).toList(),
+              }),
 
             const SizedBox(height: 16),
 
@@ -1109,7 +1109,7 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.grey[350]?.withOpacity(0.5),
+              color: Colors.grey[350]?.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.person, color: Colors.grey[500], size: 22),
@@ -1316,7 +1316,9 @@ class _RecompensesScreenState extends State<RecompensesScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: isEven ? const Color(0xFFFFF3E0).withOpacity(0.3) : Colors.white,
+        color: isEven
+            ? const Color(0xFFFFF3E0).withValues(alpha: 0.3)
+            : Colors.white,
         borderRadius: isLast
             ? const BorderRadius.only(
                 bottomLeft: Radius.circular(11),

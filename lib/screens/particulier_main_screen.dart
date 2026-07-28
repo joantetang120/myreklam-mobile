@@ -12,7 +12,6 @@ import 'package:myreklam/services/chat_notification_service.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/utils/guest_access.dart';
 import 'package:myreklam/utils/user_session.dart';
-import 'package:provider/provider.dart';
 
 class ParticulierMainScreen extends StatefulWidget {
   static const String routeName = '/particulier_main';
@@ -93,9 +92,7 @@ class _ParticulierMainScreenState extends State<ParticulierMainScreen> {
 
   List<Widget> get _pages {
     if (UserSession().isGuest) {
-      return [
-        ParticulierDashboardScreen(key: ValueKey(_dashboardRefreshKey)),
-      ];
+      return [ParticulierDashboardScreen(key: ValueKey(_dashboardRefreshKey))];
     }
 
     return [

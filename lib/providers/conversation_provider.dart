@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:myreklam/models/chat_message.dart';
 import 'package:myreklam/services/chat_service.dart';
@@ -24,21 +23,21 @@ class ConversationProvider extends ChangeNotifier {
   // Charger les messages d'une conversation
   Future<void> loadMessages(int conversationId) async {
     try {
-      print("DEBUG: Setting loading to true");
+      debugPrint("DEBUG: Setting loading to true");
       _isLoading = true;
       notifyListeners();
 
       // 1. Récupérer l'ID utilisateur actuel (toujours frais pour éviter le cache multi-comptes)
-      print("DEBUG: Getting current user ID...");
+      debugPrint("DEBUG: Getting current user ID...");
       _currentUserId = await _chatService.getCurrentUserId();
-      print("DEBUG: Current user ID: $_currentUserId");
+      debugPrint("DEBUG: Current user ID: $_currentUserId");
 
       if (_currentUserId == null) {
         throw Exception('User not authenticated');
       }
 
       // 2. Charger les messages depuis le cache local d'abord (offline support)
-      print("DEBUG: Loading messages from local cache...");
+      debugPrint("DEBUG: Loading messages from local cache...");
       final cachedMessages = await _db.getMessages(
         conversationId,
         _currentUserId!,
@@ -47,55 +46,55 @@ class ConversationProvider extends ChangeNotifier {
         _messagesByConversation[conversationId] = cachedMessages;
         _isLoading = false;
         notifyListeners();
-        print("DEBUG: Loaded ${cachedMessages.length} cached messages");
+        debugPrint("DEBUG: Loaded ${cachedMessages.length} cached messages");
       }
 
       // 3. Charger les messages depuis l'API (sync avec backend)
-      print("DEBUG: Fetching messages from API...");
+      debugPrint("DEBUG: Fetching messages from API...");
       try {
         final messages = await _chatService.getMessages(
           conversationId,
           _currentUserId!,
         );
-        print("DEBUG: Got ${messages.length} messages from API");
+        debugPrint("DEBUG: Got ${messages.length} messages from API");
 
         // 4. Sauvegarder dans la base locale
         await _db.saveMessages(messages, conversationId, _currentUserId!);
         _messagesByConversation[conversationId] = messages;
       } catch (e) {
-        print("DEBUG: API fetch failed, using cached messages: $e");
+        debugPrint("DEBUG: API fetch failed, using cached messages: $e");
         // Si l'API échoue, on garde les messages en cache
         if (cachedMessages.isEmpty) rethrow;
       }
 
       // 3. S'abonner au WebSocket pour les nouveaux messages
-      print("DEBUG: Subscribing to WebSocket...");
+      debugPrint("DEBUG: Subscribing to WebSocket...");
       try {
         await ChatService.subscribeToConversation(conversationId.toString());
-        print("DEBUG: WebSocket subscription successful");
+        debugPrint("DEBUG: WebSocket subscription successful");
 
         // Configurer l'écoute des messages (une seule fois pour toute l'app)
         _setupMessageListener();
       } catch (e) {
-        print("DEBUG: WebSocket subscription failed: $e");
+        debugPrint("DEBUG: WebSocket subscription failed: $e");
         // Continuer même si WebSocket échoue
       }
 
       // 4. Marquer les messages comme lus
-      print("DEBUG: Marking messages as read...");
+      debugPrint("DEBUG: Marking messages as read...");
       try {
         await markAsRead(conversationId);
-        print("DEBUG: Messages marked as read");
+        debugPrint("DEBUG: Messages marked as read");
       } catch (e) {
-        print("DEBUG: Failed to mark as read: $e");
+        debugPrint("DEBUG: Failed to mark as read: $e");
         // Continuer même si markAsRead échoue
       }
 
-      print("DEBUG: Setting loading to false");
+      debugPrint("DEBUG: Setting loading to false");
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      print('❌ Error loading messages: $e');
+      debugPrint('❌ Error loading messages: $e');
       _isLoading = false;
       notifyListeners();
       rethrow;
@@ -105,7 +104,9 @@ class ConversationProvider extends ChangeNotifier {
   // Callback pour les nouveaux messages via WebSocket
   Future<void> _onNewMessage(int conversationId, dynamic messageData) async {
     try {
-      print("DEBUG: Processing new message for conversation $conversationId");
+      debugPrint(
+        "DEBUG: Processing new message for conversation $conversationId",
+      );
 
       // Convertir les données dynamiques en Map<String, dynamic>
       final Map<String, dynamic> messageMap = Map<String, dynamic>.from(
@@ -117,7 +118,7 @@ class ConversationProvider extends ChangeNotifier {
 
       // Skip own messages - sendMessage() already adds them locally
       if (message.senderId == _currentUserId) {
-        print("DEBUG: Skipping own message ${message.id} from WebSocket");
+        debugPrint("DEBUG: Skipping own message ${message.id} from WebSocket");
         return;
       }
 
@@ -126,7 +127,7 @@ class ConversationProvider extends ChangeNotifier {
       final alreadyExists = existingMessages.any((msg) => msg.id == message.id);
 
       if (alreadyExists) {
-        print("DEBUG: Message ${message.id} already exists, skipping");
+        debugPrint("DEBUG: Message ${message.id} already exists, skipping");
         return;
       }
 
@@ -139,13 +140,13 @@ class ConversationProvider extends ChangeNotifier {
       // Notifier les listeners pour mettre à jour l'UI
       notifyListeners();
 
-      print("DEBUG: New message ${message.id} processed and UI updated");
+      debugPrint("DEBUG: New message ${message.id} processed and UI updated");
 
       // Refresh global chat unread count in bottom bar
       CustomBottomBar.refreshChatNotifier.value =
           !CustomBottomBar.refreshChatNotifier.value;
     } catch (e) {
-      print('❌ Error handling new message: $e');
+      debugPrint('❌ Error handling new message: $e');
     }
   }
 
@@ -189,12 +190,12 @@ class ConversationProvider extends ChangeNotifier {
 
         notifyListeners();
       } catch (e) {
-        print('❌ Failed to send message, will retry when online: $e');
+        debugPrint('❌ Failed to send message, will retry when online: $e');
         // Le message reste en attente dans la DB locale
         rethrow;
       }
     } catch (e) {
-      print('❌ Error sending message: $e');
+      debugPrint('❌ Error sending message: $e');
       rethrow;
     }
   }
@@ -230,7 +231,7 @@ class ConversationProvider extends ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      print('❌ Error editing message: $e');
+      debugPrint('❌ Error editing message: $e');
       rethrow;
     }
   }
@@ -265,7 +266,7 @@ class ConversationProvider extends ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      print('❌ Error deleting message: $e');
+      debugPrint('❌ Error deleting message: $e');
       rethrow;
     }
   }
@@ -290,7 +291,7 @@ class ConversationProvider extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print('❌ Error marking as read: $e');
+      debugPrint('❌ Error marking as read: $e');
     }
   }
 
@@ -298,13 +299,13 @@ class ConversationProvider extends ChangeNotifier {
   void _setupMessageListener() {
     if (_messageSubscription != null) return; // Déjà configuré
 
-    print("DEBUG: Setting up message listener...");
+    debugPrint("DEBUG: Setting up message listener...");
     _messageSubscription = ChatService.messageStream.listen((data) {
-      print("DEBUG: Received WebSocket data: $data");
+      debugPrint("DEBUG: Received WebSocket data: $data");
 
       if (data['type'] == 'status_update') {
         // Mise à jour de statut de message
-        print("DEBUG: Status update received");
+        debugPrint("DEBUG: Status update received");
         notifyListeners();
         return;
       }
@@ -319,7 +320,7 @@ class ConversationProvider extends ChangeNotifier {
       final senderData = data['sender'];
       if (messageData == null) return;
 
-      print("DEBUG: New message for conversation $conversationId");
+      debugPrint("DEBUG: New message for conversation $conversationId");
       // Combiner les données du message et de l'expéditeur
       final fullMessageData = {...messageData, 'sender': senderData};
       _onNewMessage(conversationId, fullMessageData);
@@ -336,11 +337,13 @@ class ConversationProvider extends ChangeNotifier {
       (msg) => msg.id == message.id,
     );
     if (alreadyExists) {
-      print("DEBUG: Message ${message.id} already in list, skipping add");
+      debugPrint("DEBUG: Message ${message.id} already in list, skipping add");
       return;
     }
     _messagesByConversation[conversationId]!.add(message);
-    print("DEBUG: Message ${message.id} added to conversation $conversationId");
+    debugPrint(
+      "DEBUG: Message ${message.id} added to conversation $conversationId",
+    );
   }
 
   // Se désabonner d'une conversation
@@ -348,7 +351,7 @@ class ConversationProvider extends ChangeNotifier {
     try {
       await ChatService.unsubscribeFromConversation(conversationId.toString());
     } catch (e) {
-      print('❌ Error unsubscribing from conversation: $e');
+      debugPrint('❌ Error unsubscribing from conversation: $e');
     }
   }
 
@@ -365,11 +368,11 @@ class ConversationProvider extends ChangeNotifier {
     _messageSubscription = null;
 
     // Nettoyer toutes les souscriptions WebSocket
-    _messagesByConversation.keys.forEach((conversationId) {
+    for (var conversationId in _messagesByConversation.keys) {
       ChatService.unsubscribeFromConversation(conversationId.toString());
-    });
+    }
 
-    print("DEBUG: ConversationProvider disposed");
+    debugPrint("DEBUG: ConversationProvider disposed");
     super.dispose();
   }
 }

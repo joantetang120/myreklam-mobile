@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (response['user'] != null) {
-        AuthNavigator.navigateToMain(context);
+        await _navigateAfterAuth(response['user']);
       }
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -68,6 +68,19 @@ class _LoginScreenState extends State<LoginScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _navigateAfterAuth(Map<String, dynamic> fallbackUser) async {
+    Map<String, dynamic> user = fallbackUser;
+    try {
+      final restoredUser = await _authService.restoreSessionFromStorage();
+      if (restoredUser != null) user = restoredUser;
+    } catch (_) {
+      // The authentication itself succeeded. Use its response if refreshing
+      // the extended profile is temporarily unavailable.
+    }
+    if (!mounted) return;
+    AuthNavigator.navigateAfterAuth(context, user);
   }
 
   Future<void> _handleGuestAccess() async {
@@ -98,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Image.asset(
                 'assets/images/auth/Rectangle 4.png',
                 fit: BoxFit.cover,
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 colorBlendMode: BlendMode.dstIn,
               ),
             ),
@@ -259,11 +272,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           textAlign: TextAlign.center,
                           text: TextSpan(
                             style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                             children: [
                               const TextSpan(
-                                  text:
-                                      'En vous connectant, vous acceptez nos '),
+                                text: 'En vous connectant, vous acceptez nos ',
+                              ),
                               TextSpan(
                                 text: "Conditions d'Utilisation",
                                 style: const TextStyle(
@@ -272,10 +287,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () => launchUrl(
-                                        Uri.parse(
-                                            'https://www.myreklam.fr/conditions.html'),
-                                        mode: LaunchMode.externalApplication,
-                                      ),
+                                    Uri.parse(
+                                      'https://www.myreklam.fr/conditions.html',
+                                    ),
+                                    mode: LaunchMode.externalApplication,
+                                  ),
                               ),
                               const TextSpan(text: ' et notre '),
                               TextSpan(
@@ -286,10 +302,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () => launchUrl(
-                                        Uri.parse(
-                                            'https://www.myreklam.fr/confidentialite.html'),
-                                        mode: LaunchMode.externalApplication,
-                                      ),
+                                    Uri.parse(
+                                      'https://www.myreklam.fr/confidentialite.html',
+                                    ),
+                                    mode: LaunchMode.externalApplication,
+                                  ),
                               ),
                               const TextSpan(text: '.'),
                             ],
@@ -333,11 +350,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                   transitionDuration: const Duration(
                                     milliseconds: 500,
                                   ),
-                                  pageBuilder: (context, animation,
-                                          secondaryAnimation) =>
-                                      const RegisterScreen(),
-                                  transitionsBuilder: (context, animation,
-                                          secondaryAnimation, child) {
+                                  pageBuilder:
+                                      (
+                                        context,
+                                        animation,
+                                        secondaryAnimation,
+                                      ) => const RegisterScreen(),
+                                  transitionsBuilder:
+                                      (
+                                        context,
+                                        animation,
+                                        secondaryAnimation,
+                                        child,
+                                      ) {
                                         var begin = const Offset(1.0, 0.0);
                                         var end = Offset.zero;
                                         var curve = Curves.easeInOut;
@@ -451,7 +476,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (response['user'] != null) {
-        AuthNavigator.navigateAfterAuth(context, response['user']);
+        await _navigateAfterAuth(response['user']);
       }
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -481,7 +506,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (response['user'] != null) {
-        AuthNavigator.navigateAfterAuth(context, response['user']);
+        await _navigateAfterAuth(response['user']);
       }
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -513,7 +538,7 @@ class _LoginScreenState extends State<LoginScreen> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               spreadRadius: 2,
             ),

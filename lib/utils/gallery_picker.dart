@@ -1,7 +1,5 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/foundation.dart';
 
 class GalleryMedia {
@@ -24,20 +22,8 @@ class GalleryPicker {
   static final ImagePicker _picker = ImagePicker();
 
   static Future<bool> _requestPermission() async {
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      // On iOS, image_picker uses PHPicker (iOS 14+) which needs NO photo
-      // permission. Pre-checking Permission.photos here wrongly blocks picking
-      // if the user previously denied access — so let image_picker handle it.
-      return true;
-    }
-
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      if (await Permission.photos.request().isGranted) return true;
-      if (await Permission.storage.request().isGranted) return true;
-      if (await Permission.manageExternalStorage.request().isGranted) return true;
-      return false;
-    }
-
+    // image_picker uses the system photo picker on current Android/iOS.
+    // MANAGE_EXTERNAL_STORAGE is unnecessary and restricted by the Play Store.
     return true;
   }
 
@@ -88,9 +74,7 @@ class GalleryPicker {
   static Future<GalleryMedia> _toGalleryMedia(XFile xfile) async {
     final path = xfile.path;
     final name = path.split(Platform.pathSeparator).last;
-    final ext = name.contains('.')
-        ? name.split('.').last.toLowerCase()
-        : null;
+    final ext = name.contains('.') ? name.split('.').last.toLowerCase() : null;
     int fileSize = 0;
     Uint8List? bytes;
     try {

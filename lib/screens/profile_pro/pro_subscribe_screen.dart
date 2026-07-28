@@ -35,10 +35,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -48,7 +45,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
     if (_subscription == null) return 'Aucun abonnement';
     final plan = _subscription!['plan'] as String?;
     final billingCycle = _subscription!['billing_cycle'] as String?;
-    
+
     if (plan == 'premium') {
       return billingCycle == 'annual' ? 'Premium annuel' : 'Premium mensuel';
     }
@@ -59,10 +56,10 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
     if (_subscription == null) return '-';
     final endDate = _subscription!['end_date'];
     if (endDate == null) return 'Sans renouvellement';
-    
+
     final date = DateTime.tryParse(endDate.toString());
     if (date == null) return '-';
-    
+
     return DateFormat('dd MMMM yyyy', 'fr_FR').format(date);
   }
 
@@ -72,7 +69,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
 
     try {
       await _subscriptionService.cancelSubscription();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -80,7 +77,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
             backgroundColor: Color(0xFFEF8A40),
           ),
         );
-        
+
         // Navigate back to subscription screen
         Navigator.pushAndRemoveUntil(
           context,
@@ -147,11 +144,17 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text(
                       'Confirmer',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
             ),
           ],
@@ -179,9 +182,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -229,7 +230,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2),
                       blurRadius: 2,
                       offset: const Offset(-2, 3),
                     ),
@@ -253,7 +254,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black.withOpacity(0.5),
+                              color: Colors.black.withValues(alpha: 0.5),
                             ),
                           ),
                         ],
@@ -279,7 +280,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.15),
+                              color: Colors.green.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Padding(
@@ -353,7 +354,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2),
                       blurRadius: 2,
                       offset: const Offset(-2, 3),
                     ),
@@ -374,7 +375,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                           ),
                         ),
                       ],
@@ -397,11 +398,17 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : const Text(
                             'Résilier l\'abonnement',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFEF8A40),

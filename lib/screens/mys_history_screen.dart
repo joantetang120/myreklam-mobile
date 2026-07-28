@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 
 class MysHistoryScreen extends StatefulWidget {
   final double totalMys;
-  
+
   const MysHistoryScreen({super.key, required this.totalMys});
 
   @override
@@ -44,12 +44,15 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
   Future<void> _loadEarningsHistory() async {
     setState(() => _isLoading = true);
     try {
-      final response = await ApiClient().authenticatedGet('/mys/history?page=1');
+      final response = await ApiClient().authenticatedGet(
+        '/mys/history?page=1',
+      );
       if (response['success'] == true) {
         final earningsData = response['earnings'];
         if (earningsData is Map && earningsData.containsKey('data')) {
           _earnings = List<Map<String, dynamic>>.from(earningsData['data']);
-          _hasMorePages = earningsData['current_page'] < (earningsData['last_page'] ?? 1);
+          _hasMorePages =
+              earningsData['current_page'] < (earningsData['last_page'] ?? 1);
           _currentPage = earningsData['current_page'] ?? 1;
         } else if (earningsData is List) {
           _earnings = List<Map<String, dynamic>>.from(earningsData);
@@ -69,14 +72,19 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
     setState(() => _isLoadingMore = true);
     try {
       final nextPage = _currentPage + 1;
-      final response = await ApiClient().authenticatedGet('/mys/history?page=$nextPage');
+      final response = await ApiClient().authenticatedGet(
+        '/mys/history?page=$nextPage',
+      );
       if (response['success'] == true) {
         final earningsData = response['earnings'];
         if (earningsData is Map && earningsData.containsKey('data')) {
-          final newEarnings = List<Map<String, dynamic>>.from(earningsData['data']);
+          final newEarnings = List<Map<String, dynamic>>.from(
+            earningsData['data'],
+          );
           setState(() {
             _earnings.addAll(newEarnings);
-            _hasMorePages = earningsData['current_page'] < (earningsData['last_page'] ?? 1);
+            _hasMorePages =
+                earningsData['current_page'] < (earningsData['last_page'] ?? 1);
             _currentPage = earningsData['current_page'] ?? _currentPage;
           });
         }
@@ -201,7 +209,7 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFFF9800).withOpacity(0.3),
+                          color: const Color(0xFFFF9800).withValues(alpha: 0.3),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -248,7 +256,7 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -287,7 +295,8 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                         : ListView.builder(
                             controller: _scrollController,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _earnings.length + (_hasMorePages ? 1 : 0),
+                            itemCount:
+                                _earnings.length + (_hasMorePages ? 1 : 0),
                             itemBuilder: (context, index) {
                               if (index == _earnings.length) {
                                 return const Padding(
@@ -307,7 +316,9 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.05,
+                                      ),
                                       blurRadius: 10,
                                       offset: const Offset(0, 2),
                                     ),
@@ -330,11 +341,14 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                                     const SizedBox(width: 16),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             earning['description'] ??
-                                                _getActionLabel(earning['action_type']),
+                                                _getActionLabel(
+                                                  earning['action_type'],
+                                                ),
                                             style: const TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
@@ -351,7 +365,9 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
-                                                _formatDate(earning['created_at']),
+                                                _formatDate(
+                                                  earning['created_at'],
+                                                ),
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: Colors.grey[600],

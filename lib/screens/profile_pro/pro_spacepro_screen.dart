@@ -796,8 +796,8 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
-                                            color: Colors.black.withOpacity(
-                                              0.5,
+                                            color: Colors.black.withValues(
+                                              alpha: 0.5,
                                             ),
                                           ),
                                         ),
@@ -866,7 +866,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                         MediaQuery.of(context).size.height -
                                         310,
                                     width: 1.5,
-                                    color: Colors.black.withOpacity(0.2),
+                                    color: Colors.black.withValues(alpha: 0.2),
                                   ),
                                 ),
                                 Positioned(
@@ -876,7 +876,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                   child: Container(
                                     height: 1,
                                     width: 500,
-                                    color: Colors.black.withOpacity(0.2),
+                                    color: Colors.black.withValues(alpha: 0.2),
                                   ),
                                 ),
                                 Positioned(
@@ -886,7 +886,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                   child: Container(
                                     height: 1,
                                     width: 500,
-                                    color: Colors.black.withOpacity(0.2),
+                                    color: Colors.black.withValues(alpha: 0.2),
                                   ),
                                 ),
                               ],
@@ -916,7 +916,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black.withOpacity(0.7),
+                              color: Colors.black.withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -1002,8 +1002,8 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
-                                              color: Colors.black.withOpacity(
-                                                0.5,
+                                              color: Colors.black.withValues(
+                                                alpha: 0.5,
                                               ),
                                             ),
                                           ),
@@ -1067,7 +1067,9 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                           MediaQuery.of(context).size.height -
                                           310,
                                       width: 1.5,
-                                      color: Colors.black.withOpacity(0.2),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.2,
+                                      ),
                                     ),
                                   ),
                                   Positioned(
@@ -1077,7 +1079,9 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                     child: Container(
                                       height: 1,
                                       width: 500,
-                                      color: Colors.black.withOpacity(0.2),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.2,
+                                      ),
                                     ),
                                   ),
                                   Positioned(
@@ -1087,7 +1091,9 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                     child: Container(
                                       height: 1,
                                       width: 500,
-                                      color: Colors.black.withOpacity(0.2),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.2,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1118,7 +1124,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black.withOpacity(0.7),
+                              color: Colors.black.withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -1211,8 +1217,8 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
-                                              color: Colors.black.withOpacity(
-                                                0.5,
+                                              color: Colors.black.withValues(
+                                                alpha: 0.5,
                                               ),
                                             ),
                                           ),
@@ -1276,7 +1282,9 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                           MediaQuery.of(context).size.height -
                                           310,
                                       width: 1.5,
-                                      color: Colors.black.withOpacity(0.2),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.2,
+                                      ),
                                     ),
                                   ),
                                   Positioned(
@@ -1286,7 +1294,9 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                     child: Container(
                                       height: 1,
                                       width: 500,
-                                      color: Colors.black.withOpacity(0.2),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.2,
+                                      ),
                                     ),
                                   ),
                                   Positioned(
@@ -1296,7 +1306,9 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                     child: Container(
                                       height: 1,
                                       width: 500,
-                                      color: Colors.black.withOpacity(0.2),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.2,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1413,7 +1425,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                         );
                         final status = _applicationStatusLabel(app['status']);
 
-                        final jobOfferId = jobOffer?['id'] ?? null;
+                        final jobOfferId = jobOffer?['id'];
                         final applicationIdInt = app['id'];
                         final companyPhone = jobOffer?['user'] is Map
                             ? (jobOffer?['user']['pro_profile'] is Map
@@ -1530,7 +1542,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                       ),
                     ),
                     const SizedBox(height: 1),
@@ -1541,10 +1553,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                           vertical: 1,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.15),
+                          color: Colors.green.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: Colors.green.withOpacity(0.5),
+                            color: Colors.green.withValues(alpha: 0.5),
                           ),
                         ),
                         child: const Text(
@@ -1600,7 +1612,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 8),
@@ -1684,7 +1696,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withValues(alpha: 0.2),
             blurRadius: 3,
             offset: const Offset(-2, 3),
           ),
@@ -1701,7 +1713,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF8A40).withOpacity(0.1),
+                    color: const Color(0xFFEF8A40).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(50),
                   ),
                   child: Padding(
@@ -1719,7 +1731,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -1731,10 +1743,12 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                           vertical: 1,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2E9B5B).withOpacity(0.1),
+                          color: const Color(0xFF2E9B5B).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: const Color(0xFF2E9B5B).withOpacity(0.5),
+                            color: const Color(
+                              0xFF2E9B5B,
+                            ).withValues(alpha: 0.5),
                           ),
                         ),
                         child: const Text(
@@ -1796,7 +1810,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 8),
@@ -1820,7 +1834,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
                 const Spacer(),
-                Container(
+                SizedBox(
                   height: 38,
                   child: ElevatedButton.icon(
                     onPressed: jobOfferId != null
@@ -1852,7 +1866,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: Colors.green),
               ),
@@ -1914,7 +1928,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEF8A40).withOpacity(0.1),
+                        color: const Color(0xFFEF8A40).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -2000,7 +2014,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                 border: Border.all(color: Colors.grey[200]!),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.grey.withOpacity(0.1),
+                                    color: Colors.grey.withValues(alpha: 0.1),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
@@ -2022,7 +2036,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                           decoration: BoxDecoration(
                                             color: _getFileTypeColor(
                                               fileType,
-                                            ).withOpacity(0.1),
+                                            ).withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(
                                               10,
                                             ),
@@ -2061,7 +2075,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                                     decoration: BoxDecoration(
                                                       color: _getFileTypeColor(
                                                         fileType,
-                                                      ).withOpacity(0.1),
+                                                      ).withValues(alpha: 0.1),
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                             4,
@@ -2214,7 +2228,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
         downloadsDir = await getApplicationDocumentsDirectory();
       }
 
-      if (!downloadsDir!.existsSync()) {
+      if (!downloadsDir.existsSync()) {
         downloadsDir.createSync(recursive: true);
       }
 
@@ -2317,7 +2331,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -2360,7 +2374,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(-3, 4),
           ),
@@ -2445,7 +2459,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                 ),
               ),
               const Spacer(),
-              Container(
+              SizedBox(
                 height: 32,
                 child: ElevatedButton.icon(
                   onPressed: () => _showCandidateDocuments(userId, name),
@@ -2636,10 +2650,6 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
           .where((url) => url.isNotEmpty)
           .toList();
 
-      if (images.isEmpty) {
-        images.add('assets/images/dashboard_particulier/Rectangle 13.png');
-      }
-
       final tags = <JobDetailTag>[
         if (contractType.isNotEmpty)
           JobDetailTag(icon: Icons.description_outlined, text: contractType),
@@ -2743,11 +2753,11 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
 
   String _formatSalary(dynamic min, dynamic max) {
     if (min != null && max != null) {
-      return '${min}€ - ${max}€';
+      return '$min€ - $max€';
     } else if (min != null) {
-      return 'À partir de ${min}€';
+      return 'À partir de $min€';
     } else if (max != null) {
-      return 'Jusqu\'à ${max}€';
+      return 'Jusqu\'à $max€';
     }
     return 'Salaire non spécifié';
   }

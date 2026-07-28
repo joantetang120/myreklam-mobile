@@ -23,6 +23,7 @@ import 'package:myreklam/screens/creer_formation_screen.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/utils/comment_sanitizer.dart';
 import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/widgets/likers_modal.dart';
@@ -155,7 +156,6 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     return widget.isOwner;
   }
 
-
   @override
   void initState() {
     super.initState();
@@ -192,6 +192,11 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         } else if (data['data'] is List) {
           fetched = List<Map<String, dynamic>>.from(data['data']);
         }
+        fetched = CommentSanitizer.forEntity(
+          fetched,
+          entityId: widget.trainingId!,
+          entityCreatedAt: widget.trainingData?['created_at'],
+        );
         setState(() {
           _comments = fetched;
           _commentsCount = fetched.length;
@@ -897,8 +902,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
           : <String>[];
       final documentFilesRaw = data['document_files'] as List? ?? [];
       final documents = documentFilesRaw
-          .where((d) => d is Map)
-          .map((d) => Map<String, dynamic>.from(d as Map))
+          .whereType<Map>()
+          .map((d) => Map<String, dynamic>.from(d))
           .toList();
       final createdAt = data['created_at']?.toString();
       final mediaFiles =
@@ -1057,8 +1062,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 },
                 itemBuilder: (context) => [
                   if (_canEdit &&
-                      DelegationManager.instance
-                          .can(DelegationPermission.announcements))
+                      DelegationManager.instance.can(
+                        DelegationPermission.announcements,
+                      ))
                     const PopupMenuItem(
                       value: 'edit',
                       child: Row(
@@ -1073,17 +1079,23 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         ],
                       ),
                     ),
-                  if (DelegationManager.instance
-                      .can(DelegationPermission.announcements))
+                  if (DelegationManager.instance.can(
+                    DelegationPermission.announcements,
+                  ))
                     const PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline,
-                              size: 20, color: Colors.red),
+                          Icon(
+                            Icons.delete_outline,
+                            size: 20,
+                            color: Colors.red,
+                          ),
                           SizedBox(width: 12),
-                          Text('Supprimer',
-                              style: TextStyle(color: Colors.red)),
+                          Text(
+                            'Supprimer',
+                            style: TextStyle(color: Colors.red),
+                          ),
                         ],
                       ),
                     ),
@@ -1243,7 +1255,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     _buildDetailItem(
                       icon: Icons.laptop_chromebook,
                       iconColor: Colors.orange,
-                      bgColor: Colors.orange.withOpacity(0.1),
+                      bgColor: Colors.orange.withValues(alpha: 0.1),
                       label: 'Type d\'enseignement',
                       value: widget.trainingStyle
                           .map(_formatEnumLabel)
@@ -1256,7 +1268,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     _buildDetailItem(
                       icon: Icons.people_outline,
                       iconColor: Colors.teal,
-                      bgColor: Colors.teal.withOpacity(0.1),
+                      bgColor: Colors.teal.withValues(alpha: 0.1),
                       label: 'Public cible',
                       value: widget.trainingPublic
                           .map(_formatEnumLabel)
@@ -1269,7 +1281,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     _buildDetailItem(
                       icon: Icons.school_outlined,
                       iconColor: Colors.purple,
-                      bgColor: Colors.purple.withOpacity(0.1),
+                      bgColor: Colors.purple.withValues(alpha: 0.1),
                       label: 'Prérequis',
                       value: widget.requiredLevels.join(', '),
                     ),
@@ -1292,7 +1304,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     _buildDetailItem(
                       icon: Icons.calendar_today_outlined,
                       iconColor: Colors.blue,
-                      bgColor: Colors.blue.withOpacity(0.1),
+                      bgColor: Colors.blue.withValues(alpha: 0.1),
                       label: 'Dates',
                       value: _formatDates(widget.startDate, widget.endDate),
                     ),
@@ -1300,7 +1312,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     _buildDetailItem(
                       icon: Icons.calendar_today_outlined,
                       iconColor: Colors.blue,
-                      bgColor: Colors.blue.withOpacity(0.1),
+                      bgColor: Colors.blue.withValues(alpha: 0.1),
                       label: 'Dates',
                       value: 'À définir',
                     ),
@@ -1313,7 +1325,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     _buildDetailItem(
                       icon: Icons.verified_outlined,
                       iconColor: const Color(0xFFFF9800),
-                      bgColor: const Color(0xFFFF9800).withOpacity(0.1),
+                      bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
                       label: 'Certifications',
                       value: widget.certification.join(', '),
                     ),
@@ -1637,10 +1649,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withOpacity(0.15)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -1785,14 +1797,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         training['address_city']?.toString() ?? '';
 
                     // Helper to extract array values
-                    String _extractArrayValues(dynamic field) {
+                    String extractArrayValues(dynamic field) {
                       if (field is List) {
                         return field
                             .map((item) {
-                              if (item is Map)
+                              if (item is Map) {
                                 return item['value']?.toString() ??
                                     item['name']?.toString() ??
                                     '';
+                              }
                               return item.toString();
                             })
                             .where((s) => s.isNotEmpty)
@@ -1802,7 +1815,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     }
 
                     // Translation for training_style
-                    String _translateTrainingStyle(String value) {
+                    String translateTrainingStyle(String value) {
                       switch (value.trim()) {
                         case 'Remote':
                           return 'En ligne';
@@ -1824,19 +1837,19 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                             final value = item is Map
                                 ? (item['value']?.toString() ?? item.toString())
                                 : item.toString();
-                            return _translateTrainingStyle(value);
+                            return translateTrainingStyle(value);
                           })
                           .where((s) => s.isNotEmpty)
                           .join(' · ');
                       trainingStyleText = translated;
                     } else if (trainingStyleRaw != null) {
-                      trainingStyleText = _translateTrainingStyle(
+                      trainingStyleText = translateTrainingStyle(
                         trainingStyleRaw.toString(),
                       );
                     }
 
                     // Translation for training_public
-                    String _translateTrainingPublic(String value) {
+                    String translateTrainingPublic(String value) {
                       switch (value.trim()) {
                         case 'AllPublic':
                           return 'Tout public';
@@ -1862,18 +1875,18 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                             final value = item is Map
                                 ? (item['value']?.toString() ?? item.toString())
                                 : item.toString();
-                            return _translateTrainingPublic(value);
+                            return translateTrainingPublic(value);
                           })
                           .where((s) => s.isNotEmpty)
                           .join(' · ');
                       trainingPublicText = translated;
                     } else if (trainingPublicRaw != null) {
-                      trainingPublicText = _translateTrainingPublic(
+                      trainingPublicText = translateTrainingPublic(
                         trainingPublicRaw.toString(),
                       );
                     }
 
-                    final certification = _extractArrayValues(
+                    final certification = extractArrayValues(
                       training['certification'],
                     );
 
@@ -2002,7 +2015,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       builder: (context, setState) {
                         bool isLoading = false;
 
-                        Future<void> _toggleFavorite() async {
+                        Future<void> toggleFavorite() async {
                           if (isLoading || trainingId.isEmpty) return;
 
                           // Toggle immediately for responsive UI
@@ -2090,15 +2103,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           ),
                           isFavorited: isFavoritedNotifier.value,
                           isLoadingFavorite: isLoading,
-                          onFavoriteToggle: _toggleFavorite,
+                          onFavoriteToggle: toggleFavorite,
                           onApply: () => _navigateToTrainingDetail(training),
                           onReport: canReportResource(training)
                               ? () => showAnnouncementReportDialog(
-                                    context: context,
-                                    entityType: 'trainings',
-                                    entityId: trainingId,
-                                    title: title,
-                                  )
+                                  context: context,
+                                  entityType: 'trainings',
+                                  entityId: trainingId,
+                                  title: title,
+                                )
                               : null,
                           onAvatarTap: () {
                             if (user?['id'] != null) {
@@ -2149,13 +2162,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     );
   }
 
-  Widget _buildReactionBar(
-    String apiSlug,
-    String entityId, {
-    bool? acceptedMessages,
-    Map<String, dynamic>? authorData,
-    Map<String, dynamic>? postData,
-  }) {
+  Widget _buildReactionBar(String apiSlug, String entityId) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
     final isPost = apiSlug == 'posts';
@@ -2543,12 +2550,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
   String _buildLocationString() {
     final parts = <String>[];
-    if (widget.addressLine1 != null && widget.addressLine1!.isNotEmpty)
+    if (widget.addressLine1 != null && widget.addressLine1!.isNotEmpty) {
       parts.add(widget.addressLine1!);
-    if (widget.addressZipcode != null && widget.addressZipcode!.isNotEmpty)
+    }
+    if (widget.addressZipcode != null && widget.addressZipcode!.isNotEmpty) {
       parts.add(widget.addressZipcode!);
-    if (widget.addressCity != null && widget.addressCity!.isNotEmpty)
+    }
+    if (widget.addressCity != null && widget.addressCity!.isNotEmpty) {
       parts.add(widget.addressCity!);
+    }
     return parts.isNotEmpty ? parts.join(', ') : 'Localisation non spécifiée';
   }
 
@@ -2578,8 +2588,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             profile['company_name']?.toString() ??
             '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'
                 .trim();
-        if (displayName.isEmpty)
+        if (displayName.isEmpty) {
           displayName = user['name']?.toString() ?? 'Utilisateur';
+        }
       } else {
         displayName = user['name']?.toString() ?? 'Utilisateur';
       }
@@ -2619,153 +2630,154 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     final isOwner = userId != null && userId == _currentUserId;
 
     return reportableCommentGesture(
-                context: context,
-                comment: comment,
-                currentUserId: _currentUserId,
-                child: Padding(
-      padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ReklamAvatar(
-                avatarUrl: avatarUrl,
-                displayName: displayName,
-                radius: isReply ? 14 : 18,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          displayName,
-                          style: TextStyle(
-                            fontSize: isReply ? 12 : 13,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF333333),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          timeAgo,
-                          style: TextStyle(
-                            fontSize: isReply ? 10 : 11,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                        if (isOwner &&
-                            (onEdit != null || onDelete != null)) ...[
-                          const Spacer(),
-                          GestureDetector(
-                            onTapDown: (TapDownDetails details) {
-                              showMenu<String>(
-                                context: context,
-                                position: RelativeRect.fromLTRB(
-                                  details.globalPosition.dx,
-                                  details.globalPosition.dy,
-                                  details.globalPosition.dx,
-                                  details.globalPosition.dy,
-                                ),
-                                items: [
-                                  const PopupMenuItem(
-                                    value: 'edit',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.edit, size: 18),
-                                        SizedBox(width: 8),
-                                        Text('Modifier'),
-                                      ],
-                                    ),
-                                  ),
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.delete,
-                                          size: 18,
-                                          color: Colors.redAccent,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Supprimer',
-                                          style: TextStyle(
-                                            color: Colors.redAccent,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ).then((value) {
-                                if (value == 'edit')
-                                  onEdit?.call(comment);
-                                else if (value == 'delete')
-                                  onDelete?.call(comment, isReply);
-                              });
-                            },
-                            child: Icon(
-                              Icons.more_horiz,
-                              size: 18,
-                              color: Colors.grey[400],
+      context: context,
+      comment: comment,
+      currentUserId: _currentUserId,
+      child: Padding(
+        padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ReklamAvatar(
+                  avatarUrl: avatarUrl,
+                  displayName: displayName,
+                  radius: isReply ? 14 : 18,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            displayName,
+                            style: TextStyle(
+                              fontSize: isReply ? 12 : 13,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF333333),
                             ),
                           ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      body,
-                      style: TextStyle(
-                        fontSize: isReply ? 12 : 13,
-                        color: Colors.grey[700],
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    if (!isReply && onReply != null)
-                      GestureDetector(
-                        onTap: () {
-                          final commentId = comment['id'];
-                          final idInt = commentId is int
-                              ? commentId
-                              : int.tryParse(commentId?.toString() ?? '');
-                          if (idInt != null) onReply(idInt, displayName);
-                        },
-                        child: Text(
-                          'Répondre',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(width: 6),
+                          Text(
+                            timeAgo,
+                            style: TextStyle(
+                              fontSize: isReply ? 10 : 11,
+                              color: Colors.grey[500],
+                            ),
                           ),
+                          if (isOwner &&
+                              (onEdit != null || onDelete != null)) ...[
+                            const Spacer(),
+                            GestureDetector(
+                              onTapDown: (TapDownDetails details) {
+                                showMenu<String>(
+                                  context: context,
+                                  position: RelativeRect.fromLTRB(
+                                    details.globalPosition.dx,
+                                    details.globalPosition.dy,
+                                    details.globalPosition.dx,
+                                    details.globalPosition.dy,
+                                  ),
+                                  items: [
+                                    const PopupMenuItem(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('Modifier'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.delete,
+                                            size: 18,
+                                            color: Colors.redAccent,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Supprimer',
+                                            style: TextStyle(
+                                              color: Colors.redAccent,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ).then((value) {
+                                  if (value == 'edit') {
+                                    onEdit?.call(comment);
+                                  } else if (value == 'delete')
+                                    onDelete?.call(comment, isReply);
+                                });
+                              },
+                              child: Icon(
+                                Icons.more_horiz,
+                                size: 18,
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        body,
+                        style: TextStyle(
+                          fontSize: isReply ? 12 : 13,
+                          color: Colors.grey[700],
+                          height: 1.4,
                         ),
                       ),
-                  ],
+                      const SizedBox(height: 6),
+                      if (!isReply && onReply != null)
+                        GestureDetector(
+                          onTap: () {
+                            final commentId = comment['id'];
+                            final idInt = commentId is int
+                                ? commentId
+                                : int.tryParse(commentId?.toString() ?? '');
+                            if (idInt != null) onReply(idInt, displayName);
+                          },
+                          child: Text(
+                            'Répondre',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (!isReply && replies.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              ...replies.map(
+                (r) => _buildCommentItem(
+                  r,
+                  isReply: true,
+                  onReply: onReply,
+                  onEdit: onEdit,
+                  onDelete: onDelete,
                 ),
               ),
             ],
-          ),
-          if (!isReply && replies.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            ...replies.map(
-              (r) => _buildCommentItem(
-                r,
-                isReply: true,
-                onReply: onReply,
-                onEdit: onEdit,
-                onDelete: onDelete,
-              ),
-            ),
           ],
-        ],
+        ),
       ),
-    ));
+    );
   }
 
   void _showCommentsSheet() async {
@@ -2940,8 +2952,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               );
               if (newText == null ||
                   newText.trim().isEmpty ||
-                  newText == currentBody)
+                  newText == currentBody) {
                 return;
+              }
               try {
                 final response = await ApiClient().authenticatedPut(
                   '/comments/$commentId',
@@ -3141,7 +3154,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         left: 16,
                         right: 16,
                         top: 8,
-                        bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 8,
+                        bottom:
+                            MediaQuery.of(ctx).viewInsets.bottom +
+                            MediaQuery.of(ctx).padding.bottom +
+                            8,
                       ),
                       decoration: BoxDecoration(
                         border: Border(
@@ -3204,9 +3220,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -3261,16 +3277,17 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       }
     });
     try {
-      if (wasLiked)
+      if (wasLiked) {
         await ApiClient().authenticatedDelete('/$s/$id/reactions');
-      else
+      } else {
         await ApiClient().authenticatedPost(
           '/$s/$id/reactions',
           body: {'type': type},
         );
+      }
       final res = await ApiClient().authenticatedGet('/$s/$id');
       final data = res['data'] as Map<String, dynamic>?;
-      if (data != null && mounted)
+      if (data != null && mounted) {
         setState(() {
           _reactions[_rKey(s, id)] = _ReactionData(
             likesCount: _asInt(data['likes_count']),
@@ -3278,6 +3295,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             userReaction: data['user_reaction']?.toString(),
           );
         });
+      }
     } catch (_) {
       setState(() {
         if (wasLiked) {
@@ -3311,9 +3329,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 .then((res) {
                   final data = res['data'];
                   List<Map<String, dynamic>> fetched = [];
-                  if (data is Map && data['data'] is List)
+                  if (data is Map && data['data'] is List) {
                     fetched = List<Map<String, dynamic>>.from(data['data']);
-                  else if (data is List)
+                  } else if (data is List)
                     fetched = List<Map<String, dynamic>>.from(data);
                   ms(() {
                     comments = fetched;
@@ -3385,10 +3403,11 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               ctrl.clear();
               FocusScope.of(ctx).unfocus();
             } catch (e) {
-              if (ctx.mounted)
+              if (ctx.mounted) {
                 ScaffoldMessenger.of(
                   ctx,
                 ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+              }
             }
           }
 
@@ -3440,8 +3459,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
             if (newText == null ||
                 newText.trim().isEmpty ||
-                newText == currentBody)
+                newText == currentBody) {
               return;
+            }
 
             try {
               final response = await ApiClient().authenticatedPut(
@@ -3584,8 +3604,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     profile['company_name']?.toString() ??
                     '${profile['first_name']?.toString() ?? ''} ${profile['last_name']?.toString() ?? ''}'
                         .trim();
-                if (displayName.isEmpty)
+                if (displayName.isEmpty) {
                   displayName = user['name']?.toString() ?? 'Utilisateur';
+                }
               } else {
                 displayName = user['name']?.toString() ?? 'Utilisateur';
               }
@@ -3630,212 +3651,212 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             final isLiked = comment['user_reaction']?.toString() == 'like';
 
             return reportableCommentGesture(
-                context: context,
-                comment: comment,
-                currentUserId: _currentUserId,
-                child: Padding(
-              padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ReklamAvatar(
-                        avatarUrl: avatarUrl,
-                        displayName: displayName,
-                        radius: isReply ? 14 : 18,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  displayName,
-                                  style: TextStyle(
-                                    fontSize: isReply ? 12 : 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF333333),
+              context: context,
+              comment: comment,
+              currentUserId: _currentUserId,
+              child: Padding(
+                padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ReklamAvatar(
+                          avatarUrl: avatarUrl,
+                          displayName: displayName,
+                          radius: isReply ? 14 : 18,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    displayName,
+                                    style: TextStyle(
+                                      fontSize: isReply ? 12 : 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF333333),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  timeAgo,
-                                  style: TextStyle(
-                                    fontSize: isReply ? 10 : 11,
-                                    color: Colors.grey[500],
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    timeAgo,
+                                    style: TextStyle(
+                                      fontSize: isReply ? 10 : 11,
+                                      color: Colors.grey[500],
+                                    ),
                                   ),
-                                ),
-                                if (isOwner) ...[
-                                  const Spacer(),
-                                  GestureDetector(
-                                    onTapDown: (TapDownDetails details) {
-                                      showMenu<String>(
-                                        context: context,
-                                        position: RelativeRect.fromLTRB(
-                                          details.globalPosition.dx,
-                                          details.globalPosition.dy,
-                                          details.globalPosition.dx,
-                                          details.globalPosition.dy,
-                                        ),
-                                        items: [
-                                          const PopupMenuItem(
-                                            value: 'edit',
-                                            child: Row(
-                                              children: [
-                                                Icon(Icons.edit, size: 18),
-                                                SizedBox(width: 8),
-                                                Text('Modifier'),
-                                              ],
-                                            ),
+                                  if (isOwner) ...[
+                                    const Spacer(),
+                                    GestureDetector(
+                                      onTapDown: (TapDownDetails details) {
+                                        showMenu<String>(
+                                          context: context,
+                                          position: RelativeRect.fromLTRB(
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
+                                            details.globalPosition.dx,
+                                            details.globalPosition.dy,
                                           ),
-                                          const PopupMenuItem(
-                                            value: 'delete',
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.delete,
-                                                  size: 18,
-                                                  color: Colors.redAccent,
-                                                ),
-                                                SizedBox(width: 8),
-                                                Text(
-                                                  'Supprimer',
-                                                  style: TextStyle(
+                                          items: [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.edit, size: 18),
+                                                  SizedBox(width: 8),
+                                                  Text('Modifier'),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.delete,
+                                                    size: 18,
                                                     color: Colors.redAccent,
                                                   ),
-                                                ),
-                                              ],
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'Supprimer',
+                                                    style: TextStyle(
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ).then((value) {
-                                        if (value == 'edit')
-                                          editComment(comment);
-                                        else if (value == 'delete')
-                                          deleteComment(comment, isReply);
-                                      });
-                                    },
-                                    child: Icon(
-                                      Icons.more_horiz,
-                                      size: 18,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              body,
-                              style: TextStyle(
-                                fontSize: isReply ? 12 : 13,
-                                color: Colors.grey[700],
-                                height: 1.4,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                // Like button
-                                GestureDetector(
-                                  onTap: () async {
-                                    try {
-                                      final cid = comment['id'];
-                                      if (cid == null) return;
-                                      final currentLiked =
-                                          comment['user_reaction']
-                                              ?.toString() ==
-                                          'like';
-                                      final currentCount =
-                                          comment['likes_count'] as int? ?? 0;
-                                      ms(() {
-                                        comment['user_reaction'] = currentLiked
-                                            ? null
-                                            : 'like';
-                                        comment['likes_count'] = currentLiked
-                                            ? (currentCount > 0
-                                                  ? currentCount - 1
-                                                  : 0)
-                                            : currentCount + 1;
-                                      });
-                                      if (currentLiked) {
-                                        await ApiClient().authenticatedDelete(
-                                          '/comments/$cid/reactions',
-                                        );
-                                      } else {
-                                        await ApiClient().authenticatedPost(
-                                          '/comments/$cid/reactions',
-                                          body: {'type': 'like'},
-                                        );
-                                      }
-                                    } catch (e) {
-                                      debugPrint('Error liking comment: $e');
-                                    }
-                                  },
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        isLiked
-                                            ? Icons.thumb_up_alt
-                                            : Icons.thumb_up_alt_outlined,
-                                        size: isReply ? 12 : 14,
-                                        color: isLiked
-                                            ? const Color(0xFF3AAE5E)
-                                            : Colors.grey[500],
+                                          ],
+                                        ).then((value) {
+                                          if (value == 'edit') {
+                                            editComment(comment);
+                                          } else if (value == 'delete')
+                                            deleteComment(comment, isReply);
+                                        });
+                                      },
+                                      child: Icon(
+                                        Icons.more_horiz,
+                                        size: 18,
+                                        color: Colors.grey[400],
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        likesCount.toString(),
-                                        style: TextStyle(
-                                          fontSize: isReply ? 11 : 12,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                body,
+                                style: TextStyle(
+                                  fontSize: isReply ? 12 : 13,
+                                  color: Colors.grey[700],
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  // Like button
+                                  GestureDetector(
+                                    onTap: () async {
+                                      try {
+                                        final cid = comment['id'];
+                                        if (cid == null) return;
+                                        final currentLiked =
+                                            comment['user_reaction']
+                                                ?.toString() ==
+                                            'like';
+                                        final currentCount =
+                                            comment['likes_count'] as int? ?? 0;
+                                        ms(() {
+                                          comment['user_reaction'] =
+                                              currentLiked ? null : 'like';
+                                          comment['likes_count'] = currentLiked
+                                              ? (currentCount > 0
+                                                    ? currentCount - 1
+                                                    : 0)
+                                              : currentCount + 1;
+                                        });
+                                        if (currentLiked) {
+                                          await ApiClient().authenticatedDelete(
+                                            '/comments/$cid/reactions',
+                                          );
+                                        } else {
+                                          await ApiClient().authenticatedPost(
+                                            '/comments/$cid/reactions',
+                                            body: {'type': 'like'},
+                                          );
+                                        }
+                                      } catch (e) {
+                                        debugPrint('Error liking comment: $e');
+                                      }
+                                    },
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          isLiked
+                                              ? Icons.thumb_up_alt
+                                              : Icons.thumb_up_alt_outlined,
+                                          size: isReply ? 12 : 14,
                                           color: isLiked
                                               ? const Color(0xFF3AAE5E)
-                                              : Colors.grey[600],
-                                          fontWeight: isLiked
-                                              ? FontWeight.w600
-                                              : FontWeight.normal,
+                                              : Colors.grey[500],
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                // Reply button
-                                if (!isReply && commentIdInt != null)
-                                  GestureDetector(
-                                    onTap: () {
-                                      ms(() {
-                                        replyingToId = commentIdInt;
-                                        replyingToName = displayName;
-                                      });
-                                    },
-                                    child: Text(
-                                      'Répondre',
-                                      style: TextStyle(
-                                        fontSize: isReply ? 11 : 12,
-                                        color: Colors.grey[600],
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          likesCount.toString(),
+                                          style: TextStyle(
+                                            fontSize: isReply ? 11 : 12,
+                                            color: isLiked
+                                                ? const Color(0xFF3AAE5E)
+                                                : Colors.grey[600],
+                                            fontWeight: isLiked
+                                                ? FontWeight.w600
+                                                : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                              ],
-                            ),
-                          ],
+                                  const SizedBox(width: 16),
+                                  // Reply button
+                                  if (!isReply && commentIdInt != null)
+                                    GestureDetector(
+                                      onTap: () {
+                                        ms(() {
+                                          replyingToId = commentIdInt;
+                                          replyingToName = displayName;
+                                        });
+                                      },
+                                      child: Text(
+                                        'Répondre',
+                                        style: TextStyle(
+                                          fontSize: isReply ? 11 : 12,
+                                          color: Colors.grey[600],
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
+                    ),
+                    if (!isReply && replies.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      ...replies.map((r) => buildCommentItem(r, isReply: true)),
                     ],
-                  ),
-                  if (!isReply && replies.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    ...replies.map((r) => buildCommentItem(r, isReply: true)),
                   ],
-                ],
+                ),
               ),
-            ));
+            );
           }
 
           return DraggableScrollableSheet(
@@ -3917,7 +3938,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   // Input area
                   Padding(
                     padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 8,
+                      bottom:
+                          MediaQuery.of(ctx).viewInsets.bottom +
+                          MediaQuery.of(ctx).padding.bottom +
+                          8,
                       left: 12,
                       right: 12,
                       top: 8,
@@ -4307,7 +4331,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
     final document = widget.documents.first;
     final String? url = document['url']?.toString();
-    final String? fileName =
+    final String fileName =
         document['file_name']?.toString() ?? 'programme.pdf';
 
     if (url == null || url.isEmpty) {
@@ -4344,9 +4368,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
       // Create unique filename
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final String safeFileName =
-          fileName?.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_') ??
-          'programme.pdf';
+      final String safeFileName = fileName.replaceAll(
+        RegExp(r'[^a-zA-Z0-9._-]'),
+        '_',
+      );
       final String finalFileName = '${timestamp}_$safeFileName';
       final String savePath = '${downloadsDir.path}/$finalFileName';
 

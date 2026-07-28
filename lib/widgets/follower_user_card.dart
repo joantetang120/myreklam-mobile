@@ -25,11 +25,7 @@ class FollowerUserCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
-          ReklamAvatar(
-            avatarUrl: image,
-            displayName: name,
-            radius: 28,
-          ),
+          ReklamAvatar(avatarUrl: image, displayName: name, radius: 28),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -45,10 +41,7 @@ class FollowerUserCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subname,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -57,31 +50,18 @@ class FollowerUserCard extends StatelessWidget {
             onPressed: onFollow,
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF3AAE5E),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 10,
-              ),
-              side: const BorderSide(
-                color: Color(0xFF3AAE5E),
-                width: 1.5,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              side: const BorderSide(color: Color(0xFF3AAE5E), width: 1.5),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: Text(
-              buttonText,
-              style: const TextStyle(fontSize: 11),
-            ),
+            child: Text(buttonText, style: const TextStyle(fontSize: 11)),
           ),
           const SizedBox(width: 8),
           GestureDetector(
             onTap: onRemove,
-            child: Icon(
-              Icons.close,
-              color: Colors.grey[600],
-              size: 20,
-            ),
+            child: Icon(Icons.close, color: Colors.grey[600], size: 20),
           ),
         ],
       ),

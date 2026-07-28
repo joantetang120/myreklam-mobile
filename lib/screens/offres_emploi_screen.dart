@@ -290,7 +290,10 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                 },
                 child: Container(
                   margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF9E6),
                     borderRadius: BorderRadius.circular(12),
@@ -344,7 +347,9 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                        border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -371,7 +376,9 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      border: Border.all(
+                        color: Colors.grey.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: Icon(Icons.tune, color: Colors.grey[500], size: 20),
                   ),
@@ -440,9 +447,9 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
 
     // Build period label
     String periodLabel = '';
-    if (period == 'horaire')
+    if (period == 'horaire') {
       periodLabel = '/h';
-    else if (period == 'mensuel')
+    } else if (period == 'mensuel')
       periodLabel = '/mois';
     else if (period == 'annuel')
       periodLabel = '/an';
@@ -454,22 +461,22 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
 
     // If we have both min and max, show range
     if (min != null && max != null) {
-      return '${min}€ - ${max}€$periodLabel$paymentLabel';
+      return '$min€ - $max€$periodLabel$paymentLabel';
     }
 
     // If we have exact salary
     if (exact != null) {
-      return '${exact}€$periodLabel$paymentLabel';
+      return '$exact€$periodLabel$paymentLabel';
     }
 
     // If we have only min
     if (min != null) {
-      return 'À partir de ${min}€$periodLabel$paymentLabel';
+      return 'À partir de $min€$periodLabel$paymentLabel';
     }
 
     // If we have only max
     if (max != null) {
-      return 'Jusqu\'à ${max}€$periodLabel$paymentLabel';
+      return 'Jusqu\'à $max€$periodLabel$paymentLabel';
     }
 
     // Check for salary_type = selon_profil
@@ -539,14 +546,14 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
 
     return StatefulBuilder(
       builder: (context, setState) {
-        bool _isLoading = false;
+        bool isLoading = false;
 
-        Future<void> _toggleFavorite() async {
-          if (_isLoading || jobId.isEmpty) return;
+        Future<void> toggleFavorite() async {
+          if (isLoading || jobId.isEmpty) return;
 
           // Toggle immediately for responsive UI
           isFavoritedNotifier.value = !isFavoritedNotifier.value;
-          setState(() => _isLoading = true);
+          setState(() => isLoading = true);
 
           try {
             if (!isFavoritedNotifier.value) {
@@ -579,7 +586,7 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
             }
 
             setState(() {
-              _isLoading = false;
+              isLoading = false;
             });
 
             if (context.mounted) {
@@ -600,7 +607,7 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
             debugPrint('Favorite toggle error: $e');
             // Revert on error
             isFavoritedNotifier.value = !isFavoritedNotifier.value;
-            setState(() => _isLoading = false);
+            setState(() => isLoading = false);
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -622,16 +629,16 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
           tags: tags,
           timeAgo: _buildTimeAgo(job['created_at']?.toString()),
           isFavorited: isFavoritedNotifier.value,
-          isLoadingFavorite: _isLoading,
-          onFavoriteToggle: _toggleFavorite,
+          isLoadingFavorite: isLoading,
+          onFavoriteToggle: toggleFavorite,
           onApply: () => _navigateToJobDetail(job),
           onReport: canReportResource(job)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'job-offers',
-                    entityId: jobId,
-                    title: jobTitle,
-                  )
+                  context: context,
+                  entityType: 'job-offers',
+                  entityId: jobId,
+                  title: jobTitle,
+                )
               : null,
           onAvatarTap: () {
             if (user?['id'] != null) {
@@ -659,11 +666,11 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
 
   String _formatJobSalary(dynamic min, dynamic max) {
     if (min != null && max != null) {
-      return '${min}€ - ${max}€';
+      return '$min€ - $max€';
     } else if (min != null) {
-      return 'À partir de ${min}€';
+      return 'À partir de $min€';
     } else if (max != null) {
-      return 'Jusqu\'à ${max}€';
+      return 'Jusqu\'à $max€';
     }
     return 'Salaire non spécifié';
   }
@@ -799,10 +806,6 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
           .where((url) => url.isNotEmpty)
           .toList();
 
-      if (images.isEmpty) {
-        images.add('assets/images/dashboard_particulier/Rectangle 13.png');
-      }
-
       // Build tags
       final tags = <JobDetailTag>[
         if (contractType.isNotEmpty)
@@ -920,11 +923,11 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
 
   String _formatSalary(dynamic min, dynamic max) {
     if (min != null && max != null) {
-      return '${min}€ - ${max}€';
+      return '$min€ - $max€';
     } else if (min != null) {
-      return 'À partir de ${min}€';
+      return 'À partir de $min€';
     } else if (max != null) {
-      return 'Jusqu\'à ${max}€';
+      return 'Jusqu\'à $max€';
     }
     return 'Salaire non spécifié';
   }
@@ -1212,8 +1215,9 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
 
               if (newText == null ||
                   newText.trim().isEmpty ||
-                  newText == currentBody)
+                  newText == currentBody) {
                 return;
+              }
 
               try {
                 final response = await ApiClient().authenticatedPut(
@@ -1355,9 +1359,9 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
               final likes = _asInt(comment['likes_count']);
               final userReaction = comment['user_reaction']?.toString();
               final isOwner = userId != null && userId == _currentUserId;
-              print("UserId: $userId");
-              print("_currentUserId: $_currentUserId");
-              print("isOwner: $isOwner");
+              debugPrint("UserId: $userId");
+              debugPrint("_currentUserId: $_currentUserId");
+              debugPrint("isOwner: $isOwner");
               final replies =
                   (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
@@ -1378,188 +1382,194 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
                 comment: comment,
                 currentUserId: _currentUserId,
                 child: Padding(
-                padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ReklamAvatar(
-                          avatarUrl: avatarUrl,
-                          displayName: displayName,
-                          radius: isReply ? 14 : 18,
-                          accountType: user['account_type']?.toString(),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    displayName,
-                                    style: TextStyle(
-                                      fontSize: isReply ? 12 : 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF333333),
+                  padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ReklamAvatar(
+                            avatarUrl: avatarUrl,
+                            displayName: displayName,
+                            radius: isReply ? 14 : 18,
+                            accountType: user['account_type']?.toString(),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      displayName,
+                                      style: TextStyle(
+                                        fontSize: isReply ? 12 : 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF333333),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _buildTimeAgo(createdAt),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                  if (isOwner) ...[
-                                    const Spacer(),
-                                    GestureDetector(
-                                      onTapDown: (TapDownDetails details) {
-                                        showMenu<String>(
-                                          context: context,
-                                          position: RelativeRect.fromLTRB(
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                          ),
-                                          items: [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('Modifier'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.delete,
-                                                    size: 18,
-                                                    color: Colors.redAccent,
-                                                  ),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    'Supprimer',
-                                                    style: TextStyle(
-                                                      color: Colors.redAccent,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ).then((value) {
-                                          if (value == 'edit') {
-                                            editComment(comment);
-                                          } else if (value == 'delete') {
-                                            deleteComment(comment, isReply);
-                                          }
-                                        });
-                                      },
-                                      child: Icon(
-                                        Icons.more_horiz,
-                                        size: 18,
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _buildTimeAgo(createdAt),
+                                      style: TextStyle(
+                                        fontSize: 11,
                                         color: Colors.grey[400],
                                       ),
                                     ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                body,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF4F4F4F),
-                                  height: 1.4,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () =>
-                                        toggleCommentReaction(comment, 'like'),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          userReaction == 'like'
-                                              ? Icons.thumb_up_alt
-                                              : Icons.thumb_up_alt_outlined,
-                                          size: 14,
-                                          color: userReaction == 'like'
-                                              ? const Color(0xFF3AAE5E)
-                                              : Colors.grey[400],
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          '$likes',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (!isReply) ...[
-                                    const SizedBox(width: 14),
-                                    GestureDetector(
-                                      onTap: () {
-                                        modalSetState(() {
-                                          replyingToId = comment['id'] as int?;
-                                          replyingToName = displayName;
-                                        });
-                                        FocusScope.of(
-                                          ctx,
-                                        ).requestFocus(FocusNode());
-                                      },
-                                      child: Text(
-                                        'Répondre',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF2E9B5B),
+                                    if (isOwner) ...[
+                                      const Spacer(),
+                                      GestureDetector(
+                                        onTapDown: (TapDownDetails details) {
+                                          showMenu<String>(
+                                            context: context,
+                                            position: RelativeRect.fromLTRB(
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                            ),
+                                            items: [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit, size: 18),
+                                                    SizedBox(width: 8),
+                                                    Text('Modifier'),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete,
+                                                      size: 18,
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      'Supprimer',
+                                                      style: TextStyle(
+                                                        color: Colors.redAccent,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ).then((value) {
+                                            if (value == 'edit') {
+                                              editComment(comment);
+                                            } else if (value == 'delete') {
+                                              deleteComment(comment, isReply);
+                                            }
+                                          });
+                                        },
+                                        child: Icon(
+                                          Icons.more_horiz,
+                                          size: 18,
+                                          color: Colors.grey[400],
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  body,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF4F4F4F),
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () => toggleCommentReaction(
+                                        comment,
+                                        'like',
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            userReaction == 'like'
+                                                ? Icons.thumb_up_alt
+                                                : Icons.thumb_up_alt_outlined,
+                                            size: 14,
+                                            color: userReaction == 'like'
+                                                ? const Color(0xFF3AAE5E)
+                                                : Colors.grey[400],
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '$likes',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: userReaction == 'like'
+                                                  ? const Color(0xFF3AAE5E)
+                                                  : Colors.grey[500],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (!isReply) ...[
+                                      const SizedBox(width: 14),
+                                      GestureDetector(
+                                        onTap: () {
+                                          modalSetState(() {
+                                            replyingToId =
+                                                comment['id'] as int?;
+                                            replyingToName = displayName;
+                                          });
+                                          FocusScope.of(
+                                            ctx,
+                                          ).requestFocus(FocusNode());
+                                        },
+                                        child: Text(
+                                          'Répondre',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF2E9B5B),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Nested replies
+                      if (!isReply && replies.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ...replies.map(
+                          (r) => Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: buildCommentItem(r, isReply: true),
                           ),
                         ),
                       ],
-                    ),
-                    // Nested replies
-                    if (!isReply && replies.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      ...replies.map(
-                        (r) => Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: buildCommentItem(r, isReply: true),
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ));
+              );
             }
 
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom,
+                bottom:
+                    MediaQuery.of(ctx).viewInsets.bottom +
+                    MediaQuery.of(ctx).padding.bottom,
               ),
               child: Container(
                 constraints: BoxConstraints(
@@ -1901,9 +1911,9 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
     // used as their display name.)
     final String name = accountType == 'pro'
         ? (proProfile?['company_name']?.toString().trim().isNotEmpty == true
-            ? proProfile!['company_name'].toString()
-            : '${proProfile?['first_name']?.toString() ?? ''} ${proProfile?['last_name']?.toString() ?? ''}'
-                .trim())
+              ? proProfile!['company_name'].toString()
+              : '${proProfile?['first_name']?.toString() ?? ''} ${proProfile?['last_name']?.toString() ?? ''}'
+                    .trim())
         : (particulierProfile?['pseudo']?.toString() ?? '');
 
     // Extract avatar from profile or fallback to direct fields
@@ -1979,14 +1989,7 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
     );
   }
 
-
-  Widget _buildReactionBar(
-    String apiSlug,
-    String entityId, {
-    bool? acceptedMessages,
-    Map<String, dynamic>? authorData,
-    Map<String, dynamic>? postData,
-  }) {
+  Widget _buildReactionBar(String apiSlug, String entityId) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
     final isPost = apiSlug == 'posts';

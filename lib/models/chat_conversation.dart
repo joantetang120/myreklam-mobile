@@ -1,4 +1,5 @@
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/utils/avatar_resolver.dart';
 
 class ChatConversation {
   final int id;
@@ -85,7 +86,7 @@ class ChatConversation {
             particulierProfile['pseudo']?.toString() ??
             otherUserEmail?.split('@').first ??
             'Utilisateur';
-        otherUserAvatar = particulierProfile['avatar_url']?.toString();
+        otherUserAvatar = AvatarResolver.resolve(otherUser);
       } else if (otherUser['account_type'] == 'pro' &&
           otherUser['pro_profile'] != null) {
         final proProfile = otherUser['pro_profile'] as Map<String, dynamic>;
@@ -96,11 +97,11 @@ class ChatConversation {
                 ? '${proProfile['first_name']} ${proProfile['last_name']}'
                 : otherUserEmail?.split('@').first) ??
             'Utilisateur';
-        otherUserAvatar = proProfile['avatar_url']?.toString();
+        otherUserAvatar = AvatarResolver.resolve(otherUser);
       } else {
         // Fallback si aucun profil n'est disponible
         otherUserName = otherUserEmail?.split('@').first ?? 'Utilisateur';
-        otherUserAvatar = null;
+        otherUserAvatar = AvatarResolver.resolve(otherUser);
       }
     }
 

@@ -44,7 +44,8 @@ class BlockedUsersManager {
     final blocked = await getBlockedIds();
     if (blocked.isEmpty) return items;
     return items.where((item) {
-      final id = item[userIdKey]?.toString() ??
+      final id =
+          item[userIdKey]?.toString() ??
           item['user']?['id']?.toString() ??
           item['author']?['id']?.toString() ??
           item['owner_id']?.toString();

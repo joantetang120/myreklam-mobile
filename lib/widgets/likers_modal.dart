@@ -38,7 +38,8 @@ class _LikersSheetState extends State<_LikersSheet> {
   Future<void> _fetchLikers() async {
     try {
       final response = await _api.authenticatedGet(
-          '/${widget.apiSlug}/${widget.entityId}/reactions/likers');
+        '/${widget.apiSlug}/${widget.entityId}/reactions/likers',
+      );
       if (response['success'] == true && response['data'] != null) {
         setState(() {
           _likers = List<Map<String, dynamic>>.from(response['data']);
@@ -122,10 +123,7 @@ class _LikersSheetState extends State<_LikersSheet> {
                     const Spacer(),
                     Text(
                       '${_likers.length} like${_likers.length > 1 ? 's' : ''}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -135,66 +133,70 @@ class _LikersSheetState extends State<_LikersSheet> {
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
                     : _likers.isEmpty
-                        ? Center(
-                            child: Text(
-                              'Aucun like pour le moment',
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 15,
+                    ? Center(
+                        child: Text(
+                          'Aucun like pour le moment',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 15,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        controller: scrollController,
+                        padding: const EdgeInsets.only(bottom: 16),
+                        itemCount: _likers.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final user = _likers[index];
+                          final name = _displayName(user);
+                          final avatarUrl = _avatarUrl(user);
+                          final isFollowing = user['is_following'] == true;
+
+                          return ListTile(
+                            leading: ReklamAvatar(
+                              radius: 20,
+                              avatarUrl: avatarUrl.isNotEmpty
+                                  ? avatarUrl
+                                  : null,
+                              displayName: name,
+                              accountType: user['account_type'],
+                            ),
+                            title: Text(
+                              name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14,
                               ),
                             ),
-                          )
-                        : ListView.separated(
-                            controller: scrollController,
-                            padding: const EdgeInsets.only(bottom: 16),
-                            itemCount: _likers.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1),
-                            itemBuilder: (context, index) {
-                              final user = _likers[index];
-                              final name = _displayName(user);
-                              final avatarUrl = _avatarUrl(user);
-                              final isFollowing = user['is_following'] == true;
-
-                              return ListTile(
-                                leading: ReklamAvatar(
-                                  radius: 20,
-                                  avatarUrl: avatarUrl.isNotEmpty ? avatarUrl : null,
-                                  displayName: name,
-                                  accountType: user['account_type'],
-                                ),
-                                title: Text(
-                                  name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 14,
+                            trailing: SizedBox(
+                              height: 32,
+                              child: ElevatedButton(
+                                onPressed: () => _toggleFollow(user),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  backgroundColor: isFollowing
+                                      ? Colors.grey[200]
+                                      : const Color(0xFF3AAE5E),
+                                  foregroundColor: isFollowing
+                                      ? Colors.black87
+                                      : Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                 ),
-                                trailing: SizedBox(
-                                  height: 32,
-                                  child: ElevatedButton(
-                                    onPressed: () => _toggleFollow(user),
-                                    style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                                      backgroundColor: isFollowing
-                                          ? Colors.grey[200]
-                                          : const Color(0xFF3AAE5E),
-                                      foregroundColor: isFollowing
-                                          ? Colors.black87
-                                          : Colors.white,
-                                      elevation: 0,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      isFollowing ? 'Suivi' : 'Suivre',
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
-                                  ),
+                                child: Text(
+                                  isFollowing ? 'Suivi' : 'Suivre',
+                                  style: const TextStyle(fontSize: 12),
                                 ),
-                              );
-                            },
-                          ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
               ),
             ],
           ),

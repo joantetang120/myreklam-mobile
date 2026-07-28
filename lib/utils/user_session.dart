@@ -54,6 +54,10 @@ class UserSession {
     _userType = type;
   }
 
+  void markProfileCompleted() {
+    _profileCompleted = true;
+  }
+
   void startGuestMode() {
     clear();
     _isGuest = true;

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/services/api_client.dart';
@@ -189,7 +188,7 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 15,
             offset: const Offset(0, -3),
           ),
@@ -271,7 +270,7 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
               padding: const EdgeInsets.all(8),
               decoration: isSelected
                   ? BoxDecoration(
-                      color: const Color(0xFF2E9B5B).withOpacity(0.15),
+                      color: const Color(0xFF2E9B5B).withValues(alpha: 0.15),
                       shape: BoxShape.rectangle,
                       borderRadius: BorderRadius.circular(10),
                     )

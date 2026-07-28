@@ -72,8 +72,10 @@ class TokenStorage {
   static Future<bool> hasTokens() async {
     final accessToken = await getAccessToken();
     final refreshToken = await getRefreshToken();
-    return accessToken != null && accessToken.isNotEmpty &&
-        refreshToken != null && refreshToken.isNotEmpty;
+    return accessToken != null &&
+        accessToken.isNotEmpty &&
+        refreshToken != null &&
+        refreshToken.isNotEmpty;
   }
 
   // ─── Account delegation ─────────────────────────────────────────────────────
@@ -143,10 +145,13 @@ class TokenStorage {
     if (!await isDelegated()) return null;
     final perms = await _storage.read(key: _delPermsKey);
     return {
-      'owner_id': int.tryParse(await _storage.read(key: _delOwnerIdKey) ?? '0') ?? 0,
+      'owner_id':
+          int.tryParse(await _storage.read(key: _delOwnerIdKey) ?? '0') ?? 0,
       'owner_name': await _storage.read(key: _delOwnerNameKey) ?? '',
       'owner_avatar': await _storage.read(key: _delOwnerAvatarKey),
-      'permissions': (perms == null || perms.isEmpty) ? <String>[] : perms.split(','),
+      'permissions': (perms == null || perms.isEmpty)
+          ? <String>[]
+          : perms.split(','),
     };
   }
 }

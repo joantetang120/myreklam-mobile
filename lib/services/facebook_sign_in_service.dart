@@ -2,7 +2,8 @@ import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:myreklam/services/auth_service.dart';
 
 class FacebookSignInService {
-  static final FacebookSignInService _instance = FacebookSignInService._internal();
+  static final FacebookSignInService _instance =
+      FacebookSignInService._internal();
   factory FacebookSignInService() => _instance;
   FacebookSignInService._internal();
 

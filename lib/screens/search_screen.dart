@@ -216,7 +216,9 @@ class _SearchScreenState extends State<SearchScreen> {
                     activeTrackColor: const Color(0xFF3AAE5E),
                     inactiveTrackColor: Colors.grey[300],
                     thumbColor: const Color(0xFF3AAE5E),
-                    overlayColor: const Color(0xFF3AAE5E).withOpacity(0.2),
+                    overlayColor: const Color(
+                      0xFF3AAE5E,
+                    ).withValues(alpha: 0.2),
                     thumbShape: const RoundSliderThumbShape(
                       enabledThumbRadius: 8,
                     ),
@@ -293,7 +295,9 @@ class _SearchScreenState extends State<SearchScreen> {
                     if (query.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Veuillez entrer un terme de recherche'),
+                          content: Text(
+                            'Veuillez entrer un terme de recherche',
+                          ),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -472,13 +476,13 @@ class _SearchScreenState extends State<SearchScreen> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: Colors.grey.withOpacity(0.3),
+                              color: Colors.grey.withValues(alpha: 0.3),
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: Colors.grey.withOpacity(0.3),
+                              color: Colors.grey.withValues(alpha: 0.3),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -498,7 +502,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           color: Colors.grey[50],
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.grey.withOpacity(0.15),
+                            color: Colors.grey.withValues(alpha: 0.15),
                           ),
                         ),
                         child: Column(
@@ -589,10 +593,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
                           // Capture scaffold context before closing dialog
                           final scaffoldContext = this.context;
-                          
+
                           // Show loading indicator (replace current dialog)
                           Navigator.pop(context);
-                          
+
                           // Use a new context for loading dialog - wait for frame to ensure clean context
                           await Future.microtask(() {});
                           if (!mounted) return;
@@ -628,18 +632,25 @@ class _SearchScreenState extends State<SearchScreen> {
 
                             // Close loading indicator
                             if (!mounted) return;
-                            Navigator.of(scaffoldContext, rootNavigator: true).pop();
+                            Navigator.of(
+                              scaffoldContext,
+                              rootNavigator: true,
+                            ).pop();
 
                             // Show success/error message
                             if (result != null) {
-                              ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                              ScaffoldMessenger.of(
+                                scaffoldContext,
+                              ).showSnackBar(
                                 const SnackBar(
                                   content: Text('Recherche sauvegardée !'),
                                   backgroundColor: Color(0xFF3AAE5E),
                                 ),
                               );
                             } else {
-                              ScaffoldMessenger.of(scaffoldContext).showSnackBar(
+                              ScaffoldMessenger.of(
+                                scaffoldContext,
+                              ).showSnackBar(
                                 const SnackBar(
                                   content: Text('Erreur lors de la sauvegarde'),
                                   backgroundColor: Colors.red,
@@ -649,7 +660,10 @@ class _SearchScreenState extends State<SearchScreen> {
                           } catch (e) {
                             // Close loading indicator on error
                             if (!mounted) return;
-                            Navigator.of(scaffoldContext, rootNavigator: true).pop();
+                            Navigator.of(
+                              scaffoldContext,
+                              rootNavigator: true,
+                            ).pop();
 
                             ScaffoldMessenger.of(scaffoldContext).showSnackBar(
                               SnackBar(

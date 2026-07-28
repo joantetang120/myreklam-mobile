@@ -1,5 +1,5 @@
-import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 enum AppStorePlatform { android, ios }
@@ -12,6 +12,7 @@ class AppUpdateRequirement {
     required this.minimumBuildNumber,
     required this.title,
     required this.message,
+    this.startImmediateUpdate,
   });
 
   final AppStorePlatform platform;
@@ -20,6 +21,7 @@ class AppUpdateRequirement {
   final int minimumBuildNumber;
   final String title;
   final String message;
+  final Future<void> Function()? startImmediateUpdate;
 }
 
 class AppUpdatePolicy {
@@ -37,122 +39,46 @@ class AppUpdatePolicy {
 }
 
 class AppUpdateService {
-  AppUpdateService({FirebaseRemoteConfig? remoteConfig})
-    : _remoteConfig = remoteConfig ?? FirebaseRemoteConfig.instance;
-
-  static const String _androidEnabledKey = 'force_update_android';
-  static const String _iosEnabledKey = 'force_update_ios';
-  static const String _androidMinimumBuildKey = 'minimum_android_build_number';
-  static const String _iosMinimumBuildKey = 'minimum_ios_build_number';
-  static const String _androidStoreUrlKey = 'android_store_url';
-  static const String _iosStoreUrlKey = 'ios_store_url';
-  static const String _titleKey = 'force_update_title';
-  static const String _messageKey = 'force_update_message';
-
-  static const String _defaultAndroidStoreUrl =
+  static const _androidStoreUrl =
       'https://play.google.com/store/apps/details?id=com.myreklam.app';
-  static const String _defaultTitle = 'Mise à jour requise';
-  static const String _defaultMessage =
-      'Une nouvelle version de Myreklam est disponible. '
-      'Mettez à jour l’application pour continuer.';
-
-  final FirebaseRemoteConfig _remoteConfig;
 
   Future<AppUpdateRequirement?> checkForRequiredUpdate() async {
-    final platform = _currentPlatform();
-    if (platform == null) return null;
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return null;
+    }
 
     try {
-      await _remoteConfig.setConfigSettings(
-        RemoteConfigSettings(
-          fetchTimeout: const Duration(seconds: 4),
-          minimumFetchInterval: kDebugMode
-              ? Duration.zero
-              : const Duration(hours: 1),
-        ),
-      );
-      await _remoteConfig.setDefaults(const {
-        _androidEnabledKey: false,
-        _iosEnabledKey: false,
-        _androidMinimumBuildKey: 0,
-        _iosMinimumBuildKey: 0,
-        _androidStoreUrlKey: _defaultAndroidStoreUrl,
-        _iosStoreUrlKey: '',
-        _titleKey: _defaultTitle,
-        _messageKey: _defaultMessage,
-      });
-
-      try {
-        await _remoteConfig.fetchAndActivate();
-      } catch (error) {
-        debugPrint(
-          'Remote Config indisponible, utilisation des valeurs en cache: '
-          '$error',
-        );
+      final updateInfo = await InAppUpdate.checkForUpdate();
+      if (updateInfo.updateAvailability != UpdateAvailability.updateAvailable) {
+        return null;
       }
 
-      final enabled = _remoteConfig.getBool(
-        platform == AppStorePlatform.android
-            ? _androidEnabledKey
-            : _iosEnabledKey,
-      );
-      if (!enabled) return null;
-
-      final minimumBuildNumber = _remoteConfig.getInt(
-        platform == AppStorePlatform.android
-            ? _androidMinimumBuildKey
-            : _iosMinimumBuildKey,
-      );
       final packageInfo = await PackageInfo.fromPlatform();
-
-      if (!AppUpdatePolicy.isBuildOutdated(
-        currentBuildNumber: packageInfo.buildNumber,
-        minimumBuildNumber: minimumBuildNumber,
-      )) {
-        return null;
-      }
-
-      final storeUrl = _remoteConfig
-          .getString(
-            platform == AppStorePlatform.android
-                ? _androidStoreUrlKey
-                : _iosStoreUrlKey,
-          )
-          .trim();
-      final storeUri = Uri.tryParse(storeUrl);
-      if (storeUri == null || !storeUri.hasScheme) {
-        debugPrint(
-          'Mise à jour forcée ignorée: URL du store absente ou invalide.',
-        );
-        return null;
-      }
+      final currentBuild = int.tryParse(packageInfo.buildNumber.trim()) ?? 0;
+      final availableBuild =
+          updateInfo.availableVersionCode ?? currentBuild + 1;
 
       return AppUpdateRequirement(
-        platform: platform,
-        storeUri: storeUri,
-        currentBuildNumber: int.parse(packageInfo.buildNumber.trim()),
-        minimumBuildNumber: minimumBuildNumber,
-        title: _remoteConfig.getString(_titleKey).trim().isEmpty
-            ? _defaultTitle
-            : _remoteConfig.getString(_titleKey).trim(),
-        message: _remoteConfig.getString(_messageKey).trim().isEmpty
-            ? _defaultMessage
-            : _remoteConfig.getString(_messageKey).trim(),
+        platform: AppStorePlatform.android,
+        storeUri: Uri.parse(_androidStoreUrl),
+        currentBuildNumber: currentBuild,
+        minimumBuildNumber: availableBuild,
+        title: 'Mise à jour requise',
+        message:
+            'Une nouvelle version de Myreklam est disponible sur Google Play. '
+            'Installez-la pour continuer à utiliser l’application.',
+        startImmediateUpdate: updateInfo.immediateUpdateAllowed
+            ? () async {
+                await InAppUpdate.performImmediateUpdate();
+              }
+            : null,
       );
     } catch (error, stackTrace) {
-      debugPrint('Vérification de mise à jour impossible: $error');
+      // Google Play ne fournit pas ce service aux APK installés par câble.
+      // La version distribuée par le Play Store est, elle, vérifiable.
+      debugPrint('Vérification Google Play indisponible: $error');
       debugPrintStack(stackTrace: stackTrace);
       return null;
     }
-  }
-
-  AppStorePlatform? _currentPlatform() {
-    if (kIsWeb) return null;
-
-    return switch (defaultTargetPlatform) {
-      TargetPlatform.android => AppStorePlatform.android,
-      TargetPlatform.iOS => AppStorePlatform.ios,
-      _ => null,
-    };
   }
 }

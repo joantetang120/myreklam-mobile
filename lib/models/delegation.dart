@@ -104,9 +104,8 @@ class Delegation {
       id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       ownerId: int.tryParse(json['owner_id']?.toString() ?? '0') ?? 0,
       managerId: int.tryParse(json['manager_id']?.toString() ?? '0') ?? 0,
-      permissions: (json['permissions'] as List?)
-              ?.map((e) => e.toString())
-              .toList() ??
+      permissions:
+          (json['permissions'] as List?)?.map((e) => e.toString()).toList() ??
           const [],
       isPaidSeat: json['is_paid_seat'] == true,
       user: json['user'] is Map

@@ -21,11 +21,7 @@ class _TrainingMediaFile {
   final String url;
   final String? type;
 
-  const _TrainingMediaFile({
-    this.id,
-    required this.url,
-    this.type,
-  });
+  const _TrainingMediaFile({this.id, required this.url, this.type});
 }
 
 class _TrainingDocumentFile {
@@ -109,7 +105,8 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
   // Custom values for Niveau requis and Certifications
   final TextEditingController _customLevelController = TextEditingController();
-  final TextEditingController _customCertificationController = TextEditingController();
+  final TextEditingController _customCertificationController =
+      TextEditingController();
   List<String> _customRequiredLevels = [];
   List<String> _customCertifications = [];
 
@@ -125,14 +122,15 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   bool _acceptMessages = true;
 
   // Step 4 - Media & Documents
-  List<GalleryMedia> _selectedMediaFiles = [];
-  List<PlatformFile> _selectedDocumentFiles = [];
+  final List<GalleryMedia> _selectedMediaFiles = [];
+  final List<PlatformFile> _selectedDocumentFiles = [];
   List<_TrainingMediaFile> _existingMedia = [];
   List<_TrainingDocumentFile> _existingDocuments = [];
   final Set<String> _deletingMediaKeys = {};
   final Set<String> _deletingDocumentKeys = {};
 
-  bool get _isEditMode => widget.trainingId != null && widget.trainingId!.isNotEmpty;
+  bool get _isEditMode =>
+      widget.trainingId != null && widget.trainingId!.isNotEmpty;
 
   @override
   void initState() {
@@ -160,7 +158,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   }
 
   void _prefillFromInitialData(Map<String, dynamic> data) {
-    debugPrint('Prefilling training form with data keys: ${data.keys.toList()}');
+    debugPrint(
+      'Prefilling training form with data keys: ${data.keys.toList()}',
+    );
 
     setState(() {
       _titleController.text = data['title']?.toString() ?? '';
@@ -177,14 +177,19 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       // Multi-select fields
       _selectedTeachingStyles = List<String>.from(data['training_style'] ?? []);
       _selectedTargetPublics = List<String>.from(data['training_public'] ?? []);
-      _selectedRequiredLevels = List<String>.from(data['required_levels'] ?? []);
+      _selectedRequiredLevels = List<String>.from(
+        data['required_levels'] ?? [],
+      );
       _selectedFunding = List<String>.from(data['training_funding'] ?? []);
       _selectedCertifications = List<String>.from(data['certification'] ?? []);
 
       // Price
       final price = data['price'];
       if (price != null) {
-        _priceController.text = price.toString().replaceAll(RegExp(r'\.00$'), '');
+        _priceController.text = price.toString().replaceAll(
+          RegExp(r'\.00$'),
+          '',
+        );
       }
       _selectedPriceType = data['price_type']?.toString();
       _selectedPublicType = data['public_type']?.toString();
@@ -200,24 +205,37 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       // Dates
       _dateToDefine = data['date_to_define'] == true;
       if (data['start_date'] != null) {
-        try { _startDate = DateTime.parse(data['start_date'].toString()); } catch (_) {}
+        try {
+          _startDate = DateTime.parse(data['start_date'].toString());
+        } catch (_) {}
       }
       if (data['end_date'] != null) {
-        try { _endDate = DateTime.parse(data['end_date'].toString()); } catch (_) {}
+        try {
+          _endDate = DateTime.parse(data['end_date'].toString());
+        } catch (_) {}
       }
 
       // Location
-      if (data['location_lat'] != null || data['location_city'] != null || data['address_city'] != null) {
+      if (data['location_lat'] != null ||
+          data['location_city'] != null ||
+          data['address_city'] != null) {
         _selectedLocation = LocationData(
-          address: data['address_line1']?.toString() ?? data['location_city']?.toString() ?? '',
+          address:
+              data['address_line1']?.toString() ??
+              data['location_city']?.toString() ??
+              '',
           latitude: data['location_lat'] != null
               ? double.tryParse(data['location_lat'].toString())
               : null,
           longitude: data['location_lng'] != null
               ? double.tryParse(data['location_lng'].toString())
               : null,
-          city: data['location_city']?.toString() ?? data['address_city']?.toString(),
-          postalCode: data['location_postal_code']?.toString() ?? data['address_zipcode']?.toString(),
+          city:
+              data['location_city']?.toString() ??
+              data['address_city']?.toString(),
+          postalCode:
+              data['location_postal_code']?.toString() ??
+              data['address_zipcode']?.toString(),
         );
       }
       _showLocation = data['show_location'] != false;
@@ -227,17 +245,15 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       final mediaFiles = data['media_files'] as List? ?? [];
       _existingMedia = mediaFiles
           .whereType<Map>()
-          .map<_TrainingMediaFile?>(
-            (m) {
-              final resolvedUrl = _buildMediaUrl(m['url']?.toString());
-              if (resolvedUrl.isEmpty) return null;
-              return _TrainingMediaFile(
-                id: m['id']?.toString(),
-                url: resolvedUrl,
-                type: m['type']?.toString(),
-              );
-            },
-          )
+          .map<_TrainingMediaFile?>((m) {
+            final resolvedUrl = _buildMediaUrl(m['url']?.toString());
+            if (resolvedUrl.isEmpty) return null;
+            return _TrainingMediaFile(
+              id: m['id']?.toString(),
+              url: resolvedUrl,
+              type: m['type']?.toString(),
+            );
+          })
           .whereType<_TrainingMediaFile>()
           .toList();
       final docFiles = data['document_files'] as List? ?? [];
@@ -263,7 +279,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
   void _restoreDescription(Map<String, dynamic> data) {
     final descDelta = data['description_delta'];
-    debugPrint('TRAINING EDIT _restoreDescription: descDelta type=${descDelta?.runtimeType}');
+    debugPrint(
+      'TRAINING EDIT _restoreDescription: descDelta type=${descDelta?.runtimeType}',
+    );
     bool deltaRestored = false;
 
     if (descDelta != null) {
@@ -334,14 +352,26 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     try {
       final data = await _trainingService.getMetadata();
       final normalizedData = Map<String, dynamic>.from(data);
-      final trainingTypesMap = _normalizeStringMap(normalizedData['training_types']);
-      final teachingTypesMap = _normalizeStringMap(normalizedData['teaching_types']);
-      final targetPublicsMap = _normalizeStringMap(normalizedData['target_publics']);
-      final fundingOptionsMap = _normalizeStringMap(normalizedData['funding_options']);
+      final trainingTypesMap = _normalizeStringMap(
+        normalizedData['training_types'],
+      );
+      final teachingTypesMap = _normalizeStringMap(
+        normalizedData['teaching_types'],
+      );
+      final targetPublicsMap = _normalizeStringMap(
+        normalizedData['target_publics'],
+      );
+      final fundingOptionsMap = _normalizeStringMap(
+        normalizedData['funding_options'],
+      );
       final priceTypesMap = _normalizeStringMap(normalizedData['price_types']);
-      final publicTypesMap = _normalizeStringMap(normalizedData['public_types']);
+      final publicTypesMap = _normalizeStringMap(
+        normalizedData['public_types'],
+      );
       final tempoTypesMap = _normalizeStringMap(normalizedData['tempo_types']);
-      final durationUnitsMap = _normalizeStringMap(normalizedData['duration_units']);
+      final durationUnitsMap = _normalizeStringMap(
+        normalizedData['duration_units'],
+      );
 
       normalizedData['training_types'] = trainingTypesMap;
       normalizedData['teaching_types'] = teachingTypesMap;
@@ -418,7 +448,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       final formData = {
         'step': _currentStep,
         'title': _titleController.text,
-        'description_delta': jsonEncode(_descriptionQuillController.document.toDelta().toJson()),
+        'description_delta': jsonEncode(
+          _descriptionQuillController.document.toDelta().toJson(),
+        ),
         'category_id': _selectedCategoryId,
         'subcategory_id': _selectedSubCategoryId,
         'training_type': _selectedTrainingType,
@@ -566,11 +598,19 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           _selectedCategoryId = formData['category_id'];
           _selectedSubCategoryId = formData['subcategory_id'];
           _selectedTrainingType = formData['training_type'];
-          _selectedTeachingStyles = List<String>.from(formData['teaching_styles'] ?? []);
-          _selectedTargetPublics = List<String>.from(formData['target_publics'] ?? []);
-          _selectedRequiredLevels = List<String>.from(formData['required_levels'] ?? []);
+          _selectedTeachingStyles = List<String>.from(
+            formData['teaching_styles'] ?? [],
+          );
+          _selectedTargetPublics = List<String>.from(
+            formData['target_publics'] ?? [],
+          );
+          _selectedRequiredLevels = List<String>.from(
+            formData['required_levels'] ?? [],
+          );
           _selectedFunding = List<String>.from(formData['funding'] ?? []);
-          _selectedCertifications = List<String>.from(formData['certifications'] ?? []);
+          _selectedCertifications = List<String>.from(
+            formData['certifications'] ?? [],
+          );
           _priceController.text = formData['price'] ?? '';
           _selectedPriceType = formData['price_type'];
           _selectedPublicType = formData['public_type'];
@@ -628,7 +668,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
   Future<void> _pickMedia() async {
     try {
-      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      final files = await GalleryPicker.pickImagesFromGallery(
+        allowMultiple: true,
+      );
       if (files == null || files.isEmpty) return;
       setState(() {
         _selectedMediaFiles.addAll(files);
@@ -648,7 +690,18 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png'],
+        allowedExtensions: [
+          'pdf',
+          'doc',
+          'docx',
+          'xls',
+          'xlsx',
+          'ppt',
+          'pptx',
+          'jpg',
+          'jpeg',
+          'png',
+        ],
         allowMultiple: true,
         withData: true,
       );
@@ -694,16 +747,16 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           return 'Veuillez sélectionner un type de formation.';
         }
         break;
-      
+
       case 1: // Step 2: Lien France Travail (optional)
         break;
-      
+
       case 2: // Step 3: Description
         return _validateStep3();
-      
+
       case 3: // Step 4: Médias et documents (optional)
         break;
-      
+
       case 4: // Step 5: Review (no validation needed)
         break;
     }
@@ -711,12 +764,16 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   }
 
   void _showSnack(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: isError ? Colors.red.shade700 : const Color(0xFF3AAE5E),
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 4),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError
+            ? Colors.red.shade700
+            : const Color(0xFF3AAE5E),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   String? _validateStep3() {
@@ -755,8 +812,11 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     }
 
     try {
-      final descriptionDelta = _descriptionQuillController.document.toDelta().toJson();
-      final descriptionHtml = _descriptionQuillController.document.toPlainText();
+      final descriptionDelta = _descriptionQuillController.document
+          .toDelta()
+          .toJson();
+      final descriptionHtml = _descriptionQuillController.document
+          .toPlainText();
 
       final trainingData = {
         'title': _titleController.text.trim(),
@@ -793,7 +853,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       }
 
       if (_durationController.text.trim().isNotEmpty) {
-        trainingData['duration_in_h'] = int.tryParse(_durationController.text.trim());
+        trainingData['duration_in_h'] = int.tryParse(
+          _durationController.text.trim(),
+        );
       }
 
       if (_selectedDurationUnit != null) {
@@ -804,7 +866,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
       if (!_dateToDefine) {
         if (_startDate != null) {
-          trainingData['start_date'] = _startDate!.toIso8601String().split('T')[0];
+          trainingData['start_date'] = _startDate!.toIso8601String().split(
+            'T',
+          )[0];
         }
         if (_endDate != null) {
           trainingData['end_date'] = _endDate!.toIso8601String().split('T')[0];
@@ -825,11 +889,16 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         trainingData['certification'] = _selectedCertifications;
       }
 
-      debugPrint('Submitting training payload (${_isEditMode ? 'edit' : 'create'}): ${jsonEncode(trainingData)}');
+      debugPrint(
+        'Submitting training payload (${_isEditMode ? 'edit' : 'create'}): ${jsonEncode(trainingData)}',
+      );
 
       final Map<String, dynamic> response;
       if (_isEditMode) {
-        response = await _trainingService.updateTraining(widget.trainingId!, trainingData);
+        response = await _trainingService.updateTraining(
+          widget.trainingId!,
+          trainingData,
+        );
       } else {
         response = await _trainingService.createTraining(trainingData);
       }
@@ -843,8 +912,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           if (_selectedMediaFiles.isNotEmpty) {
             try {
               final mediaFiles = _selectedMediaFiles
-                  .where((f) => f.path != null)
-                  .map((f) => File(f.path!))
+                  .map((f) => File(f.path))
                   .toList();
               if (mediaFiles.isNotEmpty) {
                 await _trainingService.uploadMedia(trainingId, mediaFiles);
@@ -870,9 +938,8 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         }
 
         if (!_isEditMode) await _clearDraft();
-        if (mounted) {
-          setState(() => _isSubmitting = false);
-        }
+        if (!mounted) return;
+        setState(() => _isSubmitting = false);
         _showSuccessDialog();
 
         // Award My's for creating a formation (only on create, not edit)
@@ -882,14 +949,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               actionType: 'formation',
               referenceId: trainingId,
             );
-            
+
             if (mysResponse['success'] == true && mounted) {
               // Update UserSession with new balance
               final newBalance = mysResponse['earning']?['new_balance'];
               if (newBalance != null) {
                 UserSession().updateMys(newBalance);
               }
-              
+
               // Show reward modal AFTER dialog closes - use microtask to avoid conflict
               Future.microtask(() async {
                 if (mounted) {
@@ -907,12 +974,16 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           }
         }
       } else {
-        throw Exception(response['message'] ?? (_isEditMode ? 'Erreur lors de la mise à jour' : 'Erreur lors de la création'));
+        throw Exception(
+          response['message'] ??
+              (_isEditMode
+                  ? 'Erreur lors de la mise à jour'
+                  : 'Erreur lors de la création'),
+        );
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur: ${e.toString()}'),
@@ -953,7 +1024,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               //   height: 120,
               //   decoration: BoxDecoration(
               //     shape: BoxShape.circle,
-              //     color: const Color(0xFFFFF3E0).withOpacity(0.5),
+              //     color: const Color(0xFFFFF3E0).withValues(alpha: 0.5),
               //   ),
               //   child: Center(
               //     child: Container(
@@ -1049,7 +1120,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1073,7 +1144,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                     ),
                   ],
@@ -1082,7 +1153,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                     ? SizedBox(
                         width: 14,
                         height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red[300]),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.red[300],
+                        ),
                       )
                     : const Icon(
                         Icons.close,
@@ -1100,13 +1174,15 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   bool _isImageUrl(String url, String? type) {
     final ext = url.split('.').lastOrNull?.toLowerCase();
     final mime = type?.toLowerCase();
-    return (ext != null && ['jpg', 'jpeg', 'png', 'gif'].contains(ext)) || (mime != null && mime.contains('image'));
+    return (ext != null && ['jpg', 'jpeg', 'png', 'gif'].contains(ext)) ||
+        (mime != null && mime.contains('image'));
   }
 
   bool _isVideoUrl(String url, String? type) {
     final ext = url.split('.').lastOrNull?.toLowerCase();
     final mime = type?.toLowerCase();
-    return (ext != null && ['mp4', 'mov', 'avi'].contains(ext)) || (mime != null && mime.contains('video'));
+    return (ext != null && ['mp4', 'mov', 'avi'].contains(ext)) ||
+        (mime != null && mime.contains('video'));
   }
 
   Widget _buildBrokenMediaPlaceholder() {
@@ -1132,13 +1208,17 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       }
       if (mounted) {
         setState(() {
-          _existingMedia.removeWhere((m) => m.url == media.url && m.id == media.id);
+          _existingMedia.removeWhere(
+            (m) => m.url == media.url && m.id == media.id,
+          );
         });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Suppression du média impossible: ${e.toString()}')),
+          SnackBar(
+            content: Text('Suppression du média impossible: ${e.toString()}'),
+          ),
         );
       }
     } finally {
@@ -1165,12 +1245,15 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.insert_drive_file_outlined, color: Color(0xFF3AAE5E)),
+                const Icon(
+                  Icons.insert_drive_file_outlined,
+                  color: Color(0xFF3AAE5E),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -1178,13 +1261,19 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                     children: [
                       Text(
                         displayName,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (doc.fileType != null)
                         Text(
                           doc.fileType!,
-                          style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[500],
+                          ),
                         ),
                     ],
                   ),
@@ -1201,11 +1290,18 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                       SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red[300]),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.red[300],
+                        ),
                       )
                     else
                       IconButton(
-                        icon: const Icon(Icons.close, size: 18, color: Colors.redAccent),
+                        icon: const Icon(
+                          Icons.close,
+                          size: 18,
+                          color: Colors.redAccent,
+                        ),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         onPressed: () => _removeExistingDocument(doc),
@@ -1235,7 +1331,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
       if (mounted) {
         setState(() {
-          _existingDocuments.removeWhere((d) => d.url == doc.url && d.id == doc.id);
+          _existingDocuments.removeWhere(
+            (d) => d.url == doc.url && d.id == doc.id,
+          );
         });
       }
     } catch (e) {
@@ -1277,7 +1375,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
@@ -1308,14 +1406,27 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   Map<String, String> _normalizeStringMap(dynamic raw) {
     if (raw == null) return {};
     if (raw is Map) {
-      return raw.map((key, value) => MapEntry(key.toString(), value.toString()));
+      return raw.map(
+        (key, value) => MapEntry(key.toString(), value.toString()),
+      );
     }
     if (raw is List) {
       final map = <String, String>{};
       for (final item in raw) {
         if (item is Map) {
-          final keyCandidate = item['key'] ?? item['code'] ?? item['id'] ?? item['value'] ?? item['label'] ?? item['name'];
-          final labelCandidate = item['label'] ?? item['name'] ?? item['value'] ?? item['code'] ?? keyCandidate;
+          final keyCandidate =
+              item['key'] ??
+              item['code'] ??
+              item['id'] ??
+              item['value'] ??
+              item['label'] ??
+              item['name'];
+          final labelCandidate =
+              item['label'] ??
+              item['name'] ??
+              item['value'] ??
+              item['code'] ??
+              keyCandidate;
           final key = keyCandidate?.toString();
           final label = labelCandidate?.toString();
           if (key != null && label != null) {
@@ -1339,108 +1450,112 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         await _handleBackButton();
       },
       child: AppLayout(
-      currentIndex: 2,
-      backgroundColor: const Color(0xFFF9F9FB),
-      onTabTapped: (index) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (context) => ParticulierMainScreen(initialIndex: index),
-          ),
-          (route) => false,
-        );
-      },
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 12,
-                bottom: 4,
+        currentIndex: 2,
+        backgroundColor: const Color(0xFFF9F9FB),
+        onTabTapped: (index) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => ParticulierMainScreen(initialIndex: index),
+            ),
+            (route) => false,
+          );
+        },
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 12,
+                  bottom: 4,
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onTap: _handleBackButton,
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Color(0xFF616161),
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _isEditMode
+                          ? 'Modifier la formation'
+                          : 'Créer une formation',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontFamily: 'Manjari',
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF424242),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
+              // Subtitle
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  _isEditMode
+                      ? 'Modifiez les informations de votre formation'
+                      : 'Partagez une opportunité de formation avec la communauté',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Progress bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _buildProgressBar(),
+              ),
+              const SizedBox(height: 12),
+              // Previous button
+              if (_currentStep > 0)
+                Padding(
+                  padding: const EdgeInsets.only(left: 20),
+                  child: Align(
                     alignment: Alignment.centerLeft,
                     child: GestureDetector(
-                      onTap: _handleBackButton,
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Color(0xFF616161),
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    _isEditMode ? 'Modifier la formation' : 'Créer une formation',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontFamily: 'Manjari',
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF424242),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Subtitle
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                _isEditMode
-                    ? 'Modifiez les informations de votre formation'
-                    : 'Partagez une opportunité de formation avec la communauté',
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Progress bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _buildProgressBar(),
-            ),
-            const SizedBox(height: 12),
-            // Previous button
-            if (_currentStep > 0)
-              Padding(
-                padding: const EdgeInsets.only(left: 20),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: GestureDetector(
-                    onTap: _previousStep,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      child: const Text(
-                        'Précédent',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      onTap: _previousStep,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.grey.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: const Text(
+                          'Précédent',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
                       ),
                     ),
                   ),
                 ),
+              const SizedBox(height: 8),
+              // Step content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildCurrentStep(),
+                ),
               ),
-            const SizedBox(height: 8),
-            // Step content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _buildCurrentStep(),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
 
@@ -1538,7 +1653,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                 return _buildExistingMediaCard(media);
               }
               final fileIndex = index - 1 - _existingMedia.length;
-              return _buildMediaPreviewCard(_selectedMediaFiles[fileIndex], fileIndex);
+              return _buildMediaPreviewCard(
+                _selectedMediaFiles[fileIndex],
+                fileIndex,
+              );
             },
           ),
         ),
@@ -1590,10 +1708,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFF0F9F4),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFF3AAE5E),
-                  width: 2,
-                ),
+                border: Border.all(color: const Color(0xFF3AAE5E), width: 2),
               ),
               child: Column(
                 children: [
@@ -1649,10 +1764,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         decoration: BoxDecoration(
           color: const Color(0xFFF0F9F4),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xFF3AAE5E),
-            width: 2,
-          ),
+          border: Border.all(color: const Color(0xFF3AAE5E), width: 2),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1660,7 +1772,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withOpacity(0.1),
+                color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -1687,13 +1799,13 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
   Widget _buildMediaPreviewCard(GalleryMedia file, int index) {
     final isCoverPhoto = index == 0;
-    
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1747,7 +1859,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                     ),
                   ],
@@ -1781,11 +1893,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       return Container(
         color: Colors.black87,
         child: const Center(
-          child: Icon(
-            Icons.play_circle_outline,
-            size: 40,
-            color: Colors.white,
-          ),
+          child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white),
         ),
       );
     } else {
@@ -1804,8 +1912,12 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
   // ─── STEP 1: Type & Category ───
   Widget _buildStep1Type() {
-    final categoryNames = _categoriesFromApi.map((c) => c['name'].toString()).toList();
-    final subCategoryNames = _subCategoriesForCategory.map((s) => s['name'].toString()).toList();
+    final categoryNames = _categoriesFromApi
+        .map((c) => c['name'].toString())
+        .toList();
+    final subCategoryNames = _subCategoriesForCategory
+        .map((s) => s['name'].toString())
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1813,7 +1925,8 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         _buildFormCard(
           icon: Icons.school_outlined,
           title: 'Catégorie et Type',
-          subtitle: 'Sélectionnez la catégorie, le secteur et le type de formation correspondant à votre offre.',
+          subtitle:
+              'Sélectionnez la catégorie, le secteur et le type de formation correspondant à votre offre.',
           children: [
             if (_isLoading)
               const Padding(
@@ -1904,7 +2017,8 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               controller: _linkController,
               keyboardType: TextInputType.url,
               fieldKey: 'link',
-              helperText: 'Le lien permettra d\'extraire automatiquement le titre, la description, les dates, le lieu, le prix et autres détails de la formation pour faciliter la création de votre annonce.',
+              helperText:
+                  'Le lien permettra d\'extraire automatiquement le titre, la description, les dates, le lieu, le prix et autres détails de la formation pour faciliter la création de votre annonce.',
             ),
           ],
         ),
@@ -1936,13 +2050,22 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
   // ─── STEP 3: Description & Details ───
   Widget _buildStep3Description() {
-    final teachingTypesMap = _metadata['teaching_types'] as Map<String, dynamic>? ?? {};
-    final targetPublicsMap = _metadata['target_publics'] as Map<String, dynamic>? ?? {};
-    final fundingOptionsMap = _metadata['funding_options'] as Map<String, dynamic>? ?? {};
+    final teachingTypesMap =
+        _metadata['teaching_types'] as Map<String, dynamic>? ?? {};
+    final targetPublicsMap =
+        _metadata['target_publics'] as Map<String, dynamic>? ?? {};
+    final fundingOptionsMap =
+        _metadata['funding_options'] as Map<String, dynamic>? ?? {};
 
-    final teachingTypeLabels = teachingTypesMap.values.map((v) => v.toString()).toList();
-    final targetPublicLabels = targetPublicsMap.values.map((v) => v.toString()).toList();
-    final fundingLabels = fundingOptionsMap.values.map((v) => v.toString()).toList();
+    final teachingTypeLabels = teachingTypesMap.values
+        .map((v) => v.toString())
+        .toList();
+    final targetPublicLabels = targetPublicsMap.values
+        .map((v) => v.toString())
+        .toList();
+    final fundingLabels = fundingOptionsMap.values
+        .map((v) => v.toString())
+        .toList();
     final isPriceInputEnabled = _isPriceAmountRequired(_selectedPriceType);
 
     return Column(
@@ -1955,7 +2078,8 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           label: 'ex : formation title courte et percutant',
           controller: _titleController,
           fieldKey: 'title',
-          helperText: 'Saisissez un titre accrocheur et descriptif pour votre formation (max 100 caractères).',
+          helperText:
+              'Saisissez un titre accrocheur et descriptif pour votre formation (max 100 caractères).',
         ),
 
         const SizedBox(height: 20),
@@ -1969,14 +2093,22 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               return teachingTypesMap[key]?.toString() ?? key;
             }).toList(),
             onChanged: (updatedList) {
-              final reverseMap = {for (final e in teachingTypesMap.entries) e.value.toString(): e.key};
-              final keys = updatedList.map((label) => reverseMap[label] ?? label).toList();
+              final reverseMap = {
+                for (final e in teachingTypesMap.entries)
+                  e.value.toString(): e.key,
+              };
+              final keys = updatedList
+                  .map((label) => reverseMap[label] ?? label)
+                  .toList();
               final toutKey = reverseMap.entries
                   .where((e) => e.key.toLowerCase() == 'tout')
                   .map((e) => e.value)
                   .firstOrNull;
               if (toutKey != null && keys.contains(toutKey)) {
-                setState(() => _selectedTeachingStyles = teachingTypesMap.keys.toList());
+                setState(
+                  () =>
+                      _selectedTeachingStyles = teachingTypesMap.keys.toList(),
+                );
               } else {
                 setState(() => _selectedTeachingStyles = keys..remove(toutKey));
               }
@@ -1994,14 +2126,21 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               return targetPublicsMap[key]?.toString() ?? key;
             }).toList(),
             onChanged: (updatedList) {
-              final reverseMap = {for (final e in targetPublicsMap.entries) e.value.toString(): e.key};
-              final keys = updatedList.map((label) => reverseMap[label] ?? label).toList();
+              final reverseMap = {
+                for (final e in targetPublicsMap.entries)
+                  e.value.toString(): e.key,
+              };
+              final keys = updatedList
+                  .map((label) => reverseMap[label] ?? label)
+                  .toList();
               final toutKey = reverseMap.entries
                   .where((e) => e.key.toLowerCase() == 'tout public')
                   .map((e) => e.value)
                   .firstOrNull;
               if (toutKey != null && keys.contains(toutKey)) {
-                setState(() => _selectedTargetPublics = targetPublicsMap.keys.toList());
+                setState(
+                  () => _selectedTargetPublics = targetPublicsMap.keys.toList(),
+                );
               } else {
                 setState(() => _selectedTargetPublics = keys..remove(toutKey));
               }
@@ -2011,18 +2150,19 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         ],
 
         // ── Niveau requis ──
-          _buildCheckboxGroupWithCustom(
-            title: "Niveau requis : Choix multiple possible *",
-            options: _requiredLevels,
-            selectedValues: _selectedRequiredLevels,
-            onChanged: (updatedList) {
-              setState(() => _selectedRequiredLevels = updatedList);
-            },
-            customValues: _customRequiredLevels,
-            onCustomValuesChanged: (val) => setState(() => _customRequiredLevels = val),
-            customController: _customLevelController,
-          ),
-          const SizedBox(height: 20),
+        _buildCheckboxGroupWithCustom(
+          title: "Niveau requis : Choix multiple possible *",
+          options: _requiredLevels,
+          selectedValues: _selectedRequiredLevels,
+          onChanged: (updatedList) {
+            setState(() => _selectedRequiredLevels = updatedList);
+          },
+          customValues: _customRequiredLevels,
+          onCustomValuesChanged: (val) =>
+              setState(() => _customRequiredLevels = val),
+          customController: _customLevelController,
+        ),
+        const SizedBox(height: 20),
 
         // ── Prix de la formation ──
         _buildSectionLabel('Prix de la formation', isRequired: true),
@@ -2055,29 +2195,44 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                   });
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF3AAE5E).withOpacity(0.1) : Colors.white,
+                    color: isSelected
+                        ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey.withOpacity(0.3),
+                      color: isSelected
+                          ? const Color(0xFF3AAE5E)
+                          : Colors.grey.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                        isSelected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
                         size: 16,
-                        color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[400],
+                        color: isSelected
+                            ? const Color(0xFF3AAE5E)
+                            : Colors.grey[400],
                       ),
                       const SizedBox(width: 6),
                       Text(
                         entry.value,
                         style: TextStyle(
                           fontSize: 13,
-                          color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[700],
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          color: isSelected
+                              ? const Color(0xFF3AAE5E)
+                              : Colors.grey[700],
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -2099,7 +2254,8 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                     label: 'Tarif appliqué',
                     value: _selectedPublicType,
                     items: _publicTypes.keys.toList(),
-                    onChanged: (val) => setState(() => _selectedPublicType = val),
+                    onChanged: (val) =>
+                        setState(() => _selectedPublicType = val),
                     labelBuilder: (key) => _publicTypes[key] ?? key,
                     backgroundColor: const Color(0xFFF9FAFB),
                   ),
@@ -2131,8 +2287,13 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               return fundingOptionsMap[key]?.toString() ?? key;
             }).toList(),
             onChanged: (updatedList) {
-              final reverseMap = {for (final e in fundingOptionsMap.entries) e.value.toString(): e.key};
-              final keys = updatedList.map((label) => reverseMap[label] ?? label).toList();
+              final reverseMap = {
+                for (final e in fundingOptionsMap.entries)
+                  e.value.toString(): e.key,
+              };
+              final keys = updatedList
+                  .map((label) => reverseMap[label] ?? label)
+                  .toList();
               setState(() => _selectedFunding = keys);
             },
           ),
@@ -2162,7 +2323,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                   items: _durationUnits.keys.toList(),
                   onChanged: (val) => setState(() {
                     _selectedDurationUnit = val;
-                    debugPrint('Duration unit changed to: $_selectedDurationUnit');
+                    debugPrint(
+                      'Duration unit changed to: $_selectedDurationUnit',
+                    );
                   }),
                   labelBuilder: (key) => _durationUnits[key] ?? key,
                   backgroundColor: const Color(0xFFF9FAFB),
@@ -2221,7 +2384,8 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           label: 'Description',
           controller: _descriptionQuillController,
           fieldKey: 'description',
-          helperText: 'Décrivez en détail votre formation. Utilisez les outils de mise en forme pour mettre en évidence les informations importantes.',
+          helperText:
+              'Décrivez en détail votre formation. Utilisez les outils de mise en forme pour mettre en évidence les informations importantes.',
         ),
 
         const SizedBox(height: 20),
@@ -2257,24 +2421,26 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           controller: _websiteController,
           keyboardType: TextInputType.url,
           fieldKey: 'website',
-          helperText: 'Ajoutez le lien vers le site de votre organisme de formation.',
+          helperText:
+              'Ajoutez le lien vers le site de votre organisme de formation.',
         ),
 
         const SizedBox(height: 20),
 
         // ── Certifications ──
-          _buildCheckboxGroupWithCustom(
-            title: "Êtes-vous certifié ?",
-            options: _certifications,
-            selectedValues: _selectedCertifications,
-            onChanged: (updatedList) {
-              setState(() => _selectedCertifications = updatedList);
-            },
-            customValues: _customCertifications,
-            onCustomValuesChanged: (val) => setState(() => _customCertifications = val),
-            customController: _customCertificationController,
-          ),
-          const SizedBox(height: 20),
+        _buildCheckboxGroupWithCustom(
+          title: "Êtes-vous certifié ?",
+          options: _certifications,
+          selectedValues: _selectedCertifications,
+          onChanged: (updatedList) {
+            setState(() => _selectedCertifications = updatedList);
+          },
+          customValues: _customCertifications,
+          onCustomValuesChanged: (val) =>
+              setState(() => _customCertifications = val),
+          customController: _customCertificationController,
+        ),
+        const SizedBox(height: 20),
 
         // ── Lieu ──
         _buildSectionLabel('Lieu', isRequired: true),
@@ -2286,7 +2452,8 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         LocationPickerField(
           initialLocation: _selectedLocation,
           label: 'Rechercher par ville ou code postal...',
-          helperText: 'Saisissez le nom de la ville ou le code postal où la formation se déroule.',
+          helperText:
+              'Saisissez le nom de la ville ou le code postal où la formation se déroule.',
           onLocationSelected: (location) {
             setState(() => _selectedLocation = location);
           },
@@ -2336,7 +2503,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         text: text,
         style: TextStyle(
           fontSize: 15,
-          color: Colors.black.withOpacity(0.8),
+          color: Colors.black.withValues(alpha: 0.8),
           fontFamily: 'Manjari',
           fontWeight: FontWeight.bold,
         ),
@@ -2417,12 +2584,29 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               'Description',
               _descriptionQuillController.document.toPlainText().trim().isEmpty
                   ? '-'
-                  : _descriptionQuillController.document.toPlainText().trim().substring(
-                      0,
-                      _descriptionQuillController.document.toPlainText().trim().length > 100
-                          ? 100
-                          : _descriptionQuillController.document.toPlainText().trim().length,
-                    ) + (_descriptionQuillController.document.toPlainText().trim().length > 100 ? '...' : ''),
+                  : _descriptionQuillController.document
+                            .toPlainText()
+                            .trim()
+                            .substring(
+                              0,
+                              _descriptionQuillController.document
+                                          .toPlainText()
+                                          .trim()
+                                          .length >
+                                      100
+                                  ? 100
+                                  : _descriptionQuillController.document
+                                        .toPlainText()
+                                        .trim()
+                                        .length,
+                            ) +
+                        (_descriptionQuillController.document
+                                    .toPlainText()
+                                    .trim()
+                                    .length >
+                                100
+                            ? '...'
+                            : ''),
             ),
             _buildReviewRow(
               'Site web',
@@ -2439,15 +2623,21 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           rows: [
             _buildReviewRow(
               'Type d\'enseignement',
-              _selectedTeachingStyles.isEmpty ? '-' : _selectedTeachingStyles.length.toString() + ' sélectionné(s)',
+              _selectedTeachingStyles.isEmpty
+                  ? '-'
+                  : '${_selectedTeachingStyles.length} sélectionné(s)',
             ),
             _buildReviewRow(
               'Public visé',
-              _selectedTargetPublics.isEmpty ? '-' : _selectedTargetPublics.length.toString() + ' sélectionné(s)',
+              _selectedTargetPublics.isEmpty
+                  ? '-'
+                  : '${_selectedTargetPublics.length} sélectionné(s)',
             ),
             _buildReviewRow(
               'Niveau requis',
-              _selectedRequiredLevels.isEmpty ? '-' : _selectedRequiredLevels.join(', '),
+              _selectedRequiredLevels.isEmpty
+                  ? '-'
+                  : _selectedRequiredLevels.join(', '),
             ),
           ],
         ),
@@ -2460,16 +2650,17 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           rows: [
             _buildReviewRow(
               'Type de tarif',
-              _selectedPriceType != null ? (_priceTypes[_selectedPriceType] ?? _selectedPriceType!) : '-',
+              _selectedPriceType != null
+                  ? (_priceTypes[_selectedPriceType] ?? _selectedPriceType!)
+                  : '-',
             ),
             if (_priceController.text.isNotEmpty)
-              _buildReviewRow(
-                'Prix',
-                _priceController.text + ' €',
-              ),
+              _buildReviewRow('Prix', '${_priceController.text} €'),
             _buildReviewRow(
               'Financement',
-              _selectedFunding.isEmpty ? '-' : _selectedFunding.length.toString() + ' option(s)',
+              _selectedFunding.isEmpty
+                  ? '-'
+                  : '${_selectedFunding.length} option(s)',
             ),
           ],
         ),
@@ -2484,15 +2675,15 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               'Durée',
               _durationController.text.isEmpty
                   ? '-'
-                  : _durationController.text + ' ' + (_selectedDurationUnit != null ? (_durationUnits[_selectedDurationUnit] ?? '') : ''),
+                  : '${_durationController.text} ${_selectedDurationUnit != null ? (_durationUnits[_selectedDurationUnit] ?? '') : ''}',
             ),
             _buildReviewRow(
               'Dates',
               _dateToDefine
                   ? 'À définir'
                   : (_startDate != null || _endDate != null
-                      ? '${_startDate != null ? "${_startDate!.day}/${_startDate!.month}/${_startDate!.year}" : "-"} - ${_endDate != null ? "${_endDate!.day}/${_endDate!.month}/${_endDate!.year}" : "-"}'
-                      : '-'),
+                        ? '${_startDate != null ? "${_startDate!.day}/${_startDate!.month}/${_startDate!.year}" : "-"} - ${_endDate != null ? "${_endDate!.day}/${_endDate!.month}/${_endDate!.year}" : "-"}'
+                        : '-'),
             ),
           ],
         ),
@@ -2503,10 +2694,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           title: 'Localisation',
           onEdit: () => setState(() => _currentStep = 2),
           rows: [
-            _buildReviewRow(
-              'Adresse',
-              _selectedLocation?.address ?? '-',
-            ),
+            _buildReviewRow('Adresse', _selectedLocation?.address ?? '-'),
             _buildReviewRow(
               'Afficher localisation',
               _showLocation ? 'Oui' : 'Non',
@@ -2607,7 +2795,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               elevation: 0,
             ),
             child: Text(
-              _isEditMode ? 'Mettre à jour la formation' : 'Publier la formation',
+              _isEditMode
+                  ? 'Mettre à jour la formation'
+                  : 'Publier la formation',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
@@ -2638,7 +2828,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
           ),
           child: TextField(
             controller: controller,
@@ -2660,7 +2850,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
-              prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 20, color: Colors.grey[400]) : null,
+              prefixIcon: prefixIcon != null
+                  ? Icon(prefixIcon, size: 20, color: Colors.grey[400])
+                  : null,
               suffixText: suffix,
               suffixStyle: const TextStyle(
                 fontSize: 14,
@@ -2695,7 +2887,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2712,7 +2904,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                     color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   child: QuillSimpleToolbar(
                     controller: controller,
                     config: const QuillSimpleToolbarConfig(
@@ -2769,7 +2964,11 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     );
   }
 
-  Widget _buildUploadButton2({required String label, required Color color, VoidCallback? onTap}) {
+  Widget _buildUploadButton2({
+    required String label,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
@@ -2777,7 +2976,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.grey.withOpacity(0.3),
+          color: Colors.grey.withValues(alpha: 0.3),
           style: BorderStyle.solid,
           width: 1.5,
         ),
@@ -2790,7 +2989,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             height: 50,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
             ),
             child: Icon(Icons.cloud_upload_outlined, color: color, size: 28),
           ),
@@ -2798,14 +2997,18 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
           // Bouton parcourir
           InkWell(
-            onTap: onTap ?? () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('$label - Fonctionnalité bientôt disponible'),
-                  backgroundColor: color,
-                ),
-              );
-            },
+            onTap:
+                onTap ??
+                () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '$label - Fonctionnalité bientôt disponible',
+                      ),
+                      backgroundColor: color,
+                    ),
+                  );
+                },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
               decoration: BoxDecoration(
@@ -2848,7 +3051,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               title,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.black.withOpacity(0.8),
+                color: Colors.black.withValues(alpha: 0.8),
                 fontFamily: 'Manjari',
                 fontWeight: FontWeight.bold,
               ),
@@ -3024,7 +3227,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                           side: const BorderSide(color: Colors.grey, width: 1),
                           activeColor: const Color(0xFF3AAE5E),
                           onChanged: (bool? value) {
-                            final updatedList = List<String>.from(selectedValues);
+                            final updatedList = List<String>.from(
+                              selectedValues,
+                            );
                             if (value == true) {
                               updatedList.add(option);
                             } else {
@@ -3043,15 +3248,21 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                       // × button — completely separate from checkbox tap area
                       InkWell(
                         onTap: () {
-                          final newCustom = List<String>.from(customValues)..remove(option);
-                          final newSelected = List<String>.from(selectedValues)..remove(option);
+                          final newCustom = List<String>.from(customValues)
+                            ..remove(option);
+                          final newSelected = List<String>.from(selectedValues)
+                            ..remove(option);
                           onCustomValuesChanged(newCustom);
                           onChanged(newSelected);
                         },
                         borderRadius: BorderRadius.circular(12),
                         child: Padding(
                           padding: const EdgeInsets.all(6),
-                          child: Icon(Icons.close, size: 16, color: Colors.grey[500]),
+                          child: Icon(
+                            Icons.close,
+                            size: 16,
+                            color: Colors.grey[500],
+                          ),
                         ),
                       ),
                     ],
@@ -3064,71 +3275,86 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
               // Custom input row — hidden once a custom value has been added
               if (customValues.isEmpty)
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 38,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF9FAFB),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
-                      child: TextField(
-                        controller: customController,
-                        style: const TextStyle(fontSize: 13),
-                        decoration: InputDecoration(
-                          hintText: 'Ajouter une valeur personnalisée...',
-                          hintStyle: TextStyle(fontSize: 12, color: Colors.grey[400]),
-                          border: InputBorder.none,
-                          isCollapsed: true,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 38,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
                         ),
-                        onSubmitted: (val) {
-                          final trimmed = val.trim();
-                          if (trimmed.isEmpty || allOptions.contains(trimmed)) return;
-                          final newCustom = List<String>.from(customValues)..add(trimmed);
-                          final newSelected = List<String>.from(selectedValues)..add(trimmed);
-                          onCustomValuesChanged(newCustom);
-                          onChanged(newSelected);
-                          customController.clear();
-                        },
+                        child: TextField(
+                          controller: customController,
+                          style: const TextStyle(fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Ajouter une valeur personnalisée...',
+                            hintStyle: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[400],
+                            ),
+                            border: InputBorder.none,
+                            isCollapsed: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                            ),
+                          ),
+                          onSubmitted: (val) {
+                            final trimmed = val.trim();
+                            if (trimmed.isEmpty ||
+                                allOptions.contains(trimmed)) {
+                              return;
+                            }
+                            final newCustom = List<String>.from(customValues)
+                              ..add(trimmed);
+                            final newSelected = List<String>.from(
+                              selectedValues,
+                            )..add(trimmed);
+                            onCustomValuesChanged(newCustom);
+                            onChanged(newSelected);
+                            customController.clear();
+                          },
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () {
-                      final trimmed = customController.text.trim();
-                      if (trimmed.isEmpty || allOptions.contains(trimmed)) return;
-                      final newCustom = List<String>.from(customValues)..add(trimmed);
-                      final newSelected = List<String>.from(selectedValues)..add(trimmed);
-                      onCustomValuesChanged(newCustom);
-                      onChanged(newSelected);
-                      customController.clear();
-                    },
-                    child: Container(
-                      height: 38,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF3AAE5E),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Ajouter',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        final trimmed = customController.text.trim();
+                        if (trimmed.isEmpty || allOptions.contains(trimmed)) {
+                          return;
+                        }
+                        final newCustom = List<String>.from(customValues)
+                          ..add(trimmed);
+                        final newSelected = List<String>.from(selectedValues)
+                          ..add(trimmed);
+                        onCustomValuesChanged(newCustom);
+                        onChanged(newSelected);
+                        customController.clear();
+                      },
+                      child: Container(
+                        height: 38,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3AAE5E),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Ajouter',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -3149,10 +3375,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -3218,10 +3444,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       decoration: BoxDecoration(
         color: backgroundColor ?? Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         hint:
             hint ??
             Text(
@@ -3311,7 +3537,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.withOpacity(0.15)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3378,7 +3604,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFE8F5E9),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.3)),
+        border: Border.all(
+          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3413,11 +3641,11 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               border: Border.all(
                 color: isSelected
                     ? const Color(0xFF3AAE5E)
-                    : Colors.grey.withOpacity(0.4),
+                    : Colors.grey.withValues(alpha: 0.4),
                 width: 1.5,
               ),
               color: isSelected
-                  ? const Color(0xFF3AAE5E).withOpacity(0.1)
+                  ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
                   : Colors.transparent,
             ),
             child: isSelected

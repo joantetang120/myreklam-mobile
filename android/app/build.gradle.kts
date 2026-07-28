@@ -1,3 +1,4 @@
+import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
@@ -8,11 +9,11 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-// Keystore properties
-val keystorePassword = "Myrekl@m2029@785"
-val myKeyPassword = "Myrekl@m2029@785"
-val myKeyAlias = "myreklam"
-val myStoreFile = file("../myreklam-key.jks")
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    FileInputStream(keystorePropertiesFile).use(keystoreProperties::load)
+}
 
 android {
     namespace = "com.myreklam.app"
@@ -42,10 +43,12 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = myKeyAlias
-            keyPassword = myKeyPassword
-            storeFile = myStoreFile
-            storePassword = keystorePassword
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            storeFile = keystoreProperties.getProperty("storeFile")?.let {
+                rootProject.file(it)
+            }
+            storePassword = keystoreProperties.getProperty("storePassword")
             storeType = "PKCS12"
         }
     }

@@ -39,10 +39,7 @@ class MyPostItem extends StatelessWidget {
             children: [
               Text(
                 'Publier il y a 2h',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
               Row(
                 children: [
@@ -116,7 +113,10 @@ class MyPostItem extends StatelessWidget {
               const SizedBox(width: 20),
               GestureDetector(
                 onTap: onCommentsTap,
-                child: _buildStat(Icons.chat_bubble_outline, commentCount.toString()),
+                child: _buildStat(
+                  Icons.chat_bubble_outline,
+                  commentCount.toString(),
+                ),
               ),
               // Bouton partager masqué
             ],

@@ -91,14 +91,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           listen: false,
         );
         final conversationId = int.tryParse(widget.conversationId);
-        print("DEBUG: Conversation ID: $conversationId");
+        debugPrint("DEBUG: Conversation ID: $conversationId");
         if (conversationId != null) {
           try {
-            print("DEBUG: Starting to load messages...");
+            debugPrint("DEBUG: Starting to load messages...");
             await conversationProvider.loadMessages(conversationId);
-            print("DEBUG: Messages loaded successfully");
+            debugPrint("DEBUG: Messages loaded successfully");
           } catch (e) {
-            print("DEBUG: Error loading messages: $e");
+            debugPrint("DEBUG: Error loading messages: $e");
           }
         }
       }
@@ -111,8 +111,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty || _currentUserId == null)
+    if (_messageController.text.trim().isEmpty || _currentUserId == null) {
       return;
+    }
 
     // Prevent duplicate sends with synchronous check
     if (_isSending) return;
@@ -390,8 +391,9 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   /// Fetch the other participant's real online presence.
   Future<void> _loadPresence() async {
     try {
-      final res = await ApiClient()
-          .authenticatedGet('/conversations/${widget.conversationId}');
+      final res = await ApiClient().authenticatedGet(
+        '/conversations/${widget.conversationId}',
+      );
       final presence = res['partner_presence'] as Map<String, dynamic>?;
       if (presence == null || !mounted) return;
 
@@ -506,7 +508,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           //     borderRadius: BorderRadius.circular(12),
           //     boxShadow: [
           //       BoxShadow(
-          //         color: Colors.black.withOpacity(0.05),
+          //         color: Colors.black.withValues(alpha: 0.05),
           //         blurRadius: 8,
           //         offset: const Offset(0, 2),
           //       ),
@@ -768,7 +770,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, -2),
                 ),
@@ -785,50 +787,64 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                     ),
                     child: TextField(
                       controller: _messageController,
-                      readOnly: !DelegationManager.instance
-                          .can(DelegationPermission.messages),
+                      readOnly: !DelegationManager.instance.can(
+                        DelegationPermission.messages,
+                      ),
                       decoration: InputDecoration(
-                        hintText: DelegationManager.instance
-                                .can(DelegationPermission.messages)
+                        hintText:
+                            DelegationManager.instance.can(
+                              DelegationPermission.messages,
+                            )
                             ? 'Tapez votre message...'
                             : "Messagerie non autorisée",
                         hintStyle: const TextStyle(
-                            color: Colors.grey, fontSize: 14),
+                          color: Colors.grey,
+                          fontSize: 14,
+                        ),
                         border: InputBorder.none,
                       ),
-                      onSubmitted: (_) => DelegationManager.instance
-                              .can(DelegationPermission.messages)
+                      onSubmitted: (_) =>
+                          DelegationManager.instance.can(
+                            DelegationPermission.messages,
+                          )
                           ? _sendMessage()
                           : null,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                if (DelegationManager.instance
-                    .can(DelegationPermission.messages))
+                if (DelegationManager.instance.can(
+                  DelegationPermission.messages,
+                ))
                   GestureDetector(
                     onTap: _sendImage,
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      shape: BoxShape.circle,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.image,
+                        color: Colors.grey[700],
+                        size: 20,
+                      ),
                     ),
-                    child: Icon(Icons.image, color: Colors.grey[700], size: 20),
                   ),
-                ),
                 const SizedBox(width: 8),
-                if (DelegationManager.instance
-                    .can(DelegationPermission.messages))
+                if (DelegationManager.instance.can(
+                  DelegationPermission.messages,
+                ))
                   GestureDetector(
                     onTap: _isSending ? null : _sendMessage,
                     child: Container(
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color:
-                            _isSending ? Colors.grey : const Color(0xFF3AAE5E),
+                        color: _isSending
+                            ? Colors.grey
+                            : const Color(0xFF3AAE5E),
                         shape: BoxShape.circle,
                       ),
                       child: _isSending
@@ -841,8 +857,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                                 ),
                               ),
                             )
-                          : const Icon(Icons.send,
-                              color: Colors.white, size: 20),
+                          : const Icon(
+                              Icons.send,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                     ),
                   ),
               ],

@@ -96,7 +96,7 @@ class _VideoPreviewPageState extends State<_VideoPreviewPage> {
           if (!_isPlaying)
             Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.35),
+                color: Colors.black.withValues(alpha: 0.35),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -206,7 +206,10 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.black.withOpacity(0.6), Colors.transparent],
+                    colors: [
+                      Colors.black.withValues(alpha: 0.6),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
                 child: Row(
@@ -227,7 +230,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
@@ -263,7 +266,7 @@ class _ImagePreviewScreenState extends State<ImagePreviewScreen> {
                       shape: BoxShape.circle,
                       color: _currentIndex == index
                           ? Colors.white
-                          : Colors.white.withOpacity(0.4),
+                          : Colors.white.withValues(alpha: 0.4),
                     ),
                   ),
                 ),

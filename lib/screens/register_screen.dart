@@ -15,6 +15,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirmText = true;
   bool _isLoading = false;
   bool _isValidatingParrainage = false;
+  int _parrainageValidationRequest = 0;
   bool? _isParrainageValid;
   String? _parrainageErrorMessage;
   final _formKey = GlobalKey<FormState>();
@@ -71,6 +72,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _onParrainageCodeChanged() {
     final code = _couponController.text.trim();
+    _parrainageValidationRequest++;
     if (code.isEmpty) {
       setState(() {
         _isParrainageValid = null;
@@ -82,7 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _validateParrainageCode(String code) async {
-    if (_isValidatingParrainage) return;
+    final requestId = _parrainageValidationRequest;
 
     setState(() => _isValidatingParrainage = true);
 
@@ -90,28 +92,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final response = await _authService.validateParrainageCode(
         parrainageCode: code,
       );
-      if (mounted) {
+      if (mounted &&
+          requestId == _parrainageValidationRequest &&
+          _couponController.text.trim() == code) {
         setState(() {
           _isParrainageValid = response['success'] == true;
           _parrainageErrorMessage = null;
         });
       }
     } on ApiException catch (e) {
-      if (mounted) {
+      if (mounted &&
+          requestId == _parrainageValidationRequest &&
+          _couponController.text.trim() == code) {
         setState(() {
           _isParrainageValid = false;
           _parrainageErrorMessage = e.firstError;
         });
       }
     } catch (e) {
-      if (mounted) {
+      if (mounted &&
+          requestId == _parrainageValidationRequest &&
+          _couponController.text.trim() == code) {
         setState(() {
           _isParrainageValid = false;
           _parrainageErrorMessage = 'Code invalide';
         });
       }
     } finally {
-      if (mounted) {
+      if (mounted && requestId == _parrainageValidationRequest) {
         setState(() => _isValidatingParrainage = false);
       }
     }
@@ -126,7 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Color _getParrainageBorderColor() {
     if (_isParrainageValid == null) {
-      return const Color(0xFF1B8D4B).withOpacity(0.4);
+      return const Color(0xFF1B8D4B).withValues(alpha: 0.4);
     }
     if (_isParrainageValid!) {
       return Colors.green;
@@ -246,7 +254,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Image.asset(
                 'assets/images/auth/Rectangle 4.png',
                 fit: BoxFit.cover,
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 colorBlendMode: BlendMode.dstIn,
               ),
             ),
@@ -394,7 +402,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         decoration: InputDecoration(
                           hintText: 'Entrer le Code de parrainage (Facultatif)',
                           hintStyle: TextStyle(
-                            color: const Color(0xFF1B8D4B).withOpacity(0.6),
+                            color: const Color(
+                              0xFF1B8D4B,
+                            ).withValues(alpha: 0.6),
                             fontSize: 14,
                           ),
                           filled: true,

@@ -61,10 +61,12 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
       if (!mounted) return;
 
       // Debug: Log the full profile response
-      print('📋 Profile response: ${response.keys}');
+      debugPrint('📋 Profile response: ${response.keys}');
       if (response['profile'] != null) {
-        print('📋 Profile data: ${response['profile'].keys}');
-        print('📋 secteur_activite value: ${response['profile']['secteur_activite']}');
+        debugPrint('📋 Profile data: ${response['profile'].keys}');
+        debugPrint(
+          '📋 secteur_activite value: ${response['profile']['secteur_activite']}',
+        );
       }
 
       if (response['profile'] != null) {
@@ -83,10 +85,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
           _villeController.text = profile['ville'] ?? '';
           _paysController.text = profile['pays'] ?? '';
           _presentationController.text = profile['presentation'] ?? '';
-          
+
           // Only set secteur if it exists in the new list
           final savedSecteur = profile['secteur_activite'];
-          if (savedSecteur != null && 
+          if (savedSecteur != null &&
               savedSecteur.toString().isNotEmpty &&
               SecteursActivite.all.contains(savedSecteur)) {
             _selectedSecteur = savedSecteur;
@@ -168,7 +170,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                   padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                   height: 44,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF8A40).withOpacity(0.15),
+                    color: const Color(0xFFEF8A40).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TabBar(
@@ -288,7 +290,6 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                   label: 'Ville',
                   controller: _villeController,
                 ),
-                
               ],
             ),
           ),
@@ -525,7 +526,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withValues(alpha: 0.2),
             offset: const Offset(-2, 3),
           ),
         ],
@@ -544,7 +545,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                   ),
                 ),
               ],
@@ -579,7 +580,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
           ],
         ),
         const SizedBox(height: 8),
-        Container(
+        SizedBox(
           height: 40,
           child: TextField(
             controller: controller,
@@ -677,7 +678,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
           ],
         ),
         const SizedBox(height: 8),
-        Container(
+        SizedBox(
           height: 50,
           child: TextField(
             controller: controller,
@@ -796,9 +797,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
       }
     } finally {
       // Clean up temp file if it was created and is different from original
-      if (tempFile != null &&
-          tempFile.path != originalFile.path &&
-          await tempFile.exists()) {
+      if (tempFile.path != originalFile.path && await tempFile.exists()) {
         try {
           await tempFile.delete();
         } catch (e) {
@@ -1020,7 +1019,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.8),
+                color: Colors.red.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.close, color: Colors.white, size: 16),
@@ -1035,7 +1034,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Row(
@@ -1078,10 +1077,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.05),
+          color: color.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             style: BorderStyle.solid,
           ),
         ),
@@ -1148,7 +1147,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
 
       // Check if ALL required fields are filled (except pictures)
       final allFieldsFilled = _areAllFieldsFilled();
-      
+
       if (allFieldsFilled) {
         // Award My's for completing profile
         try {
@@ -1156,14 +1155,14 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
             actionType: 'profile_complete',
             referenceId: UserSession().id?.toString(),
           );
-          
+
           if (mysResponse['success'] == true && mounted) {
             // Update UserSession with new balance
             final newBalance = mysResponse['earning']?['new_balance'];
             if (newBalance != null) {
               UserSession().updateMys(newBalance);
             }
-            
+
             // Show reward modal after a short delay
             Future.microtask(() async {
               if (mounted) {
@@ -1206,14 +1205,14 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
       _presentationController.text.trim(),
       _selectedSecteur,
     ];
-    
+
     // Check that all required fields have content
     for (final field in requiredFields) {
       if (field == null || field.toString().isEmpty) {
         return false;
       }
     }
-    
+
     // Check that at least one social link is filled (optional but counts toward completion)
     final socialLinks = [
       _facebookController.text.trim(),
@@ -1222,10 +1221,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
       _youtubeController.text.trim(),
       _snapchatController.text.trim(),
     ];
-    
+
     // Profile is considered complete if all required fields + at least one social link
     final hasSocialLink = socialLinks.any((link) => link.isNotEmpty);
-    
+
     return hasSocialLink;
   }
 }

@@ -83,7 +83,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
   final List<DrawStroke> _drawStrokes = [];
   List<Offset> _currentStroke = [];
   Color _drawColor = Colors.white;
-  double _drawWidth = 6.0;
+  final double _drawWidth = 6.0;
   bool _isAddingLocation = false;
 
   static const List<Color> _drawColors = [
@@ -99,10 +99,46 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
   ];
 
   static const List<String> _stickerEmojis = [
-    '❤️', '😂', '😍', '🔥', '👍', '🎉', '😎', '🥳', '😭', '🙌',
-    '✨', '💯', '😱', '🤩', '😡', '🤔', '👏', '🙏', '💪', '🌟',
-    '⚡', '🌈', '☀️', '🌙', '⭐', '💔', '💖', '🎁', '🏆', '👑',
-    '🍕', '🍔', '☕', '🍻', '⚽', '🏀', '🎵', '📍', '✅', '❌',
+    '❤️',
+    '😂',
+    '😍',
+    '🔥',
+    '👍',
+    '🎉',
+    '😎',
+    '🥳',
+    '😭',
+    '🙌',
+    '✨',
+    '💯',
+    '😱',
+    '🤩',
+    '😡',
+    '🤔',
+    '👏',
+    '🙏',
+    '💪',
+    '🌟',
+    '⚡',
+    '🌈',
+    '☀️',
+    '🌙',
+    '⭐',
+    '💔',
+    '💖',
+    '🎁',
+    '🏆',
+    '👑',
+    '🍕',
+    '🍔',
+    '☕',
+    '🍻',
+    '⚽',
+    '🏀',
+    '🎵',
+    '📍',
+    '✅',
+    '❌',
   ];
 
   @override
@@ -238,11 +274,15 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
   /// Detect an in-progress "@token" at the cursor and show the picker.
   void _onCaptionChanged(String text) {
     final sel = _captionController.selection;
-    final cursor = (sel.baseOffset >= 0 ? sel.baseOffset : text.length)
-        .clamp(0, text.length);
+    final cursor = (sel.baseOffset >= 0 ? sel.baseOffset : text.length).clamp(
+      0,
+      text.length,
+    );
     final beforeCursor = text.substring(0, cursor);
-    final match = RegExp(r'@([\p{L}0-9_]*)$', unicode: true)
-        .firstMatch(beforeCursor);
+    final match = RegExp(
+      r'@([\p{L}0-9_]*)$',
+      unicode: true,
+    ).firstMatch(beforeCursor);
 
     if (match == null) {
       if (_showMentions) setState(() => _showMentions = false);
@@ -265,8 +305,10 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
   void _selectMention(MentionUser user) {
     final text = _captionController.text;
     final sel = _captionController.selection;
-    final cursor = (sel.baseOffset >= 0 ? sel.baseOffset : text.length)
-        .clamp(0, text.length);
+    final cursor = (sel.baseOffset >= 0 ? sel.baseOffset : text.length).clamp(
+      0,
+      text.length,
+    );
     final before = text.substring(0, cursor);
     final after = text.substring(cursor);
     final atIndex = before.lastIndexOf('@');
@@ -296,9 +338,9 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
       constraints: const BoxConstraints(maxHeight: 220),
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.85),
+        color: Colors.black.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.15)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
       ),
       child: _mentionSuggestions.isEmpty
           ? const Padding(
@@ -444,13 +486,15 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
 
       if (!mounted) return;
       setState(() {
-        _overlays.add(LocationOverlay(
-          name: name,
-          lat: pos.latitude,
-          lng: pos.longitude,
-          x: 0.5,
-          y: 0.8,
-        ));
+        _overlays.add(
+          LocationOverlay(
+            name: name,
+            lat: pos.latitude,
+            lng: pos.longitude,
+            x: 0.5,
+            y: 0.8,
+          ),
+        );
         _selectedOverlayIndex = _overlays.length - 1;
       });
     } catch (e) {
@@ -526,7 +570,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                 decoration: selected
                     ? BoxDecoration(
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           width: 1,
                         ),
                         borderRadius: BorderRadius.circular(8),
@@ -545,13 +589,14 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
 
   void _enterDrawMode() {
     // Resume from an existing drawing if present.
-    final existingIndex =
-        _overlays.indexWhere((o) => o is DrawingOverlay);
+    final existingIndex = _overlays.indexWhere((o) => o is DrawingOverlay);
     setState(() {
       _selectedOverlayIndex = null;
       _drawStrokes.clear();
       if (existingIndex >= 0) {
-        _drawStrokes.addAll((_overlays[existingIndex] as DrawingOverlay).strokes);
+        _drawStrokes.addAll(
+          (_overlays[existingIndex] as DrawingOverlay).strokes,
+        );
       }
       _isDrawing = true;
     });
@@ -601,11 +646,13 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
   void _onDrawEnd() {
     if (_currentStroke.isEmpty) return;
     setState(() {
-      _drawStrokes.add(DrawStroke(
-        color: _drawColor.value,
-        width: _drawWidth,
-        points: List.of(_currentStroke),
-      ));
+      _drawStrokes.add(
+        DrawStroke(
+          color: _drawColor.value,
+          width: _drawWidth,
+          points: List.of(_currentStroke),
+        ),
+      );
       _currentStroke = [];
     });
   }
@@ -646,8 +693,10 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
               children: [
                 TextButton(
                   onPressed: _cancelDrawing,
-                  child: const Text('Annuler',
-                      style: TextStyle(color: Colors.white, fontSize: 16)),
+                  child: const Text(
+                    'Annuler',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
                 ),
                 Row(
                   children: [
@@ -658,12 +707,14 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                     const SizedBox(width: 12),
                     TextButton(
                       onPressed: _commitDrawing,
-                      child: const Text('Terminé',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          )),
+                      child: const Text(
+                        'Terminé',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -709,10 +760,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
   }
 
   Widget _buildUserAvatar() {
-    return ReklamAvatar(
-      avatarUrl: _userAvatar,
-      radius: 12,
-    );
+    return ReklamAvatar(avatarUrl: _userAvatar, radius: 12);
   }
 
   void _startTextEditing() {
@@ -762,7 +810,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
         _textColor == Colors.yellow ||
         _textColor == Colors.lime ||
         _textColor == Colors.cyan) {
-      return Colors.black.withOpacity(0.4);
+      return Colors.black.withValues(alpha: 0.4);
     }
     return Colors.white;
   }
@@ -866,7 +914,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
           // Play/Pause Button Overlay
           if (_showVideoControls)
             Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               child: Center(
                 child: GestureDetector(
                   onTap: _togglePlayPause,
@@ -874,7 +922,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -982,7 +1030,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
               child: GestureDetector(
                 onTap: _finishTextEditing,
                 child: Container(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   child: Center(
                     child: GestureDetector(
                       onTap: () {},
@@ -1016,7 +1064,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                               hintText: 'Ajouter du texte',
                               hintStyle: TextStyle(
                                 color: _overlayText.isEmpty
-                                    ? Colors.white.withOpacity(0.5)
+                                    ? Colors.white.withValues(alpha: 0.5)
                                     : _textColor,
                                 fontSize: 24,
                               ),
@@ -1162,7 +1210,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                     );
                   }
                 },
-                child: Container(
+                child: SizedBox(
                   key: _colorBarKey,
                   width: 10,
                   child: Column(
@@ -1215,7 +1263,10 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                   gradient: LinearGradient(
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
-                    colors: [Colors.black.withOpacity(0.8), Colors.transparent],
+                    colors: [
+                      Colors.black.withValues(alpha: 0.8),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
                 child: Column(
@@ -1248,7 +1299,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -1273,7 +1324,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                         //     vertical: 6,
                         //   ),
                         //   decoration: BoxDecoration(
-                        //     color: Colors.white.withOpacity(0.15),
+                        //     color: Colors.white.withValues(alpha: 0.15),
                         //     borderRadius: BorderRadius.circular(20),
                         //   ),
                         //   child: Row(
@@ -1427,12 +1478,12 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? Colors.white
-                              : Colors.black.withOpacity(0.6),
+                              : Colors.black.withValues(alpha: 0.6),
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: isSelected
                                 ? Colors.white
-                                : Colors.white.withOpacity(0.3),
+                                : Colors.white.withValues(alpha: 0.3),
                             width: isSelected ? 0 : 1,
                           ),
                         ),
@@ -1473,7 +1524,7 @@ class _StoryEditorScreenState extends State<StoryEditorScreen> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.3),
+          color: Colors.black.withValues(alpha: 0.3),
           shape: BoxShape.circle,
         ),
         child: Center(

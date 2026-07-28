@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/utils/avatar_resolver.dart';
 
 class ReklamAvatar extends StatelessWidget {
   final String? avatarUrl;
@@ -26,11 +27,7 @@ class ReklamAvatar extends StatelessWidget {
   });
 
   bool get _hasValidAvatar {
-    if (avatarUrl == null || avatarUrl!.isEmpty) return false;
-    final url = avatarUrl!;
-    if (url == 'null') return false;
-    if (url == 'assets/images/dashboard_particulier/Ellipse 10.png') return false;
-    return true;
+    return AvatarResolver.resolve(avatarUrl) != null;
   }
 
   String? get _initial {
@@ -39,7 +36,7 @@ class ReklamAvatar extends StatelessWidget {
   }
 
   ImageProvider _buildImageProvider() {
-    final url = avatarUrl!;
+    final url = AvatarResolver.resolve(avatarUrl)!;
     if (url.startsWith('http')) {
       return NetworkImage(url);
     }
@@ -50,7 +47,9 @@ class ReklamAvatar extends StatelessWidget {
     if (resolved != null && resolved.isNotEmpty) {
       return NetworkImage(resolved);
     }
-    return const AssetImage('assets/images/dashboard_particulier/Ellipse 10.png');
+    return const AssetImage(
+      'assets/images/dashboard_particulier/Ellipse 10.png',
+    );
   }
 
   Color _defaultBackgroundColor() {
@@ -111,18 +110,29 @@ class ReklamAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatarWidget = CircleAvatar(
-      radius: radius,
-      backgroundColor: _hasValidAvatar ? Colors.grey[300] : _defaultBackgroundColor(),
-      backgroundImage: _hasValidAvatar ? _buildImageProvider() : null,
-      child: _hasValidAvatar ? null : _buildFallbackContent(),
+    final fallback = Center(child: _buildFallbackContent());
+    final avatarWidget = Container(
+      width: radius * 2,
+      height: radius * 2,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: _defaultBackgroundColor(),
+        border: border,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: _hasValidAvatar
+          ? Image(
+              image: _buildImageProvider(),
+              fit: BoxFit.cover,
+              width: radius * 2,
+              height: radius * 2,
+              errorBuilder: (_, __, ___) => fallback,
+            )
+          : fallback,
     );
 
     if (onTap != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: avatarWidget,
-      );
+      return GestureDetector(onTap: onTap, child: avatarWidget);
     }
 
     return avatarWidget;

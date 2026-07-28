@@ -50,8 +50,9 @@ class DelegationService {
 
   /// Look up an existing user by email to add as a manager.
   Future<UserSearchResult> searchUser(String email) async {
-    final res = await _api
-        .authenticatedGet('/delegations/search-user?email=${Uri.encodeComponent(email)}');
+    final res = await _api.authenticatedGet(
+      '/delegations/search-user?email=${Uri.encodeComponent(email)}',
+    );
     return UserSearchResult(
       user: DelegationUser.fromJson(Map<String, dynamic>.from(res['data'])),
       alreadyAdded: res['already_added'] == true,
@@ -64,11 +65,14 @@ class DelegationService {
     required List<String> permissions,
     String? paymentIntentId,
   }) async {
-    final res = await _api.authenticatedPost('/delegations', body: {
-      'manager_id': managerId,
-      'permissions': permissions,
-      if (paymentIntentId != null) 'payment_intent_id': paymentIntentId,
-    });
+    final res = await _api.authenticatedPost(
+      '/delegations',
+      body: {
+        'manager_id': managerId,
+        'permissions': permissions,
+        if (paymentIntentId != null) 'payment_intent_id': paymentIntentId,
+      },
+    );
     return Delegation.fromJson(Map<String, dynamic>.from(res['data']));
   }
 

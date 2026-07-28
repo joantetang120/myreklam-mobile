@@ -76,10 +76,10 @@ class PostContentCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.withOpacity(0.15)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -94,7 +94,7 @@ class PostContentCard extends StatelessWidget {
             child: Row(
               children: [
                 if (subtags != null) _buildTag(subtags!),
-                ...tags.map((tag) => _buildTag(tag)).toList(),
+                ...tags.map((tag) => _buildTag(tag)),
               ],
             ),
           ),
@@ -115,7 +115,7 @@ class PostContentCard extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           // Divider
-          Container(height: 1, color: Colors.grey.withOpacity(0.1)),
+          Container(height: 1, color: Colors.grey.withValues(alpha: 0.1)),
           // Footer
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -280,9 +280,9 @@ class PostContentCard extends StatelessWidget {
       margin: const EdgeInsets.only(right: 10),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: tag.color.withOpacity(0.1),
+        color: tag.color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: tag.color.withOpacity(0.3)),
+        border: Border.all(color: tag.color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -379,7 +379,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
           Center(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

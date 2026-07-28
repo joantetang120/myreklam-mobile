@@ -143,7 +143,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   }
 
   void _handleTypeChanged(String? newType) {
-    print("_handleTypeChanged $newType");
+    debugPrint("_handleTypeChanged $newType");
     setState(() {
       _selectedType = newType;
       if (_isFreeType) {
@@ -168,12 +168,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     if (data['location_search'] != null) {
       _selectedLocation = LocationData(
         address: data['location_search']?.toString() ?? '',
-        latitude: data['location_lat'] != null 
-          ? double.tryParse(data['location_lat'].toString()) 
-          : null,
-        longitude: data['location_lng'] != null 
-          ? double.tryParse(data['location_lng'].toString()) 
-          : null,
+        latitude: data['location_lat'] != null
+            ? double.tryParse(data['location_lat'].toString())
+            : null,
+        longitude: data['location_lng'] != null
+            ? double.tryParse(data['location_lng'].toString())
+            : null,
         city: data['location_city']?.toString(),
         postalCode: data['location_postal_code']?.toString(),
       );
@@ -211,16 +211,18 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     // Price fields
     final prixAvant = data['prix_avant_reduction'];
     final prixFinal = data['prix_final'];
-    if (prixAvant != null)
+    if (prixAvant != null) {
       _prixAvantReductionController.text = prixAvant.toString();
+    }
     if (prixFinal != null) _prixFinalController.text = prixFinal.toString();
     _discountMode = data['discount_type']?.toString() ?? 'percent';
 
     // Shipping fields
     _shippingOption = data['shipping_option']?.toString() ?? 'free';
     final shippingCost = data['shipping_cost'];
-    if (shippingCost != null)
+    if (shippingCost != null) {
       _shippingCostController.text = shippingCost.toString();
+    }
 
     // Load existing media URLs
     final mediaFiles =
@@ -575,7 +577,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
               ),
               child: Center(
                 child: Text(
@@ -672,7 +674,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: TextField(
         controller: controller,
@@ -767,23 +769,13 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         ..headers['Accept'] = 'application/json';
 
       for (final file in _selectedMediaFiles) {
-        if (file.path != null) {
-          request.files.add(
-            await http.MultipartFile.fromPath(
-              'files[]',
-              file.path!,
-              filename: file.name,
-            ),
-          );
-        } else if (file.bytes != null) {
-          request.files.add(
-            http.MultipartFile.fromBytes(
-              'files[]',
-              file.bytes!,
-              filename: file.name ?? 'media',
-            ),
-          );
-        }
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'files[]',
+            file.path,
+            filename: file.name,
+          ),
+        );
       }
 
       final streamedResponse = await request.send();
@@ -852,9 +844,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         _categorySubCategories = updatedSubCategories;
         _categories = updatedCategories;
         _types = _toStringList(typesRaw);
-        print("_types: $_types");
+        debugPrint("_types: $_types");
         _locationOptions = _toStringList(locationsRaw);
-        print("_locationOptions: $_locationOptions");
+        debugPrint("_locationOptions: $_locationOptions");
         _availableSubCategories = newAvailableSubCategories;
 
         if (!hasValidSelectedCategory) {
@@ -1177,7 +1169,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           return 'Veuillez entrer le code promo.';
         }
         if (!_isOnlineOnly) {
-          print(
+          debugPrint(
             'DEBUG STEP4: _isOnlineOnly = $_isOnlineOnly, validating location and pickup...',
           );
           if (_selectedLocation == null && !_touteFrance) {
@@ -1189,7 +1181,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             return 'Sélectionnez au moins un moyen de retrait.';
           }
         } else {
-          print(
+          debugPrint(
             'DEBUG STEP4: _isOnlineOnly = $_isOnlineOnly, skipping location/pickup validation',
           );
         }
@@ -1335,8 +1327,8 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       final bonPlanId = bonPlanData['id']?.toString() ?? widget.bonPlanId;
 
       bool mediaSuccess = true;
-      if (_selectedMediaFiles.isNotEmpty && bonPlanId != null) {
-        mediaSuccess = await _uploadMediaFiles(bonPlanId);
+      if (_selectedMediaFiles.isNotEmpty) {
+        mediaSuccess = bonPlanId != null && await _uploadMediaFiles(bonPlanId);
       }
 
       if (!mounted) return;
@@ -1345,7 +1337,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         _showSnack(
           _isEditMode
               ? 'Bon plan modifié mais l\'upload des médias a échoué.'
-              : 'Bon plan créé mais l\'upload des médias a échoué. Réessayez depuis vos brouillons.',
+              : 'Bon plan créé mais l\'upload des médias a échoué.',
           isError: true,
         );
       }
@@ -1378,8 +1370,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       }
 
       // Show success dialog and reward modal
-      await _showSuccessDialog(withMysReward: !_isEditMode);
-
+      await _showSuccessDialog(
+        withMysReward: !_isEditMode,
+        mediaSuccess: mediaSuccess,
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       _showSnack(e.firstError, isError: true);
@@ -1396,7 +1390,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     }
   }
 
-  Future<void> _showSuccessDialog({bool withMysReward = false}) async {
+  Future<void> _showSuccessDialog({
+    bool withMysReward = false,
+    bool mediaSuccess = true,
+  }) async {
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -1430,13 +1427,15 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                _isEditMode
-                    ? 'Votre bon plan a été mis à jour avec succès'
-                    : 'Bon plan publié avec succès',
+                mediaSuccess
+                    ? (_isEditMode
+                          ? 'Votre bon plan a été mis à jour avec succès'
+                          : 'Bon plan publié avec succès')
+                    : 'Le bon plan est enregistré, mais certaines images n\'ont pas été envoyées.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: mediaSuccess ? Colors.grey[600] : Colors.red[700],
                   height: 1.4,
                 ),
               ),
@@ -1449,11 +1448,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
     // Show Mys reward modal if needed (before popping screen so context is valid)
     if (withMysReward && mounted) {
-      await MysRewardModal.show(
-        context,
-        amount: 2,
-        actionType: 'bon_plan',
-      );
+      await MysRewardModal.show(context, amount: 2, actionType: 'bon_plan');
     }
 
     // Pop the creation screen after dialog is closed
@@ -1546,7 +1541,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
   Future<void> _pickMedia() async {
     try {
-      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      final files = await GalleryPicker.pickImagesFromGallery(
+        allowMultiple: true,
+      );
       if (files == null || files.isEmpty) return;
       setState(() {
         _selectedMediaFiles.addAll(files);
@@ -1584,7 +1581,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
@@ -1722,7 +1719,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: Colors.grey.withOpacity(0.3),
+                            color: Colors.grey.withValues(alpha: 0.3),
                           ),
                         ),
                         child: const Text(
@@ -1915,7 +1912,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withOpacity(0.1),
+                color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -1947,7 +1944,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -2001,7 +1998,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -2028,7 +2025,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -2097,7 +2094,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -2437,7 +2434,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                               });
                             }
                           : null,
-                      activeColor: const Color(0xFF3AAE5E),
+                      activeThumbColor: const Color(0xFF3AAE5E),
                     ),
                   ],
                 ),
@@ -2470,7 +2467,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                       value: _afficherGoogleLocation,
                       onChanged: (val) =>
                           setState(() => _afficherGoogleLocation = val),
-                      activeColor: const Color(0xFF3AAE5E),
+                      activeThumbColor: const Color(0xFF3AAE5E),
                     ),
                   ],
                 ),
@@ -2581,7 +2578,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFF9FAFB),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    border: Border.all(
+                      color: Colors.grey.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: TextField(
                     controller: _shippingCostController,
@@ -2888,10 +2887,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               ),
             ],
             if (!_isOnlineOnly && !_touteFrance) ...[
-              _buildReviewRow(
-                'Lieu',
-                _selectedLocation?.address ?? '-',
-              ),
+              _buildReviewRow('Lieu', _selectedLocation?.address ?? '-'),
             ],
             _buildReviewRow('Toute la France', _touteFrance ? 'Oui' : 'Non'),
             _buildReviewRow(
@@ -3065,7 +3061,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.grey.withOpacity(0.3),
+          color: Colors.grey.withValues(alpha: 0.3),
           style: BorderStyle.solid,
           width: 1.5,
         ),
@@ -3078,7 +3074,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             height: 50,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
             ),
             child: Icon(Icons.cloud_upload_outlined, color: color, size: 28),
           ),
@@ -3138,10 +3134,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -3206,10 +3202,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       decoration: BoxDecoration(
         color: backgroundColor ?? Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         hint:
             hint ??
             Text(
@@ -3266,7 +3262,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFE8F5E9),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.3)),
+        border: Border.all(
+          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3310,7 +3308,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
           ),
           child: TextField(
             controller: controller,
@@ -3373,7 +3371,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3489,7 +3487,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.withOpacity(0.15)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3560,11 +3558,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               border: Border.all(
                 color: isSelected
                     ? const Color(0xFF3AAE5E)
-                    : Colors.grey.withOpacity(0.4),
+                    : Colors.grey.withValues(alpha: 0.4),
                 width: 1.5,
               ),
               color: isSelected
-                  ? const Color(0xFF3AAE5E).withOpacity(0.1)
+                  ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
                   : Colors.transparent,
             ),
             child: isSelected

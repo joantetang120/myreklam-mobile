@@ -249,7 +249,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               shape: BoxShape.circle,
                               color: const Color(0xFF1B8D4B),
                               border: Border.all(
-                                color: const Color(0xFF1B8D4B).withOpacity(0.2),
+                                color: const Color(
+                                  0xFF1B8D4B,
+                                ).withValues(alpha: 0.2),
                                 width: 4,
                               ),
                             ),

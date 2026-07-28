@@ -51,7 +51,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
               child: CircularProgressIndicator(
                 value: loadingProgress.expectedTotalBytes != null
                     ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
+                          loadingProgress.expectedTotalBytes!
                     : null,
                 strokeWidth: 2,
                 color: Colors.white,
@@ -113,9 +113,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          border: isSelected
-              ? Border.all(color: Colors.white, width: 2)
-              : null,
+          border: isSelected ? Border.all(color: Colors.white, width: 2) : null,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
@@ -125,7 +123,10 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: Colors.grey[800],
-                    child: const Icon(Icons.broken_image, color: Colors.white54),
+                    child: const Icon(
+                      Icons.broken_image,
+                      color: Colors.white54,
+                    ),
                   ),
                 )
               : Image.asset(
@@ -133,7 +134,10 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: Colors.grey[800],
-                    child: const Icon(Icons.broken_image, color: Colors.white54),
+                    child: const Icon(
+                      Icons.broken_image,
+                      color: Colors.white54,
+                    ),
                   ),
                 ),
         ),
@@ -191,7 +195,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(

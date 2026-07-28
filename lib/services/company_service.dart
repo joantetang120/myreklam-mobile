@@ -28,18 +28,22 @@ class CompanyService {
   /// Search existing companies (pro accounts) by name.
   Future<List<CompanyResult>> search(String query) async {
     if (query.trim().length < 2) return [];
-    final res = await _api
-        .authenticatedGet('/companies/search?q=${Uri.encodeComponent(query.trim())}');
+    final res = await _api.authenticatedGet(
+      '/companies/search?q=${Uri.encodeComponent(query.trim())}',
+    );
     return (res['data'] as List? ?? [])
         .map((e) => CompanyResult.fromJson(Map<String, dynamic>.from(e)))
         .toList();
   }
 
   /// Invite a company not yet on Myreklam (sends an email invitation).
-  Future<void> invite({required String companyName, required String email}) async {
-    await _api.authenticatedPost('/companies/invite', body: {
-      'company_name': companyName,
-      'email': email,
-    });
+  Future<void> invite({
+    required String companyName,
+    required String email,
+  }) async {
+    await _api.authenticatedPost(
+      '/companies/invite',
+      body: {'company_name': companyName, 'email': email},
+    );
   }
 }

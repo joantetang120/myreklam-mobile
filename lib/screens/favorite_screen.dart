@@ -30,7 +30,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   String selectedCategory = 'Bons plans';
 
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  final String _searchQuery = '';
 
   String? _currentUserId;
 
@@ -541,7 +541,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                         CategoriesIcon(
                           title: "Bons plans",
                           iconColor: const Color.fromARGB(255, 252, 116, 37),
-                          bgColor: Color(0xFFFFE0B2).withOpacity(0.2),
+                          bgColor: Color(0xFFFFE0B2).withValues(alpha: 0.2),
                           icon: Icons.card_giftcard_outlined,
                           onTap: () =>
                               setState(() => selectedCategory = "Bons plans"),
@@ -550,7 +550,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                         CategoriesIcon(
                           title: "Offre d'emploi",
                           iconColor: Colors.lightBlueAccent,
-                          bgColor: Color(0xFFB3E5FC).withOpacity(0.2),
+                          bgColor: Color(0xFFB3E5FC).withValues(alpha: 0.2),
                           iconAsset: 'assets/images/offres.png',
                           onTap: () => setState(
                             () => selectedCategory = "Offre d'emploi",
@@ -560,7 +560,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                         CategoriesIcon(
                           title: "Formations",
                           iconColor: Colors.purple,
-                          bgColor: Color(0xFFE1BEE7).withOpacity(0.1),
+                          bgColor: Color(0xFFE1BEE7).withValues(alpha: 0.1),
                           iconAsset: 'assets/images/Formation.png',
                           onTap: () =>
                               setState(() => selectedCategory = "Formations"),
@@ -569,7 +569,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                         CategoriesIcon(
                           title: "Evenements",
                           iconColor: Colors.green,
-                          bgColor: Color(0xFFE6F7EF).withOpacity(0.5),
+                          bgColor: Color(0xFFE6F7EF).withValues(alpha: 0.5),
                           icon: Icons.event_outlined,
                           onTap: () =>
                               setState(() => selectedCategory = "Evenements"),
@@ -583,7 +583,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                             255,
                             250,
                             178,
-                          ).withOpacity(0.2),
+                          ).withValues(alpha: 0.2),
                           icon: Icons.chat_outlined,
                           onTap: () =>
                               setState(() => selectedCategory = "Demandes"),
@@ -606,8 +606,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
   Widget _buildContent() {
     if (selectedCategory == 'Bons plans') return _buildFavorisBonPlansList();
-    if (selectedCategory == "Offre d'emploi")
+    if (selectedCategory == "Offre d'emploi") {
       return _buildFavorisJobOffersList();
+    }
     if (selectedCategory == 'Formations') return _buildFavorisTrainingsList();
     if (selectedCategory == 'Evenements') return _buildFavorisEventsList();
     if (selectedCategory == 'Demandes') return _buildFavorisDemandesList();
@@ -711,11 +712,11 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       onTapCTA: () => _navigateToDemandeDetail(d),
       onReport: canReportResource(d)
           ? () => showAnnouncementReportDialog(
-                context: context,
-                entityType: 'demandes',
-                entityId: d['id']?.toString() ?? '',
-                title: title,
-              )
+              context: context,
+              entityType: 'demandes',
+              entityId: d['id']?.toString() ?? '',
+              title: title,
+            )
           : null,
     );
   }
@@ -740,7 +741,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         '/demandes/$demandeId',
       );
 
-      print("Response: ${response['data']['user']}");
+      debugPrint("Response: ${response['data']['user']}");
 
       if (!mounted) return;
       Navigator.pop(context);
@@ -933,21 +934,21 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
     final trId = tr['id']?.toString() ?? '';
 
-    print("Traing: $trId");
+    debugPrint("Traing: $trId");
 
     // Check initial favorite status
     final bool isFavorited = tr['is_favorited'];
 
-    bool _isFavorited = isFavorited;
-    bool _isLoading = false;
+    bool isFavorited0 = isFavorited;
+    bool isLoading = false;
 
-    Future<void> _toggleFavorite() async {
-      if (_isLoading || trId.isEmpty) return;
+    Future<void> toggleFavorite() async {
+      if (isLoading || trId.isEmpty) return;
 
-      setState(() => _isLoading = true);
+      setState(() => isLoading = true);
 
       try {
-        if (_isFavorited) {
+        if (isFavorited0) {
           // Remove from favorites
           await ApiClient().authenticatedDelete('/trainings/$trId/favorite');
           _loadFavorisTrainings();
@@ -958,15 +959,15 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         }
 
         setState(() {
-          _isFavorited = !_isFavorited;
-          _isLoading = false;
+          isFavorited0 = !isFavorited0;
+          isLoading = false;
         });
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                isFavorited0 ? 'Ajouté aux favoris' : 'Retiré des favoris',
                 style: TextStyle(color: Colors.white),
               ),
               duration: const Duration(seconds: 2),
@@ -976,7 +977,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         }
       } catch (e) {
         debugPrint('Favorite toggle error: $e');
-        setState(() => _isLoading = false);
+        setState(() => isLoading = false);
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1000,14 +1001,14 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
       onApply: () => _navigateToTrainingDetail(tr),
       isFavorited: isFavorited,
-      onFavoriteToggle: _toggleFavorite,
+      onFavoriteToggle: toggleFavorite,
       onReport: canReportResource(tr)
           ? () => showAnnouncementReportDialog(
-                context: context,
-                entityType: 'trainings',
-                entityId: tr['id']?.toString() ?? '',
-                title: title,
-              )
+              context: context,
+              entityType: 'trainings',
+              entityId: tr['id']?.toString() ?? '',
+              title: title,
+            )
           : null,
     );
   }
@@ -1083,8 +1084,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           : <String>[];
       final documentFilesRaw = data['document_files'] as List? ?? [];
       final documents = documentFilesRaw
-          .where((d) => d is Map)
-          .map((d) => Map<String, dynamic>.from(d as Map))
+          .whereType<Map>()
+          .map((d) => Map<String, dynamic>.from(d))
           .toList();
       final createdAt = data['created_at']?.toString();
       final mediaFiles =
@@ -1315,16 +1316,16 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
     final bool isFavorited = ev['is_favorited'];
 
-    bool _isFavorited = isFavorited;
-    bool _isLoading = false;
+    bool isFavorited0 = isFavorited;
+    bool isLoading = false;
 
-    Future<void> _toggleFavorite() async {
-      if (_isLoading || evId.isEmpty) return;
+    Future<void> toggleFavorite() async {
+      if (isLoading || evId.isEmpty) return;
 
-      setState(() => _isLoading = true);
+      setState(() => isLoading = true);
 
       try {
-        if (_isFavorited) {
+        if (isFavorited0) {
           // Remove from favorites
           await ApiClient().authenticatedDelete('/events/$evId/favorite');
           _loadFavorisEvents();
@@ -1335,15 +1336,15 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         }
 
         setState(() {
-          _isFavorited = !_isFavorited;
-          _isLoading = false;
+          isFavorited0 = !isFavorited0;
+          isLoading = false;
         });
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                isFavorited0 ? 'Ajouté aux favoris' : 'Retiré des favoris',
                 style: TextStyle(color: Colors.white),
               ),
               duration: const Duration(seconds: 2),
@@ -1353,7 +1354,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         }
       } catch (e) {
         debugPrint('Favorite toggle error: $e');
-        setState(() => _isLoading = false);
+        setState(() => isLoading = false);
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1384,14 +1385,14 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       commentsCount: 0,
       onTapCTA: () => _navigateToEventDetail(ev),
       isFavorite: isFavorited,
-      onFavoriteToggle: _toggleFavorite,
+      onFavoriteToggle: toggleFavorite,
       onReport: canReportResource(ev)
           ? () => showAnnouncementReportDialog(
-                context: context,
-                entityType: 'events',
-                entityId: ev['id']?.toString() ?? '',
-                title: title,
-              )
+              context: context,
+              entityType: 'events',
+              entityId: ev['id']?.toString() ?? '',
+              title: title,
+            )
           : null,
     );
   }
@@ -1561,7 +1562,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1588,10 +1589,10 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: _statusColor(status).withOpacity(0.1),
+                  color: _statusColor(status).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: _statusColor(status).withOpacity(0.5),
+                    color: _statusColor(status).withValues(alpha: 0.5),
                   ),
                 ),
                 child: Text(
@@ -1825,16 +1826,16 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     // Check initial favorite status
     final bool isFavorited = jo['is_favorited'];
 
-    bool _isFavorited = isFavorited;
-    bool _isLoading = false;
+    bool isFavorited0 = isFavorited;
+    bool isLoading = false;
 
-    Future<void> _toggleFavorite() async {
-      if (_isLoading || jobId.isEmpty) return;
+    Future<void> toggleFavorite() async {
+      if (isLoading || jobId.isEmpty) return;
 
-      setState(() => _isLoading = true);
+      setState(() => isLoading = true);
 
       try {
-        if (_isFavorited) {
+        if (isFavorited0) {
           // Remove from favorites
           await ApiClient().authenticatedDelete('/job-offers/$jobId/favorite');
           _loadFavorisJobOffers();
@@ -1845,15 +1846,15 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         }
 
         setState(() {
-          _isFavorited = !_isFavorited;
-          _isLoading = false;
+          isFavorited0 = !isFavorited0;
+          isLoading = false;
         });
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                _isFavorited ? 'Ajouté aux favoris' : 'Retiré des favoris',
+                isFavorited0 ? 'Ajouté aux favoris' : 'Retiré des favoris',
                 style: TextStyle(color: Colors.white),
               ),
               duration: const Duration(seconds: 2),
@@ -1863,7 +1864,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         }
       } catch (e) {
         debugPrint('Favorite toggle error: $e');
-        setState(() => _isLoading = false);
+        setState(() => isLoading = false);
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1885,15 +1886,15 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       advantages: advantagesList,
       timeAgo: createdAt != null ? _timeAgo(createdAt) : '',
       onApply: () => _navigateToJobOfferDetail(jo),
-      isFavorited: _isFavorited,
-      onFavoriteToggle: _toggleFavorite,
+      isFavorited: isFavorited0,
+      onFavoriteToggle: toggleFavorite,
       onReport: canReportResource(jo)
           ? () => showAnnouncementReportDialog(
-                context: context,
-                entityType: 'job-offers',
-                entityId: jo['id']?.toString() ?? '',
-                title: title,
-              )
+              context: context,
+              entityType: 'job-offers',
+              entityId: jo['id']?.toString() ?? '',
+              title: title,
+            )
           : null,
     );
   }
@@ -1987,10 +1988,6 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           .map((m) => _buildImageUrl(m['url']?.toString() ?? ''))
           .where((url) => url.isNotEmpty)
           .toList();
-
-      if (images.isEmpty) {
-        images.add('assets/images/dashboard_particulier/Rectangle 13.png');
-      }
 
       final tags = <JobDetailTag>[
         if (contractType.isNotEmpty)
@@ -2221,11 +2218,11 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
   String _formatSalary(dynamic min, dynamic max) {
     if (min != null && max != null) {
-      return '${min}€ - ${max}€';
+      return '$min€ - $max€';
     } else if (min != null) {
-      return 'À partir de ${min}€';
+      return 'À partir de $min€';
     } else if (max != null) {
-      return 'Jusqu\'à ${max}€';
+      return 'Jusqu\'à $max€';
     }
     return 'Salaire non spécifié';
   }
@@ -2236,7 +2233,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -86,16 +86,18 @@ class _FollowersScreenState extends State<FollowersScreen>
     final part = data['particulier_profile'] as Map?;
 
     if (part != null) return part['pseudo']?.toString() ?? 'Utilisateur';
-    if (pro != null)
+    if (pro != null) {
       return pro['company_name']?.toString() ??
           '${pro['first_name'] ?? ''} ${pro['last_name'] ?? ''}'.trim();
+    }
 
     return data['name']?.toString() ?? 'Utilisateur';
   }
 
   String _extractAvatar(Map<String, dynamic>? data) {
-    if (data == null)
+    if (data == null) {
       return 'assets/images/dashboard_particulier/Ellipse 10.png';
+    }
     final pro = data['pro_profile'] as Map?;
     final part = data['particulier_profile'] as Map?;
 
@@ -315,7 +317,7 @@ class _FollowersScreenState extends State<FollowersScreen>
             style: OutlinedButton.styleFrom(
               backgroundColor: isFollowing
                   ? Colors.transparent
-                  : const Color(0xFF04BC7B).withOpacity(0.1),
+                  : const Color(0xFF04BC7B).withValues(alpha: 0.1),
               foregroundColor: const Color(0xFF2E9B5B),
               side: const BorderSide(color: Color(0xFF2E9B5B)),
               padding: const EdgeInsets.symmetric(horizontal: 10),

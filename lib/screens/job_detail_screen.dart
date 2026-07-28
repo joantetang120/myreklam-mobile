@@ -29,6 +29,7 @@ import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/services/conversation_service.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/utils/comment_sanitizer.dart';
 import 'package:myreklam/utils/subscription_helper.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
 // Bouton partager masqué
@@ -76,10 +77,7 @@ class JobDetailScreen extends StatefulWidget {
 
   const JobDetailScreen({
     super.key,
-    this.images = const [
-      'assets/images/dashboard_particulier/Rectangle 13.png',
-      'assets/images/dashboard_particulier/Rectangle 13.png',
-    ],
+    this.images = const [],
     required this.companyLogo,
     required this.companyName,
     this.companyWebsite = '',
@@ -118,7 +116,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   bool _isFavorite = false;
   bool _isLoadingFavorite = false;
   bool _hasApplied = false;
-  bool _isLoadingApply = false;
+  final bool _isLoadingApply = false;
   List<Map<String, dynamic>> _comments = [];
   int? _localCommentsCount;
   bool _isLoadingComments = false;
@@ -130,7 +128,6 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   bool get _canEdit {
     return widget.isOwner;
   }
-
 
   @override
   void initState() {
@@ -186,6 +183,11 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       } else if (data is Map && data['data'] is List) {
         fetched = List<Map<String, dynamic>>.from(data['data']);
       }
+      fetched = CommentSanitizer.forEntity(
+        fetched,
+        entityId: widget.jobOfferId!,
+        entityCreatedAt: widget.jobOfferData?['created_at'],
+      );
 
       if (!mounted) return;
       setState(() {
@@ -352,8 +354,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               );
               if (newText == null ||
                   newText.trim().isEmpty ||
-                  newText == currentBody)
+                  newText == currentBody) {
                 return;
+              }
               try {
                 final response = await ApiClient().authenticatedPut(
                   '/comments/$commentId',
@@ -465,7 +468,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom,
+                bottom:
+                    MediaQuery.of(ctx).viewInsets.bottom +
+                    MediaQuery.of(ctx).padding.bottom,
               ),
               child: SizedBox(
                 height: MediaQuery.of(ctx).size.height * 0.85,
@@ -686,147 +691,148 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     final idInt = id is int ? id : int.tryParse(id?.toString() ?? '');
 
     return reportableCommentGesture(
-                context: context,
-                comment: comment,
-                currentUserId: _currentUserId,
-                child: Padding(
-      padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ReklamAvatar(
-                avatarUrl: avatarUrl,
-                displayName: displayName,
-                radius: isReply ? 14 : 18,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          displayName,
-                          style: TextStyle(
-                            fontSize: isReply ? 12 : 13,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF333333),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          timeAgo,
-                          style: TextStyle(
-                            fontSize: isReply ? 10 : 11,
-                            color: Colors.grey[500],
-                          ),
-                        ),
-                        if (isOwner &&
-                            (onEdit != null || onDelete != null)) ...[
-                          const Spacer(),
-                          GestureDetector(
-                            onTapDown: (TapDownDetails details) {
-                              showMenu<String>(
-                                context: context,
-                                position: RelativeRect.fromLTRB(
-                                  details.globalPosition.dx,
-                                  details.globalPosition.dy,
-                                  details.globalPosition.dx,
-                                  details.globalPosition.dy,
-                                ),
-                                items: [
-                                  const PopupMenuItem(
-                                    value: 'edit',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.edit, size: 18),
-                                        SizedBox(width: 8),
-                                        Text('Modifier'),
-                                      ],
-                                    ),
-                                  ),
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.delete,
-                                          size: 18,
-                                          color: Colors.redAccent,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Supprimer',
-                                          style: TextStyle(
-                                            color: Colors.redAccent,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ).then((value) {
-                                if (value == 'edit')
-                                  onEdit?.call(comment);
-                                else if (value == 'delete')
-                                  onDelete?.call(comment, isReply);
-                              });
-                            },
-                            child: Icon(
-                              Icons.more_horiz,
-                              size: 18,
-                              color: Colors.grey[400],
+      context: context,
+      comment: comment,
+      currentUserId: _currentUserId,
+      child: Padding(
+        padding: EdgeInsets.only(left: isReply ? 32.0 : 0, bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ReklamAvatar(
+                  avatarUrl: avatarUrl,
+                  displayName: displayName,
+                  radius: isReply ? 14 : 18,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            displayName,
+                            style: TextStyle(
+                              fontSize: isReply ? 12 : 13,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF333333),
                             ),
                           ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      body,
-                      style: TextStyle(
-                        fontSize: isReply ? 12 : 13,
-                        color: Colors.grey[700],
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    if (!isReply && idInt != null && onReply != null)
-                      GestureDetector(
-                        onTap: () => onReply(idInt, displayName),
-                        child: Text(
-                          'Répondre',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(width: 6),
+                          Text(
+                            timeAgo,
+                            style: TextStyle(
+                              fontSize: isReply ? 10 : 11,
+                              color: Colors.grey[500],
+                            ),
                           ),
+                          if (isOwner &&
+                              (onEdit != null || onDelete != null)) ...[
+                            const Spacer(),
+                            GestureDetector(
+                              onTapDown: (TapDownDetails details) {
+                                showMenu<String>(
+                                  context: context,
+                                  position: RelativeRect.fromLTRB(
+                                    details.globalPosition.dx,
+                                    details.globalPosition.dy,
+                                    details.globalPosition.dx,
+                                    details.globalPosition.dy,
+                                  ),
+                                  items: [
+                                    const PopupMenuItem(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('Modifier'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.delete,
+                                            size: 18,
+                                            color: Colors.redAccent,
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Supprimer',
+                                            style: TextStyle(
+                                              color: Colors.redAccent,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ).then((value) {
+                                  if (value == 'edit') {
+                                    onEdit?.call(comment);
+                                  } else if (value == 'delete')
+                                    onDelete?.call(comment, isReply);
+                                });
+                              },
+                              child: Icon(
+                                Icons.more_horiz,
+                                size: 18,
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        body,
+                        style: TextStyle(
+                          fontSize: isReply ? 12 : 13,
+                          color: Colors.grey[700],
+                          height: 1.4,
                         ),
                       ),
-                  ],
+                      const SizedBox(height: 6),
+                      if (!isReply && idInt != null && onReply != null)
+                        GestureDetector(
+                          onTap: () => onReply(idInt, displayName),
+                          child: Text(
+                            'Répondre',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (!isReply && replies.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              ...replies.map(
+                (r) => _buildCommentItem(
+                  r,
+                  isReply: true,
+                  onReply: onReply,
+                  onEdit: onEdit,
+                  onDelete: onDelete,
                 ),
               ),
             ],
-          ),
-          if (!isReply && replies.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            ...replies.map(
-              (r) => _buildCommentItem(
-                r,
-                isReply: true,
-                onReply: onReply,
-                onEdit: onEdit,
-                onDelete: onDelete,
-              ),
-            ),
           ],
-        ],
+        ),
       ),
-    ));
+    );
   }
 
   Map<String, dynamic>? _effectiveAuthorData() {
@@ -1331,8 +1337,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
               if (newText == null ||
                   newText.trim().isEmpty ||
-                  newText == currentBody)
+                  newText == currentBody) {
                 return;
+              }
 
               try {
                 final response = await ApiClient().authenticatedPut(
@@ -1471,9 +1478,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               final likes = _asInt(comment['likes_count']);
               final userReaction = comment['user_reaction']?.toString();
               final isOwner = userId != null && userId == _currentUserId;
-              print("UserId: $userId");
-              print("_currentUserId: $_currentUserId");
-              print("isOwner: $isOwner");
+              debugPrint("UserId: $userId");
+              debugPrint("_currentUserId: $_currentUserId");
+              debugPrint("isOwner: $isOwner");
               final replies =
                   (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
@@ -1494,187 +1501,193 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 comment: comment,
                 currentUserId: _currentUserId,
                 child: Padding(
-                padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ReklamAvatar(
-                          avatarUrl: avatarUrl,
-                          displayName: displayName,
-                          radius: isReply ? 14 : 18,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    displayName,
-                                    style: TextStyle(
-                                      fontSize: isReply ? 12 : 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF333333),
+                  padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ReklamAvatar(
+                            avatarUrl: avatarUrl,
+                            displayName: displayName,
+                            radius: isReply ? 14 : 18,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      displayName,
+                                      style: TextStyle(
+                                        fontSize: isReply ? 12 : 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF333333),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _buildTimeAgo(createdAt),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                  if (isOwner) ...[
-                                    const Spacer(),
-                                    GestureDetector(
-                                      onTapDown: (TapDownDetails details) {
-                                        showMenu<String>(
-                                          context: context,
-                                          position: RelativeRect.fromLTRB(
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                          ),
-                                          items: [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('Modifier'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.delete,
-                                                    size: 18,
-                                                    color: Colors.redAccent,
-                                                  ),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    'Supprimer',
-                                                    style: TextStyle(
-                                                      color: Colors.redAccent,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ).then((value) {
-                                          if (value == 'edit') {
-                                            editComment(comment);
-                                          } else if (value == 'delete') {
-                                            deleteComment(comment, isReply);
-                                          }
-                                        });
-                                      },
-                                      child: Icon(
-                                        Icons.more_horiz,
-                                        size: 18,
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _buildTimeAgo(createdAt),
+                                      style: TextStyle(
+                                        fontSize: 11,
                                         color: Colors.grey[400],
                                       ),
                                     ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                body,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF4F4F4F),
-                                  height: 1.4,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () =>
-                                        toggleCommentReaction(comment, 'like'),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          userReaction == 'like'
-                                              ? Icons.thumb_up_alt
-                                              : Icons.thumb_up_alt_outlined,
-                                          size: 14,
-                                          color: userReaction == 'like'
-                                              ? const Color(0xFF3AAE5E)
-                                              : Colors.grey[400],
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          '$likes',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (!isReply) ...[
-                                    const SizedBox(width: 14),
-                                    GestureDetector(
-                                      onTap: () {
-                                        modalSetState(() {
-                                          replyingToId = comment['id'] as int?;
-                                          replyingToName = displayName;
-                                        });
-                                        FocusScope.of(
-                                          ctx,
-                                        ).requestFocus(FocusNode());
-                                      },
-                                      child: Text(
-                                        'Répondre',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF2E9B5B),
+                                    if (isOwner) ...[
+                                      const Spacer(),
+                                      GestureDetector(
+                                        onTapDown: (TapDownDetails details) {
+                                          showMenu<String>(
+                                            context: context,
+                                            position: RelativeRect.fromLTRB(
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                            ),
+                                            items: [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit, size: 18),
+                                                    SizedBox(width: 8),
+                                                    Text('Modifier'),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete,
+                                                      size: 18,
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      'Supprimer',
+                                                      style: TextStyle(
+                                                        color: Colors.redAccent,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ).then((value) {
+                                            if (value == 'edit') {
+                                              editComment(comment);
+                                            } else if (value == 'delete') {
+                                              deleteComment(comment, isReply);
+                                            }
+                                          });
+                                        },
+                                        child: Icon(
+                                          Icons.more_horiz,
+                                          size: 18,
+                                          color: Colors.grey[400],
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  body,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF4F4F4F),
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () => toggleCommentReaction(
+                                        comment,
+                                        'like',
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            userReaction == 'like'
+                                                ? Icons.thumb_up_alt
+                                                : Icons.thumb_up_alt_outlined,
+                                            size: 14,
+                                            color: userReaction == 'like'
+                                                ? const Color(0xFF3AAE5E)
+                                                : Colors.grey[400],
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '$likes',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: userReaction == 'like'
+                                                  ? const Color(0xFF3AAE5E)
+                                                  : Colors.grey[500],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (!isReply) ...[
+                                      const SizedBox(width: 14),
+                                      GestureDetector(
+                                        onTap: () {
+                                          modalSetState(() {
+                                            replyingToId =
+                                                comment['id'] as int?;
+                                            replyingToName = displayName;
+                                          });
+                                          FocusScope.of(
+                                            ctx,
+                                          ).requestFocus(FocusNode());
+                                        },
+                                        child: Text(
+                                          'Répondre',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF2E9B5B),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Nested replies
+                      if (!isReply && replies.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ...replies.map(
+                          (r) => Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: buildCommentItem(r, isReply: true),
                           ),
                         ),
                       ],
-                    ),
-                    // Nested replies
-                    if (!isReply && replies.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      ...replies.map(
-                        (r) => Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: buildCommentItem(r, isReply: true),
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ));
+              );
             }
 
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom,
+                bottom:
+                    MediaQuery.of(ctx).viewInsets.bottom +
+                    MediaQuery.of(ctx).padding.bottom,
               ),
               child: Container(
                 constraints: BoxConstraints(
@@ -1854,13 +1867,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     );
   }
 
-  Widget _buildReactionBar(
-    String apiSlug,
-    String entityId, {
-    bool? acceptedMessages,
-    Map<String, dynamic>? authorData,
-    Map<String, dynamic>? postData,
-  }) {
+  Widget _buildReactionBar(String apiSlug, String entityId) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
     final isPost = apiSlug == 'posts';
@@ -1970,11 +1977,11 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
   String _formatJobSalary(dynamic min, dynamic max) {
     if (min != null && max != null) {
-      return '${min}€ - ${max}€';
+      return '$min€ - $max€';
     } else if (min != null) {
-      return 'À partir de ${min}€';
+      return 'À partir de $min€';
     } else if (max != null) {
-      return 'Jusqu\'à ${max}€';
+      return 'Jusqu\'à $max€';
     }
     return 'Salaire non spécifié';
   }
@@ -2115,10 +2122,6 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           .map((m) => _buildStorageUrl(m['url']?.toString() ?? '') ?? '')
           .where((url) => url.isNotEmpty)
           .toList();
-
-      if (images.isEmpty) {
-        images.add('assets/images/dashboard_particulier/Rectangle 13.png');
-      }
 
       // Build tags
       final tags = <JobDetailTag>[
@@ -2294,14 +2297,14 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
     return StatefulBuilder(
       builder: (context, setState) {
-        bool _isLoading = false;
+        bool isLoading = false;
 
-        Future<void> _toggleFavorite() async {
-          if (_isLoading || jobId.isEmpty) return;
+        Future<void> toggleFavorite() async {
+          if (isLoading || jobId.isEmpty) return;
 
           // Toggle immediately for responsive UI
           isFavoritedNotifier.value = !isFavoritedNotifier.value;
-          setState(() => _isLoading = true);
+          setState(() => isLoading = true);
 
           try {
             if (!isFavoritedNotifier.value) {
@@ -2334,7 +2337,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             }
 
             setState(() {
-              _isLoading = false;
+              isLoading = false;
             });
 
             if (context.mounted) {
@@ -2355,7 +2358,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             debugPrint('Favorite toggle error: $e');
             // Revert on error
             isFavoritedNotifier.value = !isFavoritedNotifier.value;
-            setState(() => _isLoading = false);
+            setState(() => isLoading = false);
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -2377,16 +2380,16 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           tags: tags,
           timeAgo: _buildTimeAgo(job['created_at']?.toString()),
           isFavorited: isFavoritedNotifier.value,
-          isLoadingFavorite: _isLoading,
-          onFavoriteToggle: _toggleFavorite,
+          isLoadingFavorite: isLoading,
+          onFavoriteToggle: toggleFavorite,
           onApply: () => _navigateToJobDetail(job),
           onReport: canReportResource(job)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'job-offers',
-                    entityId: jobId,
-                    title: jobTitle,
-                  )
+                  context: context,
+                  entityType: 'job-offers',
+                  entityId: jobId,
+                  title: jobTitle,
+                )
               : null,
           onAvatarTap: () {
             if (user?['id'] != null) {
@@ -2425,9 +2428,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     final period = job['salary_period']?.toString();
 
     String periodLabel = '';
-    if (period == 'horaire')
+    if (period == 'horaire') {
       periodLabel = '/h';
-    else if (period == 'mensuel')
+    } else if (period == 'mensuel')
       periodLabel = '/mois';
     else if (period == 'annuel')
       periodLabel = '/an';
@@ -2437,19 +2440,19 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         : (paymentType == 'net' ? ' net' : '');
 
     if (min != null && max != null) {
-      return '${min}€ - ${max}€$periodLabel$paymentLabel';
+      return '$min€ - $max€$periodLabel$paymentLabel';
     }
 
     if (exact != null) {
-      return '${exact}€$periodLabel$paymentLabel';
+      return '$exact€$periodLabel$paymentLabel';
     }
 
     if (min != null) {
-      return 'À partir de ${min}€$periodLabel$paymentLabel';
+      return 'À partir de $min€$periodLabel$paymentLabel';
     }
 
     if (max != null) {
-      return 'Jusqu\'à ${max}€$periodLabel$paymentLabel';
+      return 'Jusqu\'à $max€$periodLabel$paymentLabel';
     }
 
     final salaryType = job['salary_type']?.toString();
@@ -2703,7 +2706,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       }
     }
 
-    void _showApplyDialog() {
+    void showApplyDialog() {
       if (widget.jobOfferId == null) {
         ScaffoldMessenger.of(
           context,
@@ -2938,8 +2941,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 },
                 itemBuilder: (context) => [
                   if (_canEdit &&
-                      DelegationManager.instance
-                          .can(DelegationPermission.announcements))
+                      DelegationManager.instance.can(
+                        DelegationPermission.announcements,
+                      ))
                     const PopupMenuItem(
                       value: 'edit',
                       child: Row(
@@ -2954,17 +2958,23 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                         ],
                       ),
                     ),
-                  if (DelegationManager.instance
-                      .can(DelegationPermission.announcements))
+                  if (DelegationManager.instance.can(
+                    DelegationPermission.announcements,
+                  ))
                     const PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline,
-                              size: 20, color: Colors.red),
+                          Icon(
+                            Icons.delete_outline,
+                            size: 20,
+                            color: Colors.red,
+                          ),
                           SizedBox(width: 12),
-                          Text('Supprimer',
-                              style: TextStyle(color: Colors.red)),
+                          Text(
+                            'Supprimer',
+                            style: TextStyle(color: Colors.red),
+                          ),
                         ],
                       ),
                     ),
@@ -3139,7 +3149,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                       _buildDetailItem(
                         icon: Icons.school_outlined,
                         iconColor: Colors.orange,
-                        bgColor: Colors.orange.withOpacity(0.1),
+                        bgColor: Colors.orange.withValues(alpha: 0.1),
                         label: 'Niveau d\'études',
                         value: widget.educationLevel!,
                       ),
@@ -3159,7 +3169,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                       _buildDetailItem(
                         icon: Icons.home_work_outlined,
                         iconColor: Colors.blue,
-                        bgColor: Colors.blue.withOpacity(0.1),
+                        bgColor: Colors.blue.withValues(alpha: 0.1),
                         label: 'Télétravail',
                         value: 'Possible',
                       ),
@@ -3226,7 +3236,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     Expanded(
                       flex: widget.applyButtonFlex,
                       child: ElevatedButton(
-                        onPressed: _hasApplied ? null : _showApplyDialog,
+                        onPressed: _hasApplied ? null : showApplyDialog,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _hasApplied
                               ? Colors.grey
@@ -3485,10 +3495,11 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                   ),
                   const SizedBox(height: 12),
                   LocationMap(
-                    query: AddressFormatter.query(
-                      postalCode: widget.locationPostalCode,
-                      city: widget.locationCity,
-                    ).isNotEmpty
+                    query:
+                        AddressFormatter.query(
+                          postalCode: widget.locationPostalCode,
+                          city: widget.locationCity,
+                        ).isNotEmpty
                         ? AddressFormatter.query(
                             postalCode: widget.locationPostalCode,
                             city: widget.locationCity,
@@ -3506,8 +3517,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                             city: widget.locationCity,
                           )
                         : (widget.location.isNotEmpty
-                            ? widget.location
-                            : 'Localisation non spécifiée'),
+                              ? widget.location
+                              : 'Localisation non spécifiée'),
                     style: const TextStyle(
                       fontSize: 14,
                       color: Color(0xFF616161),
@@ -3526,10 +3537,10 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withOpacity(0.15)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -4132,7 +4143,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFE6F7EF),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF3AAE5E).withOpacity(0.5)),
+        border: Border.all(
+          color: const Color(0xFF3AAE5E).withValues(alpha: 0.5),
+        ),
       ),
       child: Text(
         text,
@@ -4151,9 +4164,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -4202,9 +4215,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
       // Build period label
       String periodLabel = '';
-      if (period == 'horaire')
+      if (period == 'horaire') {
         periodLabel = '/h';
-      else if (period == 'mensuel')
+      } else if (period == 'mensuel')
         periodLabel = '/mois';
       else if (period == 'annuel')
         periodLabel = '/an';
@@ -4218,9 +4231,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       if (salaryType == 'selon_profil') {
         salaryText = 'Selon profil';
       } else if (salaryMin != null && salaryMax != null) {
-        salaryText = '${salaryMin}€ - ${salaryMax}€$periodLabel$paymentLabel';
+        salaryText = '$salaryMin€ - $salaryMax€$periodLabel$paymentLabel';
       } else if (salaryExact != null) {
-        salaryText = '${salaryExact}€$periodLabel$paymentLabel';
+        salaryText = '$salaryExact€$periodLabel$paymentLabel';
       } else if (salaryLabel != null && salaryLabel.toString().isNotEmpty) {
         // Clean up salaryLabel if it contains JSON
         final labelStr = salaryLabel.toString();
@@ -4311,8 +4324,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isSpecial
-              ? const Color(0xFF3AAE5E).withOpacity(0.5)
-              : Colors.grey.withOpacity(0.2),
+              ? const Color(0xFF3AAE5E).withValues(alpha: 0.5)
+              : Colors.grey.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -4356,7 +4369,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: iconColor, size: 20),

@@ -8,11 +8,7 @@ class PdfViewerScreen extends StatefulWidget {
   final String url;
   final String fileName;
 
-  const PdfViewerScreen({
-    super.key,
-    required this.url,
-    required this.fileName,
-  });
+  const PdfViewerScreen({super.key, required this.url, required this.fileName});
 
   @override
   State<PdfViewerScreen> createState() => _PdfViewerScreenState();
@@ -33,7 +29,8 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     try {
       // Create a temporary file path
       final tempDir = await getTemporaryDirectory();
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}_${widget.fileName}';
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${widget.fileName}';
       final filePath = '${tempDir.path}/$fileName';
 
       // Download the PDF
@@ -87,45 +84,45 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
               ),
             )
           : errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text(errorMessage!),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            isLoading = true;
-                            errorMessage = null;
-                          });
-                          _downloadAndOpenPdf();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF8A40),
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Réessayer'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(errorMessage!),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        isLoading = true;
+                        errorMessage = null;
+                      });
+                      _downloadAndOpenPdf();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF8A40),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Réessayer'),
                   ),
-                )
-              : PDFView(
-                  filePath: localPath!,
-                  enableSwipe: true,
-                  swipeHorizontal: false,
-                  autoSpacing: true,
-                  pageFling: true,
-                  pageSnap: true,
-                  fitPolicy: FitPolicy.BOTH,
-                  onError: (error) {
-                    setState(() {
-                      errorMessage = 'Erreur: $error';
-                    });
-                  },
-                ),
+                ],
+              ),
+            )
+          : PDFView(
+              filePath: localPath!,
+              enableSwipe: true,
+              swipeHorizontal: false,
+              autoSpacing: true,
+              pageFling: true,
+              pageSnap: true,
+              fitPolicy: FitPolicy.BOTH,
+              onError: (error) {
+                setState(() {
+                  errorMessage = 'Erreur: $error';
+                });
+              },
+            ),
     );
   }
 

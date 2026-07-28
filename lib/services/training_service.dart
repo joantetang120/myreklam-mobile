@@ -26,10 +26,7 @@ class TrainingService {
   Future<List<Map<String, dynamic>>> getCategories() async {
     final response = await http.post(
       Uri.parse('https://api.myreklam.fr/Categorie.php'),
-      body: {
-        'Method': 'getByType',
-        'type': 'formations',
-      },
+      body: {'Method': 'getByType', 'type': 'formations'},
     );
 
     if (response.statusCode == 200) {
@@ -38,23 +35,27 @@ class TrainingService {
       if (responseData is Map && responseData['data'] != null) {
         final data = responseData['data'];
         if (data is Map) {
-          final mainCategories = List<Map<String, dynamic>>.from(data['main'] ?? []);
-          final subsByParent = data['subs'] is Map ? Map<String, dynamic>.from(data['subs']) : <String, dynamic>{};
+          final mainCategories = List<Map<String, dynamic>>.from(
+            data['main'] ?? [],
+          );
+          final subsByParent = data['subs'] is Map
+              ? Map<String, dynamic>.from(data['subs'])
+              : <String, dynamic>{};
 
           return mainCategories.map((category) {
             final id = category['id'];
             final subListRaw = subsByParent[id?.toString()] ?? [];
             final subcategories = subListRaw is List
                 ? subListRaw
-                    .map<Map<String, dynamic>>(
-                      (sub) => {
-                        'id': sub['id'],
-                        'code': sub['code'],
-                        'label': sub['label'],
-                        'name': sub['label'],
-                      },
-                    )
-                    .toList()
+                      .map<Map<String, dynamic>>(
+                        (sub) => {
+                          'id': sub['id'],
+                          'code': sub['code'],
+                          'label': sub['label'],
+                          'name': sub['label'],
+                        },
+                      )
+                      .toList()
                 : <Map<String, dynamic>>[];
 
             return {
@@ -77,12 +78,18 @@ class TrainingService {
   }
 
   /// Update an existing training
-  Future<Map<String, dynamic>> updateTraining(String id, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> updateTraining(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     return await _api.authenticatedPut('/trainings/$id', body: data);
   }
 
   /// Upload media files
-  Future<Map<String, dynamic>> uploadMedia(String trainingId, List<File> files) async {
+  Future<Map<String, dynamic>> uploadMedia(
+    String trainingId,
+    List<File> files,
+  ) async {
     final token = await TokenStorage.getAccessToken();
     if (token == null) throw Exception('No authentication token');
 
@@ -91,12 +98,14 @@ class TrainingService {
     request.headers['Authorization'] = 'Bearer $token';
 
     for (final file in files) {
-      request.files.add(await http.MultipartFile.fromPath('media[]', file.path));
+      request.files.add(
+        await http.MultipartFile.fromPath('media[]', file.path),
+      );
     }
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
-    
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
@@ -104,21 +113,28 @@ class TrainingService {
   }
 
   /// Upload document files
-  Future<Map<String, dynamic>> uploadDocuments(String trainingId, List<File> files) async {
+  Future<Map<String, dynamic>> uploadDocuments(
+    String trainingId,
+    List<File> files,
+  ) async {
     final token = await TokenStorage.getAccessToken();
     if (token == null) throw Exception('No authentication token');
 
-    final uri = Uri.parse('${ApiConfig.baseUrl}/trainings/$trainingId/documents');
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}/trainings/$trainingId/documents',
+    );
     final request = http.MultipartRequest('POST', uri);
     request.headers['Authorization'] = 'Bearer $token';
 
     for (final file in files) {
-      request.files.add(await http.MultipartFile.fromPath('documents[]', file.path));
+      request.files.add(
+        await http.MultipartFile.fromPath('documents[]', file.path),
+      );
     }
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
-    
+
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
@@ -130,13 +146,12 @@ class TrainingService {
     final token = await TokenStorage.getAccessToken();
     if (token == null) throw Exception('No authentication token');
 
-    final uri = Uri.parse('${ApiConfig.baseUrl}/trainings/$trainingId/media/$mediaId');
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}/trainings/$trainingId/media/$mediaId',
+    );
     final response = await http.delete(
       uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -149,13 +164,12 @@ class TrainingService {
     final token = await TokenStorage.getAccessToken();
     if (token == null) throw Exception('No authentication token');
 
-    final uri = Uri.parse('${ApiConfig.baseUrl}/trainings/$trainingId/documents/$documentId');
+    final uri = Uri.parse(
+      '${ApiConfig.baseUrl}/trainings/$trainingId/documents/$documentId',
+    );
     final response = await http.delete(
       uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -191,10 +205,7 @@ class TrainingService {
     final uri = Uri.parse('${ApiConfig.baseUrl}/trainings/$id');
     final response = await http.delete(
       uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      },
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {

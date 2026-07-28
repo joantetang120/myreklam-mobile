@@ -16,8 +16,9 @@ class ReferralService {
   Future<Map<String, dynamic>> validateReferralCode({
     required String referralCode,
   }) async {
-    return await _api.post('/referral/validate', body: {
-      'parrainage_code': referralCode,
-    });
+    return await _api.post(
+      '/referral/validate',
+      body: {'parrainage_code': referralCode},
+    );
   }
 }

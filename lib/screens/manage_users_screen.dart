@@ -79,26 +79,34 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Permissions de ${d.user?.name ?? ''}',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Permissions de ${d.user?.name ?? ''}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  ...DelegationPermission.all.map((p) => CheckboxListTile(
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                        activeColor: _kGreen,
-                        value: selected.contains(p),
-                        title: Text(DelegationPermission.label(p),
-                            style: const TextStyle(fontSize: 13)),
-                        secondary: Icon(DelegationPermission.icon(p), size: 20),
-                        onChanged: (v) => setSheet(() {
-                          if (v == true) {
-                            selected.add(p);
-                          } else {
-                            selected.remove(p);
-                          }
-                        }),
-                      )),
+                  ...DelegationPermission.all.map(
+                    (p) => CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      activeColor: _kGreen,
+                      value: selected.contains(p),
+                      title: Text(
+                        DelegationPermission.label(p),
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      secondary: Icon(DelegationPermission.icon(p), size: 20),
+                      onChanged: (v) => setSheet(() {
+                        if (v == true) {
+                          selected.add(p);
+                        } else {
+                          selected.remove(p);
+                        }
+                      }),
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
@@ -127,8 +135,9 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
         _load();
       } on ApiException catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(e.message)));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(e.message)));
         }
       }
     }
@@ -140,14 +149,17 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Retirer ce gestionnaire ?'),
         content: Text(
-            '${d.user?.name ?? "Cet utilisateur"} ne pourra plus gérer votre compte.'),
+          '${d.user?.name ?? "Cet utilisateur"} ne pourra plus gérer votre compte.',
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Annuler')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
           TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Retirer', style: TextStyle(color: Colors.red))),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Retirer', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
@@ -165,8 +177,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black87,
-        title: const Text('Ajouter utilisateurs',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Ajouter utilisateurs',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: _kGreen))
@@ -186,11 +200,16 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                       child: Center(
                         child: Column(
                           children: [
-                            Icon(Icons.group_outlined,
-                                size: 56, color: Colors.grey[400]),
+                            Icon(
+                              Icons.group_outlined,
+                              size: 56,
+                              color: Colors.grey[400],
+                            ),
                             const SizedBox(height: 12),
-                            Text('Aucun gestionnaire pour le moment',
-                                style: TextStyle(color: Colors.grey[500])),
+                            Text(
+                              'Aucun gestionnaire pour le moment',
+                              style: TextStyle(color: Colors.grey[500]),
+                            ),
                           ],
                         ),
                       ),
@@ -208,9 +227,11 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                       ),
                       onPressed: _openAddFlow,
                       icon: const Icon(Icons.person_add_alt_1),
-                      label: Text(_nextSeatIsPaid
-                          ? 'Ajouter un utilisateur (${_seatPrice.toStringAsFixed(0)}€)'
-                          : 'Ajouter un utilisateur (gratuit)'),
+                      label: Text(
+                        _nextSeatIsPaid
+                            ? 'Ajouter un utilisateur (${_seatPrice.toStringAsFixed(0)}€)'
+                            : 'Ajouter un utilisateur (gratuit)',
+                      ),
                     ),
                   ),
                 ],
@@ -231,7 +252,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       child: Row(
         children: [
           ReklamAvatar(
-              avatarUrl: d.user?.avatar, displayName: d.user?.name, radius: 22),
+            avatarUrl: d.user?.avatar,
+            displayName: d.user?.name,
+            radius: 22,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -240,20 +264,28 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(d.user?.name ?? 'Utilisateur',
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w600)),
+                      child: Text(
+                        d.user?.name ?? 'Utilisateur',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                     if (d.isPaidSeat)
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: _kGreen.withOpacity(0.1),
+                          color: _kGreen.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text('Payant',
-                            style: TextStyle(fontSize: 10, color: _kGreen)),
+                        child: const Text(
+                          'Payant',
+                          style: TextStyle(fontSize: 10, color: _kGreen),
+                        ),
                       ),
                   ],
                 ),
@@ -335,8 +367,9 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
     try {
       String? paymentIntentId;
       if (widget.isPaidSeat) {
-        paymentIntentId =
-            await StripePaymentService().processSeatPayment(context: context);
+        paymentIntentId = await StripePaymentService().processSeatPayment(
+          context: context,
+        );
         if (!mounted) return;
         if (paymentIntentId == null) {
           // Cancelled or failed.
@@ -354,8 +387,7 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : 'Erreur: $e';
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(msg)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       setState(() => _submitting = false);
     }
   }
@@ -368,14 +400,18 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black87,
-        title: const Text('Ajouter un utilisateur',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Ajouter un utilisateur',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Email de l\'utilisateur',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          const Text(
+            'Email de l\'utilisateur',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -387,7 +423,8 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
                     hintText: 'exemple@email.com',
                     isDense: true,
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   onSubmitted: (_) => _search(),
                 ),
@@ -398,7 +435,9 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
                   backgroundColor: _kGreen,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 14),
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                 ),
                 onPressed: _searching ? null : _search,
                 child: _searching
@@ -406,14 +445,20 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Chercher'),
               ),
             ],
           ),
           if (_error != null) ...[
             const SizedBox(height: 12),
-            Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+            Text(
+              _error!,
+              style: const TextStyle(color: Colors.red, fontSize: 13),
+            ),
           ],
           if (_found != null) ...[
             const SizedBox(height: 20),
@@ -427,21 +472,30 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
               child: Row(
                 children: [
                   ReklamAvatar(
-                      avatarUrl: _found!.avatar,
-                      displayName: _found!.name,
-                      radius: 22),
+                    avatarUrl: _found!.avatar,
+                    displayName: _found!.name,
+                    radius: 22,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_found!.name,
-                            style: const TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text(
+                          _found!.name,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         if (_found!.email != null)
-                          Text(_found!.email!,
-                              style: TextStyle(
-                                  fontSize: 12, color: Colors.grey[600])),
+                          Text(
+                            _found!.email!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -450,29 +504,37 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
             ),
             if (_alreadyAdded) ...[
               const SizedBox(height: 12),
-              const Text('Cet utilisateur gère déjà votre compte.',
-                  style: TextStyle(color: Colors.orange, fontSize: 13)),
+              const Text(
+                'Cet utilisateur gère déjà votre compte.',
+                style: TextStyle(color: Colors.orange, fontSize: 13),
+              ),
             ] else ...[
               const SizedBox(height: 20),
-              const Text('Que peut-il faire ?',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              const Text(
+                'Que peut-il faire ?',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
               const SizedBox(height: 4),
-              ...DelegationPermission.all.map((p) => CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    activeColor: _kGreen,
-                    value: _selected.contains(p),
-                    title: Text(DelegationPermission.label(p),
-                        style: const TextStyle(fontSize: 13)),
-                    secondary: Icon(DelegationPermission.icon(p), size: 20),
-                    onChanged: (v) => setState(() {
-                      if (v == true) {
-                        _selected.add(p);
-                      } else {
-                        _selected.remove(p);
-                      }
-                    }),
-                  )),
+              ...DelegationPermission.all.map(
+                (p) => CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  activeColor: _kGreen,
+                  value: _selected.contains(p),
+                  title: Text(
+                    DelegationPermission.label(p),
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  secondary: Icon(DelegationPermission.icon(p), size: 20),
+                  onChanged: (v) => setState(() {
+                    if (v == true) {
+                      _selected.add(p);
+                    } else {
+                      _selected.remove(p);
+                    }
+                  }),
+                ),
+              ),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -482,17 +544,23 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  onPressed:
-                      (_selected.isEmpty || _submitting) ? null : _submit,
+                  onPressed: (_selected.isEmpty || _submitting)
+                      ? null
+                      : _submit,
                   child: _submitting
                       ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : Text(widget.isPaidSeat
-                          ? 'Payer ${widget.seatPrice.toStringAsFixed(0)}€ et ajouter'
-                          : 'Ajouter (gratuit)'),
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          widget.isPaidSeat
+                              ? 'Payer ${widget.seatPrice.toStringAsFixed(0)}€ et ajouter'
+                              : 'Ajouter (gratuit)',
+                        ),
                 ),
               ),
             ],

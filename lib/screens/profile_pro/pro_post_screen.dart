@@ -7,8 +7,6 @@ import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/create_post_screen.dart';
 import 'package:myreklam/screens/image_preview_screen.dart';
 import 'package:myreklam/screens/post_detail_full_screen.dart';
-import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
-import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
@@ -250,7 +248,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.45),
+                  color: Colors.black.withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -274,7 +272,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.45),
+                    color: Colors.black.withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -313,7 +311,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
           Center(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -450,7 +448,9 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
           child: ReklamAvatar(
             avatarUrl: authorInfo.avatar,
             displayName: authorInfo.displayName,
-            accountType: authorInfo.accountType == 'Professionnel' ? 'pro' : 'particulier',
+            accountType: authorInfo.accountType == 'Professionnel'
+                ? 'pro'
+                : 'particulier',
           ),
         ),
         const SizedBox(width: 10),
@@ -523,11 +523,14 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(
-            bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
+            bottom: BorderSide(
+              color: Colors.grey.withValues(alpha: 0.2),
+              width: 1,
+            ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.09),
+              color: Colors.black.withValues(alpha: 0.09),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -563,7 +566,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             radius: 14,
                             avatarUrl: widget.reposter.avatar,
                             displayName: widget.reposter.displayName,
-                            accountType: widget.reposter.accountType == 'Professionnel' ? 'pro' : 'particulier',
+                            accountType:
+                                widget.reposter.accountType == 'Professionnel'
+                                ? 'pro'
+                                : 'particulier',
                           ),
                           const SizedBox(width: 6),
                           Expanded(
@@ -672,7 +678,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             radius: 14,
                             avatarUrl: widget.author.avatar,
                             displayName: widget.author.displayName,
-                            accountType: widget.author.accountType == 'Professionnel' ? 'pro' : 'particulier',
+                            accountType:
+                                widget.author.accountType == 'Professionnel'
+                                ? 'pro'
+                                : 'particulier',
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -769,7 +778,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       setState(() => _dragOffset = 0);
                       widget.onEdit?.call();
                     },
-                    child: Container(
+                    child: SizedBox(
                       width: _actionWidth,
                       height: double.infinity,
                       // decoration: const BoxDecoration(color: Colors.grey),
@@ -797,7 +806,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       setState(() => _dragOffset = 0);
                       widget.onDelete?.call();
                     },
-                    child: Container(
+                    child: SizedBox(
                       width: _actionWidth,
                       height: double.infinity,
                       // decoration: const BoxDecoration(
@@ -1143,17 +1152,19 @@ class _ProPostScreenState extends State<ProPostScreen>
         });
       }
     } on ApiException catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = e.message;
           _isLoading = false;
         });
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _error = 'Impossible de charger vos posts.';
           _isLoading = false;
         });
+      }
     }
   }
 
@@ -1412,10 +1423,10 @@ class _ProPostScreenState extends State<ProPostScreen>
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withOpacity(0.08),
+                color: const Color(0xFF3AAE5E).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFF3AAE5E).withOpacity(0.3),
+                  color: const Color(0xFF3AAE5E).withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -1537,7 +1548,7 @@ class _ProPostScreenState extends State<ProPostScreen>
     for (final candidate in avatarCandidates) {
       if (candidate == null) continue;
       final resolved = candidate.toString();
-      if (resolved != null && resolved.isNotEmpty) {
+      if (resolved.isNotEmpty) {
         avatar = resolved;
         break;
       }
@@ -1635,7 +1646,7 @@ class _ProPostScreenState extends State<ProPostScreen>
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.8)],
+          colors: [color, color.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1645,7 +1656,7 @@ class _ProPostScreenState extends State<ProPostScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1968,8 +1979,9 @@ class _ProPostScreenState extends State<ProPostScreen>
 
               if (newText == null ||
                   newText.trim().isEmpty ||
-                  newText == currentBody)
+                  newText == currentBody) {
                 return;
+              }
 
               try {
                 final response = await ApiClient().authenticatedPut(
@@ -2102,9 +2114,8 @@ class _ProPostScreenState extends State<ProPostScreen>
               final userId = user['id']?.toString(); // Convertir en String
               final email = user['email']?.toString() ?? '';
 
-              final userProfile = user['pro_profile'] != null
-                  ? user['pro_profile']
-                  : user['particulier_profile'];
+              final userProfile =
+                  user['pro_profile'] ?? user['particulier_profile'];
 
               final displayName = (userId != null && userId == _currentUserId)
                   ? 'Vous'
@@ -2116,9 +2127,9 @@ class _ProPostScreenState extends State<ProPostScreen>
               final likes = _asInt(comment['likes_count']);
               final userReaction = comment['user_reaction']?.toString();
               final isOwner = userId != null && userId == _currentUserId;
-              print("UserId: $userId");
-              print("_currentUserId: $_currentUserId");
-              print("isOwner: $isOwner");
+              debugPrint("UserId: $userId");
+              debugPrint("_currentUserId: $_currentUserId");
+              debugPrint("isOwner: $isOwner");
               final replies =
                   (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
@@ -2139,185 +2150,191 @@ class _ProPostScreenState extends State<ProPostScreen>
                 comment: comment,
                 currentUserId: _currentUserId,
                 child: Padding(
-                padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ReklamAvatar(
-                          radius: isReply ? 14 : 18,
-                          avatarUrl: avatarUrl,
-                          displayName: displayName,
-                          accountType: user['pro_profile'] != null ? 'pro' : 'particulier',
-                          backgroundColor: const Color(0xFFE6F7EF),
-                          textColor: const Color(0xFF2A8143),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    displayName,
-                                    style: TextStyle(
-                                      fontSize: isReply ? 12 : 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF333333),
+                  padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ReklamAvatar(
+                            radius: isReply ? 14 : 18,
+                            avatarUrl: avatarUrl,
+                            displayName: displayName,
+                            accountType: user['pro_profile'] != null
+                                ? 'pro'
+                                : 'particulier',
+                            backgroundColor: const Color(0xFFE6F7EF),
+                            textColor: const Color(0xFF2A8143),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      displayName,
+                                      style: TextStyle(
+                                        fontSize: isReply ? 12 : 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF333333),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _buildTimeAgo(createdAt),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                  if (isOwner) ...[
-                                    const Spacer(),
-                                    GestureDetector(
-                                      onTapDown: (TapDownDetails details) {
-                                        showMenu<String>(
-                                          context: context,
-                                          position: RelativeRect.fromLTRB(
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                          ),
-                                          items: [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('Modifier'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.delete,
-                                                    size: 18,
-                                                    color: Colors.redAccent,
-                                                  ),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    'Supprimer',
-                                                    style: TextStyle(
-                                                      color: Colors.redAccent,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ).then((value) {
-                                          if (value == 'edit') {
-                                            editComment(comment);
-                                          } else if (value == 'delete') {
-                                            deleteComment(comment, isReply);
-                                          }
-                                        });
-                                      },
-                                      child: Icon(
-                                        Icons.more_horiz,
-                                        size: 18,
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _buildTimeAgo(createdAt),
+                                      style: TextStyle(
+                                        fontSize: 11,
                                         color: Colors.grey[400],
                                       ),
                                     ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                body,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF4F4F4F),
-                                  height: 1.4,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () =>
-                                        toggleCommentReaction(comment, 'like'),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          userReaction == 'like'
-                                              ? Icons.thumb_up_alt
-                                              : Icons.thumb_up_alt_outlined,
-                                          size: 14,
-                                          color: userReaction == 'like'
-                                              ? const Color(0xFF3AAE5E)
-                                              : Colors.grey[400],
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          '$likes',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (!isReply) ...[
-                                    const SizedBox(width: 14),
-                                    GestureDetector(
-                                      onTap: () {
-                                        modalSetState(() {
-                                          replyingToId = comment['id'] as int?;
-                                          replyingToName = displayName;
-                                        });
-                                        FocusScope.of(
-                                          ctx,
-                                        ).requestFocus(FocusNode());
-                                      },
-                                      child: Text(
-                                        'Répondre',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF2E9B5B),
+                                    if (isOwner) ...[
+                                      const Spacer(),
+                                      GestureDetector(
+                                        onTapDown: (TapDownDetails details) {
+                                          showMenu<String>(
+                                            context: context,
+                                            position: RelativeRect.fromLTRB(
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                            ),
+                                            items: [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit, size: 18),
+                                                    SizedBox(width: 8),
+                                                    Text('Modifier'),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete,
+                                                      size: 18,
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      'Supprimer',
+                                                      style: TextStyle(
+                                                        color: Colors.redAccent,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ).then((value) {
+                                            if (value == 'edit') {
+                                              editComment(comment);
+                                            } else if (value == 'delete') {
+                                              deleteComment(comment, isReply);
+                                            }
+                                          });
+                                        },
+                                        child: Icon(
+                                          Icons.more_horiz,
+                                          size: 18,
+                                          color: Colors.grey[400],
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  body,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF4F4F4F),
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () => toggleCommentReaction(
+                                        comment,
+                                        'like',
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            userReaction == 'like'
+                                                ? Icons.thumb_up_alt
+                                                : Icons.thumb_up_alt_outlined,
+                                            size: 14,
+                                            color: userReaction == 'like'
+                                                ? const Color(0xFF3AAE5E)
+                                                : Colors.grey[400],
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '$likes',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: userReaction == 'like'
+                                                  ? const Color(0xFF3AAE5E)
+                                                  : Colors.grey[500],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (!isReply) ...[
+                                      const SizedBox(width: 14),
+                                      GestureDetector(
+                                        onTap: () {
+                                          modalSetState(() {
+                                            replyingToId =
+                                                comment['id'] as int?;
+                                            replyingToName = displayName;
+                                          });
+                                          FocusScope.of(
+                                            ctx,
+                                          ).requestFocus(FocusNode());
+                                        },
+                                        child: Text(
+                                          'Répondre',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF2E9B5B),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Nested replies
+                      if (!isReply && replies.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ...replies.map(
+                          (r) => Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: buildCommentItem(r, isReply: true),
                           ),
                         ),
                       ],
-                    ),
-                    // Nested replies
-                    if (!isReply && replies.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      ...replies.map(
-                        (r) => Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: buildCommentItem(r, isReply: true),
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ));
+              );
             }
 
             return Padding(
@@ -2881,12 +2898,9 @@ class _ProPostScreenState extends State<ProPostScreen>
     }
   }
 
-
   Widget _buildReactionBar(
     String apiSlug,
     String entityId, {
-    bool? acceptedMessages,
-    Map<String, dynamic>? authorData,
     Map<String, dynamic>? postData,
   }) {
     final data = _getReaction(apiSlug, entityId);

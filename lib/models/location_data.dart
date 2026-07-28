@@ -32,12 +32,12 @@ class LocationData {
   factory LocationData.fromJson(Map<String, dynamic> json) {
     return LocationData(
       address: json['address']?.toString() ?? '',
-      latitude: json['latitude'] != null 
-        ? double.tryParse(json['latitude'].toString()) 
-        : null,
-      longitude: json['longitude'] != null 
-        ? double.tryParse(json['longitude'].toString()) 
-        : null,
+      latitude: json['latitude'] != null
+          ? double.tryParse(json['latitude'].toString())
+          : null,
+      longitude: json['longitude'] != null
+          ? double.tryParse(json['longitude'].toString())
+          : null,
       city: json['city']?.toString(),
       postalCode: json['postal_code']?.toString(),
       label: json['label']?.toString(),
@@ -45,7 +45,8 @@ class LocationData {
     );
   }
 
-  factory LocationData.fromMap(Map<String, dynamic> map) => LocationData.fromJson(map);
+  factory LocationData.fromMap(Map<String, dynamic> map) =>
+      LocationData.fromJson(map);
 
   LocationData copyWith({
     String? address,
@@ -68,7 +69,8 @@ class LocationData {
   }
 
   @override
-  String toString() => 'LocationData(address: $address, lat: $latitude, lng: $longitude, city: $city)';
+  String toString() =>
+      'LocationData(address: $address, lat: $latitude, lng: $longitude, city: $city)';
 }
 
 class LocationSuggestion {

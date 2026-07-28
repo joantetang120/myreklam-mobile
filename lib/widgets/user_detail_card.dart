@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class UserDetailCard extends StatelessWidget {
@@ -33,10 +32,10 @@ class UserDetailCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.withOpacity(0.15)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -48,7 +47,9 @@ class UserDetailCard extends StatelessWidget {
             avatarUrl: avatar,
             displayName: name,
             radius: 26,
-            accountType: userType.toLowerCase() == 'professionnel' ? 'pro' : 'particulier',
+            accountType: userType.toLowerCase() == 'professionnel'
+                ? 'pro'
+                : 'particulier',
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -78,7 +79,7 @@ class UserDetailCard extends StatelessWidget {
                         98,
                         93,
                         93,
-                      ).withOpacity(0.3),
+                      ).withValues(alpha: 0.3),
                     ),
                   ),
                   child: Text(

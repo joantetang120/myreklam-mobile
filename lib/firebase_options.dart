@@ -62,8 +62,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '166441708619',
     projectId: 'myreklam-7b2d9',
     storageBucket: 'myreklam-7b2d9.firebasestorage.app',
-    androidClientId: '166441708619-e63s1vkkj2cbnqi43j542uscj94n5oid.apps.googleusercontent.com',
-    iosClientId: '166441708619-o38o8rtne2rsie3ur6io1aq0finjtefs.apps.googleusercontent.com',
+    androidClientId:
+        '166441708619-e63s1vkkj2cbnqi43j542uscj94n5oid.apps.googleusercontent.com',
+    iosClientId:
+        '166441708619-o38o8rtne2rsie3ur6io1aq0finjtefs.apps.googleusercontent.com',
     iosBundleId: 'com.example.myreklam',
   );
 }

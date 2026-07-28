@@ -62,19 +62,19 @@ class ProSubscriptionScreen extends StatelessWidget {
           centerTitle: true,
         ),
         body: const Column(
-        children: [
-          SizedBox(height: 14),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              'Développez votre activité avec Myreklam : choisissez l\'offre qui correspond à vos ambitions.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Color(0xFF8D8D8D)),
+          children: [
+            SizedBox(height: 14),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                'Développez votre activité avec Myreklam : choisissez l\'offre qui correspond à vos ambitions.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Color(0xFF8D8D8D)),
+              ),
             ),
-          ),
-          SizedBox(height: 18),
-          Expanded(child: _PremiumPlan()),
-        ],
+            SizedBox(height: 18),
+            Expanded(child: _PremiumPlan()),
+          ],
         ),
       ),
     );
@@ -125,128 +125,136 @@ class _PremiumPlanState extends State<_PremiumPlan> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) => SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: 24,
-              right: 24,
-              top: 24,
-              bottom: 24 + MediaQuery.of(ctx).viewInsets.bottom,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: 24 + MediaQuery.of(ctx).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
-                const Text(
-                  'Choisir votre méthode de paiement',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Abonnement Premium - ${_cycle == _BillingCycle.monthly ? 'Mensuel' : 'Annuel'}',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                // Promo / reduction code
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _promoController,
-                        enabled: !_promoValid,
-                        textCapitalization: TextCapitalization.characters,
-                        decoration: InputDecoration(
-                          hintText: 'Code de réduction',
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 12),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          suffixIcon: _promoValid
-                              ? IconButton(
-                                  icon: const Icon(Icons.close, size: 18),
-                                  onPressed: () {
-                                    _promoController.clear();
-                                    setModalState(() {
-                                      setState(_resetPromo);
-                                    });
-                                  },
-                                )
-                              : null,
+                  const Text(
+                    'Choisir votre méthode de paiement',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Abonnement Premium - ${_cycle == _BillingCycle.monthly ? 'Mensuel' : 'Annuel'}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  // Promo / reduction code
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _promoController,
+                          enabled: !_promoValid,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: InputDecoration(
+                            hintText: 'Code de réduction',
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            suffixIcon: _promoValid
+                                ? IconButton(
+                                    icon: const Icon(Icons.close, size: 18),
+                                    onPressed: () {
+                                      _promoController.clear();
+                                      setModalState(() {
+                                        setState(_resetPromo);
+                                      });
+                                    },
+                                  )
+                                : null,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(
-                      height: 46,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1B8D4B),
-                          foregroundColor: Colors.white,
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        height: 46,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1B8D4B),
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: (_checkingPromo || _promoValid)
+                              ? null
+                              : () => _applyPromo(setModalState),
+                          child: _checkingPromo
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Appliquer'),
                         ),
-                        onPressed: (_checkingPromo || _promoValid)
-                            ? null
-                            : () => _applyPromo(setModalState),
-                        child: _checkingPromo
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))
-                            : const Text('Appliquer'),
+                      ),
+                    ],
+                  ),
+                  if (_promoFeedback != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      _promoFeedback!,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: _promoValid
+                            ? const Color(0xFF1B8D4B)
+                            : Colors.red,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
-                ),
-                if (_promoFeedback != null) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    _promoFeedback!,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      color: _promoValid ? const Color(0xFF1B8D4B) : Colors.red,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  const SizedBox(height: 20),
+                  _PaymentOptionTile(
+                    icon: Icons.payment,
+                    label: 'PayPal',
+                    color: const Color(0xFF0070BA),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _processPayPalPayment();
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _PaymentOptionTile(
+                    icon: Icons.credit_card,
+                    label: 'Stripe (Carte bancaire)',
+                    color: const Color(0xFF635BFF),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _processStripePayment();
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Annuler'),
                   ),
                 ],
-                const SizedBox(height: 20),
-                _PaymentOptionTile(
-                  icon: Icons.payment,
-                  label: 'PayPal',
-                  color: const Color(0xFF0070BA),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _processPayPalPayment();
-                  },
-                ),
-                const SizedBox(height: 12),
-                _PaymentOptionTile(
-                  icon: Icons.credit_card,
-                  label: 'Stripe (Carte bancaire)',
-                  color: const Color(0xFF635BFF),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _processStripePayment();
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Annuler'),
-                ),
-              ],
+              ),
             ),
-          ),
           ),
         );
       },
@@ -274,7 +282,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
           final amount = result['discounted_amount'];
           final label = disc?['label']?.toString();
           _promoFeedback =
-              '✓ Code appliqué${label != null && label.isNotEmpty ? ' ($label)' : ''} — nouveau prix : ${amount}€';
+              '✓ Code appliqué${label != null && label.isNotEmpty ? ' ($label)' : ''} — nouveau prix : $amount€';
         } else {
           _promoValid = false;
           _appliedPromoCode = null;
@@ -285,14 +293,16 @@ class _PremiumPlanState extends State<_PremiumPlan> {
   }
 
   bool _ensureCanManageSubscription() {
-    if (DelegationManager.instance
-        .can(DelegationPermission.manageSubscription)) {
+    if (DelegationManager.instance.can(
+      DelegationPermission.manageSubscription,
+    )) {
       return true;
     }
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-            "Vous n'avez pas l'autorisation de gérer l'abonnement de ce compte."),
+          "Vous n'avez pas l'autorisation de gérer l'abonnement de ce compte.",
+        ),
       ),
     );
     return false;
@@ -456,7 +466,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
               border: Border.all(color: const Color(0xFFE2F3EA)),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF2E9B5B).withOpacity(0.12),
+                  color: const Color(0xFF2E9B5B).withValues(alpha: 0.12),
                   blurRadius: 30,
                   offset: const Offset(0, 18),
                 ),
@@ -634,7 +644,9 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                         // Free plan option (limited features).
                         Center(
                           child: TextButton(
-                            onPressed: _isProcessingPayment ? null : _continueFree,
+                            onPressed: _isProcessingPayment
+                                ? null
+                                : _continueFree,
                             child: const Text(
                               'Continuer avec la version gratuite',
                               style: TextStyle(
@@ -703,10 +715,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
       if (mounted && Navigator.canPop(context)) Navigator.pop(context);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -778,7 +787,7 @@ class _BillingToggle extends StatelessWidget {
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withValues(alpha: 0.08),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -823,7 +832,7 @@ class _CenteredPremiumIntro extends StatelessWidget {
 }
 
 class _PremiumHighlights extends StatelessWidget {
-  const _PremiumHighlights({Key? key}) : super(key: key);
+  const _PremiumHighlights();
 
   static const List<_HighlightItem> _items = [
     _HighlightItem(Icons.visibility_outlined, 'Visibilité maximale'),
@@ -881,7 +890,7 @@ class _HighlightTile extends StatelessWidget {
             color: const Color(0xFFDFF5E8),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: const Color(0xFF2E9B5B).withOpacity(0.25),
+              color: const Color(0xFF2E9B5B).withValues(alpha: 0.25),
             ),
           ),
           child: Icon(item.icon, color: const Color(0xFF24A05B), size: 16),
@@ -929,7 +938,7 @@ class _GradientButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: gradient.colors.last.withOpacity(0.35),
+                  color: gradient.colors.last.withValues(alpha: 0.35),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -972,16 +981,16 @@ class _PaymentOptionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 24),
@@ -999,7 +1008,7 @@ class _PaymentOptionTile extends StatelessWidget {
             ),
             Icon(
               Icons.arrow_forward_ios,
-              color: color.withOpacity(0.6),
+              color: color.withValues(alpha: 0.6),
               size: 16,
             ),
           ],
@@ -1049,7 +1058,7 @@ class _PremiumPlanHeader extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -1107,7 +1116,7 @@ class _SwirlPainter extends CustomPainter {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
-      ..color = Colors.white.withOpacity(opacity);
+      ..color = Colors.white.withValues(alpha: opacity);
 
     final center = Offset(size.width / 2, size.height / 2);
     double radius = size.width * 0.15;

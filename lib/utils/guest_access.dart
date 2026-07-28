@@ -46,10 +46,9 @@ class GuestAccess {
             onPressed: () {
               Navigator.pop(ctx);
               UserSession().clear();
-              Navigator.of(context).pushNamedAndRemoveUntil(
-                '/login',
-                (route) => false,
-              );
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil('/login', (route) => false);
             },
             child: const Text('Se connecter'),
           ),

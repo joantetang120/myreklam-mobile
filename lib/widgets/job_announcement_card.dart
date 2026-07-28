@@ -43,12 +43,12 @@ class JobAnnouncementCard extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: Stack(
         children: [
@@ -67,7 +67,7 @@ class JobAnnouncementCard extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: const Color(0xFFE6F7EF),
                         border: Border.all(
-                          color: const Color(0xFF3AAE5E).withOpacity(0.2),
+                          color: const Color(0xFF3AAE5E).withValues(alpha: 0.2),
                         ),
                         image: companyLogo.isNotEmpty
                             ? DecorationImage(
@@ -128,7 +128,9 @@ class JobAnnouncementCard extends StatelessWidget {
                             ],
                             // Favorite heart button
                             GestureDetector(
-                              onTap: isLoadingFavorite ? null : onFavoriteToggle,
+                              onTap: isLoadingFavorite
+                                  ? null
+                                  : onFavoriteToggle,
                               child: Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
@@ -136,7 +138,9 @@ class JobAnnouncementCard extends StatelessWidget {
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -152,8 +156,12 @@ class JobAnnouncementCard extends StatelessWidget {
                                         ),
                                       )
                                     : Icon(
-                                        isFavorited ? Icons.favorite : Icons.favorite_border,
-                                        color: isFavorited ? Colors.red : Colors.grey[600],
+                                        isFavorited
+                                            ? Icons.favorite
+                                            : Icons.favorite_border,
+                                        color: isFavorited
+                                            ? Colors.red
+                                            : Colors.grey[600],
                                         size: 18,
                                       ),
                               ),
@@ -170,7 +178,9 @@ class JobAnnouncementCard extends StatelessWidget {
                             color: const Color(0xFFE6F7EF),
                             borderRadius: BorderRadius.circular(5),
                             border: Border.all(
-                              color: const Color(0xFF3AAE5E).withOpacity(0.2),
+                              color: const Color(
+                                0xFF3AAE5E,
+                              ).withValues(alpha: 0.2),
                             ),
                           ),
                           child: const Text(
@@ -185,10 +195,45 @@ class JobAnnouncementCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Spacer(),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3AAE5E).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFF3AAE5E).withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.work_outline,
+                        size: 14,
+                        color: Color(0xFF3AAE5E),
+                      ),
+                      SizedBox(width: 5),
+                      Text(
+                        'Offre d\'emploi',
+                        style: TextStyle(
+                          color: Color(0xFF3AAE5E),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               // Job Title
               Text(
                 jobTitle,
@@ -280,7 +325,7 @@ class JobAnnouncementCard extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.access_time,
-                      color: Colors.grey.withOpacity(0.7),
+                      color: Colors.grey.withValues(alpha: 0.7),
                       size: 14,
                     ),
                     const SizedBox(width: 4),
@@ -293,50 +338,6 @@ class JobAnnouncementCard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
             ],
-          ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF3AAE5E),
-                    const Color(0xFF3AAE5E).withOpacity(0.8),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(20),
-                  bottomLeft: Radius.circular(12),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF3AAE5E).withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.work_outline, size: 14, color: Colors.white),
-                  SizedBox(width: 4),
-                  Text(
-                    'Offre d\'emploi',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
@@ -352,8 +353,8 @@ class JobAnnouncementCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isSpecial
-              ? const Color(0xFF3AAE5E).withOpacity(0.5)
-              : Colors.grey.withOpacity(0.2),
+              ? const Color(0xFF3AAE5E).withValues(alpha: 0.5)
+              : Colors.grey.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -384,7 +385,9 @@ class JobAnnouncementCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFE6F7EF),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF3AAE5E).withOpacity(0.5)),
+        border: Border.all(
+          color: const Color(0xFF3AAE5E).withValues(alpha: 0.5),
+        ),
       ),
       child: Text(
         text,

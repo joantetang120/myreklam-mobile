@@ -49,12 +49,12 @@ class ProPostCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +97,7 @@ class ProPostCard extends StatelessWidget {
                         color: const Color(0xFFE6F7EF),
                         borderRadius: BorderRadius.circular(5),
                         border: Border.all(
-                          color: const Color(0xFF3AAE5E).withOpacity(0.2),
+                          color: const Color(0xFF3AAE5E).withValues(alpha: 0.2),
                         ),
                       ),
                       child: Text(
@@ -116,19 +116,19 @@ class ProPostCard extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.favorite_border,
-                    color: Colors.grey.withOpacity(0.7),
+                    color: Colors.grey.withValues(alpha: 0.7),
                     size: 20,
                   ),
                   const SizedBox(width: 10),
                   Icon(
                     Icons.more_horiz,
-                    color: Colors.grey.withOpacity(0.7),
+                    color: Colors.grey.withValues(alpha: 0.7),
                     size: 20,
                   ),
                   const SizedBox(width: 10),
                   Icon(
                     Icons.close,
-                    color: Colors.grey.withOpacity(0.7),
+                    color: Colors.grey.withValues(alpha: 0.7),
                     size: 20,
                   ),
                 ],
@@ -205,7 +205,7 @@ class ProPostCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+          Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
           const SizedBox(height: 12),
           // Merchant and Time
           Row(
@@ -217,10 +217,16 @@ class ProPostCard extends StatelessWidget {
                   text: TextSpan(
                     style: const TextStyle(fontSize: 12, color: Colors.black87),
                     children: [
-                      const TextSpan(text: 'En ligne disponible chez ', style: TextStyle(fontSize: 10, color: Colors.black87)),
+                      const TextSpan(
+                        text: 'En ligne disponible chez ',
+                        style: TextStyle(fontSize: 10, color: Colors.black87),
+                      ),
                       TextSpan(
                         text: merchantName,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
                       ),
                     ],
                   ),
@@ -236,7 +242,7 @@ class ProPostCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+          Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
           const SizedBox(height: 16),
           // Price and CTA
           Row(
@@ -253,7 +259,10 @@ class ProPostCard extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onTapCTA,
                 icon: const Icon(Icons.list_alt_outlined, size: 18),
-                label: const Text('Voir le bon plan', style: TextStyle(fontSize: 12)),
+                label: const Text(
+                  'Voir le bon plan',
+                  style: TextStyle(fontSize: 12),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF9800),
                   foregroundColor: Colors.white,
@@ -270,7 +279,7 @@ class ProPostCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
+          Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
           const SizedBox(height: 16),
           // Engagement Stats
           Row(
@@ -293,7 +302,7 @@ class ProPostCard extends StatelessWidget {
   Widget _buildStat(IconData icon, String count, {VoidCallback? onTap}) {
     final content = Row(
       children: [
-        Icon(icon, color: Colors.grey.withOpacity(0.7), size: 18),
+        Icon(icon, color: Colors.grey.withValues(alpha: 0.7), size: 18),
         const SizedBox(width: 6),
         Text(
           count,
@@ -341,7 +350,7 @@ class ProPostCard extends StatelessWidget {
               child: CircularProgressIndicator(
                 value: progress.expectedTotalBytes != null
                     ? progress.cumulativeBytesLoaded /
-                        progress.expectedTotalBytes!
+                          progress.expectedTotalBytes!
                     : null,
               ),
             ),
@@ -363,8 +372,11 @@ class ProPostCard extends StatelessWidget {
       width: double.infinity,
       height: 200,
       color: Colors.grey[200],
-      child: const Icon(Icons.image_not_supported,
-          color: Colors.grey, size: 40),
+      child: const Icon(
+        Icons.image_not_supported,
+        color: Colors.grey,
+        size: 40,
+      ),
     );
   }
 }

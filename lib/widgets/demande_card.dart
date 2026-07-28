@@ -55,12 +55,12 @@ class DemandeCard extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: Stack(
         children: [
@@ -93,53 +93,106 @@ class DemandeCard extends StatelessWidget {
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F5F5),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFE0E0E0)),
+                          ),
+                          child: Text(
+                            accountType?.toLowerCase() == 'professionnel' ||
+                                    accountType?.toLowerCase() == 'pro'
+                                ? 'Professionnel'
+                                : 'Particulier',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF616161),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  if (onReport != null)
-                    IconButton(
-                      tooltip: 'Signaler',
-                      onPressed: onReport,
-                      icon: const Icon(
-                        Icons.report_outlined,
-                        color: Colors.redAccent,
-                        size: 20,
-                      ),
-                    ),
-                  // Favorite icon
-                  if (onFavoriteToggle != null)
-                    GestureDetector(
-                      onTap: isLoadingFavorite ? null : onFavoriteToggle,
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 20),
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: isFavorited
-                              ? Colors.red.withOpacity(0.1)
-                              : Colors.grey.withOpacity(0.1),
-                          shape: BoxShape.circle,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (onReport != null)
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          tooltip: 'Signaler',
+                          onPressed: onReport,
+                          icon: const Icon(
+                            Icons.report_outlined,
+                            color: Colors.redAccent,
+                            size: 20,
+                          ),
                         ),
-                        child: isLoadingFavorite
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                      if (onFavoriteToggle != null)
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          tooltip: 'Favoris',
+                          onPressed: isLoadingFavorite
+                              ? null
+                              : onFavoriteToggle,
+                          icon: isLoadingFavorite
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Icon(
+                                  isFavorited
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
                                   color: isFavorited ? Colors.red : Colors.grey,
+                                  size: 21,
                                 ),
-                              )
-                            : Icon(
-                                isFavorited
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                size: 20,
-                                color: isFavorited ? Colors.red : Colors.grey,
-                              ),
+                        ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: categoryColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: categoryColor.withValues(alpha: 0.35),
                       ),
                     ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.description_outlined,
+                          size: 14,
+                          color: categoryColor,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          'Demande',
+                          style: TextStyle(
+                            color: categoryColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 12),
               // Title
               Text(
                 title,
@@ -257,51 +310,6 @@ class DemandeCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
             ],
-          ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [categoryColor, categoryColor.withOpacity(0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(20),
-                  bottomLeft: Radius.circular(12),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: categoryColor.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.description_outlined,
-                    size: 14,
-                    color: Colors.white,
-                  ),
-                  SizedBox(width: 4),
-                  Text(
-                    'Demande',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
         ],
       ),

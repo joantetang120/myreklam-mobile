@@ -62,12 +62,12 @@ class EvenementCard extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: Stack(
         children: [
@@ -83,7 +83,9 @@ class EvenementCard extends StatelessWidget {
                       avatarUrl: profileImage,
                       displayName: username,
                       radius: 24,
-                      accountType: userType.toLowerCase() == 'professionnel' ? 'pro' : 'particulier',
+                      accountType: userType.toLowerCase() == 'professionnel'
+                          ? 'pro'
+                          : 'particulier',
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -112,7 +114,9 @@ class EvenementCard extends StatelessWidget {
                             color: const Color(0xFFE6F7EF),
                             borderRadius: BorderRadius.circular(5),
                             border: Border.all(
-                              color: const Color(0xFF3AAE5E).withOpacity(0.2),
+                              color: const Color(
+                                0xFF3AAE5E,
+                              ).withValues(alpha: 0.2),
                             ),
                           ),
                           child: Text(
@@ -208,7 +212,7 @@ class EvenementCard extends StatelessWidget {
                                   border: Border.all(
                                     color: const Color(
                                       0xFF2196F3,
-                                    ).withOpacity(0.3),
+                                    ).withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: Text(
@@ -299,7 +303,7 @@ class EvenementCard extends StatelessWidget {
                   color: const Color(0xFFE6F7EF),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: const Color(0xFF3AAE5E).withOpacity(0.5),
+                    color: const Color(0xFF3AAE5E).withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
@@ -408,11 +412,11 @@ class EvenementCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -443,11 +447,11 @@ class EvenementCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -472,7 +476,7 @@ class EvenementCard extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: [
                         const Color(0xFF2196F3),
-                        const Color(0xFF2196F3).withOpacity(0.8),
+                        const Color(0xFF2196F3).withValues(alpha: 0.8),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -483,7 +487,7 @@ class EvenementCard extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF2196F3).withOpacity(0.3),
+                        color: const Color(0xFF2196F3).withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -513,15 +517,17 @@ class EvenementCard extends StatelessWidget {
             // Grey veil (taps pass through) + "Expirée" badge.
             Positioned.fill(
               child: IgnorePointer(
-                child: Container(color: Colors.white.withOpacity(0.55)),
+                child: Container(color: Colors.white.withValues(alpha: 0.55)),
               ),
             ),
             Positioned(
               top: 0,
               right: 0,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF757575),
                   borderRadius: BorderRadius.circular(8),
@@ -531,11 +537,14 @@ class EvenementCard extends StatelessWidget {
                   children: [
                     Icon(Icons.event_busy, size: 13, color: Colors.white),
                     SizedBox(width: 4),
-                    Text('Expirée',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700)),
+                    Text(
+                      'Expirée',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
               ),

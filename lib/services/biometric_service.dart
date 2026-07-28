@@ -94,9 +94,7 @@ class BiometricService {
     final accepted = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         icon: Icon(desc.icon, size: 40, color: const Color(0xFFE7412A)),
         title: const Text(
           'Connexion rapide',
@@ -113,8 +111,10 @@ class BiometricService {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Plus tard',
-                style: TextStyle(color: Colors.grey)),
+            child: const Text(
+              'Plus tard',
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(

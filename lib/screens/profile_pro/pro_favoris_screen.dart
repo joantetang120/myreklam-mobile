@@ -8,8 +8,6 @@ import 'package:myreklam/screens/demande_detail_screen.dart';
 import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
-import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
-import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/mys_earning_service.dart';
@@ -134,8 +132,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       // Seed reactions (force=true to ensure fresh data from API)
       for (final bp in _bonPlans) {
         final bpId = bp['id']?.toString() ?? '';
-        if (bpId.isNotEmpty)
+        if (bpId.isNotEmpty) {
           _seedReactionFromResource('bon-plans', bpId, bp, force: true);
+        }
       }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading bon plans: ${e.message}');
@@ -176,8 +175,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       // Seed reactions (force=true to ensure fresh data from API)
       for (final job in _jobOffers) {
         final jobId = job['id']?.toString() ?? '';
-        if (jobId.isNotEmpty)
+        if (jobId.isNotEmpty) {
           _seedReactionFromResource('job-offers', jobId, job, force: true);
+        }
       }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading job offers: ${e.message}');
@@ -212,8 +212,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       // Seed reactions (force=true to ensure fresh data from API)
       for (final d in _demandes) {
         final dId = d['id']?.toString() ?? '';
-        if (dId.isNotEmpty)
+        if (dId.isNotEmpty) {
           _seedReactionFromResource('demandes', dId, d, force: true);
+        }
       }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading demandes: ${e.message}');
@@ -248,8 +249,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       // Seed reactions (force=true to ensure fresh data from API)
       for (final evt in _events) {
         final evtId = evt['id']?.toString() ?? '';
-        if (evtId.isNotEmpty)
+        if (evtId.isNotEmpty) {
           _seedReactionFromResource('events', evtId, evt, force: true);
+        }
       }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading events: ${e.message}');
@@ -286,8 +288,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       // Seed reactions (force=true to ensure fresh data from API)
       for (final tr in _trainings) {
         final trId = tr['id']?.toString() ?? '';
-        if (trId.isNotEmpty)
+        if (trId.isNotEmpty) {
           _seedReactionFromResource('trainings', trId, tr, force: true);
+        }
       }
     } on ApiException catch (e) {
       debugPrint('Pro: Error loading trainings: ${e.message}');
@@ -616,7 +619,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                         CategoriesIcon(
                           title: "Bons plans",
                           iconColor: const Color.fromARGB(255, 252, 116, 37),
-                          bgColor: Color(0xFFFFE0B2).withOpacity(0.2),
+                          bgColor: Color(0xFFFFE0B2).withValues(alpha: 0.2),
                           icon: Icons.card_giftcard_outlined,
                           onTap: () =>
                               setState(() => selectedCategory = 'Bons plans'),
@@ -625,7 +628,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                         CategoriesIcon(
                           title: "Offre d'emploi",
                           iconColor: Colors.lightBlueAccent,
-                          bgColor: Color(0xFFB3E5FC).withOpacity(0.2),
+                          bgColor: Color(0xFFB3E5FC).withValues(alpha: 0.2),
                           iconAsset: 'assets/images/offres.png',
                           onTap: () => setState(
                             () => selectedCategory = 'Offre d\'emploi',
@@ -635,7 +638,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                         CategoriesIcon(
                           title: "Formations",
                           iconColor: Colors.purple,
-                          bgColor: Color(0xFFE1BEE7).withOpacity(0.1),
+                          bgColor: Color(0xFFE1BEE7).withValues(alpha: 0.1),
                           iconAsset: 'assets/images/Formation.png',
                           onTap: () =>
                               setState(() => selectedCategory = 'Formations'),
@@ -644,7 +647,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                         CategoriesIcon(
                           title: "Evenements",
                           iconColor: Colors.green,
-                          bgColor: Color(0xFFE6F7EF).withOpacity(0.5),
+                          bgColor: Color(0xFFE6F7EF).withValues(alpha: 0.5),
                           icon: Icons.event_outlined,
                           onTap: () =>
                               setState(() => selectedCategory = 'Evenements'),
@@ -658,7 +661,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                             255,
                             250,
                             178,
-                          ).withOpacity(0.2),
+                          ).withValues(alpha: 0.2),
                           icon: Icons.chat_outlined,
                           onTap: () =>
                               setState(() => selectedCategory = 'Demandes'),
@@ -681,8 +684,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
   Widget _buildContent() {
     if (selectedCategory == 'Bons plans') return _buildFavorisBonPlansList();
-    if (selectedCategory == "Offre d'emploi")
+    if (selectedCategory == "Offre d'emploi") {
       return _buildFavorisJobOffersList();
+    }
     if (selectedCategory == 'Formations') return _buildFavorisTrainingsList();
     if (selectedCategory == 'Evenements') return _buildFavorisEventsList();
     if (selectedCategory == 'Demandes') return _buildFavorisDemandesList();
@@ -1140,8 +1144,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
               if (newText == null ||
                   newText.trim().isEmpty ||
-                  newText == currentBody)
+                  newText == currentBody) {
                 return;
+              }
 
               try {
                 final response = await ApiClient().authenticatedPut(
@@ -1274,9 +1279,8 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               final userId = user['id']?.toString(); // Convertir en String
               final email = user['email']?.toString() ?? '';
 
-              final userProfile = user['pro_profile'] != null
-                  ? user['pro_profile']
-                  : user['particulier_profile'];
+              final userProfile =
+                  user['pro_profile'] ?? user['particulier_profile'];
 
               final displayName = (userId != null && userId == _currentUserId)
                   ? 'Vous'
@@ -1288,9 +1292,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               final likes = _asInt(comment['likes_count']);
               final userReaction = comment['user_reaction']?.toString();
               final isOwner = userId != null && userId == _currentUserId;
-              print("UserId: $userId");
-              print("_currentUserId: $_currentUserId");
-              print("isOwner: $isOwner");
+              debugPrint("UserId: $userId");
+              debugPrint("_currentUserId: $_currentUserId");
+              debugPrint("isOwner: $isOwner");
               final replies =
                   (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
@@ -1311,185 +1315,191 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                 comment: comment,
                 currentUserId: _currentUserId,
                 child: Padding(
-                padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ReklamAvatar(
-                          radius: isReply ? 14 : 18,
-                          avatarUrl: avatarUrl,
-                          displayName: displayName,
-                          accountType: user['pro_profile'] != null ? 'pro' : 'particulier',
-                          backgroundColor: const Color(0xFFE6F7EF),
-                          textColor: const Color(0xFF2A8143),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    displayName,
-                                    style: TextStyle(
-                                      fontSize: isReply ? 12 : 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF333333),
+                  padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ReklamAvatar(
+                            radius: isReply ? 14 : 18,
+                            avatarUrl: avatarUrl,
+                            displayName: displayName,
+                            accountType: user['pro_profile'] != null
+                                ? 'pro'
+                                : 'particulier',
+                            backgroundColor: const Color(0xFFE6F7EF),
+                            textColor: const Color(0xFF2A8143),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      displayName,
+                                      style: TextStyle(
+                                        fontSize: isReply ? 12 : 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF333333),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _buildTimeAgo(createdAt),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                  if (isOwner) ...[
-                                    const Spacer(),
-                                    GestureDetector(
-                                      onTapDown: (TapDownDetails details) {
-                                        showMenu<String>(
-                                          context: context,
-                                          position: RelativeRect.fromLTRB(
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                          ),
-                                          items: [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('Modifier'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.delete,
-                                                    size: 18,
-                                                    color: Colors.redAccent,
-                                                  ),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    'Supprimer',
-                                                    style: TextStyle(
-                                                      color: Colors.redAccent,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ).then((value) {
-                                          if (value == 'edit') {
-                                            editComment(comment);
-                                          } else if (value == 'delete') {
-                                            deleteComment(comment, isReply);
-                                          }
-                                        });
-                                      },
-                                      child: Icon(
-                                        Icons.more_horiz,
-                                        size: 18,
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _buildTimeAgo(createdAt),
+                                      style: TextStyle(
+                                        fontSize: 11,
                                         color: Colors.grey[400],
                                       ),
                                     ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                body,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF4F4F4F),
-                                  height: 1.4,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () =>
-                                        toggleCommentReaction(comment, 'like'),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          userReaction == 'like'
-                                              ? Icons.thumb_up_alt
-                                              : Icons.thumb_up_alt_outlined,
-                                          size: 14,
-                                          color: userReaction == 'like'
-                                              ? const Color(0xFF3AAE5E)
-                                              : Colors.grey[400],
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          '$likes',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (!isReply) ...[
-                                    const SizedBox(width: 14),
-                                    GestureDetector(
-                                      onTap: () {
-                                        modalSetState(() {
-                                          replyingToId = comment['id'] as int?;
-                                          replyingToName = displayName;
-                                        });
-                                        FocusScope.of(
-                                          ctx,
-                                        ).requestFocus(FocusNode());
-                                      },
-                                      child: Text(
-                                        'Répondre',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF2E9B5B),
+                                    if (isOwner) ...[
+                                      const Spacer(),
+                                      GestureDetector(
+                                        onTapDown: (TapDownDetails details) {
+                                          showMenu<String>(
+                                            context: context,
+                                            position: RelativeRect.fromLTRB(
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                            ),
+                                            items: [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit, size: 18),
+                                                    SizedBox(width: 8),
+                                                    Text('Modifier'),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete,
+                                                      size: 18,
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      'Supprimer',
+                                                      style: TextStyle(
+                                                        color: Colors.redAccent,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ).then((value) {
+                                            if (value == 'edit') {
+                                              editComment(comment);
+                                            } else if (value == 'delete') {
+                                              deleteComment(comment, isReply);
+                                            }
+                                          });
+                                        },
+                                        child: Icon(
+                                          Icons.more_horiz,
+                                          size: 18,
+                                          color: Colors.grey[400],
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  body,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF4F4F4F),
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () => toggleCommentReaction(
+                                        comment,
+                                        'like',
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            userReaction == 'like'
+                                                ? Icons.thumb_up_alt
+                                                : Icons.thumb_up_alt_outlined,
+                                            size: 14,
+                                            color: userReaction == 'like'
+                                                ? const Color(0xFF3AAE5E)
+                                                : Colors.grey[400],
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '$likes',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: userReaction == 'like'
+                                                  ? const Color(0xFF3AAE5E)
+                                                  : Colors.grey[500],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (!isReply) ...[
+                                      const SizedBox(width: 14),
+                                      GestureDetector(
+                                        onTap: () {
+                                          modalSetState(() {
+                                            replyingToId =
+                                                comment['id'] as int?;
+                                            replyingToName = displayName;
+                                          });
+                                          FocusScope.of(
+                                            ctx,
+                                          ).requestFocus(FocusNode());
+                                        },
+                                        child: Text(
+                                          'Répondre',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF2E9B5B),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Nested replies
+                      if (!isReply && replies.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ...replies.map(
+                          (r) => Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: buildCommentItem(r, isReply: true),
                           ),
                         ),
                       ],
-                    ),
-                    // Nested replies
-                    if (!isReply && replies.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      ...replies.map(
-                        (r) => Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: buildCommentItem(r, isReply: true),
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ));
+              );
             }
 
             return Padding(
@@ -1674,7 +1684,6 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     );
   }
 
-
   Widget _buildAuthorInfo(Map<String, dynamic> authorData) {
     // Extract profile data based on account type
     final accountType = authorData['account_type']?.toString();
@@ -1690,9 +1699,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     // used as their display name.)
     final String name = accountType == 'pro'
         ? (proProfile?['company_name']?.toString().trim().isNotEmpty == true
-            ? proProfile!['company_name'].toString()
-            : '${proProfile?['first_name']?.toString() ?? ''} ${proProfile?['last_name']?.toString() ?? ''}'
-                .trim())
+              ? proProfile!['company_name'].toString()
+              : '${proProfile?['first_name']?.toString() ?? ''} ${proProfile?['last_name']?.toString() ?? ''}'
+                    .trim())
         : (particulierProfile?['pseudo']?.toString() ?? '');
 
     // Extract avatar from profile or fallback to direct fields
@@ -1999,11 +2008,11 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           onFavoriteToggle: toggleFavorite,
           onReport: canReportResource(demande)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'demandes',
-                    entityId: demandeId,
-                    title: title,
-                  )
+                  context: context,
+                  entityType: 'demandes',
+                  entityId: demandeId,
+                  title: title,
+                )
               : null,
           reactionBar: demandeId.isNotEmpty
               ? _buildReactionBar(
@@ -2038,7 +2047,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         '/demandes/$demandeId',
       );
 
-      print("Response: ${response['data']['user']}");
+      debugPrint("Response: ${response['data']['user']}");
 
       if (!mounted) return;
       Navigator.pop(context);
@@ -2201,14 +2210,15 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     final addressCity = training['address_city']?.toString() ?? '';
 
     // Helper to extract array values
-    String _extractArrayValues(dynamic field) {
+    String extractArrayValues(dynamic field) {
       if (field is List) {
         return field
             .map((item) {
-              if (item is Map)
+              if (item is Map) {
                 return item['value']?.toString() ??
                     item['name']?.toString() ??
                     '';
+              }
               return item.toString();
             })
             .where((s) => s.isNotEmpty)
@@ -2218,7 +2228,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     }
 
     // Translation for training_style
-    String _translateTrainingStyle(String value) {
+    String translateTrainingStyle(String value) {
       switch (value.trim()) {
         case 'Remote':
           return 'En ligne';
@@ -2240,17 +2250,17 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
             final value = item is Map
                 ? (item['value']?.toString() ?? item.toString())
                 : item.toString();
-            return _translateTrainingStyle(value);
+            return translateTrainingStyle(value);
           })
           .where((s) => s.isNotEmpty)
           .join(' · ');
       trainingStyleText = translated;
     } else if (trainingStyleRaw != null) {
-      trainingStyleText = _translateTrainingStyle(trainingStyleRaw.toString());
+      trainingStyleText = translateTrainingStyle(trainingStyleRaw.toString());
     }
 
     // Translation for training_public
-    String _translateTrainingPublic(String value) {
+    String translateTrainingPublic(String value) {
       switch (value.trim()) {
         case 'AllPublic':
           return 'Tout public';
@@ -2276,18 +2286,18 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
             final value = item is Map
                 ? (item['value']?.toString() ?? item.toString())
                 : item.toString();
-            return _translateTrainingPublic(value);
+            return translateTrainingPublic(value);
           })
           .where((s) => s.isNotEmpty)
           .join(' · ');
       trainingPublicText = translated;
     } else if (trainingPublicRaw != null) {
-      trainingPublicText = _translateTrainingPublic(
+      trainingPublicText = translateTrainingPublic(
         trainingPublicRaw.toString(),
       );
     }
 
-    final certification = _extractArrayValues(training['certification']);
+    final certification = extractArrayValues(training['certification']);
 
     // Check if CPF is in training_funding array
     final trainingFunding = training['training_funding'];
@@ -2370,7 +2380,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       builder: (context, setState) {
         bool isLoading = false;
 
-        Future<void> _toggleFavorite() async {
+        Future<void> toggleFavorite() async {
           if (isLoading || trainingId.isEmpty) return;
 
           // Toggle immediately for responsive UI
@@ -2454,15 +2464,15 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           timeAgo: _buildTimeAgo(training['created_at']?.toString()),
           isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: isLoading,
-          onFavoriteToggle: _toggleFavorite,
+          onFavoriteToggle: toggleFavorite,
           onApply: () => _navigateToTrainingDetail(training),
           onReport: canReportResource(training)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'trainings',
-                    entityId: trainingId,
-                    title: title,
-                  )
+                  context: context,
+                  entityType: 'trainings',
+                  entityId: trainingId,
+                  title: title,
+                )
               : null,
           onAvatarTap: () {},
           reactionBar: trainingId.isNotEmpty
@@ -2542,8 +2552,8 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           : <String>[];
       final documentFilesRaw = data['document_files'] as List? ?? [];
       final documents = documentFilesRaw
-          .where((d) => d is Map)
-          .map((d) => Map<String, dynamic>.from(d as Map))
+          .whereType<Map>()
+          .map((d) => Map<String, dynamic>.from(d))
           .toList();
       final createdAt = data['created_at']?.toString();
       final mediaFiles =
@@ -2896,8 +2906,8 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     final coverageArea = isNationwide
         ? 'Toute la France'
         : (event['coverage_area']?.toString() ??
-           event['location']?.toString() ??
-           'Non spécifié');
+              event['location']?.toString() ??
+              'Non spécifié');
 
     final eventId = event['id']?.toString() ?? '';
 
@@ -2928,7 +2938,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
     return StatefulBuilder(
       builder: (context, cardSetState) {
-        Future<void> _toggleFavorite() async {
+        Future<void> toggleFavorite() async {
           // Toggle immediately for responsive UI
           cardSetState(() {
             favoris = !favoris;
@@ -3050,11 +3060,11 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           onTapCTA: () => _navigateToEventDetail(event),
           onReport: canReportResource(event)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'events',
-                    entityId: eventId,
-                    title: eventTitle,
-                  )
+                  context: context,
+                  entityType: 'events',
+                  entityId: eventId,
+                  title: eventTitle,
+                )
               : null,
           tags: tags.isNotEmpty ? tags : null,
           onAvatarTap: () {},
@@ -3062,7 +3072,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               ? _buildReactionBar('events', eventId)
               : null,
           isFavorite: favoris,
-          onFavoriteToggle: _toggleFavorite,
+          onFavoriteToggle: toggleFavorite,
         );
       },
     );
@@ -3216,7 +3226,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.8)],
+          colors: [color, color.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -3226,7 +3236,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -3330,14 +3340,14 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
     return StatefulBuilder(
       builder: (context, setState) {
-        bool _isLoading = false;
+        bool isLoading = false;
 
-        Future<void> _toggleFavorite() async {
-          if (_isLoading) return;
+        Future<void> toggleFavorite() async {
+          if (isLoading) return;
 
           // Toggle immediately for responsive UI
           favoris = !favoris;
-          setState(() => _isLoading = true);
+          setState(() => isLoading = true);
 
           try {
             if (!favoris) {
@@ -3361,7 +3371,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
             }
 
             setState(() {
-              _isLoading = false;
+              isLoading = false;
             });
 
             if (context.mounted) {
@@ -3382,7 +3392,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
             favoris = !favoris;
             bp['is_favorited'] = favoris;
             setState(() {
-              _isLoading = false;
+              isLoading = false;
             });
 
             if (context.mounted) {
@@ -3402,7 +3412,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -3525,7 +3535,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF2E9B5B).withOpacity(0.1),
+                                color: const Color(
+                                  0xFF2E9B5B,
+                                ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: const Color(0xFF2E9B5B),
@@ -3651,21 +3663,21 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                 top: 12,
                 left: 12,
                 child: GestureDetector(
-                  onTap: _isLoading ? null : _toggleFavorite,
+                  onTap: isLoading ? null : toggleFavorite,
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: _isLoading
+                    child: isLoading
                         ? SizedBox(
                             width: 20,
                             height: 20,
@@ -3708,9 +3720,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
     // Build period label
     String periodLabel = '';
-    if (period == 'horaire')
+    if (period == 'horaire') {
       periodLabel = '/h';
-    else if (period == 'mensuel')
+    } else if (period == 'mensuel')
       periodLabel = '/mois';
     else if (period == 'annuel')
       periodLabel = '/an';
@@ -3722,22 +3734,22 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
     // If we have both min and max, show range
     if (min != null && max != null) {
-      return '${min}€ - ${max}€$periodLabel$paymentLabel';
+      return '$min€ - $max€$periodLabel$paymentLabel';
     }
 
     // If we have exact salary
     if (exact != null) {
-      return '${exact}€$periodLabel$paymentLabel';
+      return '$exact€$periodLabel$paymentLabel';
     }
 
     // If we have only min
     if (min != null) {
-      return 'À partir de ${min}€$periodLabel$paymentLabel';
+      return 'À partir de $min€$periodLabel$paymentLabel';
     }
 
     // If we have only max
     if (max != null) {
-      return 'Jusqu\'à ${max}€$periodLabel$paymentLabel';
+      return 'Jusqu\'à $max€$periodLabel$paymentLabel';
     }
 
     // Check for salary_type = selon_profil
@@ -3792,14 +3804,14 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
     return StatefulBuilder(
       builder: (context, setState) {
-        bool _isLoading = false;
+        bool isLoading = false;
 
-        Future<void> _toggleFavorite() async {
-          if (_isLoading || jobId.isEmpty) return;
+        Future<void> toggleFavorite() async {
+          if (isLoading || jobId.isEmpty) return;
 
           // Toggle immediately for responsive UI
           favoris = !favoris;
-          setState(() => _isLoading = true);
+          setState(() => isLoading = true);
 
           try {
             if (!favoris) {
@@ -3836,7 +3848,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
             }
 
             setState(() {
-              _isLoading = false;
+              isLoading = false;
             });
 
             if (context.mounted) {
@@ -3856,7 +3868,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
             // Revert on error
             favoris = !favoris;
             job['is_favorited'] = favoris;
-            setState(() => _isLoading = false);
+            setState(() => isLoading = false);
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -3878,16 +3890,16 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           tags: tags,
           timeAgo: _buildTimeAgo(job['created_at']?.toString()),
           isFavorited: favoris,
-          isLoadingFavorite: _isLoading,
-          onFavoriteToggle: _toggleFavorite,
+          isLoadingFavorite: isLoading,
+          onFavoriteToggle: toggleFavorite,
           onApply: () => _navigateToJobOfferDetail(job),
           onReport: canReportResource(job)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'job-offers',
-                    entityId: jobId,
-                    title: jobTitle,
-                  )
+                  context: context,
+                  entityType: 'job-offers',
+                  entityId: jobId,
+                  title: jobTitle,
+                )
               : null,
           onAvatarTap: () {},
           reactionBar: jobId.isNotEmpty
@@ -3985,10 +3997,6 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           .map((m) => _buildImageUrl(m['url']?.toString() ?? ''))
           .where((url) => url.isNotEmpty)
           .toList();
-
-      if (images.isEmpty) {
-        images.add('assets/images/dashboard_particulier/Rectangle 13.png');
-      }
 
       final tags = <JobDetailTag>[
         if (contractType.isNotEmpty)
@@ -4219,11 +4227,11 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
   String _formatSalary(dynamic min, dynamic max) {
     if (min != null && max != null) {
-      return '${min}€ - ${max}€';
+      return '$min€ - $max€';
     } else if (min != null) {
-      return 'À partir de ${min}€';
+      return 'À partir de $min€';
     } else if (max != null) {
-      return 'Jusqu\'à ${max}€';
+      return 'Jusqu\'à $max€';
     }
     return 'Salaire non spécifié';
   }
@@ -4234,7 +4242,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

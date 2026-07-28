@@ -7,11 +7,7 @@ class BonPlanCarousel extends StatefulWidget {
   final List<String> urls;
   final double height;
 
-  const BonPlanCarousel({
-    super.key,
-    required this.urls,
-    this.height = 220,
-  });
+  const BonPlanCarousel({super.key, required this.urls, this.height = 220});
 
   @override
   State<BonPlanCarousel> createState() => _BonPlanCarouselState();
@@ -57,7 +53,11 @@ class _BonPlanCarouselState extends State<BonPlanCarousel> {
                   height: widget.height,
                   color: Colors.grey[200],
                   child: const Center(
-                    child: Icon(Icons.image_not_supported, color: Colors.grey, size: 48),
+                    child: Icon(
+                      Icons.image_not_supported,
+                      color: Colors.grey,
+                      size: 48,
+                    ),
                   ),
                 ),
               );

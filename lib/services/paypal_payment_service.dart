@@ -4,7 +4,8 @@ import 'package:myreklam/utils/user_session.dart';
 import 'api_client.dart';
 
 class PayPalPaymentService {
-  static final PayPalPaymentService _instance = PayPalPaymentService._internal();
+  static final PayPalPaymentService _instance =
+      PayPalPaymentService._internal();
   factory PayPalPaymentService() => _instance;
   PayPalPaymentService._internal();
 
@@ -35,10 +36,7 @@ class PayPalPaymentService {
   Future<bool> launchPayPalCheckout(String approvalUrl) async {
     final uri = Uri.parse(approvalUrl);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
       return true;
     }
     throw Exception('Could not launch PayPal checkout');
@@ -52,7 +50,9 @@ class PayPalPaymentService {
     );
 
     if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to capture PayPal payment');
+      throw Exception(
+        response['message'] ?? 'Failed to capture PayPal payment',
+      );
     }
 
     final subscription = response['subscription'];

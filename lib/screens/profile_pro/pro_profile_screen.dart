@@ -304,7 +304,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E9B5B).withOpacity(0.15),
+                  color: const Color(0xFF2E9B5B).withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -785,7 +785,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: const Color(
                                   0xFFEF8A40,
-                                ).withOpacity(0.2),
+                                ).withValues(alpha: 0.2),
                                 foregroundColor: const Color(0xFFEF8A40),
                                 side: const BorderSide(
                                   color: Color(0xFFEF8A40),
@@ -918,7 +918,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       title: 'Mes posts',
                       description:
                           'Consultez et gérez vos publications professionnelles',
-                      color: const Color(0xFF04BC7B).withOpacity(0.15),
+                      color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -934,7 +934,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       title: 'Mes recherches sauvegardées',
                       description:
                           'Retrouvez vos recherches et filtres enregistrés',
-                      color: const Color(0xFF04BC7B).withOpacity(0.15),
+                      color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -974,15 +974,16 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         ).then((_) => _loadProfile());
                       },
                     ),
-                    if (DelegationManager.instance
-                        .can(DelegationPermission.editAccount))
+                    if (DelegationManager.instance.can(
+                      DelegationPermission.editAccount,
+                    ))
                       _buildMenuCard(
                         icon: 'assets/images/profil_pro/opt-6.png',
                         backgroundColor: const Color(0xFFFFE0B2),
                         title: 'Paramètre du compte',
                         description:
                             'Configurez vos préférences et sécurité du compte',
-                        color: const Color(0xFF04BC7B).withOpacity(0.15),
+                        color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
                         onTap: () {
                           Navigator.push(
                             context,
@@ -998,7 +999,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                       title: 'Recompenses ambassadeurs',
                       description:
                           'Consultez vos points et avantages fidélité pro',
-                      color: const Color(0xFF04BC7B).withOpacity(0.15),
+                      color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -1023,8 +1024,9 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         ).then((_) => _loadProfile());
                       },
                     ),
-                    if (DelegationManager.instance
-                        .can(DelegationPermission.manageSubscription))
+                    if (DelegationManager.instance.can(
+                      DelegationPermission.manageSubscription,
+                    ))
                       _buildMenuCard(
                         icon: 'assets/images/profil_pro/opt-9.png',
                         backgroundColor: const Color(0xFFFFE0B2),
@@ -1040,15 +1042,16 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                           ).then((_) => _loadProfile());
                         },
                       ),
-                    if (DelegationManager.instance
-                        .can(DelegationPermission.editAccount))
+                    if (DelegationManager.instance.can(
+                      DelegationPermission.editAccount,
+                    ))
                       _buildMenuCard(
                         icon: 'assets/images/profil_pro/opt-10.png',
                         backgroundColor: const Color(0xFFFFE0B2),
                         title: 'Profil Entreprise',
                         description:
                             'Modifiez les informations et la présentation de votre société',
-                        color: const Color(0xFF04BC7B).withOpacity(0.15),
+                        color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
                         onTap: () {
                           Navigator.push(
                             context,
@@ -1078,7 +1081,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             offset: const Offset(0, 2),
                           ),
                         ],
@@ -1096,7 +1099,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                 decoration: BoxDecoration(
                                   color: const Color(
                                     0xFF2E9B5B,
-                                  ).withOpacity(0.1),
+                                  ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -1112,7 +1115,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.black.withOpacity(0.5),
+                                    color: Colors.black.withValues(alpha: 0.5),
                                   ),
                                 ),
                               ),
@@ -1133,7 +1136,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             offset: const Offset(0, 2),
                           ),
                         ],
@@ -1151,7 +1154,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                 decoration: BoxDecoration(
                                   color: const Color(
                                     0xFF2E9B5B,
-                                  ).withOpacity(0.1),
+                                  ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: _isLoggingOut
@@ -1181,7 +1184,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.black.withOpacity(0.5),
+                                    color: Colors.black.withValues(alpha: 0.5),
                                   ),
                                 ),
                               ),
@@ -1243,7 +1246,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -1259,7 +1262,7 @@ class _ProfileProScreenState extends State<ProfileProScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 4),

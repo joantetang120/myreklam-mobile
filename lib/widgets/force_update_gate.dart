@@ -4,9 +4,14 @@ import 'package:myreklam/widgets/dot_loader.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ForceUpdateGate extends StatefulWidget {
-  const ForceUpdateGate({required this.child, super.key});
+  const ForceUpdateGate({
+    required this.child,
+    this.checkForRequiredUpdate,
+    super.key,
+  });
 
   final Widget child;
+  final Future<AppUpdateRequirement?> Function()? checkForRequiredUpdate;
 
   @override
   State<ForceUpdateGate> createState() => _ForceUpdateGateState();
@@ -18,7 +23,9 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
   @override
   void initState() {
     super.initState();
-    _updateCheck = AppUpdateService().checkForRequiredUpdate();
+    _updateCheck =
+        widget.checkForRequiredUpdate?.call() ??
+        AppUpdateService().checkForRequiredUpdate();
   }
 
   @override
@@ -84,6 +91,11 @@ class _RequiredUpdateScreenState extends State<_RequiredUpdateScreen> {
     setState(() => _openingStore = true);
 
     try {
+      final immediateUpdate = widget.requirement.startImmediateUpdate;
+      if (immediateUpdate != null) {
+        await immediateUpdate();
+        return;
+      }
       final opened = await launchUrl(
         widget.requirement.storeUri,
         mode: LaunchMode.externalApplication,

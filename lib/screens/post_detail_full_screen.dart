@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 import 'package:video_player/video_player.dart';
 
@@ -144,7 +143,7 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.45),
+                color: Colors.black.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -166,7 +165,7 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.45),
+                  color: Colors.black.withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -311,6 +310,4 @@ class PostDetailFullScreen extends StatelessWidget {
       ),
     );
   }
-
-
 }

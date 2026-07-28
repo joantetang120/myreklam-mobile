@@ -38,15 +38,20 @@ class _DelegationBannerState extends State<DelegationBanner> {
           padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
           child: Row(
             children: [
-              const Icon(Icons.supervisor_account, color: Colors.white, size: 18),
+              const Icon(
+                Icons.supervisor_account,
+                color: Colors.white,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Vous gérez le compte de $name',
                   style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600),
+                    color: Colors.white,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -54,7 +59,7 @@ class _DelegationBannerState extends State<DelegationBanner> {
                 onPressed: _exiting ? null : _exit,
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white,
-                  backgroundColor: Colors.white.withOpacity(0.2),
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   minimumSize: const Size(0, 32),
                 ),
@@ -63,7 +68,10 @@ class _DelegationBannerState extends State<DelegationBanner> {
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Quitter', style: TextStyle(fontSize: 12.5)),
               ),
             ],

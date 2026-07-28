@@ -25,8 +25,7 @@ class DelegationManager extends ChangeNotifier {
 
   /// True if the current (possibly delegated) session may perform [permission].
   /// The real account owner is never restricted.
-  bool can(String permission) =>
-      !_active || _permissions.contains(permission);
+  bool can(String permission) => !_active || _permissions.contains(permission);
 
   /// Load persisted delegation state at app startup.
   Future<void> init() async {
@@ -36,7 +35,9 @@ class DelegationManager extends ChangeNotifier {
       _ownerId = info['owner_id'] as int? ?? 0;
       _ownerName = info['owner_name'] as String? ?? '';
       _ownerAvatar = info['owner_avatar'] as String?;
-      _permissions = List<String>.from(info['permissions'] as List? ?? const []);
+      _permissions = List<String>.from(
+        info['permissions'] as List? ?? const [],
+      );
     } else {
       _reset();
     }

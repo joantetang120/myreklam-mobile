@@ -29,8 +29,7 @@ class ParticulierOnboardingModal extends StatefulWidget {
       _ParticulierOnboardingModalState();
 }
 
-class _ParticulierOnboardingModalState
-    extends State<ParticulierOnboardingModal>
+class _ParticulierOnboardingModalState extends State<ParticulierOnboardingModal>
     with TickerProviderStateMixin {
   int _currentStep = 0;
   final int _totalSteps = 3;
@@ -61,13 +60,10 @@ class _ParticulierOnboardingModalState
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeInOut,
-    ));
+    _slideAnimation = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeInOut),
+        );
     _slideController.forward();
   }
 
@@ -139,7 +135,7 @@ class _ParticulierOnboardingModalState
 
       if (response['success'] == true) {
         _hasAwardedPicture = true;
-        
+
         // Update bottom bar avatar immediately
         if (response['avatar_url'] != null) {
           CustomBottomBar.avatarNotifier.value = response['avatar_url'];
@@ -149,11 +145,15 @@ class _ParticulierOnboardingModalState
         // Update balance from response if available
         final mysAwarded = response['mys_awarded'];
         if (mysAwarded != null) {
-          final mysValue = mysAwarded is String ? double.tryParse(mysAwarded) : mysAwarded.toDouble();
+          final mysValue = mysAwarded is String
+              ? double.tryParse(mysAwarded)
+              : mysAwarded.toDouble();
           if (mysValue != null && mysValue > 0) {
             final newBalance = response['new_mys_balance'];
             if (newBalance != null) {
-              final balanceValue = newBalance is String ? double.tryParse(newBalance) ?? 0.0 : newBalance.toDouble();
+              final balanceValue = newBalance is String
+                  ? double.tryParse(newBalance) ?? 0.0
+                  : newBalance.toDouble();
               UserSession().updateMys(balanceValue);
             }
           }
@@ -181,7 +181,9 @@ class _ParticulierOnboardingModalState
 
         // Award 0.5 My's for phone entered in modal
         try {
-          final mysResponse = await MysEarningService().awardMys(actionType: 'phone_added');
+          final mysResponse = await MysEarningService().awardMys(
+            actionType: 'phone_added',
+          );
           if (mysResponse['success'] == true) {
             _totalMysEarned += 0.5;
             final newBalance = mysResponse['earning']?['new_balance'];
@@ -195,7 +197,9 @@ class _ParticulierOnboardingModalState
       } else if (!widget.needsPhone) {
         // User already had phone from particulier_info_screen, award My's for it
         try {
-          final mysResponse = await MysEarningService().awardMys(actionType: 'phone_added');
+          final mysResponse = await MysEarningService().awardMys(
+            actionType: 'phone_added',
+          );
           if (mysResponse['success'] == true) {
             _totalMysEarned += 0.5;
             final newBalance = mysResponse['earning']?['new_balance'];
@@ -242,11 +246,11 @@ class _ParticulierOnboardingModalState
 
       // Mark onboarding as completed
       widget.onComplete();
-      
+
       // Close onboarding modal and show reward modal
       if (mounted) {
         Navigator.of(context).pop();
-        
+
         // Show reward modal after frame is rendered (avoid dialog conflict)
         if (_totalMysEarned > 0) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -263,9 +267,9 @@ class _ParticulierOnboardingModalState
     } catch (e) {
       debugPrint('Error completing onboarding: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: ${e.toString()}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: ${e.toString()}')));
       }
     } finally {
       if (mounted) {
@@ -450,10 +454,7 @@ class _ParticulierOnboardingModalState
           Text(
             'Une photo de profil augmente la confiance et rend votre profil plus attractif.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
           const SizedBox(height: 24),
 
@@ -467,11 +468,7 @@ class _ParticulierOnboardingModalState
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.stars,
-                  color: Color(0xFF3AAE5E),
-                  size: 16,
-                ),
+                const Icon(Icons.stars, color: Color(0xFF3AAE5E), size: 16),
                 const SizedBox(width: 6),
                 Text(
                   'Gagnez 0.5 My\'s',
@@ -503,10 +500,7 @@ class _ParticulierOnboardingModalState
               child: _selectedImage != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(70),
-                      child: Image.file(
-                        _selectedImage!,
-                        fit: BoxFit.cover,
-                      ),
+                      child: Image.file(_selectedImage!, fit: BoxFit.cover),
                     )
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -575,15 +569,11 @@ class _ParticulierOnboardingModalState
           Text(
             'Plus votre profil est complet, plus vous êtes visible et crédible auprès des autres utilisateurs.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
           const SizedBox(height: 16),
 
           // Progress indicator
-         
           const SizedBox(height: 24),
 
           // Phone input (if needed)
@@ -597,11 +587,7 @@ class _ParticulierOnboardingModalState
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.stars,
-                    color: Color(0xFF3AAE5E),
-                    size: 18,
-                  ),
+                  const Icon(Icons.stars, color: Color(0xFF3AAE5E), size: 18),
                   const SizedBox(width: 8),
                   Text(
                     'Ajoutez votre numéro (+0.5 My)',
@@ -643,7 +629,10 @@ class _ParticulierOnboardingModalState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE6F7EF),
                   borderRadius: BorderRadius.circular(20),
@@ -651,11 +640,7 @@ class _ParticulierOnboardingModalState
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.stars,
-                      color: Color(0xFF3AAE5E),
-                      size: 18,
-                    ),
+                    const Icon(Icons.stars, color: Color(0xFF3AAE5E), size: 18),
                     const SizedBox(width: 8),
                     Text(
                       'Ajoutez un réseau social (+0.5 My)',
@@ -758,8 +743,8 @@ class _ParticulierOnboardingModalState
             color: index == _currentStep
                 ? const Color(0xFF3AAE5E)
                 : index < _currentStep
-                    ? const Color(0xFF3AAE5E).withOpacity(0.5)
-                    : Colors.grey[300],
+                ? const Color(0xFF3AAE5E).withValues(alpha: 0.5)
+                : Colors.grey[300],
           ),
         );
       }),

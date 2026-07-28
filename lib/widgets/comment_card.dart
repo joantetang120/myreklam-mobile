@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
 enum CommentType { comment, reply }
@@ -112,7 +111,7 @@ class CommentCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
               ),
             ),
             child: Row(
@@ -138,7 +137,7 @@ class CommentCard extends StatelessWidget {
                 Container(
                   height: 12,
                   width: 1,
-                  color: Colors.grey.withOpacity(0.4),
+                  color: Colors.grey.withValues(alpha: 0.4),
                 ),
                 const SizedBox(width: 16),
                 GestureDetector(

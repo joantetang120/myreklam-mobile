@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class ParticulierInfoScreen extends StatefulWidget {
   const ParticulierInfoScreen({super.key});
@@ -34,12 +36,14 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
         pseudo: _pseudoController.text.trim(),
         phone: _phoneController.text.trim(),
       );
+      UserSession().markProfileCompleted();
 
       if (!mounted) return;
 
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const ParticulierMainScreen()),
+        (route) => false,
       );
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -140,7 +144,7 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                         borderRadius: BorderRadius.circular(15),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
@@ -200,10 +204,21 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                                   ),
                                   child: TextFormField(
                                     controller: _pseudoController,
+                                    inputFormatters: [
+                                      LengthLimitingTextInputFormatter(20),
+                                    ],
                                     textInputAction: TextInputAction.next,
                                     validator: (value) {
-                                      if (value == null || value.isEmpty) {
+                                      final pseudo = value?.trim() ?? '';
+                                      if (pseudo.isEmpty) {
                                         return 'Veuillez entrer votre pseudo';
+                                      }
+                                      if (pseudo.contains('@')) {
+                                        return 'Une adresse e-mail ne peut pas être utilisée';
+                                      }
+                                      if (pseudo.length < 3 ||
+                                          pseudo.length > 20) {
+                                        return 'Le pseudo doit contenir entre 3 et 20 caractères';
                                       }
                                       return null;
                                     },

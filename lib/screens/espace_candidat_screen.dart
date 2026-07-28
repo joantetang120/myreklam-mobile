@@ -47,13 +47,15 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
 
   Future<void> _loadCandidatures() async {
     setState(() => _isLoadingCandidatures = true);
-    
+
     List<dynamic> allCandidatures = [];
-    
+
     // Fetch training subscriptions independently
     try {
       debugPrint('Fetching training subscriptions...');
-      final trainingResponse = await ApiClient().authenticatedGet('/trainings/my-subscriptions');
+      final trainingResponse = await ApiClient().authenticatedGet(
+        '/trainings/my-subscriptions',
+      );
       debugPrint('Training response: $trainingResponse');
       if (trainingResponse['success'] == true) {
         final trainings = trainingResponse['data'] as List<dynamic>? ?? [];
@@ -68,7 +70,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     // Fetch event participations independently
     try {
       debugPrint('Fetching event participations...');
-      final eventResponse = await ApiClient().authenticatedGet('/events/my-participations');
+      final eventResponse = await ApiClient().authenticatedGet(
+        '/events/my-participations',
+      );
       debugPrint('Event response: $eventResponse');
       if (eventResponse['success'] == true) {
         final events = eventResponse['data'] as List<dynamic>? ?? [];
@@ -110,7 +114,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
 
     try {
       if (type == 'formation') {
-        final response = await ApiClient().authenticatedGet('/trainings/$entityId');
+        final response = await ApiClient().authenticatedGet(
+          '/trainings/$entityId',
+        );
         Navigator.pop(context);
 
         final data = response['data'] as Map<String, dynamic>? ?? response;
@@ -118,7 +124,8 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         final userData = data['user'] as Map<String, dynamic>?;
 
         // Extract images
-        final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+        final mediaFiles =
+            data['media_files'] as List? ?? data['media'] as List? ?? [];
         final images = mediaFiles
             .where((m) => m is Map && m['url'] != null)
             .map((m) => ApiConfig.resolveMediaUrl(m['url']?.toString()) ?? '')
@@ -126,11 +133,12 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
             .toList();
 
         // Build owner info
-        final ownerName = user?['display_name']?.toString() ?? 
-                         user?['name']?.toString() ?? 
-                         user?['pro_profile']?['company_name']?.toString() ??
-                         user?['particulier_profile']?['pseudo']?.toString() ??
-                         'Organisme';
+        final ownerName =
+            user?['display_name']?.toString() ??
+            user?['name']?.toString() ??
+            user?['pro_profile']?['company_name']?.toString() ??
+            user?['particulier_profile']?['pseudo']?.toString() ??
+            'Organisme';
 
         // Get training data
         final title = data['title']?.toString() ?? '';
@@ -177,8 +185,8 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         final website = data['website']?.toString();
         final documentFilesRaw = data['document_files'] as List? ?? [];
         final documents = documentFilesRaw
-            .where((d) => d is Map)
-            .map((d) => Map<String, dynamic>.from(d as Map))
+            .whereType<Map>()
+            .map((d) => Map<String, dynamic>.from(d))
             .toList();
         final createdAt = data['created_at']?.toString();
 
@@ -233,7 +241,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
           );
         }
       } else if (type == 'evenement') {
-        final response = await ApiClient().authenticatedGet('/events/$entityId');
+        final response = await ApiClient().authenticatedGet(
+          '/events/$entityId',
+        );
         Navigator.pop(context);
 
         final data = response['data'] as Map<String, dynamic>? ?? response;
@@ -241,7 +251,8 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         final userData = data['user'] as Map<String, dynamic>?;
 
         // Extract images
-        final mediaFiles = data['media_files'] as List? ?? data['media'] as List? ?? [];
+        final mediaFiles =
+            data['media_files'] as List? ?? data['media'] as List? ?? [];
         final images = mediaFiles
             .where((m) => m is Map && m['url'] != null)
             .map((m) => ApiConfig.resolveMediaUrl(m['url']?.toString()) ?? '')
@@ -249,12 +260,16 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
             .toList();
 
         // Build owner info
-        final ownerName = user?['display_name']?.toString() ?? 
-                         user?['name']?.toString() ?? 
-                         user?['pro_profile']?['company_name']?.toString() ??
-                         user?['particulier_profile']?['pseudo']?.toString() ??
-                         'Organisateur';
-        final profileImage = user?['avatar_url']?.toString() ?? user?['avatar']?.toString() ?? '';
+        final ownerName =
+            user?['display_name']?.toString() ??
+            user?['name']?.toString() ??
+            user?['pro_profile']?['company_name']?.toString() ??
+            user?['particulier_profile']?['pseudo']?.toString() ??
+            'Organisateur';
+        final profileImage =
+            user?['avatar_url']?.toString() ??
+            user?['avatar']?.toString() ??
+            '';
 
         // Get event data
         final title = data['title']?.toString() ?? '';
@@ -272,9 +287,13 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         final priceType = data['price_type']?.toString();
         final pricingMode = data['pricing_mode']?.toString();
         final priceAmount = data['price_amount']?.toString();
-        final priceCategories = (data['price_categories'] as List?)
-            ?.map<Map<String, dynamic>>((c) => Map<String, dynamic>.from(c as Map))
-            .toList() ?? <Map<String, dynamic>>[];
+        final priceCategories =
+            (data['price_categories'] as List?)
+                ?.map<Map<String, dynamic>>(
+                  (c) => Map<String, dynamic>.from(c as Map),
+                )
+                .toList() ??
+            <Map<String, dynamic>>[];
         final reservationMode = data['reservation_mode']?.toString();
         final coverageArea = data['coverage_area']?.toString();
         final locationCity = data['location_city']?.toString();
@@ -298,7 +317,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
               builder: (_) => EventDetailScreen(
                 images: images,
                 avatar: profileImage,
-                username: isOrganizer ? ownerName : (organizerName ?? 'Organisateur'),
+                username: isOrganizer
+                    ? ownerName
+                    : (organizerName ?? 'Organisateur'),
                 userType: 'Évènement',
                 eventTitle: title,
                 description: description,
@@ -342,9 +363,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     } catch (e) {
       Navigator.pop(context);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: ${e.toString()}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: ${e.toString()}')));
       }
     }
   }
@@ -420,7 +441,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     }
 
     try {
-      final conversation = await ConversationService().getOrCreateConversation(ownerId);
+      final conversation = await ConversationService().getOrCreateConversation(
+        ownerId,
+      );
       if (mounted) {
         Navigator.push(
           context,
@@ -437,9 +460,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     } catch (e) {
       debugPrint('Error starting chat: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
       }
     }
   }
@@ -451,7 +474,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
   Future<void> _loadDocuments() async {
     setState(() => _isLoadingDocuments = true);
     try {
-      final response = await ApiClient().authenticatedGet('/candidate-documents/settings');
+      final response = await ApiClient().authenticatedGet(
+        '/candidate-documents/settings',
+      );
       final data = response['data'];
 
       if (data != null) {
@@ -490,7 +515,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     // For Android 12 and below, request storage permission
     // Try multiple permission types for better compatibility
     PermissionStatus status = await Permission.storage.status;
-    
+
     if (status.isDenied) {
       status = await Permission.storage.request();
     }
@@ -596,7 +621,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Permission de stockage nécessaire pour sélectionner des fichiers'),
+              content: Text(
+                'Permission de stockage nécessaire pour sélectionner des fichiers',
+              ),
               backgroundColor: Colors.orange,
               duration: Duration(seconds: 3),
             ),
@@ -652,7 +679,13 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${type == 'cv' ? 'CV' : type == 'lettre' ? 'Lettre' : 'Portfolio'} ajouté avec succès'),
+              content: Text(
+                '${type == 'cv'
+                    ? 'CV'
+                    : type == 'lettre'
+                    ? 'Lettre'
+                    : 'Portfolio'} ajouté avec succès',
+              ),
               backgroundColor: const Color(0xFF3AAE5E),
             ),
           );
@@ -677,7 +710,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     if (docId == null) return;
 
     try {
-      final response = await ApiClient().authenticatedDelete('/candidate-documents/$docId');
+      final response = await ApiClient().authenticatedDelete(
+        '/candidate-documents/$docId',
+      );
 
       if (response['success'] == true) {
         setState(() {
@@ -719,7 +754,11 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     }
   }
 
-  Future<void> _updateDocumentVisibility(String type, dynamic docId, bool isVisible) async {
+  Future<void> _updateDocumentVisibility(
+    String type,
+    dynamic docId,
+    bool isVisible,
+  ) async {
     if (docId == null) return;
 
     try {
@@ -786,8 +825,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  ParticulierMainScreen(initialIndex: index),
+              builder: (context) => ParticulierMainScreen(initialIndex: index),
             ),
           );
         }
@@ -820,7 +858,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
           onRefresh: _refreshData,
           color: const Color(0xFFFF9800),
           child: _isLoadingDocuments
-              ? const Center(child: CircularProgressIndicator(color: Color(0xFFFF9800)))
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+                )
               : SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   child: Column(
@@ -828,135 +868,147 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                     children: [
                       const SizedBox(height: 12),
 
-                    // Search bar
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.search, color: Colors.grey[400], size: 20),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Faire une recherche',
-                              style: TextStyle(
-                                fontSize: 13,
+                      // Search bar
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.search,
                                 color: Colors.grey[400],
+                                size: 20,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 10),
+                              Text(
+                                'Faire une recherche',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Tab toggle
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => setState(() => _showDocuments = true),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: _showDocuments
-                                        ? const Color(0xFFFF9800)
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.description_outlined,
-                                        size: 16,
-                                        color: _showDocuments
-                                            ? Colors.white
-                                            : Colors.grey[600],
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Mes documents',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
+                      // Tab toggle
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _showDocuments = true),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _showDocuments
+                                          ? const Color(0xFFFF9800)
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.description_outlined,
+                                          size: 16,
                                           color: _showDocuments
                                               ? Colors.white
                                               : Colors.grey[600],
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Mes documents',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: _showDocuments
+                                                ? Colors.white
+                                                : Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () => setState(() => _showDocuments = false),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 10),
-                                  decoration: BoxDecoration(
-                                    color: !_showDocuments
-                                        ? const Color(0xFFFF9800)
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.volume_up_outlined,
-                                        size: 16,
-                                        color: !_showDocuments
-                                            ? Colors.white
-                                            : Colors.grey[600],
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Mes Candidatures',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _showDocuments = false),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: !_showDocuments
+                                          ? const Color(0xFFFF9800)
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.volume_up_outlined,
+                                          size: 16,
                                           color: !_showDocuments
                                               ? Colors.white
                                               : Colors.grey[600],
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Mes Candidatures',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: !_showDocuments
+                                                ? Colors.white
+                                                : Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    if (_showDocuments) _buildDocumentsTab(),
-                    if (!_showDocuments) _buildCandidaturesTab(),
+                      if (_showDocuments) _buildDocumentsTab(),
+                      if (!_showDocuments) _buildCandidaturesTab(),
 
-                    const SizedBox(height: 40),
-                  ],
+                      const SizedBox(height: 40),
+                    ],
+                  ),
                 ),
-              ),
         ),
       ),
     );
@@ -991,7 +1043,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                         onChanged: (val) => _updateGlobalVisibility(val),
                         activeThumbColor: Colors.white,
                         activeTrackColor: const Color(0xFFFF9800),
-                        trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+                        trackOutlineColor: WidgetStateProperty.all(
+                          Colors.transparent,
+                        ),
                         inactiveThumbColor: Colors.white,
                         inactiveTrackColor: Colors.grey[300],
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1022,11 +1076,16 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
           // CV Section
           _buildDocumentSection(
             title: 'Votre CV',
-            status: _cvDocument != null ? _cvDocument!['original_name'] ?? 'CV ajouté' : 'Aucun document',
-            buttonLabel: _cvDocument != null ? 'Remplacer le CV' : 'Ajouter votre CV',
+            status: _cvDocument != null
+                ? _cvDocument!['original_name'] ?? 'CV ajouté'
+                : 'Aucun document',
+            buttonLabel: _cvDocument != null
+                ? 'Remplacer le CV'
+                : 'Ajouter votre CV',
             buttonIcon: Icons.upload_file_outlined,
             visibilityValue: _cvVisibility,
-            onVisibilityChanged: (val) => _updateDocumentVisibility('cv', _cvDocument?['id'], val),
+            onVisibilityChanged: (val) =>
+                _updateDocumentVisibility('cv', _cvDocument?['id'], val),
             document: _cvDocument,
             onUpload: () => _pickAndUploadDocument('cv'),
             onDelete: () => _deleteDocument('cv', _cvDocument?['id']),
@@ -1037,11 +1096,19 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
           // Lettre de motivation Section
           _buildDocumentSection(
             title: 'Lettre de motivation',
-            status: _lettreDocument != null ? _lettreDocument!['original_name'] ?? 'Lettre ajoutée' : 'Aucun document',
-            buttonLabel: _lettreDocument != null ? 'Remplacer la lettre' : 'Ajouter une lettre de motivation',
+            status: _lettreDocument != null
+                ? _lettreDocument!['original_name'] ?? 'Lettre ajoutée'
+                : 'Aucun document',
+            buttonLabel: _lettreDocument != null
+                ? 'Remplacer la lettre'
+                : 'Ajouter une lettre de motivation',
             buttonIcon: Icons.upload_file_outlined,
             visibilityValue: _lettreVisibility,
-            onVisibilityChanged: (val) => _updateDocumentVisibility('lettre', _lettreDocument?['id'], val),
+            onVisibilityChanged: (val) => _updateDocumentVisibility(
+              'lettre',
+              _lettreDocument?['id'],
+              val,
+            ),
             document: _lettreDocument,
             onUpload: () => _pickAndUploadDocument('lettre'),
             onDelete: () => _deleteDocument('lettre', _lettreDocument?['id']),
@@ -1052,14 +1119,23 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
           // Portfolio Section
           _buildDocumentSection(
             title: 'Portfolio',
-            status: _portfolioDocument != null ? _portfolioDocument!['original_name'] ?? 'Portfolio ajouté' : 'Aucun document',
-            buttonLabel: _portfolioDocument != null ? 'Remplacer le portfolio' : 'Ajouter un document ou lien',
+            status: _portfolioDocument != null
+                ? _portfolioDocument!['original_name'] ?? 'Portfolio ajouté'
+                : 'Aucun document',
+            buttonLabel: _portfolioDocument != null
+                ? 'Remplacer le portfolio'
+                : 'Ajouter un document ou lien',
             buttonIcon: Icons.upload_file_outlined,
             visibilityValue: _portfolioVisibility,
-            onVisibilityChanged: (val) => _updateDocumentVisibility('portfolio', _portfolioDocument?['id'], val),
+            onVisibilityChanged: (val) => _updateDocumentVisibility(
+              'portfolio',
+              _portfolioDocument?['id'],
+              val,
+            ),
             document: _portfolioDocument,
             onUpload: () => _pickAndUploadDocument('portfolio'),
-            onDelete: () => _deleteDocument('portfolio', _portfolioDocument?['id']),
+            onDelete: () =>
+                _deleteDocument('portfolio', _portfolioDocument?['id']),
           ),
 
           if (_isUploading) ...[
@@ -1069,7 +1145,10 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                 children: [
                   CircularProgressIndicator(color: Color(0xFFFF9800)),
                   SizedBox(height: 8),
-                  Text('Upload en cours...', style: TextStyle(color: Colors.grey)),
+                  Text(
+                    'Upload en cours...',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ],
               ),
             ),
@@ -1111,7 +1190,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                   onChanged: onVisibilityChanged,
                   activeThumbColor: Colors.white,
                   activeTrackColor: const Color(0xFFFF9800),
-                  trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+                  trackOutlineColor: WidgetStateProperty.all(
+                    Colors.transparent,
+                  ),
                   inactiveThumbColor: Colors.white,
                   inactiveTrackColor: Colors.grey[300],
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1147,8 +1228,12 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                       status,
                       style: TextStyle(
                         fontSize: 12,
-                        color: hasDocument ? const Color(0xFF3AAE5E) : Colors.grey[400],
-                        fontWeight: hasDocument ? FontWeight.w500 : FontWeight.normal,
+                        color: hasDocument
+                            ? const Color(0xFF3AAE5E)
+                            : Colors.grey[400],
+                        fontWeight: hasDocument
+                            ? FontWeight.w500
+                            : FontWeight.normal,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1202,7 +1287,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     if (_isLoadingCandidatures) {
       return const Padding(
         padding: EdgeInsets.all(16),
-        child: Center(child: CircularProgressIndicator(color: Color(0xFFFF9800))),
+        child: Center(
+          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+        ),
       );
     }
 
@@ -1210,8 +1297,10 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     final filteredCandidatures = _candidatures.where((c) {
       if (_selectedCandidatureFilter == 'Tout') return true;
       if (_selectedCandidatureFilter == 'Emploi') return c['type'] == 'emploi';
-      if (_selectedCandidatureFilter == 'Formations') return c['type'] == 'formation';
-      if (_selectedCandidatureFilter == 'Événements') return c['type'] == 'evenement';
+      if (_selectedCandidatureFilter == 'Formations')
+        return c['type'] == 'formation';
+      if (_selectedCandidatureFilter == 'Événements')
+        return c['type'] == 'evenement';
       return true;
     }).toList();
 
@@ -1240,10 +1329,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
           // Category label
           Text(
             'Sélectionner la catégorie',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
           ),
           const SizedBox(height: 10),
 
@@ -1266,10 +1352,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                 padding: const EdgeInsets.all(32),
                 child: Text(
                   'Aucune candidature',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                 ),
               ),
             )
@@ -1280,7 +1363,10 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
               final status = candidature['status'] as String? ?? 'pending';
               final owner = candidature['owner'] as Map<String, dynamic>?;
               final ownerName = owner?['name'] as String? ?? 'Utilisateur';
-              final date = candidature['subscribed_at'] ?? candidature['participated_at'] ?? '';
+              final date =
+                  candidature['subscribed_at'] ??
+                  candidature['participated_at'] ??
+                  '';
 
               String displayType;
               IconData typeIcon;
@@ -1316,7 +1402,8 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
               final candidatureId = candidature['id'];
               final trainingId = candidature['training_id'];
               final eventId = candidature['event_id'];
-              final entityId = (type == 'formation' ? trainingId : eventId)?.toString();
+              final entityId = (type == 'formation' ? trainingId : eventId)
+                  ?.toString();
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
@@ -1334,7 +1421,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                   onViewDetails: () => _navigateToDetail(entityId, type),
                 ),
               );
-            }).toList(),
+            }),
         ],
       ),
     );
@@ -1396,7 +1483,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1417,7 +1504,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                   shape: BoxShape.circle,
                   image: ownerAvatarUrl != null
                       ? DecorationImage(
-                          image: NetworkImage(ApiConfig.resolveMediaUrl(ownerAvatarUrl)!),
+                          image: NetworkImage(
+                            ApiConfig.resolveMediaUrl(ownerAvatarUrl)!,
+                          ),
                           fit: BoxFit.cover,
                         )
                       : null,
@@ -1442,10 +1531,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                     const SizedBox(height: 2),
                     Text(
                       ownerName,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -1514,7 +1600,11 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                     style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                   ),
                   const SizedBox(width: 12),
-                  Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey[400]),
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 14,
+                    color: Colors.grey[400],
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     date,

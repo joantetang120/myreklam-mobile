@@ -41,8 +41,9 @@ class ApiConfig {
     if (path == null) return null;
     final trimmed = path.trim();
     if (trimmed.isEmpty) return null;
-    if (trimmed.startsWith('http') || trimmed.startsWith('https'))
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       return trimmed;
+    }
 
     // Handle case where URL is nested inside storage/ (e.g., storage/https://...)
     if (trimmed.contains('http://') || trimmed.contains('https://')) {
@@ -58,6 +59,9 @@ class ApiConfig {
     if (trimmed.startsWith('storage/')) {
       return '$host/$trimmed';
     }
+    if (trimmed.startsWith('img/')) {
+      return '$host/$trimmed';
+    }
     // Handle candidate-documents paths
     if (trimmed.startsWith('candidate-documents/')) {
       final result = '$host/storage/$trimmed';
@@ -70,7 +74,12 @@ class ApiConfig {
       debugPrint('avatars result: $result');
       return result;
     }
-    debugPrint('fallback return: $trimmed');
-    return trimmed;
+    // Remaining backend media paths (img/, uploads/, profile/, etc.) are
+    // storage-relative. Returning them unchanged makes NetworkImage interpret
+    // them as invalid URLs on some screens.
+    final normalized = trimmed.replaceFirst(RegExp(r'^/+'), '');
+    final result = '$host/storage/$normalized';
+    debugPrint('generic media result: $result');
+    return result;
   }
 }

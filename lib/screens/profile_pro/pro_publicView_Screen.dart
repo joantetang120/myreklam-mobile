@@ -30,6 +30,8 @@ import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
 import 'package:myreklam/utils/blocked_users_manager.dart';
+import 'package:myreklam/utils/professional_subscription_status.dart';
+import 'package:myreklam/utils/avatar_resolver.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -341,7 +343,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.45),
+                  color: Colors.black.withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -365,7 +367,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.45),
+                    color: Colors.black.withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -404,7 +406,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
           Center(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -603,7 +605,8 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       context,
                       MaterialPageRoute(
                         builder: (context) =>
-                            authorInfo.accountType.toLowerCase() == 'professionnel'
+                            authorInfo.accountType.toLowerCase() ==
+                                'professionnel'
                             ? ProPublicViewScreen(userId: userId)
                             : ParticulierPublicViewScreen(userId: userId),
                       ),
@@ -672,11 +675,14 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(
-            bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
+            bottom: BorderSide(
+              color: Colors.grey.withValues(alpha: 0.2),
+              width: 1,
+            ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.09),
+              color: Colors.black.withValues(alpha: 0.09),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -1098,7 +1104,7 @@ class _CarouselMediaItemWidget extends StatelessWidget {
           // Smaller play icon overlay for carousel
           Container(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -1339,7 +1345,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.8)],
+          colors: [color, color.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1349,7 +1355,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1604,8 +1610,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
               if (newText == null ||
                   newText.trim().isEmpty ||
-                  newText == currentBody)
+                  newText == currentBody) {
                 return;
+              }
 
               try {
                 final response = await ApiClient().authenticatedPut(
@@ -1738,9 +1745,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               final userId = user['id']?.toString(); // Convertir en String
               final email = user['email']?.toString() ?? '';
 
-              final userProfile = user['pro_profile'] != null
-                  ? user['pro_profile']
-                  : user['particulier_profile'];
+              final userProfile =
+                  user['pro_profile'] ?? user['particulier_profile'];
 
               final displayName = (userId != null && userId == _currentUserId)
                   ? 'Vous'
@@ -1752,9 +1758,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               final likes = _asInt(comment['likes_count']);
               final userReaction = comment['user_reaction']?.toString();
               final isOwner = userId != null && userId == _currentUserId;
-              print("UserId: $userId");
-              print("_currentUserId: $_currentUserId");
-              print("isOwner: $isOwner");
+              debugPrint("UserId: $userId");
+              debugPrint("_currentUserId: $_currentUserId");
+              debugPrint("isOwner: $isOwner");
               final replies =
                   (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
@@ -1775,182 +1781,186 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 comment: comment,
                 currentUserId: _currentUserId,
                 child: Padding(
-                padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ReklamAvatar(
-                          avatarUrl: avatarUrl,
-                          radius: isReply ? 14 : 18,
-                          displayName: displayName,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    displayName,
-                                    style: TextStyle(
-                                      fontSize: isReply ? 12 : 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF333333),
+                  padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ReklamAvatar(
+                            avatarUrl: avatarUrl,
+                            radius: isReply ? 14 : 18,
+                            displayName: displayName,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      displayName,
+                                      style: TextStyle(
+                                        fontSize: isReply ? 12 : 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF333333),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _buildTimeAgo(createdAt),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                  if (isOwner) ...[
-                                    const Spacer(),
-                                    GestureDetector(
-                                      onTapDown: (TapDownDetails details) {
-                                        showMenu<String>(
-                                          context: context,
-                                          position: RelativeRect.fromLTRB(
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                          ),
-                                          items: [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('Modifier'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.delete,
-                                                    size: 18,
-                                                    color: Colors.redAccent,
-                                                  ),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    'Supprimer',
-                                                    style: TextStyle(
-                                                      color: Colors.redAccent,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ).then((value) {
-                                          if (value == 'edit') {
-                                            editComment(comment);
-                                          } else if (value == 'delete') {
-                                            deleteComment(comment, isReply);
-                                          }
-                                        });
-                                      },
-                                      child: Icon(
-                                        Icons.more_horiz,
-                                        size: 18,
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _buildTimeAgo(createdAt),
+                                      style: TextStyle(
+                                        fontSize: 11,
                                         color: Colors.grey[400],
                                       ),
                                     ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                body,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF4F4F4F),
-                                  height: 1.4,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () =>
-                                        toggleCommentReaction(comment, 'like'),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          userReaction == 'like'
-                                              ? Icons.thumb_up_alt
-                                              : Icons.thumb_up_alt_outlined,
-                                          size: 14,
-                                          color: userReaction == 'like'
-                                              ? const Color(0xFF3AAE5E)
-                                              : Colors.grey[400],
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          '$likes',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (!isReply) ...[
-                                    const SizedBox(width: 14),
-                                    GestureDetector(
-                                      onTap: () {
-                                        modalSetState(() {
-                                          replyingToId = comment['id'] as int?;
-                                          replyingToName = displayName;
-                                        });
-                                        FocusScope.of(
-                                          ctx,
-                                        ).requestFocus(FocusNode());
-                                      },
-                                      child: Text(
-                                        'Répondre',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF2E9B5B),
+                                    if (isOwner) ...[
+                                      const Spacer(),
+                                      GestureDetector(
+                                        onTapDown: (TapDownDetails details) {
+                                          showMenu<String>(
+                                            context: context,
+                                            position: RelativeRect.fromLTRB(
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                            ),
+                                            items: [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit, size: 18),
+                                                    SizedBox(width: 8),
+                                                    Text('Modifier'),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete,
+                                                      size: 18,
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      'Supprimer',
+                                                      style: TextStyle(
+                                                        color: Colors.redAccent,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ).then((value) {
+                                            if (value == 'edit') {
+                                              editComment(comment);
+                                            } else if (value == 'delete') {
+                                              deleteComment(comment, isReply);
+                                            }
+                                          });
+                                        },
+                                        child: Icon(
+                                          Icons.more_horiz,
+                                          size: 18,
+                                          color: Colors.grey[400],
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  body,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF4F4F4F),
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () => toggleCommentReaction(
+                                        comment,
+                                        'like',
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            userReaction == 'like'
+                                                ? Icons.thumb_up_alt
+                                                : Icons.thumb_up_alt_outlined,
+                                            size: 14,
+                                            color: userReaction == 'like'
+                                                ? const Color(0xFF3AAE5E)
+                                                : Colors.grey[400],
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '$likes',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: userReaction == 'like'
+                                                  ? const Color(0xFF3AAE5E)
+                                                  : Colors.grey[500],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (!isReply) ...[
+                                      const SizedBox(width: 14),
+                                      GestureDetector(
+                                        onTap: () {
+                                          modalSetState(() {
+                                            replyingToId =
+                                                comment['id'] as int?;
+                                            replyingToName = displayName;
+                                          });
+                                          FocusScope.of(
+                                            ctx,
+                                          ).requestFocus(FocusNode());
+                                        },
+                                        child: Text(
+                                          'Répondre',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF2E9B5B),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Nested replies
+                      if (!isReply && replies.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ...replies.map(
+                          (r) => Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: buildCommentItem(r, isReply: true),
                           ),
                         ),
                       ],
-                    ),
-                    // Nested replies
-                    if (!isReply && replies.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      ...replies.map(
-                        (r) => Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: buildCommentItem(r, isReply: true),
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ));
+              );
             }
 
             return Padding(
@@ -2282,7 +2292,6 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     return 0;
   }
 
-
   Widget _buildAuthorInfo(Map<String, dynamic> authorData) {
     // Extract profile data based on account type
     final accountType = authorData['account_type']?.toString();
@@ -2291,15 +2300,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         authorData['particulier_profile'] as Map<String, dynamic>?;
 
     // Get the appropriate profile
-    final profile = proProfile != null ? proProfile : particulierProfile;
+    final profile = proProfile ?? particulierProfile;
 
     // Name: company name for pros, pseudo for particuliers. (Particulier
     // profiles carry an employment `company_name` that must NOT be the name.)
     final String name = proProfile != null
         ? (proProfile['company_name']?.toString().trim().isNotEmpty == true
-            ? proProfile['company_name'].toString()
-            : '${proProfile['first_name']?.toString() ?? ''} ${proProfile['last_name']?.toString() ?? ''}'
-                .trim())
+              ? proProfile['company_name'].toString()
+              : '${proProfile['first_name']?.toString() ?? ''} ${proProfile['last_name']?.toString() ?? ''}'
+                    .trim())
         : (particulierProfile?['pseudo']?.toString() ?? '');
 
     // Extract avatar from profile or fallback to direct fields
@@ -3083,14 +3092,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
     return StatefulBuilder(
       builder: (context, setState) {
-        bool _isLoading = false;
+        bool isLoading = false;
 
-        Future<void> _toggleFavorite() async {
-          if (_isLoading) return;
+        Future<void> toggleFavorite() async {
+          if (isLoading) return;
 
           // Toggle immediately for responsive UI
           favoris = !favoris;
-          setState(() => _isLoading = true);
+          setState(() => isLoading = true);
 
           try {
             if (!favoris) {
@@ -3121,7 +3130,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             }
 
             setState(() {
-              _isLoading = false;
+              isLoading = false;
             });
 
             if (context.mounted) {
@@ -3142,7 +3151,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             favoris = !favoris;
             bp['is_favorited'] = favoris;
             setState(() {
-              _isLoading = false;
+              isLoading = false;
             });
 
             if (context.mounted) {
@@ -3162,7 +3171,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -3285,7 +3294,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF2E9B5B).withOpacity(0.1),
+                                color: const Color(
+                                  0xFF2E9B5B,
+                                ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: const Color(0xFF2E9B5B),
@@ -3411,21 +3422,21 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 top: 12,
                 left: 12,
                 child: GestureDetector(
-                  onTap: _isLoading ? null : _toggleFavorite,
+                  onTap: isLoading ? null : toggleFavorite,
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: _isLoading
+                    child: isLoading
                         ? SizedBox(
                             width: 20,
                             height: 20,
@@ -3465,7 +3476,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -3487,9 +3498,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
     // Build period label
     String periodLabel = '';
-    if (period == 'horaire')
+    if (period == 'horaire') {
       periodLabel = '/h';
-    else if (period == 'mensuel')
+    } else if (period == 'mensuel')
       periodLabel = '/mois';
     else if (period == 'annuel')
       periodLabel = '/an';
@@ -3501,22 +3512,22 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
     // If we have both min and max, show range
     if (min != null && max != null) {
-      return '${min}€ - ${max}€$periodLabel$paymentLabel';
+      return '$min€ - $max€$periodLabel$paymentLabel';
     }
 
     // If we have exact salary
     if (exact != null) {
-      return '${exact}€$periodLabel$paymentLabel';
+      return '$exact€$periodLabel$paymentLabel';
     }
 
     // If we have only min
     if (min != null) {
-      return 'À partir de ${min}€$periodLabel$paymentLabel';
+      return 'À partir de $min€$periodLabel$paymentLabel';
     }
 
     // If we have only max
     if (max != null) {
-      return 'Jusqu\'à ${max}€$periodLabel$paymentLabel';
+      return 'Jusqu\'à $max€$periodLabel$paymentLabel';
     }
 
     // Check for salary_type = selon_profil
@@ -3530,11 +3541,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
   String _formatJobSalary(dynamic min, dynamic max) {
     if (min != null && max != null) {
-      return '${min}€ - ${max}€';
+      return '$min€ - $max€';
     } else if (min != null) {
-      return 'À partir de ${min}€';
+      return 'À partir de $min€';
     } else if (max != null) {
-      return 'Jusqu\'à ${max}€';
+      return 'Jusqu\'à $max€';
     }
     return 'Salaire non spécifié';
   }
@@ -3671,10 +3682,6 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           .map((m) => _buildStorageUrl(m['url']?.toString() ?? '') ?? '')
           .where((url) => url.isNotEmpty)
           .toList();
-
-      if (images.isEmpty) {
-        images.add('assets/images/dashboard_particulier/Rectangle 13.png');
-      }
 
       // Build tags
       final tags = <JobDetailTag>[
@@ -3836,14 +3843,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
     return StatefulBuilder(
       builder: (context, setState) {
-        bool _isLoading = false;
+        bool isLoading = false;
 
-        Future<void> _toggleFavorite() async {
-          if (_isLoading || jobId.isEmpty) return;
+        Future<void> toggleFavorite() async {
+          if (isLoading || jobId.isEmpty) return;
 
           // Toggle immediately for responsive UI
           favoris = !favoris;
-          setState(() => _isLoading = true);
+          setState(() => isLoading = true);
 
           try {
             if (!favoris) {
@@ -3878,7 +3885,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             }
 
             setState(() {
-              _isLoading = false;
+              isLoading = false;
             });
 
             if (context.mounted) {
@@ -3898,7 +3905,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             // Revert on error
             favoris = !favoris;
             job['is_favorited'] = favoris;
-            setState(() => _isLoading = false);
+            setState(() => isLoading = false);
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -3920,16 +3927,16 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           tags: tags,
           timeAgo: _buildTimeAgo(job['created_at']?.toString()),
           isFavorited: favoris,
-          isLoadingFavorite: _isLoading,
-          onFavoriteToggle: _toggleFavorite,
+          isLoadingFavorite: isLoading,
+          onFavoriteToggle: toggleFavorite,
           onApply: () => _navigateToJobOfferDetail(job),
           onReport: canReportResource(job)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'job-offers',
-                    entityId: jobId,
-                    title: jobTitle,
-                  )
+                  context: context,
+                  entityType: 'job-offers',
+                  entityId: jobId,
+                  title: jobTitle,
+                )
               : null,
           onAvatarTap: () {},
           reactionBar: jobId.isNotEmpty
@@ -3942,11 +3949,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
   String _formatSalary(dynamic min, dynamic max) {
     if (min != null && max != null) {
-      return '${min}€ - ${max}€';
+      return '$min€ - $max€';
     } else if (min != null) {
-      return 'À partir de ${min}€';
+      return 'À partir de $min€';
     } else if (max != null) {
-      return 'Jusqu\'à ${max}€';
+      return 'Jusqu\'à $max€';
     }
     return 'Salaire non spécifié';
   }
@@ -4024,8 +4031,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           : <String>[];
       final documentFilesRaw = data['document_files'] as List? ?? [];
       final documents = documentFilesRaw
-          .where((d) => d is Map)
-          .map((d) => Map<String, dynamic>.from(d as Map))
+          .whereType<Map>()
+          .map((d) => Map<String, dynamic>.from(d))
           .toList();
       final createdAt = data['created_at']?.toString();
       final mediaFiles =
@@ -4135,14 +4142,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     final addressCity = training['address_city']?.toString() ?? '';
 
     // Helper to extract array values
-    String _extractArrayValues(dynamic field) {
+    String extractArrayValues(dynamic field) {
       if (field is List) {
         return field
             .map((item) {
-              if (item is Map)
+              if (item is Map) {
                 return item['value']?.toString() ??
                     item['name']?.toString() ??
                     '';
+              }
               return item.toString();
             })
             .where((s) => s.isNotEmpty)
@@ -4152,7 +4160,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     }
 
     // Translation for training_style
-    String _translateTrainingStyle(String value) {
+    String translateTrainingStyle(String value) {
       switch (value.trim()) {
         case 'Remote':
           return 'En ligne';
@@ -4174,17 +4182,17 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             final value = item is Map
                 ? (item['value']?.toString() ?? item.toString())
                 : item.toString();
-            return _translateTrainingStyle(value);
+            return translateTrainingStyle(value);
           })
           .where((s) => s.isNotEmpty)
           .join(' · ');
       trainingStyleText = translated;
     } else if (trainingStyleRaw != null) {
-      trainingStyleText = _translateTrainingStyle(trainingStyleRaw.toString());
+      trainingStyleText = translateTrainingStyle(trainingStyleRaw.toString());
     }
 
     // Translation for training_public
-    String _translateTrainingPublic(String value) {
+    String translateTrainingPublic(String value) {
       switch (value.trim()) {
         case 'AllPublic':
           return 'Tout public';
@@ -4210,18 +4218,18 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             final value = item is Map
                 ? (item['value']?.toString() ?? item.toString())
                 : item.toString();
-            return _translateTrainingPublic(value);
+            return translateTrainingPublic(value);
           })
           .where((s) => s.isNotEmpty)
           .join(' · ');
       trainingPublicText = translated;
     } else if (trainingPublicRaw != null) {
-      trainingPublicText = _translateTrainingPublic(
+      trainingPublicText = translateTrainingPublic(
         trainingPublicRaw.toString(),
       );
     }
 
-    final certification = _extractArrayValues(training['certification']);
+    final certification = extractArrayValues(training['certification']);
 
     // Check if CPF is in training_funding array
     final trainingFunding = training['training_funding'];
@@ -4312,7 +4320,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       builder: (context, setState) {
         bool isLoading = false;
 
-        Future<void> _toggleFavorite() async {
+        Future<void> toggleFavorite() async {
           if (isLoading || trainingId.isEmpty) return;
 
           // Toggle immediately for responsive UI
@@ -4394,15 +4402,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           timeAgo: _buildTimeAgo(training['created_at']?.toString()),
           isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: isLoading,
-          onFavoriteToggle: _toggleFavorite,
+          onFavoriteToggle: toggleFavorite,
           onApply: () => _navigateToTrainingDetail(training),
           onReport: canReportResource(training)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'trainings',
-                    entityId: trainingId,
-                    title: title,
-                  )
+                  context: context,
+                  entityType: 'trainings',
+                  entityId: trainingId,
+                  title: title,
+                )
               : null,
           onAvatarTap: () {},
           reactionBar: trainingId.isNotEmpty
@@ -4781,8 +4789,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     final coverageArea = isNationwide
         ? 'Toute la France'
         : (event['coverage_area']?.toString() ??
-           event['location']?.toString() ??
-           'Non spécifié');
+              event['location']?.toString() ??
+              'Non spécifié');
 
     final eventId = event['id']?.toString() ?? '';
 
@@ -4813,7 +4821,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
     return StatefulBuilder(
       builder: (context, cardSetState) {
-        Future<void> _toggleFavorite() async {
+        Future<void> toggleFavorite() async {
           // Toggle immediately for responsive UI
           cardSetState(() {
             favoris = !favoris;
@@ -4933,11 +4941,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           onTapCTA: () => _navigateToEventDetail(event),
           onReport: canReportResource(event)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'events',
-                    entityId: eventId,
-                    title: eventTitle,
-                  )
+                  context: context,
+                  entityType: 'events',
+                  entityId: eventId,
+                  title: eventTitle,
+                )
               : null,
           tags: tags.isNotEmpty ? tags : null,
           onAvatarTap: () {},
@@ -4945,7 +4953,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               ? _buildReactionBar('events', eventId)
               : null,
           isFavorite: favoris,
-          onFavoriteToggle: _toggleFavorite,
+          onFavoriteToggle: toggleFavorite,
         );
       },
     );
@@ -4995,7 +5003,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         '/demandes/$demandeId',
       );
 
-      print("Response: ${response['data']['user']}");
+      debugPrint("Response: ${response['data']['user']}");
 
       if (!mounted) return;
       Navigator.pop(context);
@@ -5257,7 +5265,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           profileImage: profileImage,
           username: username,
           categoryLabel: categoryLabel,
-          accountType: proProfile != null && proProfile!.isNotEmpty
+          accountType: proProfile != null && proProfile.isNotEmpty
               ? 'pro'
               : 'particulier',
           categoryColor: _categoryColor(categoryLabel),
@@ -5277,11 +5285,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           onFavoriteToggle: toggleFavorite,
           onReport: canReportResource(demande)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'demandes',
-                    entityId: demandeId,
-                    title: title,
-                  )
+                  context: context,
+                  entityType: 'demandes',
+                  entityId: demandeId,
+                  title: title,
+                )
               : null,
           reactionBar: demandeId.isNotEmpty
               ? _buildReactionBar(
@@ -5649,7 +5657,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   }
 
   Future<void> _showReportReasonDialog() async {
-    final targetId = widget.userId ?? _profileResponse?['user']?['id']?.toString();
+    final targetId =
+        widget.userId ?? _profileResponse?['user']?['id']?.toString();
     if (targetId == null || targetId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Impossible d\'identifier ce compte.')),
@@ -6136,8 +6145,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       }
       for (final job in jobOffers) {
         final jobId = job['id']?.toString() ?? '';
-        if (jobId.isNotEmpty)
+        if (jobId.isNotEmpty) {
           _seedReactionFromResource('job-offers', jobId, job);
+        }
       }
       for (final tr in trainings) {
         final trId = tr['id']?.toString() ?? '';
@@ -6175,9 +6185,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   }
 
   String? _resolveAvatarUrl() {
-    final profile = _profileResponse?['profile'];
-    final raw = profile is Map ? profile['avatar_url']?.toString() : null;
-    return raw;
+    return AvatarResolver.resolve(_profileResponse);
   }
 
   @override
@@ -6207,11 +6215,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       nameParts.add(lastName.trim());
     }
     final displayName = companyName ?? nameParts.join(' ');
-    final siret = profile is Map ? profile['siret']?.toString() : null;
+    final ville = profile is Map ? profile['ville']?.toString() : null;
     final secteur = profile is Map
         ? profile['secteur_activite']?.toString()
         : null;
     final avatarUrl = _resolveAvatarUrl();
+    final subscriptionStatus = resolveProfessionalSubscriptionStatus(
+      _profileResponse,
+    );
 
     // Get social links
     final socialLinks = profile is Map
@@ -6260,8 +6271,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         children: [
                           Icon(Icons.block, color: Colors.orange, size: 20),
                           SizedBox(width: 8),
-                          Text('Bloquer cet utilisateur',
-                              style: TextStyle(color: Colors.orange)),
+                          Text(
+                            'Bloquer cet utilisateur',
+                            style: TextStyle(color: Colors.orange),
+                          ),
                         ],
                       ),
                     ),
@@ -6327,9 +6340,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              siret != null && siret.trim().isNotEmpty
-                                  ? 'SIRET: $siret'
-                                  : 'SIRET: —',
+                              ville != null && ville.trim().isNotEmpty
+                                  ? 'Ville : $ville'
+                                  : 'Ville : —',
                               style: const TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey,
@@ -6404,16 +6417,31 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFEF8A40),
+                                    color: subscriptionStatus.isPremium
+                                        ? const Color(0xFFEF8A40)
+                                        : const Color(0xFF607D8B),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: const Text(
-                                    'Premium',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        subscriptionStatus.isPremium
+                                            ? Icons.workspace_premium
+                                            : Icons.person_outline,
+                                        color: Colors.white,
+                                        size: 13,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        subscriptionStatus.label,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -6490,7 +6518,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 decoration: BoxDecoration(
                                   color: const Color(
                                     0xFFE1306C,
-                                  ).withOpacity(0.1),
+                                  ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: IconButton(
@@ -6525,7 +6553,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 decoration: BoxDecoration(
                                   color: const Color(
                                     0xFFFF0000,
-                                  ).withOpacity(0.1),
+                                  ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: IconButton(
@@ -6634,7 +6662,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF8A40).withOpacity(0.15),
+                      color: const Color(0xFFEF8A40).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: TabBar(
@@ -6667,7 +6695,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         Tab(
                           height: 32,
                           child: Text(
-                            'Annonce(${_totalCount})',
+                            'Annonce($_totalCount)',
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -6767,7 +6795,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(-2, 3),
                 ),
@@ -6852,7 +6880,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black.withOpacity(0.5),
+                                    color: Colors.black.withValues(alpha: 0.5),
                                   ),
                                 ),
                               ),
@@ -6902,7 +6930,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black.withOpacity(0.5),
+                                    color: Colors.black.withValues(alpha: 0.5),
                                   ),
                                 ),
                               ),
@@ -6969,7 +6997,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(-2, 3),
                   ),
@@ -6986,7 +7014,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -7075,7 +7103,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: color, size: 22),
@@ -7171,7 +7199,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -7342,22 +7370,20 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 ),
               )
             else if (_reviews.isNotEmpty)
-              ..._reviews
-                  .map(
-                    (review) => Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: _buildReviewCard(
-                        avatarPath:
-                            review['author_avatar'] ??
-                            'assets/images/dashboard_particulier/Ellipse 10.png',
-                        name: review['author_name'] ?? 'Utilisateur',
-                        timeAgo: review['time_ago'] ?? '',
-                        reviewText: review['comment'] ?? '',
-                        rating: review['rating'] ?? 0,
-                      ),
-                    ),
-                  )
-                  .toList()
+              ..._reviews.map(
+                (review) => Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: _buildReviewCard(
+                    avatarPath:
+                        review['author_avatar'] ??
+                        'assets/images/dashboard_particulier/Ellipse 10.png',
+                    name: review['author_name'] ?? 'Utilisateur',
+                    timeAgo: review['time_ago'] ?? '',
+                    reviewText: review['comment'] ?? '',
+                    rating: review['rating'] ?? 0,
+                  ),
+                ),
+              )
             else
               const Center(
                 child: Padding(
@@ -7559,7 +7585,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           label,
           style: TextStyle(
             fontSize: 12,
-            color: isSelected ? Colors.white : Colors.black.withOpacity(0.5),
+            color: isSelected
+                ? Colors.white
+                : Colors.black.withValues(alpha: 0.5),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
@@ -7588,7 +7616,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -7614,7 +7642,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black.withOpacity(0.5),
+                        color: Colors.black.withValues(alpha: 0.5),
                       ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -7627,8 +7655,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       ),
                       decoration: BoxDecoration(
                         color: userType == 'Pro'
-                            ? Colors.green.withOpacity(0.15)
-                            : Colors.grey.withOpacity(0.15),
+                            ? Colors.green.withValues(alpha: 0.15)
+                            : Colors.grey.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(
                           color: userType == 'Pro' ? Colors.green : Colors.grey,
@@ -7638,8 +7666,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         userType,
                         style: TextStyle(
                           color: userType == 'Pro'
-                              ? Colors.green.withOpacity(0.8)
-                              : Colors.grey.withOpacity(0.8),
+                              ? Colors.green.withValues(alpha: 0.8)
+                              : Colors.grey.withValues(alpha: 0.8),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -7873,7 +7901,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -7978,7 +8006,7 @@ class _ReviewConfirmationDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 30,
               offset: const Offset(0, 20),
             ),
@@ -8114,7 +8142,7 @@ class _AvisSuccessBadge extends StatelessWidget {
               border: Border.all(color: const Color(0xFFFFC477), width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 6),
                 ),
@@ -8140,9 +8168,9 @@ class _AvisSuccessBadge extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(opacity),
+        color: Colors.white.withValues(alpha: opacity),
         border: Border.all(
-          color: const Color(0xFFFF9800).withOpacity(0.4),
+          color: const Color(0xFFFF9800).withValues(alpha: 0.4),
           width: 1,
         ),
       ),

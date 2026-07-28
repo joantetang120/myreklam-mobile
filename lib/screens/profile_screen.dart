@@ -8,15 +8,12 @@ import 'package:myreklam/screens/profile_pro/pro_annonces_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_favoris_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_post_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/particulier_dashboard_screen.dart';
 import 'package:myreklam/screens/my_posts_screen.dart';
 import 'package:myreklam/screens/followers_screen.dart';
 import 'package:myreklam/screens/publier_screen.dart';
-import 'package:myreklam/screens/favorite_screen.dart';
-import 'package:myreklam/screens/my_announces_screen.dart';
 import 'package:myreklam/screens/login_screen.dart';
 import 'package:myreklam/screens/saved_searches_screen.dart';
 import 'package:myreklam/screens/settings_screen.dart';
@@ -195,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3AAE5E).withOpacity(0.15),
+                  color: const Color(0xFF3AAE5E).withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -660,7 +657,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: 'Mes posts',
                       description:
                           'Consultez et gérez vos publications sur le réseau social',
-                      color: const Color(0xFF04BC7B).withOpacity(0.15),
+                      color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -675,7 +672,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       backgroundColor: const Color(0xFFE6F7EF),
                       title: 'Mes recherches sauvegardées',
                       description: 'Retrouvez vos critères de recherche',
-                      color: const Color(0xFF04BC7B).withOpacity(0.15),
+                      color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -700,8 +697,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ).then((_) => _loadProfile());
                       },
                     ),
-                    if (DelegationManager.instance
-                        .can(DelegationPermission.editAccount))
+                    if (DelegationManager.instance.can(
+                      DelegationPermission.editAccount,
+                    ))
                       _buildMenuCard(
                         icon: 'assets/images/profil_pro/opt-6.png',
                         backgroundColor: const Color(0xFFFFE0B2),
@@ -722,7 +720,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: 'Espace candidat',
                       description:
                           'Suivez vos candidatures et documents professionnels',
-                      color: const Color(0xFF04BC7B).withOpacity(0.15),
+                      color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -737,7 +735,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       backgroundColor: const Color(0xFFE6F7EF),
                       title: 'Récompenses',
                       description: 'Consultez vos points et avantages fidélité',
-                      color: const Color(0xFF04BC7B).withOpacity(0.15),
+                      color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -761,8 +759,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ).then((_) => _loadProfile());
                       },
                     ),
-                    if (DelegationManager.instance
-                        .can(DelegationPermission.editAccount))
+                    if (DelegationManager.instance.can(
+                      DelegationPermission.editAccount,
+                    ))
                       _buildMenuCard(
                         icon: 'assets/images/profil_pro/opt-1.png',
                         backgroundColor: const Color(0xFFE6F7EF),
@@ -830,7 +829,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -846,7 +845,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -914,7 +913,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           boxShadow: showShadow
               ? [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -929,8 +928,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: EdgeInsets.all(useProStyle ? 12 : 8),
               decoration: BoxDecoration(
                 color: useProStyle
-                    ? const Color(0xFF2E9B5B).withOpacity(0.1)
-                    : iconColor.withOpacity(0.1),
+                    ? const Color(0xFF2E9B5B).withValues(alpha: 0.1)
+                    : iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -949,7 +948,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontWeight: FontWeight.w500,
                     ).copyWith(
                       color: useProStyle
-                          ? Colors.black.withOpacity(0.5)
+                          ? Colors.black.withValues(alpha: 0.5)
                           : const Color(0xFF616161),
                     ),
               ),

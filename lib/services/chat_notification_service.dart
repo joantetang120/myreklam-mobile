@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:myreklam/services/push_notification_service.dart';
 
 /// Chat-specific notification helper.
@@ -22,7 +23,9 @@ class ChatNotificationService {
     required String message,
     String? conversationId,
   }) async {
-    print('🔔 Affichage notification chat: De $senderName / $conversationId');
+    debugPrint(
+      '🔔 Affichage notification chat: De $senderName / $conversationId',
+    );
 
     // Build a routing payload consumed by PushNotificationService's tap handler.
     final parts = <String>['type=chat'];
@@ -46,7 +49,7 @@ class ChatNotificationService {
   }) {
     // Ne pas afficher de notification pour ses propres messages
     if (senderId == currentUserId) {
-      print('🔔 Notification ignorée - Mon propre message');
+      debugPrint('🔔 Notification ignorée - Mon propre message');
       return false;
     }
 

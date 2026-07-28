@@ -47,7 +47,7 @@ class CategoriesScreen extends StatelessWidget {
         description:
             'Découvrez les meilleures offres et promotions près de chez vous.',
         icon: Icons.card_giftcard_outlined,
-        bgColor: const Color(0xFFFFE0B2).withOpacity(0.3),
+        bgColor: const Color(0xFFFFE0B2).withValues(alpha: 0.3),
         iconColor: const Color.fromARGB(255, 252, 116, 37),
         onTap: () {
           Navigator.push(
@@ -61,7 +61,7 @@ class CategoriesScreen extends StatelessWidget {
         description:
             'Trouvez votre prochain emploi ou déposez vos offres de recrutement.',
         icon: Icons.work_outline,
-        bgColor: const Color(0xFFB3E5FC).withOpacity(0.3),
+        bgColor: const Color(0xFFB3E5FC).withValues(alpha: 0.3),
         iconColor: Colors.lightBlueAccent,
         onTap: () {
           Navigator.push(
@@ -75,7 +75,7 @@ class CategoriesScreen extends StatelessWidget {
         description:
             'Développez vos compétences avec nos formations et cours disponibles.',
         icon: Icons.school_outlined,
-        bgColor: const Color(0xFFE1BEE7).withOpacity(0.2),
+        bgColor: const Color(0xFFE1BEE7).withValues(alpha: 0.2),
         iconColor: Colors.purple,
         onTap: () {
           Navigator.push(
@@ -89,7 +89,7 @@ class CategoriesScreen extends StatelessWidget {
         description:
             'Participez aux événements et rencontres organisés dans votre région.',
         icon: Icons.event_outlined,
-        bgColor: const Color(0xFFE6F7EF).withOpacity(0.5),
+        bgColor: const Color(0xFFE6F7EF).withValues(alpha: 0.5),
         iconColor: Colors.green,
         onTap: () {
           Navigator.push(
@@ -103,7 +103,7 @@ class CategoriesScreen extends StatelessWidget {
         description:
             'Postez vos demandes et recevez des réponses de la communauté.',
         icon: Icons.chat_outlined,
-        bgColor: Color.fromARGB(255, 255, 250, 178).withOpacity(0.3),
+        bgColor: Color.fromARGB(255, 255, 250, 178).withValues(alpha: 0.3),
         iconColor: const Color.fromARGB(255, 252, 231, 49),
         onTap: () {
           Navigator.push(
@@ -244,7 +244,10 @@ class CategoriesScreen extends StatelessWidget {
                 },
                 child: Container(
                   margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF9E6),
                     borderRadius: BorderRadius.circular(12),
@@ -312,7 +315,7 @@ class CategoriesScreen extends StatelessWidget {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: cat.iconColor.withOpacity(0.15),
+                            color: cat.iconColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(cat.icon, color: cat.iconColor, size: 22),

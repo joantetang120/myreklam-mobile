@@ -24,7 +24,7 @@ class SearchCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -100,7 +100,9 @@ class SearchCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF3E0),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFFFF9800).withOpacity(0.5)),
+        border: Border.all(
+          color: const Color(0xFFFF9800).withValues(alpha: 0.5),
+        ),
       ),
       child: RichText(
         text: TextSpan(

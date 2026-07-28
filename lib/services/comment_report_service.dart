@@ -1,7 +1,8 @@
 import 'package:myreklam/services/api_client.dart';
 
 class CommentReportService {
-  static final CommentReportService _instance = CommentReportService._internal();
+  static final CommentReportService _instance =
+      CommentReportService._internal();
   factory CommentReportService() => _instance;
   CommentReportService._internal();
 

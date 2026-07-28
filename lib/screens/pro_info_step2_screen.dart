@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'pro_subscription_screen.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/utils/user_session.dart';
 
 class ProInfoStep2Screen extends StatefulWidget {
   const ProInfoStep2Screen({super.key});
@@ -42,6 +43,7 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
             ? null
             : _phoneController.text.trim(),
       );
+      UserSession().markProfileCompleted();
 
       if (!mounted) return;
 
@@ -133,7 +135,7 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                         borderRadius: BorderRadius.circular(15),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
@@ -265,7 +267,9 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                                       if (value == null || value.isEmpty) {
                                         return 'Veuillez entrer votre email';
                                       }
-                                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                      if (!RegExp(
+                                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                      ).hasMatch(value)) {
                                         return 'Email invalide';
                                       }
                                       return null;
@@ -295,7 +299,8 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
@@ -326,18 +331,22 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                                           keyboardType: TextInputType.phone,
                                           textInputAction: TextInputAction.done,
                                           validator: (value) {
-                                            if (value != null && value.isNotEmpty) {
-                                              if (!RegExp(r'^\d{9,10}$').hasMatch(value)) {
+                                            if (value != null &&
+                                                value.isNotEmpty) {
+                                              if (!RegExp(
+                                                r'^\d{9,10}$',
+                                              ).hasMatch(value)) {
                                                 return 'Numéro de téléphone invalide';
                                               }
                                             }
                                             return null;
                                           },
                                           decoration: const InputDecoration(
-                                            contentPadding: EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 12,
-                                            ),
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                                  horizontal: 16,
+                                                  vertical: 12,
+                                                ),
                                             border: InputBorder.none,
                                             errorStyle: TextStyle(height: 0.8),
                                           ),

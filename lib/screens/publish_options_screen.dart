@@ -172,7 +172,10 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                 },
                 child: Container(
                   margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF9E6),
                     borderRadius: BorderRadius.circular(12),
@@ -230,8 +233,9 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                if (!DelegationManager.instance
-                    .can(DelegationPermission.announcements))
+                if (!DelegationManager.instance.can(
+                  DelegationPermission.announcements,
+                ))
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Text(
@@ -240,8 +244,9 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                       style: TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                   ),
-                if (DelegationManager.instance
-                    .can(DelegationPermission.announcements))
+                if (DelegationManager.instance.can(
+                  DelegationPermission.announcements,
+                ))
                   PublishOptionCard(
                     backgroundColor: const Color(0xFFFFF3E0),
                     borderColor: const Color(0xFFFF9800),
@@ -256,8 +261,9 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                   ),
                 // Show Offre d'emploi and Formation only for professionals
                 if (_userSession.isPro &&
-                    DelegationManager.instance
-                        .can(DelegationPermission.announcements)) ...[
+                    DelegationManager.instance.can(
+                      DelegationPermission.announcements,
+                    )) ...[
                   PublishOptionCard(
                     backgroundColor: const Color(0xFFE0F7FA),
                     borderColor: Colors.lightBlueAccent,
@@ -287,8 +293,9 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                     ),
                   ),
                 ],
-                if (DelegationManager.instance
-                    .can(DelegationPermission.announcements))
+                if (DelegationManager.instance.can(
+                  DelegationPermission.announcements,
+                ))
                   PublishOptionCard(
                     backgroundColor: const Color(0xFFE0F2F1),
                     borderColor: const Color(0xFF00897B),
@@ -299,10 +306,13 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                     icon: Icons.event_outlined,
                     iconColor: const Color(0xFF00897B),
                     onTap: () => _navigateIfAllowed(
-                        context, const CreerEvenementScreen()),
+                      context,
+                      const CreerEvenementScreen(),
+                    ),
                   ),
-                if (DelegationManager.instance
-                    .can(DelegationPermission.announcements))
+                if (DelegationManager.instance.can(
+                  DelegationPermission.announcements,
+                ))
                   PublishOptionCard(
                     backgroundColor: const Color(0xFFFFF9C4),
                     borderColor: const Color(0xFFFFA000),

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
-import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'token_storage.dart';
 import '../config/api_config.dart';
@@ -9,7 +9,8 @@ import 'chat_notification_service.dart';
 import '../widgets/custom_bottom_bar.dart';
 
 class ChatService {
-  static PusherChannelsFlutter _pusher = PusherChannelsFlutter.getInstance();
+  static final PusherChannelsFlutter _pusher =
+      PusherChannelsFlutter.getInstance();
   static final StreamController<Map<String, dynamic>> _messageController =
       StreamController<Map<String, dynamic>>.broadcast();
 
@@ -50,9 +51,9 @@ class ChatService {
         onAuthorizer: (channelName, socketId, options) async {
           // Faire une requête HTTP complète pour l'authentification
           try {
-            print('🔐 Authentification Pusher...');
-            print('   Channel: $channelName');
-            print('   Socket ID: $socketId');
+            debugPrint('🔐 Authentification Pusher...');
+            debugPrint('   Channel: $channelName');
+            debugPrint('   Socket ID: $socketId');
 
             final response = await http.post(
               Uri.parse('${ApiConfig.baseUrl}/broadcasting/auth'),
@@ -67,25 +68,27 @@ class ChatService {
               }),
             );
 
-            print('🔐 Réponse auth: ${response.statusCode}');
-            print('   Body: ${response.body}');
+            debugPrint('🔐 Réponse auth: ${response.statusCode}');
+            debugPrint('   Body: ${response.body}');
 
             if (response.statusCode == 200) {
               final data = jsonDecode(response.body);
               return data;
             } else {
-              print('❌ Erreur auth: ${response.statusCode} - ${response.body}');
+              debugPrint(
+                '❌ Erreur auth: ${response.statusCode} - ${response.body}',
+              );
               return null;
             }
           } catch (e) {
-            print('❌ Exception auth: $e');
+            debugPrint('❌ Exception auth: $e');
             return null;
           }
         },
       );
 
       await _pusher.connect();
-      print('✅ Pusher connecté');
+      debugPrint('✅ Pusher connecté');
 
       // 🟢 S'abonner au Presence Channel
       // await _pusher.subscribe(
@@ -99,9 +102,9 @@ class ChatService {
 
       // await _pusher.connect();
 
-      // print('✅ Pusher connecté avec Presence Channel');
+      // debugPrint('✅ Pusher connecté avec Presence Channel');
     } catch (e) {
-      print('❌ Erreur initialisation Pusher: $e');
+      debugPrint('❌ Erreur initialisation Pusher: $e');
     }
   }
 
@@ -112,31 +115,33 @@ class ChatService {
 
       // Vérifier si déjà abonné
       if (_subscribedChannels.contains(channelName)) {
-        print('⚠️ Déjà abonné à: $channelName');
+        debugPrint('⚠️ Déjà abonné à: $channelName');
         return;
       }
 
-      print('🔔 Abonnement au canal: $channelName');
-      print('   Canaux déjà abonnés: $_subscribedChannels');
+      debugPrint('🔔 Abonnement au canal: $channelName');
+      debugPrint('   Canaux déjà abonnés: $_subscribedChannels');
 
       await _pusher.subscribe(
         channelName: channelName,
         onEvent: (dynamic event) {
-          print('📨 Événement reçu sur $channelName: ${event.runtimeType}');
+          debugPrint(
+            '📨 Événement reçu sur $channelName: ${event.runtimeType}',
+          );
           if (event is PusherEvent) {
-            print('   EventName: ${event.eventName}');
-            print('   ChannelName: ${event.channelName}');
-            print('   Data: ${event.data}');
+            debugPrint('   EventName: ${event.eventName}');
+            debugPrint('   ChannelName: ${event.channelName}');
+            debugPrint('   Data: ${event.data}');
             onEvent(event);
           }
         },
       );
 
       _subscribedChannels.add(channelName);
-      print('✅ Abonné à: $channelName');
-      print('   Canaux abonnés: $_subscribedChannels');
+      debugPrint('✅ Abonné à: $channelName');
+      debugPrint('   Canaux abonnés: $_subscribedChannels');
     } catch (e) {
-      print('❌ Erreur abonnement conversation: $e');
+      debugPrint('❌ Erreur abonnement conversation: $e');
       rethrow;
     }
   }
@@ -149,9 +154,9 @@ class ChatService {
       await _pusher.unsubscribe(channelName: channelName);
       _subscribedChannels.remove(channelName);
 
-      print('✅ Désabonné de la conversation $conversationId');
+      debugPrint('✅ Désabonné de la conversation $conversationId');
     } catch (e) {
-      print('❌ Erreur désabonnement: $e');
+      debugPrint('❌ Erreur désabonnement: $e');
     }
   }
 
@@ -160,12 +165,12 @@ class ChatService {
     try {
       for (final channelName in _subscribedChannels) {
         await _pusher.unsubscribe(channelName: channelName);
-        print('🧹 Nettoyé: $channelName');
+        debugPrint('🧹 Nettoyé: $channelName');
       }
       _subscribedChannels.clear();
-      print('✅ Tous les abonnements nettoyés');
+      debugPrint('✅ Tous les abonnements nettoyés');
     } catch (e) {
-      print('❌ Erreur nettoyage abonnements: $e');
+      debugPrint('❌ Erreur nettoyage abonnements: $e');
     }
   }
 
@@ -174,14 +179,14 @@ class ChatService {
     try {
       const channelName = 'presence-online-users';
 
-      print('📡 Abonnement au Presence Channel: $channelName');
+      debugPrint('📡 Abonnement au Presence Channel: $channelName');
 
       // Les événements sont gérés globalement via onEvent dans init()
-      await _pusher!.subscribe(channelName: channelName);
+      await _pusher.subscribe(channelName: channelName);
 
-      print('✅ Abonné au Presence Channel');
+      debugPrint('✅ Abonné au Presence Channel');
     } catch (e) {
-      print('❌ Erreur abonnement Presence Channel: $e');
+      debugPrint('❌ Erreur abonnement Presence Channel: $e');
     }
   }
 
@@ -200,29 +205,29 @@ class ChatService {
     dynamic currentState,
     dynamic previousState,
   ) {
-    print('🔄 Pusher état: $previousState -> $currentState');
+    debugPrint('🔄 Pusher état: $previousState -> $currentState');
   }
 
   static void onError(String message, int? code, dynamic e) {
-    print('❌ Pusher erreur: $message (code: $code)');
+    debugPrint('❌ Pusher erreur: $message (code: $code)');
   }
 
   static void onEvent(PusherEvent event) {
-    print('📨 Pusher événement global: ${event.eventName}');
-    print('   Canal: ${event.channelName}');
-    print('   Data: ${event.data}');
-    print('   Timestamp: ${DateTime.now()}');
+    debugPrint('📨 Pusher événement global: ${event.eventName}');
+    debugPrint('   Canal: ${event.channelName}');
+    debugPrint('   Data: ${event.data}');
+    debugPrint('   Timestamp: ${DateTime.now()}');
 
     // Ignorer les événements système Pusher (gérés par les callbacks onMemberAdded/onMemberRemoved)
     if (event.eventName.startsWith('pusher:')) {
-      print('   ⚠️ Événement système ignoré');
+      debugPrint('   ⚠️ Événement système ignoré');
       return;
     }
 
     switch (event.eventName) {
       case 'new.message':
         {
-          print('✅ New message détecté - Traitement...');
+          debugPrint('✅ New message détecté - Traitement...');
 
           // Parser les données de l'événement Laravel
           final eventData = json.decode(event.data);
@@ -238,9 +243,9 @@ class ChatService {
               '',
             );
 
-            print('   Conversation ID: $conversationId');
-            print('   Message ID: ${messageData['id']}');
-            print('   Sender ID: ${senderData['id']}');
+            debugPrint('   Conversation ID: $conversationId');
+            debugPrint('   Message ID: ${messageData['id']}');
+            debugPrint('   Sender ID: ${senderData['id']}');
 
             // Ajouter les données complètes au stream
             _messageController.add({
@@ -253,13 +258,13 @@ class ChatService {
             // Gérer les notifications globalement
             _handleNotification(messageData, senderData, conversationId);
           } else {
-            print('⚠️ Format de canal invalide: $channelName');
+            debugPrint('⚠️ Format de canal invalide: $channelName');
           }
         }
         break;
       case 'message.status.updated':
         {
-          print('✅ Message.status.updated détecté - Traitement...');
+          debugPrint('✅ Message.status.updated détecté - Traitement...');
 
           // Extraire l'ID de conversation du nom du canal
           // Format: conversation.7 -> 7
@@ -270,8 +275,8 @@ class ChatService {
               '',
             );
 
-            print('   Conversation ID: $conversationId');
-            print('   Data: ${event.data}');
+            debugPrint('   Conversation ID: $conversationId');
+            debugPrint('   Data: ${event.data}');
 
             // Ajouter au stream pour mettre à jour les statuts
             _messageController.add({
@@ -280,12 +285,12 @@ class ChatService {
               'data': event.data,
             });
           } else {
-            print('⚠️ Format de canal invalide: $channelName');
+            debugPrint('⚠️ Format de canal invalide: $channelName');
           }
         }
         break;
       default:
-        print('⚠️ Événement non géré: ${event.eventName}');
+        debugPrint('⚠️ Événement non géré: ${event.eventName}');
         break;
     }
   }
@@ -308,7 +313,7 @@ class ChatService {
       }
       return null;
     } catch (e) {
-      print('❌ Error getting current user: $e');
+      debugPrint('❌ Error getting current user: $e');
       return null;
     }
   }
@@ -327,7 +332,7 @@ class ChatService {
       if (messageId != null) {
         final notificationKey = '${conversationId}_$messageId';
         if (_notifiedMessages.contains(notificationKey)) {
-          print('🔔 Notification déjà envoyée pour le message $messageId');
+          debugPrint('🔔 Notification déjà envoyée pour le message $messageId');
           return;
         }
         _notifiedMessages.add(notificationKey);
@@ -343,7 +348,7 @@ class ChatService {
       // Récupérer l'ID de l'expéditeur
       final senderId = messageData['sender_id'] ?? senderData?['id'];
       if (senderId == null) {
-        print('⚠️ Notification ignorée - Sender ID manquant');
+        debugPrint('⚠️ Notification ignorée - Sender ID manquant');
         return;
       }
 
@@ -357,13 +362,13 @@ class ChatService {
       final content = messageData['text'] ?? messageData['content'] ?? '';
       final currentUserId = await getCurrentUserId() ?? 0;
 
-      print('🔔 Notification chat:');
-      print('   De: $senderName (ID: $senderId)');
-      print('   Message: $content');
-      print('   Conversation: $conversationId');
+      debugPrint('🔔 Notification chat:');
+      debugPrint('   De: $senderName (ID: $senderId)');
+      debugPrint('   Message: $content');
+      debugPrint('   Conversation: $conversationId');
 
       // Utiliser les notifications locales uniquement
-      print('🔔 Envoi notification locale...');
+      debugPrint('🔔 Envoi notification locale...');
 
       // Utiliser le service de notifications avec logique intelligente
       await ChatNotificationService.instance.showSmartNotification(
@@ -375,23 +380,23 @@ class ChatService {
         currentConversationId: null, // TODO: Détecter la conversation active
       );
 
-      print('🔔 Notification locale envoyée');
+      debugPrint('🔔 Notification locale envoyée');
 
       // Refresh global chat unread count in bottom bar
       CustomBottomBar.refreshChatNotifier.value =
           !CustomBottomBar.refreshChatNotifier.value;
     } catch (e) {
-      print('❌ Erreur notification: $e');
+      debugPrint('❌ Erreur notification: $e');
     }
   }
 
   static void onSubscriptionSucceeded(String channelName, dynamic data) {
-    print('✅ Abonnement réussi: $channelName');
+    debugPrint('✅ Abonnement réussi: $channelName');
 
     // 🟢 Récupérer la liste initiale des membres en ligne
     if (channelName == 'presence-online-users') {
       try {
-        print('👥 Data reçue: $data');
+        debugPrint('👥 Data reçue: $data');
 
         onlineUserIds.clear();
 
@@ -427,14 +432,14 @@ class ChatService {
                   }
 
                   onlineUserIds.add(userIdInt);
-                  print('   ✅ User $userIdInt ajouté');
+                  debugPrint('   ✅ User $userIdInt ajouté');
                 }
               });
             }
           }
         }
 
-        print(
+        debugPrint(
           '👥 ${onlineUserIds.length} utilisateurs en ligne: $onlineUserIds',
         );
 
@@ -445,17 +450,17 @@ class ChatService {
           'onlineUsers': onlineUserIds.toList(),
         });
       } catch (e) {
-        print('❌ Erreur parsing members: $e');
+        debugPrint('❌ Erreur parsing members: $e');
       }
     }
   }
 
   static void onSubscriptionError(String message, dynamic e) {
-    print('❌ Erreur abonnement: $message');
+    debugPrint('❌ Erreur abonnement: $message');
   }
 
   static void onDecryptionFailure(String event, String reason) {
-    print('❌ Échec déchiffrement: $event - $reason');
+    debugPrint('❌ Échec déchiffrement: $event - $reason');
   }
 
   // Utilitaire: parser un userId dynamique en int
@@ -477,8 +482,8 @@ class ChatService {
   static void _applyMemberAdded(int userIdInt) {
     onlineUserIds.add(userIdInt);
 
-    print('🟢 User $userIdInt est maintenant EN LIGNE');
-    print('👥 Total en ligne: ${onlineUserIds.length}');
+    debugPrint('🟢 User $userIdInt est maintenant EN LIGNE');
+    debugPrint('👥 Total en ligne: ${onlineUserIds.length}');
 
     _messageController.add({
       'type': 'presence_update',
@@ -494,9 +499,9 @@ class ChatService {
 
     final lastSeenTime = lastSeen ?? DateTime.now().toIso8601String();
 
-    print('🔴 User $userIdInt est maintenant HORS LIGNE');
-    print('👥 Total en ligne: ${onlineUserIds.length}');
-    print('🕐 Last seen: $lastSeenTime');
+    debugPrint('🔴 User $userIdInt est maintenant HORS LIGNE');
+    debugPrint('👥 Total en ligne: ${onlineUserIds.length}');
+    debugPrint('🕐 Last seen: $lastSeenTime');
 
     _messageController.add({
       'type': 'presence_update',
@@ -509,12 +514,12 @@ class ChatService {
 
   // 🟢 Callback Pusher: membre ajouté au canal presence
   static void onMemberAdded(String channelName, PusherMember member) {
-    print('👤 Membre ajouté: ${member.userId} sur $channelName');
+    debugPrint('👤 Membre ajouté: ${member.userId} sur $channelName');
 
     // 🟢 Quelqu'un se connecte
     if (channelName == 'presence-online-users') {
       try {
-        print('👤 UserInfo: ${member.userInfo}');
+        debugPrint('👤 UserInfo: ${member.userInfo}');
 
         dynamic userInfo;
         if (member.userInfo is String) {
@@ -530,18 +535,18 @@ class ChatService {
           _applyMemberAdded(userIdInt);
         }
       } catch (e) {
-        print('❌ Erreur onMemberAdded: $e');
+        debugPrint('❌ Erreur onMemberAdded: $e');
       }
     }
   }
 
   static void onMemberRemoved(String channelName, PusherMember member) {
-    print('👤 Membre retiré: ${member.userId} de $channelName');
+    debugPrint('👤 Membre retiré: ${member.userId} de $channelName');
 
     // 🔴 Quelqu'un se déconnecte
     if (channelName == 'presence-online-users') {
       try {
-        print('👤 UserInfo: ${member.userInfo}');
+        debugPrint('👤 UserInfo: ${member.userInfo}');
 
         dynamic userInfo;
         if (member.userInfo is String) {
@@ -557,14 +562,14 @@ class ChatService {
           _applyMemberRemoved(userIdInt);
         }
       } catch (e) {
-        print('❌ Erreur onMemberRemoved: $e');
+        debugPrint('❌ Erreur onMemberRemoved: $e');
       }
     }
   }
 
   // Nettoyer les ressources
   static Future<void> dispose() async {
-    await _pusher?.disconnect();
+    await _pusher.disconnect();
     await _messageController.close();
   }
 }

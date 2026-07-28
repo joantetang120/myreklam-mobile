@@ -25,7 +25,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final LayerLink _layerLink = LayerLink();
-  
+
   List<LocationSuggestion> _suggestions = [];
   bool _isLoading = false;
   Timer? _debounceTimer;
@@ -62,7 +62,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
 
   void _onSearchChanged(String value) {
     _debounceTimer?.cancel();
-    
+
     if (value.trim().isEmpty) {
       setState(() {
         _suggestions = [];
@@ -78,16 +78,16 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
 
   Future<void> _searchPlaces(String query) async {
     if (!mounted) return;
-    
+
     setState(() {
       _isLoading = true;
     });
 
     try {
       final results = await LocationService.searchPlaces(query);
-      
+
       if (!mounted) return;
-      
+
       setState(() {
         _suggestions = results;
         _isLoading = false;
@@ -108,11 +108,11 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
 
   void _showOverlay() {
     _removeOverlay();
-    
+
     final overlay = Overlay.of(context);
     final renderBox = context.findRenderObject() as RenderBox;
     final size = renderBox.size;
-    
+
     _overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         width: size.width,
@@ -144,7 +144,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
         ),
       ),
     );
-    
+
     overlay.insert(_overlayEntry!);
   }
 
@@ -159,15 +159,14 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey.shade100),
-          ),
+          border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
         ),
         child: Row(
           children: [
-            Icon(Icons.location_on_outlined, 
-              color: const Color(0xFF3AAE5E), 
-              size: 20
+            Icon(
+              Icons.location_on_outlined,
+              color: const Color(0xFF3AAE5E),
+              size: 20,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -187,10 +186,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
                   if (suggestion.context != null)
                     Text(
                       suggestion.context!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -245,9 +241,9 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: hasLocation 
-                  ? const Color(0xFF3AAE5E) 
-                  : Colors.grey.withOpacity(0.3),
+                color: hasLocation
+                    ? const Color(0xFF3AAE5E)
+                    : Colors.grey.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -260,29 +256,29 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
                     decoration: InputDecoration(
                       hintText: 'Rechercher une ville, adresse...',
                       hintStyle: TextStyle(
-                        fontSize: 14, 
-                        color: Colors.grey[400]
+                        fontSize: 14,
+                        color: Colors.grey[400],
                       ),
                       prefixIcon: Icon(
                         Icons.search,
-                        color: hasLocation 
-                          ? const Color(0xFF3AAE5E) 
-                          : Colors.grey,
+                        color: hasLocation
+                            ? const Color(0xFF3AAE5E)
+                            : Colors.grey,
                         size: 20,
                       ),
-                      suffixIcon: _isLoading 
-                        ? Container(
-                            width: 20,
-                            height: 20,
-                            margin: const EdgeInsets.all(14),
-                            child: const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF3AAE5E)
+                      suffixIcon: _isLoading
+                          ? Container(
+                              width: 20,
+                              height: 20,
+                              margin: const EdgeInsets.all(14),
+                              child: const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF3AAE5E),
+                                ),
                               ),
-                            ),
-                          )
-                        : _searchController.text.isNotEmpty
+                            )
+                          : _searchController.text.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear, size: 18),
                               onPressed: _clearSelection,
@@ -291,8 +287,8 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
                           : null,
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, 
-                        vertical: 14
+                        horizontal: 14,
+                        vertical: 14,
                       ),
                     ),
                   ),
@@ -334,10 +330,7 @@ class _LocationPickerFieldState extends State<LocationPickerField> {
             const SizedBox(height: 6),
             Text(
               widget.helperText!,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ],

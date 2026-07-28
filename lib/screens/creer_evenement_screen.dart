@@ -23,11 +23,7 @@ class _EventMediaFile {
   final String url;
   final String? type;
 
-  const _EventMediaFile({
-    this.id,
-    required this.url,
-    this.type,
-  });
+  const _EventMediaFile({this.id, required this.url, this.type});
 }
 
 class CreerEvenementScreen extends StatefulWidget {
@@ -72,7 +68,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
   // Focus tracking for helper text
   String? _focusedField;
-  final TextEditingController _organizerNameController = TextEditingController();
+  final TextEditingController _organizerNameController =
+      TextEditingController();
   LocationData? _selectedLocation;
   String? selectedOptionOrg = "Oui";
   bool _touteLaFrance = false;
@@ -108,11 +105,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
   bool get _isEditMode => widget.eventId != null && widget.eventId!.isNotEmpty;
 
-  final List<String> _types = [
-    'Présentiel',
-    'En ligne',
-    'Hybride',
-  ];
+  final List<String> _types = ['Présentiel', 'En ligne', 'Hybride'];
 
   final List<String> _validiteOptions = [
     'Offre permanente',
@@ -196,7 +189,15 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
   void _selectAllDaysOfWeek() {
     setState(() {
-      _selectedDaysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      _selectedDaysOfWeek = [
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+        'sunday',
+      ];
     });
   }
 
@@ -227,15 +228,20 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
       // Organizer
       final isOrganizer = data['is_organizer'];
-      if (isOrganizer == false || isOrganizer == 0 || isOrganizer == '0' || isOrganizer == 'false') {
+      if (isOrganizer == false ||
+          isOrganizer == 0 ||
+          isOrganizer == '0' ||
+          isOrganizer == 'false') {
         selectedOptionOrg = 'Non';
-        _organizerNameController.text = data['organizer_name']?.toString() ?? '';
+        _organizerNameController.text =
+            data['organizer_name']?.toString() ?? '';
       } else {
         selectedOptionOrg = 'Oui';
       }
 
       // Coverage / Location
-      _touteLaFrance = data['is_nationwide'] == true || data['is_nationwide'] == 1;
+      _touteLaFrance =
+          data['is_nationwide'] == true || data['is_nationwide'] == 1;
       if (data['coverage_area'] != null || data['location_city'] != null) {
         _selectedLocation = LocationData(
           address: data['coverage_area']?.toString() ?? '',
@@ -261,14 +267,21 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           _priceCategories = cats.map<Map<String, TextEditingController>>((c) {
             return {
               'name': TextEditingController(text: c['name']?.toString() ?? ''),
-              'price': TextEditingController(text: c['price']?.toString().replaceAll(RegExp(r'\.00$'), '') ?? ''),
+              'price': TextEditingController(
+                text:
+                    c['price']?.toString().replaceAll(RegExp(r'\.00$'), '') ??
+                    '',
+              ),
             };
           }).toList();
         } else {
           _selectedPricingMode = 'Prix unique';
           final amount = data['price_amount'];
           if (amount != null) {
-            _prixEntreeController.text = amount.toString().replaceAll(RegExp(r'\.00$'), '');
+            _prixEntreeController.text = amount.toString().replaceAll(
+              RegExp(r'\.00$'),
+              '',
+            );
           }
         }
       } else {
@@ -304,13 +317,19 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       final startDateStr = data['start_date']?.toString();
       final endDateStr = data['end_date']?.toString();
       if (eventDate != null && eventDate.isNotEmpty) {
-        try { selectedDate = DateTime.parse(eventDate); } catch (_) {}
+        try {
+          selectedDate = DateTime.parse(eventDate);
+        } catch (_) {}
       }
       if (startDateStr != null && startDateStr.isNotEmpty) {
-        try { startDate = DateTime.parse(startDateStr); } catch (_) {}
+        try {
+          startDate = DateTime.parse(startDateStr);
+        } catch (_) {}
       }
       if (endDateStr != null && endDateStr.isNotEmpty) {
-        try { endDate = DateTime.parse(endDateStr); } catch (_) {}
+        try {
+          endDate = DateTime.parse(endDateStr);
+        } catch (_) {}
       }
 
       // Times
@@ -319,51 +338,67 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       if (st != null && st.isNotEmpty) {
         final parts = st.split(':');
         if (parts.length >= 2) {
-          _startTime = TimeOfDay(hour: int.tryParse(parts[0]) ?? 0, minute: int.tryParse(parts[1]) ?? 0);
+          _startTime = TimeOfDay(
+            hour: int.tryParse(parts[0]) ?? 0,
+            minute: int.tryParse(parts[1]) ?? 0,
+          );
         }
       }
       if (et != null && et.isNotEmpty) {
         final parts = et.split(':');
         if (parts.length >= 2) {
-          _endTime = TimeOfDay(hour: int.tryParse(parts[0]) ?? 0, minute: int.tryParse(parts[1]) ?? 0);
+          _endTime = TimeOfDay(
+            hour: int.tryParse(parts[0]) ?? 0,
+            minute: int.tryParse(parts[1]) ?? 0,
+          );
         }
       }
 
       // Commercial data
       final initPrice = data['initial_price'];
       if (initPrice != null) {
-        _prixInitialController.text = initPrice.toString().replaceAll(RegExp(r'\.00$'), '');
+        _prixInitialController.text = initPrice.toString().replaceAll(
+          RegExp(r'\.00$'),
+          '',
+        );
       }
       final finalPrice = data['final_price'];
       if (finalPrice != null) {
-        _prixFinalController.text = finalPrice.toString().replaceAll(RegExp(r'\.00$'), '');
+        _prixFinalController.text = finalPrice.toString().replaceAll(
+          RegExp(r'\.00$'),
+          '',
+        );
       }
       final discount = data['discount_value'];
       if (discount != null) {
-        _reductionController.text = discount.toString().replaceAll(RegExp(r'\.00$'), '');
+        _reductionController.text = discount.toString().replaceAll(
+          RegExp(r'\.00$'),
+          '',
+        );
       }
 
-      _acceptMessages = data['accept_messages'] == true || data['accept_messages'] == 1;
+      _acceptMessages =
+          data['accept_messages'] == true || data['accept_messages'] == 1;
 
       // Days of week
       final daysOfWeek = data['days_of_week'] as List? ?? [];
-      _selectedDaysOfWeek = daysOfWeek.map<String>((d) => d.toString()).toList();
+      _selectedDaysOfWeek = daysOfWeek
+          .map<String>((d) => d.toString())
+          .toList();
 
       // Existing media
       final mediaFiles = data['media_files'] as List? ?? [];
       _existingMedia = mediaFiles
           .whereType<Map>()
-          .map<_EventMediaFile?>(
-            (m) {
-              final resolvedUrl = _buildMediaUrl(m['url']?.toString());
-              if (resolvedUrl.isEmpty) return null;
-              return _EventMediaFile(
-                id: m['id']?.toString(),
-                url: resolvedUrl,
-                type: m['type']?.toString(),
-              );
-            },
-          )
+          .map<_EventMediaFile?>((m) {
+            final resolvedUrl = _buildMediaUrl(m['url']?.toString());
+            if (resolvedUrl.isEmpty) return null;
+            return _EventMediaFile(
+              id: m['id']?.toString(),
+              url: resolvedUrl,
+              type: m['type']?.toString(),
+            );
+          })
           .whereType<_EventMediaFile>()
           .toList();
     });
@@ -376,7 +411,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
   void _restoreDescription(Map<String, dynamic> data) {
     final descDelta = data['description_delta'];
-    debugPrint('EVENT EDIT _restoreDescription: descDelta type=${descDelta?.runtimeType}');
+    debugPrint(
+      'EVENT EDIT _restoreDescription: descDelta type=${descDelta?.runtimeType}',
+    );
     bool deltaRestored = false;
 
     if (descDelta != null) {
@@ -497,7 +534,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       final formData = {
         'step': _currentStep,
         'title': _titleController.text,
-        'description_delta': jsonEncode(_descriptionQuillController.document.toDelta().toJson()),
+        'description_delta': jsonEncode(
+          _descriptionQuillController.document.toDelta().toJson(),
+        ),
         'category': _selectedCategory,
         'sub_category': _selectedSubCategory,
         'type': _selectedType,
@@ -509,10 +548,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         'prix_entree': _selectedPrixEntree,
         'pricing_mode': _selectedPricingMode,
         'prix_entree_montant': _prixEntreeController.text,
-        'price_categories': _priceCategories.map((c) => {
-          'name': c['name']!.text,
-          'price': c['price']!.text,
-        }).toList(),
+        'price_categories': _priceCategories
+            .map((c) => {'name': c['name']!.text, 'price': c['price']!.text})
+            .toList(),
         'mode_reservation': _selectedModeReservation,
         'site_web': _siteWebController.text,
         'duree': _selectedTimeEvenement,
@@ -569,11 +607,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             'price': TextEditingController(text: c['price']?.toString() ?? ''),
           });
         }
-        _selectedModeReservation = formData['mode_reservation'] ?? 'Sans inscription';
+        _selectedModeReservation =
+            formData['mode_reservation'] ?? 'Sans inscription';
         _siteWebController.text = formData['site_web'] ?? '';
         _selectedTimeEvenement = formData['duree'] ?? 'Sur une journée';
         _acceptMessages = formData['accept_messages'] ?? false;
-        _selectedDaysOfWeek = (formData['days_of_week'] as List? ?? []).map<String>((d) => d.toString()).toList();
+        _selectedDaysOfWeek = (formData['days_of_week'] as List? ?? [])
+            .map<String>((d) => d.toString())
+            .toList();
 
         if (formData['date'] != null) {
           selectedDate = DateTime.parse(formData['date']);
@@ -585,10 +626,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           endDate = DateTime.parse(formData['end_date']);
         }
         if (formData['start_time_hour'] != null) {
-          _startTime = TimeOfDay(hour: formData['start_time_hour'], minute: formData['start_time_minute'] ?? 0);
+          _startTime = TimeOfDay(
+            hour: formData['start_time_hour'],
+            minute: formData['start_time_minute'] ?? 0,
+          );
         }
         if (formData['end_time_hour'] != null) {
-          _endTime = TimeOfDay(hour: formData['end_time_hour'], minute: formData['end_time_minute'] ?? 0);
+          _endTime = TimeOfDay(
+            hour: formData['end_time_hour'],
+            minute: formData['end_time_minute'] ?? 0,
+          );
         }
       });
 
@@ -606,7 +653,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         setState(() {
           _subCategoryOptions = _getSubCategoriesForCode(_selectedCategory);
           if (_subCategoryOptions.isEmpty ||
-              !_subCategoryOptions.any((sub) => sub['code'] == _selectedSubCategory)) {
+              !_subCategoryOptions.any(
+                (sub) => sub['code'] == _selectedSubCategory,
+              )) {
             _selectedSubCategory = null;
           }
         });
@@ -690,15 +739,21 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
   Future<void> _pickMediaFiles() async {
     try {
-      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      final files = await GalleryPicker.pickImagesFromGallery(
+        allowMultiple: true,
+      );
       if (files == null || files.isEmpty) return;
+      if (!mounted) return;
       setState(() {
         _selectedMediaFiles.addAll(files);
       });
     } catch (e) {
       debugPrint('Error picking media: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erreur lors de la sélection des fichiers.')),
+        const SnackBar(
+          content: Text('Erreur lors de la sélection des fichiers.'),
+        ),
       );
     }
   }
@@ -736,15 +791,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           return 'Veuillez sélectionner une sous-catégorie.';
         }
         break;
-      
+
       case 1: // Step 2: Lien (optional)
         break;
-      
+
       case 2: // Step 3: Description
         if (_titleController.text.trim().length < 5) {
           return 'Le titre doit contenir au moins 5 caractères.';
         }
-        if (_descriptionQuillController.document.toPlainText().trim().length < 20) {
+        if (_descriptionQuillController.document.toPlainText().trim().length <
+            20) {
           return 'La description doit contenir au moins 20 caractères.';
         }
         if (_selectedLocation == null && !_touteLaFrance) {
@@ -757,7 +813,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           if (_selectedPricingMode == null) {
             return 'Veuillez choisir un type de tarification.';
           }
-          if (_selectedPricingMode == 'Prix unique' && _prixEntreeController.text.trim().isEmpty) {
+          if (_selectedPricingMode == 'Prix unique' &&
+              _prixEntreeController.text.trim().isEmpty) {
             return 'Indiquez le prix d\'entrée.';
           }
           if (_selectedPricingMode == 'Catégories') {
@@ -775,7 +832,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           }
         }
         break;
-      
+
       case 3: // Step 4: Dates et horaires
         // Dates de début et de fin sont facultatives. On vérifie seulement la
         // cohérence quand les deux sont renseignées.
@@ -787,7 +844,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           }
         }
         break;
-      
+
       case 4: // Step 5: Médias (optional)
         break;
     }
@@ -795,12 +852,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   }
 
   void _showSnack(String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: isError ? Colors.red.shade700 : const Color(0xFF3AAE5E),
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 4),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError
+            ? Colors.red.shade700
+            : const Color(0xFF3AAE5E),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   Future<void> _selectTime(BuildContext context, bool isStartTime) async {
@@ -901,15 +962,15 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     final durationType = _selectedTimeEvenement == 'Sur plusieurs jours'
         ? 'multi_day'
         : _selectedTimeEvenement == 'Sur une journée'
-            ? 'one_day'
-            : 'permanent';
+        ? 'one_day'
+        : 'permanent';
 
     final priceType = _selectedPrixEntree == 'Payant' ? 'payant' : 'gratuit';
     final reservationMode = _selectedModeReservation == 'Inscription requise'
         ? 'inscription'
         : _selectedModeReservation == 'Achat de billet obligatoire'
-            ? 'achat_billet'
-            : 'sans_inscription';
+        ? 'achat_billet'
+        : 'sans_inscription';
 
     return {
       'category_code': _selectedCategory,
@@ -917,10 +978,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       'format_type': _selectedType,
       'title': _titleController.text.trim(),
       'description': _descriptionQuillController.document.toPlainText().trim(),
-      'description_delta': _descriptionQuillController.document.toDelta().toJson(),
-      'landing_url': _linkController.text.trim().isEmpty ? null : _linkController.text.trim(),
+      'description_delta': _descriptionQuillController.document
+          .toDelta()
+          .toJson(),
+      'landing_url': _linkController.text.trim().isEmpty
+          ? null
+          : _linkController.text.trim(),
       'is_organizer': selectedOptionOrg == 'Oui',
-      'organizer_name': selectedOptionOrg == 'Non' ? _organizerNameController.text.trim() : null,
+      'organizer_name': selectedOptionOrg == 'Non'
+          ? _organizerNameController.text.trim()
+          : null,
       'coverage_area': _selectedLocation?.address,
       'location_lat': _selectedLocation?.latitude,
       'location_lng': _selectedLocation?.longitude,
@@ -928,21 +995,30 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       'location_postal_code': _selectedLocation?.postalCode,
       'is_nationwide': _touteLaFrance,
       'price_type': priceType,
-      'price_amount': priceType == 'payant' && _selectedPricingMode == 'Prix unique'
+      'price_amount':
+          priceType == 'payant' && _selectedPricingMode == 'Prix unique'
           ? double.tryParse(_prixEntreeController.text.replaceAll(',', '.'))
           : null,
       // New pricing fields — only sent when using categories
       if (priceType == 'payant') ...{
-        'pricing_mode': _selectedPricingMode == 'Catégories' ? 'categories' : 'unique',
+        'pricing_mode': _selectedPricingMode == 'Catégories'
+            ? 'categories'
+            : 'unique',
       },
       if (priceType == 'payant' && _selectedPricingMode == 'Catégories') ...{
-        'price_categories': _priceCategories.map((c) => {
-              'name': c['name']!.text.trim(),
-              'price': double.tryParse(c['price']!.text.replaceAll(',', '.')),
-            }).toList(),
+        'price_categories': _priceCategories
+            .map(
+              (c) => {
+                'name': c['name']!.text.trim(),
+                'price': double.tryParse(c['price']!.text.replaceAll(',', '.')),
+              },
+            )
+            .toList(),
       },
       'reservation_mode': reservationMode,
-      'website_url': _siteWebController.text.trim().isEmpty ? null : _siteWebController.text.trim(),
+      'website_url': _siteWebController.text.trim().isEmpty
+          ? null
+          : _siteWebController.text.trim(),
       'duration_type': durationType,
       'event_date': durationType == 'one_day' && selectedDate != null
           ? selectedDate!.toIso8601String().split('T').first
@@ -955,7 +1031,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           : null,
       'start_time': _startTime != null ? _formatTime(_startTime) : null,
       'end_time': _endTime != null ? _formatTime(_endTime) : null,
-      'days_of_week': (durationType == 'multi_day' || durationType == 'permanent') && _selectedDaysOfWeek.isNotEmpty
+      'days_of_week':
+          (durationType == 'multi_day' || durationType == 'permanent') &&
+              _selectedDaysOfWeek.isNotEmpty
           ? _selectedDaysOfWeek
           : null,
       'initial_price': _prixInitialController.text.trim().isNotEmpty
@@ -968,7 +1046,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           ? double.tryParse(_reductionController.text.replaceAll(',', '.'))
           : null,
       'accept_messages': _acceptMessages,
-    }..removeWhere((key, value) => value == null || (value is String && value.isEmpty));
+    }..removeWhere(
+      (key, value) => value == null || (value is String && value.isEmpty),
+    );
   }
 
   Future<void> _submitEvent() async {
@@ -993,11 +1073,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           auth: true,
         );
       } else {
-        response = await ApiClient().post(
-          '/events',
-          body: payload,
-          auth: true,
-        );
+        response = await ApiClient().post('/events', body: payload, auth: true);
       }
 
       if ((response['success'] ?? false) == true) {
@@ -1022,14 +1098,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               actionType: 'evenement',
               referenceId: eventId,
             );
-            
+
             if (mysResponse['success'] == true && mounted) {
               // Update UserSession with new balance
               final newBalance = mysResponse['earning']?['new_balance'];
               if (newBalance != null) {
                 UserSession().updateMys(newBalance);
               }
-              
+
               // Show reward modal AFTER dialog closes - use microtask to avoid conflict
               Future.microtask(() async {
                 if (mounted) {
@@ -1049,16 +1125,22 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       } else {
         throw ApiException(
           statusCode: response['status'] ?? 500,
-          message: response['message']?.toString() ?? (_isEditMode ? 'Erreur lors de la mise à jour' : 'Une erreur est survenue.'),
+          message:
+              response['message']?.toString() ??
+              (_isEditMode
+                  ? 'Erreur lors de la mise à jour'
+                  : 'Une erreur est survenue.'),
         );
       }
     } on ApiException catch (e) {
       setState(() => _submitError = e.firstError);
       if (mounted) setState(() => _isSubmitting = false);
     } catch (e) {
-      setState(() => _submitError = _isEditMode
-          ? 'Impossible de mettre à jour l\'événement. Veuillez réessayer.'
-          : 'Impossible de publier l\'événement. Veuillez réessayer.');
+      setState(
+        () => _submitError = _isEditMode
+            ? 'Impossible de mettre à jour l\'événement. Veuillez réessayer.'
+            : 'Impossible de publier l\'événement. Veuillez réessayer.',
+      );
       debugPrint('Error submitting event: $e');
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -1072,7 +1154,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     setState(() => _deletingMediaKeys.add(key));
 
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/events/$eventId/media/$mediaId');
+      final uri = Uri.parse(
+        '${ApiConfig.baseUrl}/events/$eventId/media/$mediaId',
+      );
       final token = await TokenStorage.getAccessToken();
       final response = await http.delete(
         uri,
@@ -1095,7 +1179,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       if (mounted) {
         setState(() => _deletingMediaKeys.remove(key));
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erreur lors de la suppression du média.')),
+          const SnackBar(
+            content: Text('Erreur lors de la suppression du média.'),
+          ),
         );
       }
     }
@@ -1123,9 +1209,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     }
 
     final streamedResponse = await request.send();
-    if (streamedResponse.statusCode < 200 || streamedResponse.statusCode >= 300) {
+    if (streamedResponse.statusCode < 200 ||
+        streamedResponse.statusCode >= 300) {
       final responseBody = await streamedResponse.stream.bytesToString();
-      debugPrint('Media upload failed: ${streamedResponse.statusCode} -> $responseBody');
+      debugPrint(
+        'Media upload failed: ${streamedResponse.statusCode} -> $responseBody',
+      );
       throw Exception('Échec du téléchargement des médias.');
     }
   }
@@ -1162,7 +1251,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       final decoded = jsonDecode(response.body);
       if (decoded is! Map<String, dynamic> || decoded['status'] != 'success') {
         final message = decoded is Map<String, dynamic>
-            ? decoded['message']?.toString() ?? 'Réponse invalide du service des catégories.'
+            ? decoded['message']?.toString() ??
+                  'Réponse invalide du service des catégories.'
             : 'Réponse invalide du service des catégories.';
         throw Exception(message);
       }
@@ -1212,7 +1302,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         });
       }
 
-      final nextSubCategories = _getSubCategoriesForCode(_selectedCategory, parsedCodeToId, parsedSubs);
+      final nextSubCategories = _getSubCategoriesForCode(
+        _selectedCategory,
+        parsedCodeToId,
+        parsedSubs,
+      );
 
       setState(() {
         _categoryOptions = parsedCategories;
@@ -1224,7 +1318,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           ..addAll(parsedSubs);
         _subCategoryOptions = nextSubCategories;
         if (_subCategoryOptions.isEmpty ||
-            !_subCategoryOptions.any((sub) => sub['code'] == _selectedSubCategory)) {
+            !_subCategoryOptions.any(
+              (sub) => sub['code'] == _selectedSubCategory,
+            )) {
           _selectedSubCategory = null;
         }
         _isCategoryLoading = false;
@@ -1232,17 +1328,18 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     } catch (e) {
       debugPrint('Error loading event categories: $e');
       setState(() {
-        _categoryLoadError = 'Impossible de charger les catégories. Veuillez réessayer.';
+        _categoryLoadError =
+            'Impossible de charger les catégories. Veuillez réessayer.';
         _isCategoryLoading = false;
       });
     }
   }
 
   List<Map<String, String>> _getSubCategoriesForCode(
-    String? categoryCode,
-    [Map<String, String>? codeToId,
-    Map<String, List<Map<String, String>>>? subsMap,]
-  ) {
+    String? categoryCode, [
+    Map<String, String>? codeToId,
+    Map<String, List<Map<String, String>>>? subsMap,
+  ]) {
     final effectiveCodeToId = codeToId ?? _categoryCodeToId;
     final effectiveSubs = subsMap ?? _subsByParentId;
     if (categoryCode == null) return [];
@@ -1262,104 +1359,108 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         await _handleBackButton();
       },
       child: AppLayout(
-      currentIndex: 2,
-      backgroundColor: const Color(0xFFF9F9FB),
-      onTabTapped: (index) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (context) => ParticulierMainScreen(initialIndex: index),
-          ),
-          (route) => false,
-        );
-      },
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 16,
-                right: 16,
-                top: 12,
-                bottom: 4,
+        currentIndex: 2,
+        backgroundColor: const Color(0xFFF9F9FB),
+        onTabTapped: (index) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => ParticulierMainScreen(initialIndex: index),
+            ),
+            (route) => false,
+          );
+        },
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 12,
+                  bottom: 4,
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onTap: _handleBackButton,
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Color(0xFF616161),
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _isEditMode
+                          ? 'Modifier l\'événement'
+                          : 'Créer un événement',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontFamily: 'Manjari',
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF424242),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Align(
+              // Subtitle
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  'Partagez vos événements avec la communauté',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Progress bar
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _buildProgressBar(),
+              ),
+              const SizedBox(height: 12),
+              // Previous button
+              if (_currentStep > 0)
+                Padding(
+                  padding: const EdgeInsets.only(left: 20),
+                  child: Align(
                     alignment: Alignment.centerLeft,
                     child: GestureDetector(
-                      onTap: _handleBackButton,
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Color(0xFF616161),
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    _isEditMode ? 'Modifier l\'événement' : 'Créer un événement',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontFamily: 'Manjari',
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF424242),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Subtitle
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                'Partagez vos événements avec la communauté',
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Progress bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _buildProgressBar(),
-            ),
-            const SizedBox(height: 12),
-            // Previous button
-            if (_currentStep > 0)
-              Padding(
-                padding: const EdgeInsets.only(left: 20),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: GestureDetector(
-                    onTap: _previousStep,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      child: const Text(
-                        'Précédent',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      onTap: _previousStep,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.grey.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: const Text(
+                          'Précédent',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
                       ),
                     ),
                   ),
                 ),
+              const SizedBox(height: 8),
+              // Step content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _buildCurrentStep(),
+                ),
               ),
-            const SizedBox(height: 8),
-            // Step content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _buildCurrentStep(),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -1455,7 +1556,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 return _buildExistingMediaCard(_existingMedia[existingIndex]);
               }
               final newIndex = existingIndex - _existingMedia.length;
-              return _buildPhotoPreviewCard(_selectedMediaFiles[newIndex], newIndex);
+              return _buildPhotoPreviewCard(
+                _selectedMediaFiles[newIndex],
+                newIndex,
+              );
             },
           ),
         ),
@@ -1488,7 +1592,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withOpacity(0.1),
+                color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -1520,7 +1624,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1574,7 +1678,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -1596,14 +1700,18 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   bool _isImageUrl(String url, String? type) {
     if (type != null && type.toLowerCase().contains('image')) return true;
     final lower = url.toLowerCase();
-    return lower.endsWith('.jpg') || lower.endsWith('.jpeg') ||
-        lower.endsWith('.png') || lower.endsWith('.gif');
+    return lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.png') ||
+        lower.endsWith('.gif');
   }
 
   bool _isVideoUrl(String url, String? type) {
     if (type != null && type.toLowerCase().contains('video')) return true;
     final lower = url.toLowerCase();
-    return lower.endsWith('.mp4') || lower.endsWith('.mov') || lower.endsWith('.avi');
+    return lower.endsWith('.mp4') ||
+        lower.endsWith('.mov') ||
+        lower.endsWith('.avi');
   }
 
   Widget _buildBrokenMediaPlaceholder() {
@@ -1646,7 +1754,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1666,7 +1774,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.4),
+                  color: Colors.black.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Center(
@@ -1698,7 +1806,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -1719,18 +1827,20 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
   Widget _buildMediaPreview(GalleryMedia file) {
     final extension = file.extension?.toLowerCase();
-    final isVideo =
-        ['mp4', 'mov', 'avi', 'mkv', 'webm', '3gp'].contains(extension);
+    final isVideo = [
+      'mp4',
+      'mov',
+      'avi',
+      'mkv',
+      'webm',
+      '3gp',
+    ].contains(extension);
 
     if (isVideo) {
       return Container(
         color: Colors.black87,
         child: const Center(
-          child: Icon(
-            Icons.play_circle_outline,
-            size: 40,
-            color: Colors.white,
-          ),
+          child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white),
         ),
       );
     }
@@ -1749,12 +1859,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         width: double.infinity,
         height: double.infinity,
         errorBuilder: (_, __, ___) => file.path.isNotEmpty
-            ? Image.file(File(file.path),
+            ? Image.file(
+                File(file.path),
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,
                 errorBuilder: (_, __, ___) =>
-                    Container(color: const Color(0xFFF9FAFB), child: fileIcon))
+                    Container(color: const Color(0xFFF9FAFB), child: fileIcon),
+              )
             : Container(color: const Color(0xFFF9FAFB), child: fileIcon),
       );
     }
@@ -1777,7 +1889,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         .map(
           (category) => DropdownMenuItem<String>(
             value: category['code'],
-            child: Text(category['label'] ?? '--', style: const TextStyle(fontSize: 13)),
+            child: Text(
+              category['label'] ?? '--',
+              style: const TextStyle(fontSize: 13),
+            ),
           ),
         )
         .toList();
@@ -1786,18 +1901,23 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         .map(
           (sub) => DropdownMenuItem<String>(
             value: sub['code'],
-            child: Text(sub['label'] ?? '--', style: const TextStyle(fontSize: 13)),
+            child: Text(
+              sub['label'] ?? '--',
+              style: const TextStyle(fontSize: 13),
+            ),
           ),
         )
         .toList();
 
     final hasCategories = categoryItems.isNotEmpty;
     final hasSubCategories = subCategoryItems.isNotEmpty;
-    final selectedCategoryValue = hasCategories &&
+    final selectedCategoryValue =
+        hasCategories &&
             categoryItems.any((item) => item.value == _selectedCategory)
         ? _selectedCategory
         : null;
-    final selectedSubCategoryValue = hasSubCategories &&
+    final selectedSubCategoryValue =
+        hasSubCategories &&
             subCategoryItems.any((item) => item.value == _selectedSubCategory)
         ? _selectedSubCategory
         : null;
@@ -1834,7 +1954,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                     _subCategoryOptions = _getSubCategoriesForCode(val);
                   });
                 },
-                hint: _buildRequiredHint('Choisissez la catégorie d\'événement'),
+                hint: _buildRequiredHint(
+                  'Choisissez la catégorie d\'événement',
+                ),
                 backgroundColor: const Color(0xFFF9FAFB),
                 enabled: hasCategories,
               ),
@@ -1882,7 +2004,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               label: 'Ajouter un lien',
               controller: _linkController,
               fieldKey: 'link',
-              helperText: 'Le lien permettra d\'extraire automatiquement le titre, la description, les dates, le lieu et autres détails de l\'événement pour faciliter la création de votre annonce.',
+              helperText:
+                  'Le lien permettra d\'extraire automatiquement le titre, la description, les dates, le lieu et autres détails de l\'événement pour faciliter la création de votre annonce.',
             ),
           ],
         ),
@@ -1924,14 +2047,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               label: 'Quel est votre titre?*',
               controller: _titleController,
               fieldKey: 'title',
-              helperText: 'Saisissez un titre accrocheur et descriptif pour votre événement (ex: "Conférence développement durable 2026").',
+              helperText:
+                  'Saisissez un titre accrocheur et descriptif pour votre événement (ex: "Conférence développement durable 2026").',
             ),
             const SizedBox(height: 12),
             _buildRichTextEditor(
               label: 'Décrivez l\'évènement*',
               controller: _descriptionQuillController,
               fieldKey: 'description',
-              helperText: 'Décrivez en détail votre événement. Utilisez les outils de mise en forme pour mettre en évidence les informations importantes.',
+              helperText:
+                  'Décrivez en détail votre événement. Utilisez les outils de mise en forme pour mettre en évidence les informations importantes.',
             ),
             const SizedBox(height: 12),
             _buildRadioGroup(
@@ -1947,7 +2072,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 label: 'Nom de l\'organisateur',
                 controller: _organizerNameController,
                 fieldKey: 'organizer_name',
-                helperText: 'Indiquez le nom de la personne ou de l\'organisme qui organise cet événement.',
+                helperText:
+                    'Indiquez le nom de la personne ou de l\'organisme qui organise cet événement.',
               ),
             const SizedBox(height: 12),
             LocationPickerField(
@@ -1970,7 +2096,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2035,12 +2161,15 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                        border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: TextField(
                         controller: _prixEntreeController,
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         decoration: const InputDecoration(
                           hintText: 'Prix',
                           border: InputBorder.none,
@@ -2075,15 +2204,22 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                              border: Border.all(
+                                color: Colors.grey.withValues(alpha: 0.2),
+                              ),
                             ),
                             child: TextField(
                               controller: _priceCategories[index]['name'],
                               decoration: InputDecoration(
                                 hintText: 'ex: Enfant, VIP...',
-                                hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                                hintStyle: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[400],
+                                ),
                                 border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                               ),
                             ),
                           ),
@@ -2096,26 +2232,46 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                              border: Border.all(
+                                color: Colors.grey.withValues(alpha: 0.2),
+                              ),
                             ),
                             child: TextField(
                               controller: _priceCategories[index]['price'],
                               keyboardType:
-                                  const TextInputType.numberWithOptions(decimal: true),
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               decoration: InputDecoration(
                                 hintText: '€',
-                                hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                                hintStyle: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[400],
+                                ),
                                 border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                               ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Text('€', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF2E9B5B))),
+                        const Text(
+                          '€',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF2E9B5B),
+                          ),
+                        ),
                         if (_priceCategories.length > 1)
                           IconButton(
-                            icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 22),
+                            icon: const Icon(
+                              Icons.remove_circle_outline,
+                              color: Colors.red,
+                              size: 22,
+                            ),
                             onPressed: () => _removePriceCategory(index),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
@@ -2129,7 +2285,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
                     onPressed: _addPriceCategory,
-                    icon: const Icon(Icons.add_circle_outline, size: 20, color: Color(0xFFEF8A40)),
+                    icon: const Icon(
+                      Icons.add_circle_outline,
+                      size: 20,
+                      color: Color(0xFFEF8A40),
+                    ),
                     label: const Text(
                       'Ajouter une catégorie de prix',
                       style: TextStyle(color: Color(0xFFEF8A40), fontSize: 13),
@@ -2160,7 +2320,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               controller: _siteWebController,
               keyboardType: TextInputType.url,
               fieldKey: 'site_web',
-              helperText: 'Saisissez l\'adresse du site web officiel de l\'événement ou de l\'organisateur.',
+              helperText:
+                  'Saisissez l\'adresse du site web officiel de l\'événement ou de l\'organisateur.',
             ),
           ],
         ),
@@ -2258,7 +2419,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                        border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2310,7 +2473,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                        border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2348,7 +2513,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             ),
             const SizedBox(height: 16),
             // Days of week selection (for multi_day and permanent)
-            if (_selectedTimeEvenement == 'Sur plusieurs jours' || _selectedTimeEvenement == 'Permanent') ...[
+            if (_selectedTimeEvenement == 'Sur plusieurs jours' ||
+                _selectedTimeEvenement == 'Permanent') ...[
               const Text(
                 'Jours de la semaine :',
                 style: TextStyle(
@@ -2412,7 +2578,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           onEdit: () => setState(() => _currentStep = 0),
           rows: [
             _buildReviewRow('Catégorie', _getCategoryLabel(_selectedCategory)),
-            _buildReviewRow('Sous-catégorie', _getSubCategoryLabel(_selectedSubCategory)),
+            _buildReviewRow(
+              'Sous-catégorie',
+              _getSubCategoryLabel(_selectedSubCategory),
+            ),
             _buildReviewRow('Format', _selectedType ?? '-'),
           ],
         ),
@@ -2425,7 +2594,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           rows: [
             _buildReviewRow(
               'Lien',
-              _linkController.text.isEmpty ? 'Aucun lien' : _linkController.text,
+              _linkController.text.isEmpty
+                  ? 'Aucun lien'
+                  : _linkController.text,
             ),
           ],
         ),
@@ -2450,24 +2621,32 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               'Organisateur',
               selectedOptionOrg == 'Oui'
                   ? 'Vous'
-                  : (_organizerNameController.text.isEmpty ? '-' : _organizerNameController.text),
+                  : (_organizerNameController.text.isEmpty
+                        ? '-'
+                        : _organizerNameController.text),
             ),
-            _buildReviewRow(
-              'Lieu',
-              _selectedLocation?.address ?? '-',
-            ),
+            _buildReviewRow('Lieu', _selectedLocation?.address ?? '-'),
             _buildReviewRow('Toute la France', _touteLaFrance ? 'Oui' : 'Non'),
             _buildReviewRow('Prix d\'entrée', _selectedPrixEntree ?? '-'),
             if (_selectedPrixEntree == 'Payant') ...[
-              _buildReviewRow('Type de tarification', _selectedPricingMode ?? '-'),
+              _buildReviewRow(
+                'Type de tarification',
+                _selectedPricingMode ?? '-',
+              ),
               if (_selectedPricingMode == 'Prix unique')
                 _buildReviewRow('Montant', '${_prixEntreeController.text} €'),
               if (_selectedPricingMode == 'Catégories')
-                ..._priceCategories.map((c) =>
-                  _buildReviewRow(c['name']!.text.isEmpty ? '-' : c['name']!.text, '${c['price']!.text} €'),
+                ..._priceCategories.map(
+                  (c) => _buildReviewRow(
+                    c['name']!.text.isEmpty ? '-' : c['name']!.text,
+                    '${c['price']!.text} €',
+                  ),
                 ),
             ],
-            _buildReviewRow('Mode de réservation', _selectedModeReservation ?? '-'),
+            _buildReviewRow(
+              'Mode de réservation',
+              _selectedModeReservation ?? '-',
+            ),
             _buildReviewRow(
               'Site web',
               _siteWebController.text.isEmpty ? '-' : _siteWebController.text,
@@ -2482,7 +2661,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           onEdit: () => setState(() => _currentStep = 3),
           rows: [
             _buildReviewRow('Durée', _selectedTimeEvenement ?? '-'),
-            if (_selectedTimeEvenement == 'Sur une journée' && selectedDate != null)
+            if (_selectedTimeEvenement == 'Sur une journée' &&
+                selectedDate != null)
               _buildReviewRow(
                 'Date',
                 '${selectedDate!.day.toString().padLeft(2, '0')}/${selectedDate!.month.toString().padLeft(2, '0')}/${selectedDate!.year}',
@@ -2499,8 +2679,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   '${endDate!.day.toString().padLeft(2, '0')}/${endDate!.month.toString().padLeft(2, '0')}/${endDate!.year}',
                 ),
             ],
-            _buildReviewRow('Horaire', '${_formatTime(_startTime)} - ${_formatTime(_endTime)}'),
-            if ((_selectedTimeEvenement == 'Sur plusieurs jours' || _selectedTimeEvenement == 'Permanent') &&
+            _buildReviewRow(
+              'Horaire',
+              '${_formatTime(_startTime)} - ${_formatTime(_endTime)}',
+            ),
+            if ((_selectedTimeEvenement == 'Sur plusieurs jours' ||
+                    _selectedTimeEvenement == 'Permanent') &&
                 _selectedDaysOfWeek.isNotEmpty)
               _buildReviewRow('Jours', _formatSelectedDaysOfWeek()),
           ],
@@ -2587,16 +2771,27 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Text(_isEditMode ? 'Mise à jour en cours...' : 'Publication en cours...'),
+                      Text(
+                        _isEditMode
+                            ? 'Mise à jour en cours...'
+                            : 'Publication en cours...',
+                      ),
                     ],
                   )
                 : Text(
-                    _isEditMode ? 'Mettre à jour l\'événement' : 'Publier l\'événement',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    _isEditMode
+                        ? 'Mettre à jour l\'événement'
+                        : 'Publier l\'événement',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
           ),
         ),
@@ -2630,7 +2825,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               title,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.black.withOpacity(0.8),
+                color: Colors.black.withValues(alpha: 0.8),
                 fontFamily: 'Manjari',
                 fontWeight: FontWeight.bold,
               ),
@@ -2742,10 +2937,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -2807,7 +3002,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     Color? backgroundColor,
     bool enabled = true,
   }) {
-    final dropdownItems = menuItems ??
+    final dropdownItems =
+        menuItems ??
         items
             .map(
               (item) => DropdownMenuItem<String>(
@@ -2822,10 +3018,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       decoration: BoxDecoration(
         color: backgroundColor ?? Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         hint:
             hint ??
             Text(
@@ -2864,10 +3060,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             ),
           ),
           if (onRetry != null)
-            TextButton(
-              onPressed: onRetry,
-              child: const Text('Réessayer'),
-            ),
+            TextButton(onPressed: onRetry, child: const Text('Réessayer')),
         ],
       ),
     );
@@ -2904,7 +3097,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFE8F5E9),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.3)),
+        border: Border.all(
+          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2946,7 +3141,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
           ),
           child: TextField(
             controller: controller,
@@ -2969,7 +3164,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
-              prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.grey[400]) : null,
+              prefixIcon: prefixIcon != null
+                  ? Icon(prefixIcon, color: Colors.grey[400])
+                  : null,
               suffixText: suffix,
               suffixStyle: const TextStyle(
                 fontSize: 14,
@@ -3004,7 +3201,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3021,7 +3218,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                     color: const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   child: QuillSimpleToolbar(
                     controller: controller,
                     config: const QuillSimpleToolbarConfig(
@@ -3117,7 +3317,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.withOpacity(0.15)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3188,11 +3388,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               border: Border.all(
                 color: isSelected
                     ? const Color(0xFF3AAE5E)
-                    : Colors.grey.withOpacity(0.4),
+                    : Colors.grey.withValues(alpha: 0.4),
                 width: 1.5,
               ),
               color: isSelected
-                  ? const Color(0xFF3AAE5E).withOpacity(0.1)
+                  ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
                   : Colors.transparent,
             ),
             child: isSelected
@@ -3234,7 +3434,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   color: isSelected ? const Color(0xFF3AAE5E) : Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey.withOpacity(0.3),
+                    color: isSelected
+                        ? const Color(0xFF3AAE5E)
+                        : Colors.grey.withValues(alpha: 0.3),
                     width: 1.5,
                   ),
                 ),
@@ -3244,7 +3446,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : const Color(0xFF424242),
+                      color: isSelected
+                          ? Colors.white
+                          : const Color(0xFF424242),
                     ),
                   ),
                 ),

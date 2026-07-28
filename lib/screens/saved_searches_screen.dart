@@ -229,7 +229,7 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF9800).withOpacity(0.1),
+                    color: const Color(0xFFFF9800).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: const Color(0xFFFF9800)),
                   ),
@@ -344,7 +344,7 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                           icon: const Icon(Icons.clear, size: 18),
                           tooltip: 'Effacer le filtre de date',
                           style: IconButton.styleFrom(
-                            backgroundColor: Colors.red.withOpacity(0.1),
+                            backgroundColor: Colors.red.withValues(alpha: 0.1),
                             foregroundColor: Colors.red,
                           ),
                         ),

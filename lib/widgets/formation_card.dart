@@ -41,115 +41,119 @@ class FormationCard extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: Stack(
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-          // Header
-          Row(
-            children: [
-              GestureDetector(
-                onTap: onAvatarTap,
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                    image: DecorationImage(
-                      image: companyLogo.startsWith('http')
-                          ? NetworkImage(companyLogo)
-                          : AssetImage(companyLogo) as ImageProvider,
-                      fit: BoxFit.cover,
+              // Header
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: onAvatarTap,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.2),
+                        ),
+                        image: DecorationImage(
+                          image: companyLogo.startsWith('http')
+                              ? NetworkImage(companyLogo)
+                              : AssetImage(companyLogo) as ImageProvider,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: onAvatarTap,
+                          child: Text(
+                            companyName,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF616161),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE6F7EF),
+                            borderRadius: BorderRadius.circular(5),
+                            border: Border.all(
+                              color: const Color(
+                                0xFF3AAE5E,
+                              ).withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: const Text(
+                            'Pro',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF3AAE5E),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Formation Title
+              Text(
+                formationTitle,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF757575),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: onAvatarTap,
-                      child: Text(
-                        companyName,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF616161),
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE6F7EF),
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(
-                          color: const Color(0xFF3AAE5E).withOpacity(0.2),
-                        ),
-                      ),
-                      child: const Text(
-                        'Pro',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Color(0xFF3AAE5E),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 8),
+              // Description
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF616161),
+                  height: 1.5,
                 ),
               ),
-              const Spacer(),
-            ],
-          ),
-          const SizedBox(height: 20),
-          // Formation Title
-          Text(
-            formationTitle,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF757575),
-            ),
-          ),
-          const SizedBox(height: 8),
-          // Description
-          Text(
-            description,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF616161),
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 15),
-          const Divider(height: 1),
-          const SizedBox(height: 15),
-          // Tags
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: tags.map((tag) => _buildTag(tag)).toList(),
-          ),
-          const SizedBox(height: 15),
-          const Divider(height: 1),
-          const SizedBox(height: 15),
+              const SizedBox(height: 15),
+              const Divider(height: 1),
+              const SizedBox(height: 15),
+              // Tags
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: tags.map((tag) => _buildTag(tag)).toList(),
+              ),
+              const SizedBox(height: 15),
+              const Divider(height: 1),
+              const SizedBox(height: 15),
               // Footer - button only (timeAgo moved below)
               SizedBox(
                 width: double.infinity,
@@ -171,31 +175,31 @@ class FormationCard extends StatelessWidget {
                   ),
                 ),
               ),
-          if (reactionBar != null) ...[
-            const SizedBox(height: 20),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-            reactionBar!,
-            const SizedBox(height: 10),
-            const Divider(height: 1),
-          ],
-          // Time ago below reaction section
-          Padding(
-            padding: const EdgeInsets.only(top: 16, left: 4, right: 4),
-            child: Row(
-              children: [
-                const Icon(Icons.access_time, size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  timeAgo,
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
-                ),
+              if (reactionBar != null) ...[
+                const SizedBox(height: 20),
+                const Divider(height: 1),
+                const SizedBox(height: 10),
+                reactionBar!,
+                const SizedBox(height: 10),
+                const Divider(height: 1),
               ],
-            ),
+              // Time ago below reaction section
+              Padding(
+                padding: const EdgeInsets.only(top: 16, left: 4, right: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(
+                      timeAgo,
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
           ),
-          const SizedBox(height: 10),
-        ],
-      ),
           Positioned(
             top: 0,
             right: 0,
@@ -208,11 +212,11 @@ class FormationCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -228,7 +232,9 @@ class FormationCard extends StatelessWidget {
                             ),
                           )
                         : Icon(
-                            isFavorited ? Icons.favorite : Icons.favorite_border,
+                            isFavorited
+                                ? Icons.favorite
+                                : Icons.favorite_border,
                             color: isFavorited ? Colors.red : Colors.grey[600],
                             size: 20,
                           ),
@@ -241,11 +247,11 @@ class FormationCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -262,10 +268,16 @@ class FormationCard extends StatelessWidget {
                 ],
                 // Formation tag
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [const Color(0xFF9C27B0), const Color(0xFF9C27B0).withOpacity(0.8)],
+                      colors: [
+                        const Color(0xFF9C27B0),
+                        const Color(0xFF9C27B0).withValues(alpha: 0.8),
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -275,7 +287,7 @@ class FormationCard extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF9C27B0).withOpacity(0.3),
+                        color: const Color(0xFF9C27B0).withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -284,7 +296,11 @@ class FormationCard extends StatelessWidget {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.school_outlined, size: 14, color: Colors.white),
+                      Icon(
+                        Icons.school_outlined,
+                        size: 14,
+                        color: Colors.white,
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Formation',
@@ -315,8 +331,8 @@ class FormationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isSpecial
-              ? const Color(0xFF3AAE5E).withOpacity(0.5)
-              : Colors.grey.withOpacity(0.2),
+              ? const Color(0xFF3AAE5E).withValues(alpha: 0.5)
+              : Colors.grey.withValues(alpha: 0.2),
         ),
       ),
       child: Row(

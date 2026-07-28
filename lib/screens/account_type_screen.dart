@@ -30,7 +30,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
         destination = const ProInfoScreen();
       }
 
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => destination),
       );
@@ -68,7 +68,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
               child: Image.asset(
                 'assets/images/auth/Rectangle 4.png',
                 fit: BoxFit.cover,
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 colorBlendMode: BlendMode.dstIn,
               ),
             ),
@@ -125,7 +125,9 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                             buttonText: 'Continuer en tant que particulier',
                             icon: Icons.person_outline_rounded,
                             primaryColor: const Color(0xFFFF9800), // Orange
-                            onTap: _isLoading ? () {} : () => _selectAccountType('particulier'),
+                            onTap: _isLoading
+                                ? () {}
+                                : () => _selectAccountType('particulier'),
                           ),
                           const SizedBox(height: 24),
                           _buildAccountTypeCard(
@@ -136,7 +138,9 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                             buttonText: 'Continuer en tant que Professionnel',
                             icon: Icons.business_rounded,
                             primaryColor: const Color(0xFF1B8D4B), // Green
-                            onTap: _isLoading ? () {} : () => _selectAccountType('pro'),
+                            onTap: _isLoading
+                                ? () {}
+                                : () => _selectAccountType('pro'),
                           ),
                           const SizedBox(height: 20),
                         ],
@@ -168,13 +172,16 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withOpacity(0.2),
+            color: primaryColor.withValues(alpha: 0.2),
             blurRadius: 15,
             spreadRadius: 2,
             offset: const Offset(0, 8),
           ),
         ],
-        border: Border.all(color: primaryColor.withOpacity(0.3), width: 1),
+        border: Border.all(
+          color: primaryColor.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -183,7 +190,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.1),
+                color: primaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 40, color: primaryColor),
@@ -213,7 +220,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
               height: 50,
               child: OutlinedButton(
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: primaryColor.withOpacity(0.5)),
+                  side: BorderSide(color: primaryColor.withValues(alpha: 0.5)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

@@ -13,7 +13,8 @@ class MysRewardModal extends StatefulWidget {
     this.onClose,
   });
 
-  static Future<void> show(BuildContext context, {
+  static Future<void> show(
+    BuildContext context, {
     required num amount,
     required String actionType,
   }) async {
@@ -52,10 +53,7 @@ class _MysRewardModalState extends State<MysRewardModal>
       TweenSequenceItem(tween: Tween(begin: 1.1, end: 1.0), weight: 20),
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.05), weight: 20),
       TweenSequenceItem(tween: Tween(begin: 1.05, end: 1.0), weight: 20),
-    ]).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
+    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
@@ -64,15 +62,18 @@ class _MysRewardModalState extends State<MysRewardModal>
       ),
     );
 
-    _bounceAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 20.0), weight: 25),
-      TweenSequenceItem(tween: Tween(begin: 20.0, end: -15.0), weight: 25),
-      TweenSequenceItem(tween: Tween(begin: -15.0, end: 10.0), weight: 25),
-      TweenSequenceItem(tween: Tween(begin: 10.0, end: 0.0), weight: 25),
-    ]).animate(CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
-    ));
+    _bounceAnimation =
+        TweenSequence<double>([
+          TweenSequenceItem(tween: Tween(begin: 0.0, end: 20.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 20.0, end: -15.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: -15.0, end: 10.0), weight: 25),
+          TweenSequenceItem(tween: Tween(begin: 10.0, end: 0.0), weight: 25),
+        ]).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
+          ),
+        );
 
     _controller.forward();
   }
@@ -138,7 +139,7 @@ class _MysRewardModalState extends State<MysRewardModal>
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 30,
                       spreadRadius: 5,
                       offset: const Offset(0, 10),
@@ -163,7 +164,9 @@ class _MysRewardModalState extends State<MysRewardModal>
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFFF9800).withOpacity(0.4),
+                              color: const Color(
+                                0xFFFF9800,
+                              ).withValues(alpha: 0.4),
                               blurRadius: 20,
                               spreadRadius: 5,
                             ),
@@ -191,10 +194,7 @@ class _MysRewardModalState extends State<MysRewardModal>
                     Text(
                       _getActionDescription(),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 20),
                     // My's Earned
@@ -209,7 +209,7 @@ class _MysRewardModalState extends State<MysRewardModal>
                         ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: const Color(0xFFFF9800).withOpacity(0.3),
+                          color: const Color(0xFFFF9800).withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(

@@ -33,10 +33,7 @@ String? ownerIdFromComment(Map<String, dynamic> comment) {
       comment['author_id']?.toString();
 }
 
-bool canReportComment(
-  Map<String, dynamic> comment, {
-  String? currentUserId,
-}) {
+bool canReportComment(Map<String, dynamic> comment, {String? currentUserId}) {
   final ownerId = ownerIdFromComment(comment);
   final sessionUserId = currentUserId ?? UserSession().id?.toString();
   return ownerId != null &&
@@ -55,10 +52,10 @@ Widget reportableCommentGesture({
   return GestureDetector(
     onLongPress: canReportComment(comment, currentUserId: currentUserId)
         ? () => showCommentReportActionSheet(
-              context: context,
-              comment: comment,
-              currentUserId: currentUserId,
-            )
+            context: context,
+            comment: comment,
+            currentUserId: currentUserId,
+          )
         : null,
     child: child,
   );
@@ -76,9 +73,7 @@ Future<void> showCommentReportActionSheet({
   final commentId = comment['id']?.toString() ?? '';
   if (commentId.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Impossible d\'identifier ce commentaire.'),
-      ),
+      const SnackBar(content: Text('Impossible d\'identifier ce commentaire.')),
     );
     return;
   }
@@ -125,10 +120,7 @@ Future<void> showCommentReportActionSheet({
   );
 
   if (action == 'report' && context.mounted) {
-    await showCommentReportDialog(
-      context: context,
-      commentId: commentId,
-    );
+    await showCommentReportDialog(context: context, commentId: commentId);
   }
 }
 
@@ -174,8 +166,9 @@ Future<void> showCommentReportDialog({
           ),
           actions: [
             TextButton(
-              onPressed:
-                  isSubmitting ? null : () => Navigator.pop(dialogContext),
+              onPressed: isSubmitting
+                  ? null
+                  : () => Navigator.pop(dialogContext),
               child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
             ),
             ElevatedButton(
@@ -299,8 +292,9 @@ Future<void> showAnnouncementReportDialog({
           ),
           actions: [
             TextButton(
-              onPressed:
-                  isSubmitting ? null : () => Navigator.pop(dialogContext),
+              onPressed: isSubmitting
+                  ? null
+                  : () => Navigator.pop(dialogContext),
               child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
             ),
             ElevatedButton(

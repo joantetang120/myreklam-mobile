@@ -310,7 +310,10 @@ class _FormationScreenState extends State<FormationScreen> {
                 },
                 child: Container(
                   margin: const EdgeInsets.only(right: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF9E6),
                     borderRadius: BorderRadius.circular(12),
@@ -364,7 +367,9 @@ class _FormationScreenState extends State<FormationScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                        border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -391,7 +396,9 @@ class _FormationScreenState extends State<FormationScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      border: Border.all(
+                        color: Colors.grey.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: Icon(Icons.tune, color: Colors.grey[500], size: 20),
                   ),
@@ -466,14 +473,15 @@ class _FormationScreenState extends State<FormationScreen> {
     final addressCity = training['address_city']?.toString() ?? '';
 
     // Helper to extract array values
-    String _extractArrayValues(dynamic field) {
+    String extractArrayValues(dynamic field) {
       if (field is List) {
         return field
             .map((item) {
-              if (item is Map)
+              if (item is Map) {
                 return item['value']?.toString() ??
                     item['name']?.toString() ??
                     '';
+              }
               return item.toString();
             })
             .where((s) => s.isNotEmpty)
@@ -483,7 +491,7 @@ class _FormationScreenState extends State<FormationScreen> {
     }
 
     // Translation for training_style
-    String _translateTrainingStyle(String value) {
+    String translateTrainingStyle(String value) {
       switch (value.trim()) {
         case 'Remote':
           return 'En ligne';
@@ -505,17 +513,17 @@ class _FormationScreenState extends State<FormationScreen> {
             final value = item is Map
                 ? (item['value']?.toString() ?? item.toString())
                 : item.toString();
-            return _translateTrainingStyle(value);
+            return translateTrainingStyle(value);
           })
           .where((s) => s.isNotEmpty)
           .join(' · ');
       trainingStyleText = translated;
     } else if (trainingStyleRaw != null) {
-      trainingStyleText = _translateTrainingStyle(trainingStyleRaw.toString());
+      trainingStyleText = translateTrainingStyle(trainingStyleRaw.toString());
     }
 
     // Translation for training_public
-    String _translateTrainingPublic(String value) {
+    String translateTrainingPublic(String value) {
       switch (value.trim()) {
         case 'AllPublic':
           return 'Tout public';
@@ -541,18 +549,18 @@ class _FormationScreenState extends State<FormationScreen> {
             final value = item is Map
                 ? (item['value']?.toString() ?? item.toString())
                 : item.toString();
-            return _translateTrainingPublic(value);
+            return translateTrainingPublic(value);
           })
           .where((s) => s.isNotEmpty)
           .join(' · ');
       trainingPublicText = translated;
     } else if (trainingPublicRaw != null) {
-      trainingPublicText = _translateTrainingPublic(
+      trainingPublicText = translateTrainingPublic(
         trainingPublicRaw.toString(),
       );
     }
 
-    final certification = _extractArrayValues(training['certification']);
+    final certification = extractArrayValues(training['certification']);
 
     // Check if CPF is in training_funding array
     final trainingFunding = training['training_funding'];
@@ -655,7 +663,7 @@ class _FormationScreenState extends State<FormationScreen> {
       builder: (context, setState) {
         bool isLoading = false;
 
-        Future<void> _toggleFavorite() async {
+        Future<void> toggleFavorite() async {
           if (isLoading || trainingId.isEmpty) return;
 
           // Toggle immediately for responsive UI
@@ -735,15 +743,15 @@ class _FormationScreenState extends State<FormationScreen> {
           timeAgo: _buildTimeAgo(training['created_at']?.toString()),
           isFavorited: isFavoritedNotifier.value,
           isLoadingFavorite: isLoading,
-          onFavoriteToggle: _toggleFavorite,
+          onFavoriteToggle: toggleFavorite,
           onApply: () => _navigateToTrainingDetail(training),
           onReport: canReportResource(training)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'trainings',
-                    entityId: trainingId,
-                    title: title,
-                  )
+                  context: context,
+                  entityType: 'trainings',
+                  entityId: trainingId,
+                  title: title,
+                )
               : null,
           onAvatarTap: () {
             if (user?['id'] != null) {
@@ -873,8 +881,8 @@ class _FormationScreenState extends State<FormationScreen> {
           : <String>[];
       final documentFilesRaw = data['document_files'] as List? ?? [];
       final documents = documentFilesRaw
-          .where((d) => d is Map)
-          .map((d) => Map<String, dynamic>.from(d as Map))
+          .whereType<Map>()
+          .map((d) => Map<String, dynamic>.from(d))
           .toList();
       final createdAt = data['created_at']?.toString();
       final mediaFiles =
@@ -1126,13 +1134,7 @@ class _FormationScreenState extends State<FormationScreen> {
     }
   }
 
-  Widget _buildReactionBar(
-    String apiSlug,
-    String entityId, {
-    bool? acceptedMessages,
-    Map<String, dynamic>? authorData,
-    Map<String, dynamic>? postData,
-  }) {
+  Widget _buildReactionBar(String apiSlug, String entityId) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
     final isPost = apiSlug == 'posts';
@@ -1188,7 +1190,6 @@ class _FormationScreenState extends State<FormationScreen> {
       ],
     );
   }
-
 
   Future<void> _refreshReactionFromApi(String apiSlug, String entityId) async {
     try {
@@ -1433,8 +1434,9 @@ class _FormationScreenState extends State<FormationScreen> {
 
               if (newText == null ||
                   newText.trim().isEmpty ||
-                  newText == currentBody)
+                  newText == currentBody) {
                 return;
+              }
 
               try {
                 final response = await ApiClient().authenticatedPut(
@@ -1576,9 +1578,9 @@ class _FormationScreenState extends State<FormationScreen> {
               final likes = _asInt(comment['likes_count']);
               final userReaction = comment['user_reaction']?.toString();
               final isOwner = userId != null && userId == _currentUserId;
-              print("UserId: $userId");
-              print("_currentUserId: $_currentUserId");
-              print("isOwner: $isOwner");
+              debugPrint("UserId: $userId");
+              debugPrint("_currentUserId: $_currentUserId");
+              debugPrint("isOwner: $isOwner");
               final replies =
                   (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
@@ -1599,188 +1601,194 @@ class _FormationScreenState extends State<FormationScreen> {
                 comment: comment,
                 currentUserId: _currentUserId,
                 child: Padding(
-                padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ReklamAvatar(
-                          avatarUrl: avatarUrl,
-                          displayName: displayName,
-                          radius: isReply ? 14 : 18,
-                          accountType: user['account_type']?.toString(),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    displayName,
-                                    style: TextStyle(
-                                      fontSize: isReply ? 12 : 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF333333),
+                  padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ReklamAvatar(
+                            avatarUrl: avatarUrl,
+                            displayName: displayName,
+                            radius: isReply ? 14 : 18,
+                            accountType: user['account_type']?.toString(),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      displayName,
+                                      style: TextStyle(
+                                        fontSize: isReply ? 12 : 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF333333),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _buildTimeAgo(createdAt),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                  if (isOwner) ...[
-                                    const Spacer(),
-                                    GestureDetector(
-                                      onTapDown: (TapDownDetails details) {
-                                        showMenu<String>(
-                                          context: context,
-                                          position: RelativeRect.fromLTRB(
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                          ),
-                                          items: [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('Modifier'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.delete,
-                                                    size: 18,
-                                                    color: Colors.redAccent,
-                                                  ),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    'Supprimer',
-                                                    style: TextStyle(
-                                                      color: Colors.redAccent,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ).then((value) {
-                                          if (value == 'edit') {
-                                            editComment(comment);
-                                          } else if (value == 'delete') {
-                                            deleteComment(comment, isReply);
-                                          }
-                                        });
-                                      },
-                                      child: Icon(
-                                        Icons.more_horiz,
-                                        size: 18,
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _buildTimeAgo(createdAt),
+                                      style: TextStyle(
+                                        fontSize: 11,
                                         color: Colors.grey[400],
                                       ),
                                     ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                body,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF4F4F4F),
-                                  height: 1.4,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () =>
-                                        toggleCommentReaction(comment, 'like'),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          userReaction == 'like'
-                                              ? Icons.thumb_up_alt
-                                              : Icons.thumb_up_alt_outlined,
-                                          size: 14,
-                                          color: userReaction == 'like'
-                                              ? const Color(0xFF3AAE5E)
-                                              : Colors.grey[400],
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          '$likes',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (!isReply) ...[
-                                    const SizedBox(width: 14),
-                                    GestureDetector(
-                                      onTap: () {
-                                        modalSetState(() {
-                                          replyingToId = comment['id'] as int?;
-                                          replyingToName = displayName;
-                                        });
-                                        FocusScope.of(
-                                          ctx,
-                                        ).requestFocus(FocusNode());
-                                      },
-                                      child: Text(
-                                        'Répondre',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF2E9B5B),
+                                    if (isOwner) ...[
+                                      const Spacer(),
+                                      GestureDetector(
+                                        onTapDown: (TapDownDetails details) {
+                                          showMenu<String>(
+                                            context: context,
+                                            position: RelativeRect.fromLTRB(
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                            ),
+                                            items: [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit, size: 18),
+                                                    SizedBox(width: 8),
+                                                    Text('Modifier'),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete,
+                                                      size: 18,
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      'Supprimer',
+                                                      style: TextStyle(
+                                                        color: Colors.redAccent,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ).then((value) {
+                                            if (value == 'edit') {
+                                              editComment(comment);
+                                            } else if (value == 'delete') {
+                                              deleteComment(comment, isReply);
+                                            }
+                                          });
+                                        },
+                                        child: Icon(
+                                          Icons.more_horiz,
+                                          size: 18,
+                                          color: Colors.grey[400],
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  body,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF4F4F4F),
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () => toggleCommentReaction(
+                                        comment,
+                                        'like',
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            userReaction == 'like'
+                                                ? Icons.thumb_up_alt
+                                                : Icons.thumb_up_alt_outlined,
+                                            size: 14,
+                                            color: userReaction == 'like'
+                                                ? const Color(0xFF3AAE5E)
+                                                : Colors.grey[400],
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '$likes',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: userReaction == 'like'
+                                                  ? const Color(0xFF3AAE5E)
+                                                  : Colors.grey[500],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (!isReply) ...[
+                                      const SizedBox(width: 14),
+                                      GestureDetector(
+                                        onTap: () {
+                                          modalSetState(() {
+                                            replyingToId =
+                                                comment['id'] as int?;
+                                            replyingToName = displayName;
+                                          });
+                                          FocusScope.of(
+                                            ctx,
+                                          ).requestFocus(FocusNode());
+                                        },
+                                        child: Text(
+                                          'Répondre',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF2E9B5B),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Nested replies
+                      if (!isReply && replies.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ...replies.map(
+                          (r) => Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: buildCommentItem(r, isReply: true),
                           ),
                         ),
                       ],
-                    ),
-                    // Nested replies
-                    if (!isReply && replies.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      ...replies.map(
-                        (r) => Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: buildCommentItem(r, isReply: true),
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ));
+              );
             }
 
             return Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom,
+                bottom:
+                    MediaQuery.of(ctx).viewInsets.bottom +
+                    MediaQuery.of(ctx).padding.bottom,
               ),
               child: Container(
                 constraints: BoxConstraints(

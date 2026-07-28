@@ -73,21 +73,21 @@ class StickerOverlay extends PositionedOverlay {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'sticker',
-        'emoji': emoji,
-        'x': x,
-        'y': y,
-        'scale': scale,
-        'rotation': rotation,
-      };
+    'type': 'sticker',
+    'emoji': emoji,
+    'x': x,
+    'y': y,
+    'scale': scale,
+    'rotation': rotation,
+  };
 
   factory StickerOverlay.fromJson(Map<String, dynamic> j) => StickerOverlay(
-        emoji: j['emoji']?.toString() ?? '⭐',
-        x: _toDouble(j['x'], 0.5),
-        y: _toDouble(j['y'], 0.5),
-        scale: _toDouble(j['scale'], 1.0),
-        rotation: _toDouble(j['rotation'], 0.0),
-      );
+    emoji: j['emoji']?.toString() ?? '⭐',
+    x: _toDouble(j['x'], 0.5),
+    y: _toDouble(j['y'], 0.5),
+    scale: _toDouble(j['scale'], 1.0),
+    rotation: _toDouble(j['rotation'], 0.0),
+  );
 }
 
 class LocationOverlay extends PositionedOverlay {
@@ -110,25 +110,25 @@ class LocationOverlay extends PositionedOverlay {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'location',
-        'name': name,
-        if (lat != null) 'lat': lat,
-        if (lng != null) 'lng': lng,
-        'x': x,
-        'y': y,
-        'scale': scale,
-        'rotation': rotation,
-      };
+    'type': 'location',
+    'name': name,
+    if (lat != null) 'lat': lat,
+    if (lng != null) 'lng': lng,
+    'x': x,
+    'y': y,
+    'scale': scale,
+    'rotation': rotation,
+  };
 
   factory LocationOverlay.fromJson(Map<String, dynamic> j) => LocationOverlay(
-        name: j['name']?.toString() ?? '',
-        lat: j['lat'] == null ? null : _toDouble(j['lat'], 0),
-        lng: j['lng'] == null ? null : _toDouble(j['lng'], 0),
-        x: _toDouble(j['x'], 0.5),
-        y: _toDouble(j['y'], 0.85),
-        scale: _toDouble(j['scale'], 1.0),
-        rotation: _toDouble(j['rotation'], 0.0),
-      );
+    name: j['name']?.toString() ?? '',
+    lat: j['lat'] == null ? null : _toDouble(j['lat'], 0),
+    lng: j['lng'] == null ? null : _toDouble(j['lng'], 0),
+    x: _toDouble(j['x'], 0.5),
+    y: _toDouble(j['y'], 0.85),
+    scale: _toDouble(j['scale'], 1.0),
+    rotation: _toDouble(j['rotation'], 0.0),
+  );
 }
 
 /// A single freehand stroke. [points] are normalized (0..1) offsets.
@@ -140,13 +140,13 @@ class DrawStroke {
   DrawStroke({required this.color, required this.width, required this.points});
 
   Map<String, dynamic> toJson() => {
-        'color': color,
-        'width': width,
-        // Flat [x1, y1, x2, y2, ...] for compactness.
-        'points': [
-          for (final p in points) ...[p.dx, p.dy],
-        ],
-      };
+    'color': color,
+    'width': width,
+    // Flat [x1, y1, x2, y2, ...] for compactness.
+    'points': [
+      for (final p in points) ...[p.dx, p.dy],
+    ],
+  };
 
   factory DrawStroke.fromJson(Map<String, dynamic> j) {
     final raw = (j['points'] as List?) ?? const [];
@@ -174,16 +174,16 @@ class DrawingOverlay extends StoryOverlay {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'drawing',
-        'strokes': strokes.map((s) => s.toJson()).toList(),
-      };
+    'type': 'drawing',
+    'strokes': strokes.map((s) => s.toJson()).toList(),
+  };
 
   factory DrawingOverlay.fromJson(Map<String, dynamic> j) => DrawingOverlay(
-        strokes: ((j['strokes'] as List?) ?? const [])
-            .whereType<Map>()
-            .map((s) => DrawStroke.fromJson(Map<String, dynamic>.from(s)))
-            .toList(),
-      );
+    strokes: ((j['strokes'] as List?) ?? const [])
+        .whereType<Map>()
+        .map((s) => DrawStroke.fromJson(Map<String, dynamic>.from(s)))
+        .toList(),
+  );
 }
 
 /// Paints normalized drawing strokes onto a sized canvas.
@@ -276,10 +276,7 @@ class StoryOverlaysView extends StatelessWidget {
 /// Visual content of a positioned overlay (shared by editor + viewer).
 Widget buildOverlayChild(PositionedOverlay overlay) {
   if (overlay is StickerOverlay) {
-    return Text(
-      overlay.emoji,
-      style: const TextStyle(fontSize: 64),
-    );
+    return Text(overlay.emoji, style: const TextStyle(fontSize: 64));
   }
   if (overlay is LocationOverlay) {
     return Container(
@@ -289,7 +286,7 @@ Widget buildOverlayChild(PositionedOverlay overlay) {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),

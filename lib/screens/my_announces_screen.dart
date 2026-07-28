@@ -822,8 +822,8 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
           : <String>[];
       final documentFilesRaw = data['document_files'] as List? ?? [];
       final documents = documentFilesRaw
-          .where((d) => d is Map)
-          .map((d) => Map<String, dynamic>.from(d as Map))
+          .whereType<Map>()
+          .map((d) => Map<String, dynamic>.from(d))
           .toList();
       final createdAt = data['created_at']?.toString();
       final mediaFiles =
@@ -1005,10 +1005,6 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
           .map((m) => _buildImageUrl(m['url']?.toString() ?? ''))
           .where((url) => url.isNotEmpty)
           .toList();
-
-      if (images.isEmpty) {
-        images.add('assets/images/dashboard_particulier/Rectangle 13.png');
-      }
 
       // Build tags
       final tags = <JobDetailTag>[
@@ -1336,7 +1332,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                         CategoriesIcon(
                           title: 'Bons plans',
                           iconColor: const Color.fromARGB(255, 252, 116, 37),
-                          bgColor: const Color(0xFFFFE0B2).withOpacity(0.2),
+                          bgColor: const Color(
+                            0xFFFFE0B2,
+                          ).withValues(alpha: 0.2),
                           icon: Icons.card_giftcard_outlined,
                           onTap: () =>
                               setState(() => _selectedFilter = 'Bons plans'),
@@ -1345,7 +1343,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                         CategoriesIcon(
                           title: "Offre d'emploi",
                           iconColor: Colors.lightBlueAccent,
-                          bgColor: const Color(0xFFB3E5FC).withOpacity(0.2),
+                          bgColor: const Color(
+                            0xFFB3E5FC,
+                          ).withValues(alpha: 0.2),
                           iconAsset: 'assets/images/offres.png',
                           onTap: () => setState(
                             () => _selectedFilter = "Offre d'emploi",
@@ -1355,7 +1355,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                         CategoriesIcon(
                           title: 'Formations',
                           iconColor: Colors.purple,
-                          bgColor: const Color(0xFFE1BEE7).withOpacity(0.1),
+                          bgColor: const Color(
+                            0xFFE1BEE7,
+                          ).withValues(alpha: 0.1),
                           iconAsset: 'assets/images/Formation.png',
                           onTap: () =>
                               setState(() => _selectedFilter = 'Formations'),
@@ -1364,7 +1366,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                         CategoriesIcon(
                           title: 'Evenements',
                           iconColor: Colors.green,
-                          bgColor: const Color(0xFFE6F7EF).withOpacity(0.5),
+                          bgColor: const Color(
+                            0xFFE6F7EF,
+                          ).withValues(alpha: 0.5),
                           icon: Icons.event_outlined,
                           onTap: () =>
                               setState(() => _selectedFilter = 'Événement'),
@@ -1378,7 +1382,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                             255,
                             250,
                             178,
-                          ).withOpacity(0.2),
+                          ).withValues(alpha: 0.2),
                           icon: Icons.chat_outlined,
                           onTap: () =>
                               setState(() => _selectedFilter = 'Demandes'),
@@ -1715,7 +1719,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1742,10 +1746,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: _statusColor(status).withOpacity(0.1),
+                  color: _statusColor(status).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: _statusColor(status).withOpacity(0.5),
+                    color: _statusColor(status).withValues(alpha: 0.5),
                   ),
                 ),
                 child: Text(
@@ -1955,11 +1959,11 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
 
   String _formatSalary(dynamic min, dynamic max) {
     if (min != null && max != null) {
-      return '${min}€ - ${max}€';
+      return '$min€ - $max€';
     } else if (min != null) {
-      return 'À partir de ${min}€';
+      return 'À partir de $min€';
     } else if (max != null) {
-      return 'Jusqu\'à ${max}€';
+      return 'Jusqu\'à $max€';
     }
     return 'Salaire non spécifié';
   }
@@ -2087,7 +2091,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -2164,12 +2168,12 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(color: iconColor.withOpacity(0.5), width: 1.5),
+        border: Border.all(color: iconColor.withValues(alpha: 0.5), width: 1.5),
       ),
       child: Row(
         children: [

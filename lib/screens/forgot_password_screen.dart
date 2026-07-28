@@ -28,9 +28,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.forgotPassword(
-        email: _emailController.text.trim(),
-      );
+      await _authService.forgotPassword(email: _emailController.text.trim());
 
       if (!mounted) return;
 
@@ -205,24 +203,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: Color(0xFF1B8D4B),
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFF1B8D4B), width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: Color(0xFFD32F2F),
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(
-            color: Color(0xFFD32F2F),
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
         ),
         errorStyle: const TextStyle(
           fontSize: 12,

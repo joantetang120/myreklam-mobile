@@ -20,7 +20,7 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
   late AnimationController _logoController;
   late AnimationController _textController;
   late AnimationController _pulseController;
-  
+
   late Animation<double> _scaleAnimation;
   late Animation<double> _logoScaleAnimation;
   late Animation<double> _logoBounceAnimation;
@@ -31,7 +31,7 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
   @override
   void initState() {
     super.initState();
-    
+
     // Main dialog scale animation
     _scaleController = AnimationController(
       vsync: this,
@@ -41,7 +41,7 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
       parent: _scaleController,
       curve: Curves.elasticOut,
     );
-    
+
     // Logo bounce animation
     _logoController = AnimationController(
       vsync: this,
@@ -59,7 +59,7 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
         curve: const Interval(0.3, 1.0, curve: Curves.bounceOut),
       ),
     );
-    
+
     // Text staggered animation
     _textController = AnimationController(
       vsync: this,
@@ -69,26 +69,20 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
       parent: _textController,
       curve: Curves.easeOut,
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _textController,
-      curve: Curves.easeOutCubic,
-    ));
-    
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
+        );
+
     // Pulse animation for My's amount
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.15).animate(
-      CurvedAnimation(
-        parent: _pulseController,
-        curve: Curves.easeInOut,
-      ),
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    
+
     // Start animations in sequence
     _startAnimations();
   }
@@ -118,9 +112,7 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
     return ScaleTransition(
       scale: _scaleAnimation,
       child: Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         backgroundColor: Colors.transparent,
         child: Container(
           padding: const EdgeInsets.all(24),
@@ -129,7 +121,7 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1B8D4B).withOpacity(0.2),
+                color: const Color(0xFF1B8D4B).withValues(alpha: 0.2),
                 blurRadius: 20,
                 spreadRadius: 5,
                 offset: const Offset(0, 10),
@@ -158,7 +150,7 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               // Animated Title
               FadeTransition(
                 opacity: _fadeAnimation,
@@ -175,7 +167,7 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Animated Message with pulsing My's
               FadeTransition(
                 opacity: _fadeAnimation,
@@ -198,9 +190,13 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                               return Transform.scale(
                                 scale: _pulseAnimation.value,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF1B8D4B).withOpacity(0.1),
+                                    color: const Color(
+                                      0xFF1B8D4B,
+                                    ).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
@@ -223,7 +219,7 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               // Animated subtitle
               FadeTransition(
                 opacity: _fadeAnimation,
@@ -232,15 +228,12 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                   child: const Text(
                     'Utilisez-les pour profiter de nos services.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ),
               ),
               const SizedBox(height: 28),
-              
+
               // Animated Button
               FadeTransition(
                 opacity: _fadeAnimation,
@@ -256,7 +249,9 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                           borderRadius: BorderRadius.circular(12),
                         ),
                         elevation: 4,
-                        shadowColor: const Color(0xFF1B8D4B).withOpacity(0.4),
+                        shadowColor: const Color(
+                          0xFF1B8D4B,
+                        ).withValues(alpha: 0.4),
                       ),
                       onPressed: () {
                         _pulseController.stop();
@@ -274,7 +269,11 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                             ),
                           ),
                           SizedBox(width: 8),
-                          Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                          Icon(
+                            Icons.arrow_forward,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ],
                       ),
                     ),

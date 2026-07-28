@@ -43,3 +43,11 @@ next-env.d.ts
 # scripts python
 fix_duplicate.py
 *.py
+# Kotlin build artifacts
+android/.kotlin/
+
+# Database dumps
+*.sql
+
+# Claude Code local settings
+.claude/

@@ -19,7 +19,7 @@ import 'dart:async';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  print('🔔 Background message received: ${message.notification?.title}');
+  debugPrint('🔔 Background message received: ${message.notification?.title}');
 }
 
 class PushNotificationService {
@@ -27,7 +27,8 @@ class PushNotificationService {
   static final PushNotificationService instance = PushNotificationService._();
 
   late final FirebaseMessaging _messaging;
-  final FlutterLocalNotificationsPlugin _localPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localPlugin =
+      FlutterLocalNotificationsPlugin();
 
   static const _channelId = 'myreklam_notifications';
   static const _channelName = 'Myreklam Notifications';
@@ -36,7 +37,7 @@ class PushNotificationService {
 
   /// Initialize push notifications (Firebase must already be initialized)
   Future<void> init() async {
-    print('🔔 Initializing PushNotificationService...');
+    debugPrint('🔔 Initializing PushNotificationService...');
 
     // Firebase is already initialized in main(), just get the instance
     _messaging = FirebaseMessaging.instance;
@@ -63,32 +64,36 @@ class PushNotificationService {
           await Future.delayed(const Duration(seconds: 1));
         }
         if (apnsToken == null) {
-          print('🔔 APNS not available (simulator or APNS not configured) — skipping FCM token');
+          debugPrint(
+            '🔔 APNS not available (simulator or APNS not configured) — skipping FCM token',
+          );
           _setupMessageHandlers();
-          print('✅ PushNotificationService initialized (no FCM token)');
+          debugPrint('✅ PushNotificationService initialized (no FCM token)');
           return;
         }
       }
 
       _fcmToken = await _messaging.getToken();
       if (_fcmToken != null) {
-        print('🔔 FCM Token: ${_fcmToken!.substring(0, 30)}...');
+        debugPrint('🔔 FCM Token: ${_fcmToken!.substring(0, 30)}...');
         await _registerTokenWithBackend(_fcmToken!);
       }
     } catch (e) {
-      print('🔔 Push notifications not available: $e');
-      print('   (This is normal on simulator or if APNS is not configured)');
+      debugPrint('🔔 Push notifications not available: $e');
+      debugPrint(
+        '   (This is normal on simulator or if APNS is not configured)',
+      );
     }
 
     _setupMessageHandlers();
 
-    print('✅ PushNotificationService initialized');
+    debugPrint('✅ PushNotificationService initialized');
   }
 
   /// Wire up token-refresh and message listeners (safe to call even without FCM token)
   void _setupMessageHandlers() {
     _messaging.onTokenRefresh.listen((token) {
-      print('🔔 FCM Token refreshed');
+      debugPrint('🔔 FCM Token refreshed');
       _fcmToken = token;
       _registerTokenWithBackend(token);
     });
@@ -110,7 +115,7 @@ class PushNotificationService {
         sound: true,
         provisional: false,
       );
-      print('🔔 iOS permission status: ${settings.authorizationStatus}');
+      debugPrint('🔔 iOS permission status: ${settings.authorizationStatus}');
     }
   }
 
@@ -132,7 +137,8 @@ class PushNotificationService {
     if (Platform.isAndroid) {
       await _localPlugin
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.createNotificationChannel(
             const AndroidNotificationChannel(
               _channelId,
@@ -148,10 +154,13 @@ class PushNotificationService {
   /// Register FCM token with backend
   Future<void> _registerTokenWithBackend(String token) async {
     try {
-      await ApiClient().authenticatedPost('/push-tokens', body: {'token': token});
-      print('🔔 FCM token registered with backend');
+      await ApiClient().authenticatedPost(
+        '/push-tokens',
+        body: {'token': token},
+      );
+      debugPrint('🔔 FCM token registered with backend');
     } catch (e) {
-      print('❌ Failed to register FCM token: $e');
+      debugPrint('❌ Failed to register FCM token: $e');
     }
   }
 
@@ -167,7 +176,7 @@ class PushNotificationService {
         await _registerTokenWithBackend(_fcmToken!);
       }
     } catch (e) {
-      print('❌ registerToken failed: $e');
+      debugPrint('❌ registerToken failed: $e');
     }
   }
 
@@ -209,15 +218,15 @@ class PushNotificationService {
     if (_fcmToken == null) return;
     try {
       await ApiClient().authenticatedDelete('/push-tokens?token=$_fcmToken');
-      print('🔔 FCM token unregistered from backend');
+      debugPrint('🔔 FCM token unregistered from backend');
     } catch (e) {
-      print('❌ Failed to unregister FCM token: $e');
+      debugPrint('❌ Failed to unregister FCM token: $e');
     }
   }
 
   /// Handle foreground message (show local notification)
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    print('🔔 Foreground message: ${message.notification?.title}');
+    debugPrint('🔔 Foreground message: ${message.notification?.title}');
 
     final notification = message.notification;
     if (notification == null) return;
@@ -251,7 +260,7 @@ class PushNotificationService {
 
   /// Handle message when app is opened from notification
   void _handleMessageOpenedApp(RemoteMessage message) {
-    print('🔔 Message opened app: ${message.notification?.title}');
+    debugPrint('🔔 Message opened app: ${message.notification?.title}');
     _navigateFromData(message.data);
   }
 
@@ -283,17 +292,19 @@ class PushNotificationService {
   void _navigateFromData(Map<String, dynamic> data) {
     final context = navigatorKey.currentContext;
     if (context == null) {
-      print('❌ Context not available for navigation');
+      debugPrint('❌ Context not available for navigation');
       return;
     }
 
     final type = (data['type'] ?? '').toString();
-    final referenceType =
-        (data['reference_type'] ?? data['ref_type'] ?? '').toString();
+    final referenceType = (data['reference_type'] ?? data['ref_type'] ?? '')
+        .toString();
     final referenceId =
         (data['reference_id'] ?? data['ref_id'] ?? data['id'] ?? '').toString();
 
-    print('🔔 Navigating from notification: type=$type, ref=$referenceType, id=$referenceId');
+    debugPrint(
+      '🔔 Navigating from notification: type=$type, ref=$referenceType, id=$referenceId',
+    );
 
     // 1. Chat message → open the conversation.
     if (type == 'chat' || type == 'new_message') {
@@ -367,7 +378,7 @@ class PushNotificationService {
         ),
       );
     } catch (e) {
-      print('❌ Failed to open follower profile: $e');
+      debugPrint('❌ Failed to open follower profile: $e');
     }
   }
 
@@ -402,6 +413,7 @@ class PushNotificationService {
 
   /// Refresh notification count from backend (call when app comes to foreground)
   void refreshNotificationCount() {
-    CustomBottomBar.refreshNotificationNotifier.value = !CustomBottomBar.refreshNotificationNotifier.value;
+    CustomBottomBar.refreshNotificationNotifier.value =
+        !CustomBottomBar.refreshNotificationNotifier.value;
   }
 }

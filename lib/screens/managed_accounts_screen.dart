@@ -57,9 +57,9 @@ class _ManagedAccountsScreenState extends State<ManagedAccountsScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connexion impossible: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Connexion impossible: $e')));
         setState(() => _connecting = false);
       }
     }
@@ -73,8 +73,10 @@ class _ManagedAccountsScreenState extends State<ManagedAccountsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         foregroundColor: Colors.black87,
-        title: const Text('Gérer compte',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Gérer compte',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: _kGreen))
@@ -84,8 +86,11 @@ class _ManagedAccountsScreenState extends State<ManagedAccountsScreen> {
                   ? ListView(
                       children: [
                         const SizedBox(height: 80),
-                        Icon(Icons.supervisor_account_outlined,
-                            size: 64, color: Colors.grey[400]),
+                        Icon(
+                          Icons.supervisor_account_outlined,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
                         const SizedBox(height: 16),
                         Center(
                           child: Text(
@@ -126,14 +131,19 @@ class _ManagedAccountsScreenState extends State<ManagedAccountsScreen> {
           Row(
             children: [
               ReklamAvatar(
-                  avatarUrl: d.user?.avatar,
-                  displayName: d.user?.name,
-                  radius: 24),
+                avatarUrl: d.user?.avatar,
+                displayName: d.user?.name,
+                radius: 24,
+              ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(d.user?.name ?? 'Compte',
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600)),
+                child: Text(
+                  d.user?.name ?? 'Compte',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -150,25 +160,33 @@ class _ManagedAccountsScreenState extends State<ManagedAccountsScreen> {
             spacing: 6,
             runSpacing: 6,
             children: d.permissions
-                .map((p) => Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _kGreen.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(DelegationPermission.icon(p),
-                              size: 13, color: _kGreen),
-                          const SizedBox(width: 4),
-                          Text(DelegationPermission.label(p),
-                              style: const TextStyle(
-                                  fontSize: 11, color: _kGreen)),
-                        ],
-                      ),
-                    ))
+                .map(
+                  (p) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _kGreen.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          DelegationPermission.icon(p),
+                          size: 13,
+                          color: _kGreen,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          DelegationPermission.label(p),
+                          style: const TextStyle(fontSize: 11, color: _kGreen),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
                 .toList(),
           ),
         ],

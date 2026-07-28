@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/models/chat_conversation.dart';
@@ -25,8 +26,8 @@ class ConversationService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print("DEBUG: API Response structure: ${data.runtimeType}");
-        print("DEBUG: Full response: $data");
+        debugPrint("DEBUG: API Response structure: ${data.runtimeType}");
+        debugPrint("DEBUG: Full response: $data");
 
         // Gérer la réponse paginée Laravel
         List<dynamic> messagesList;
@@ -52,14 +53,14 @@ class ConversationService {
           }
         } else if (data is List) {
           // Direct list: [...]
-          messagesList = data as List<dynamic>;
+          messagesList = data;
         } else {
           throw Exception(
             'Unexpected API response structure: ${data.runtimeType}',
           );
         }
 
-        print("DEBUG: Found ${messagesList.length} messages");
+        debugPrint("DEBUG: Found ${messagesList.length} messages");
         final messages = messagesList
             .map((msg) => ChatMessage.fromJson(msg, currentUserId))
             .toList();
@@ -68,7 +69,7 @@ class ConversationService {
         throw Exception('Failed to load messages: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Error loading messages: $e');
+      debugPrint('❌ Error loading messages: $e');
       rethrow;
     }
   }
@@ -103,7 +104,7 @@ class ConversationService {
         throw Exception('Failed to send message: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Error sending message: $e');
+      debugPrint('❌ Error sending message: $e');
       rethrow;
     }
   }
@@ -137,7 +138,7 @@ class ConversationService {
         throw Exception(data['message'] ?? 'Failed to edit message');
       }
     } catch (e) {
-      print('❌ Error editing message: $e');
+      debugPrint('❌ Error editing message: $e');
       rethrow;
     }
   }
@@ -171,7 +172,7 @@ class ConversationService {
         throw Exception(data['message'] ?? 'Failed to delete message');
       }
     } catch (e) {
-      print('❌ Error deleting message: $e');
+      debugPrint('❌ Error deleting message: $e');
       rethrow;
     }
   }
@@ -192,7 +193,7 @@ class ConversationService {
         throw Exception('Failed to mark as read: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Error marking as read: $e');
+      debugPrint('❌ Error marking as read: $e');
       rethrow;
     }
   }
@@ -215,7 +216,7 @@ class ConversationService {
       }
       return null;
     } catch (e) {
-      print('❌ Error getting current user: $e');
+      debugPrint('❌ Error getting current user: $e');
       return null;
     }
   }
@@ -245,7 +246,7 @@ class ConversationService {
         throw Exception('Failed to load conversations: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Error loading conversations: $e');
+      debugPrint('❌ Error loading conversations: $e');
       rethrow;
     }
   }
@@ -268,7 +269,7 @@ class ConversationService {
       }
       return 0;
     } catch (e) {
-      print('❌ Error loading unread count: $e');
+      debugPrint('❌ Error loading unread count: $e');
       return 0;
     }
   }
@@ -306,7 +307,7 @@ class ConversationService {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      print('❌ Error creating conversation: $e');
+      debugPrint('❌ Error creating conversation: $e');
       rethrow;
     }
   }
@@ -329,7 +330,7 @@ class ConversationService {
         );
       }
     } catch (e) {
-      print('❌ Error deleting conversation: $e');
+      debugPrint('❌ Error deleting conversation: $e');
       rethrow;
     }
   }

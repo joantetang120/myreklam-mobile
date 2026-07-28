@@ -75,7 +75,6 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return AppLayout(
@@ -211,8 +210,7 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
               const SizedBox(height: 24),
 
               // History list at bottom
-              if (!_isLoading && _error == null)
-                _buildHistorySection(),
+              if (!_isLoading && _error == null) _buildHistorySection(),
 
               const SizedBox(height: 40),
             ],
@@ -243,7 +241,7 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 24),
@@ -353,7 +351,10 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
                         const SizedBox(height: 4),
                         Text(
                           buttonLabel,
-                          style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[500],
+                          ),
                         ),
                       ],
                     ),
@@ -378,7 +379,6 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
     );
   }
 
-
   Widget _buildHistorySection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -390,7 +390,7 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
           border: Border.all(color: Colors.grey[200]!),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -403,10 +403,7 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Text(
                       'Aucun parrainage pour le moment',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                     ),
                   ),
                 ]
@@ -421,12 +418,7 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
                     status: item['status'] ?? 'pending',
                   );
                   if (index < _history.length - 1) {
-                    return Column(
-                      children: [
-                        row,
-                        const SizedBox(height: 12),
-                      ],
-                    );
+                    return Column(children: [row, const SizedBox(height: 12)]);
                   }
                   return row;
                 }).toList(),
@@ -453,7 +445,7 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.grey[350]?.withOpacity(0.5),
+              color: Colors.grey[350]?.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.person, color: Colors.grey[500], size: 22),

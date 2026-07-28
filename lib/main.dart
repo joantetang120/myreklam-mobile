@@ -1,10 +1,8 @@
-import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:myreklam/firebase_options.dart';
-import 'package:myreklam/screens/profile_pro/pro_profile_screen.dart';
 import 'package:myreklam/screens/splash_screen.dart';
 import 'package:myreklam/services/chat_service.dart';
 import 'package:myreklam/services/chat_notification_service.dart';
@@ -26,41 +24,50 @@ final RouteObserver<ModalRoute<void>> routeObserver =
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase FIRST before any other service
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  print('✅ Firebase initialisé');
+  final firebaseReady = await _initializeService(
+    'Firebase',
+    () =>
+        Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform),
+  );
 
-  // Initialize Stripe for payments
-  await StripePaymentService.initialize();
-  print('✅ Stripe initialisé');
+  await _initializeService('Stripe', StripePaymentService.initialize);
 
   // Set navigator key for AuthStateManager
   AuthStateManager().setNavigatorKey(navigatorKey);
 
-  // Initialisation de pusher
-  await ChatService.initializePusher();
-  print('✅ Pusher initialisé');
-
-  // Initialisation du service de notifications chat
-  await ChatNotificationService.instance.init();
-  print('✅ ChatNotificationService initialisé');
+  await _initializeService('Pusher', ChatService.initializePusher);
+  await _initializeService(
+    'Notifications chat',
+    ChatNotificationService.instance.init,
+  );
 
   // Initialisation du service de push notifications (FCM)
-  try {
-    await PushNotificationService.instance.init();
-    print('✅ PushNotificationService initialisé');
-  } catch (e) {
-    print('⚠️ PushNotificationService non-fatal error: $e');
+  if (firebaseReady) {
+    await _initializeService(
+      'Notifications push',
+      PushNotificationService.instance.init,
+    );
   }
 
-  // Initialisation du service de deep links
-  await DeepLinkService.instance.init();
-  print('✅ DeepLinkService initialisé');
-
-  // Restaurer l'état de délégation (si un manager gérait un compte)
-  await DelegationManager.instance.init();
+  await _initializeService('Liens profonds', DeepLinkService.instance.init);
+  await _initializeService('Délégation', DelegationManager.instance.init);
 
   runApp(const MyApp());
+}
+
+Future<bool> _initializeService(
+  String name,
+  Future<dynamic> Function() initialize,
+) async {
+  try {
+    await initialize();
+    debugPrint('$name initialisé');
+    return true;
+  } catch (error, stackTrace) {
+    debugPrint('$name indisponible (non bloquant): $error');
+    debugPrintStack(stackTrace: stackTrace);
+    return false;
+  }
 }
 
 class MyApp extends StatelessWidget {

@@ -67,7 +67,10 @@ class StripePaymentService {
       );
 
       if (subscriptionData == null) {
-        _showError(context, 'Payment succeeded but failed to create subscription');
+        _showError(
+          context,
+          'Payment succeeded but failed to create subscription',
+        );
         return false;
       }
 
@@ -119,10 +122,7 @@ class StripePaymentService {
     try {
       final response = await _api.authenticatedPost(
         '/payments/promo',
-        body: {
-          'billing_cycle': billingCycle,
-          'promotion_code': code.trim(),
-        },
+        body: {'billing_cycle': billingCycle, 'promotion_code': code.trim()},
       );
       if (response['success'] == true) {
         return {
@@ -193,7 +193,9 @@ class StripePaymentService {
       if (response['success'] == true) {
         final subscription = response['subscription'] as Map<String, dynamic>?;
         if (subscription != null) {
-          UserSession().updateFromApi(subscription: Map<String, dynamic>.from(subscription));
+          UserSession().updateFromApi(
+            subscription: Map<String, dynamic>.from(subscription),
+          );
         }
         return subscription;
       }
@@ -216,7 +218,10 @@ class StripePaymentService {
       // 1. Create the seat PaymentIntent on the backend.
       final response = await _api.authenticatedPost('/delegations/seat-intent');
       if (response['success'] != true) {
-        _showError(context, response['message']?.toString() ?? 'Échec du paiement');
+        _showError(
+          context,
+          response['message']?.toString() ?? 'Échec du paiement',
+        );
         return null;
       }
       final clientSecret = response['client_secret'] as String;
@@ -250,10 +255,7 @@ class StripePaymentService {
   void _showError(BuildContext context, String message) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
     }
   }

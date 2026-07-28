@@ -129,7 +129,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
             _buildSectionCard(
               icon: Icons.group_add_outlined,
               iconColor: const Color(0xFF1B8D4B),
-              iconBgColor: const Color(0xFF1B8D4B).withOpacity(0.1),
+              iconBgColor: const Color(0xFF1B8D4B).withValues(alpha: 0.1),
               title: 'Ajouter utilisateurs',
               subtitle: 'Autorisez des personnes à gérer votre compte',
               trailing: const Icon(Icons.chevron_right, color: Colors.grey),
@@ -144,13 +144,15 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
             _buildSectionCard(
               icon: Icons.supervisor_account_outlined,
               iconColor: const Color(0xFF2196F3),
-              iconBgColor: const Color(0xFF2196F3).withOpacity(0.1),
+              iconBgColor: const Color(0xFF2196F3).withValues(alpha: 0.1),
               title: 'Gérer compte',
               subtitle: 'Comptes auxquels vous avez accès',
               trailing: const Icon(Icons.chevron_right, color: Colors.grey),
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ManagedAccountsScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const ManagedAccountsScreen(),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -159,7 +161,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
             _buildSectionCard(
               icon: Icons.notifications_outlined,
               iconColor: const Color(0xFFEF8A40),
-              iconBgColor: const Color(0xFFEF8A40).withOpacity(0.1),
+              iconBgColor: const Color(0xFFEF8A40).withValues(alpha: 0.1),
               title: 'Réseaux sociaux',
               subtitle: 'Gérez vos préférences de notifications',
               child: Column(
@@ -260,7 +262,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: Colors.grey.withValues(alpha: 0.2),
                     blurRadius: 2,
                     offset: const Offset(-2, 3),
                   ),
@@ -271,14 +273,16 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                 children: [
                   // Sécurité du compte
                   InkWell(
-                    onTap: () => setState(() => _isSecurityExpanded = !_isSecurityExpanded),
+                    onTap: () => setState(
+                      () => _isSecurityExpanded = !_isSecurityExpanded,
+                    ),
                     child: Row(
                       children: [
                         Container(
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
+                            color: Colors.red.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -297,7 +301,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.black.withValues(alpha: 0.5),
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -386,7 +390,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 'Email',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.black.withValues(alpha: 0.5),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -395,7 +399,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.black.withValues(alpha: 0.5),
                                 ),
                               ),
                             ],
@@ -409,7 +413,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 'Type de compte',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.black.withValues(alpha: 0.5),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -420,7 +424,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.black.withValues(alpha: 0.5),
                                 ),
                               ),
                             ],
@@ -435,7 +439,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
 
                   // Action du compte
                   InkWell(
-                    onTap: () => setState(() => _isAccountActionExpanded = !_isAccountActionExpanded),
+                    onTap: () => setState(
+                      () =>
+                          _isAccountActionExpanded = !_isAccountActionExpanded,
+                    ),
                     child: Row(
                       children: [
                         Icon(
@@ -496,7 +503,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                           ),
                           Switch(
                             value: _bioEnabled,
-                            activeColor: const Color(0xFF2E9B5B),
+                            activeThumbColor: const Color(0xFF2E9B5B),
                             onChanged: _bioBusy ? null : _toggleBiometric,
                           ),
                         ],
@@ -613,7 +620,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withValues(alpha: 0.2),
             blurRadius: 2,
             offset: const Offset(-2, 3),
           ),
@@ -647,7 +654,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                           ),
                         ),
                         const SizedBox(height: 2),

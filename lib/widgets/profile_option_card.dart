@@ -29,7 +29,7 @@ class ProfileOptionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -46,11 +46,7 @@ class ProfileOptionCard extends StatelessWidget {
                 color: backgroundColor,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: 26,
-              ),
+              child: Icon(icon, color: iconColor, size: 26),
             ),
             const SizedBox(height: 12),
             Text(

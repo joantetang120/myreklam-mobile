@@ -9,15 +9,13 @@ class PublierScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black.withOpacity(0.5),
+      backgroundColor: Colors.black.withValues(alpha: 0.5),
       body: Stack(
         children: [
           Positioned.fill(
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: Container(
-                color: Colors.transparent,
-              ),
+              child: Container(color: Colors.transparent),
             ),
           ),
           SafeArea(
@@ -27,23 +25,28 @@ class PublierScreen extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (DelegationManager.instance
-                          .can(DelegationPermission.announcements))
+                      if (DelegationManager.instance.can(
+                        DelegationPermission.announcements,
+                      ))
                         _buildOptionCard(
                           context,
-                          image: 'assets/images/publier_bottom/Wavy_Bus-05_Single-03-[Converti] 1.png',
+                          image:
+                              'assets/images/publier_bottom/Wavy_Bus-05_Single-03-[Converti] 1.png',
                           title: 'Publier une annonce',
                           description:
                               'Publiez du contenu à partager avec votre communauté : un bon plan, un événement...',
                         ),
-                      if (DelegationManager.instance
-                          .can(DelegationPermission.announcements))
+                      if (DelegationManager.instance.can(
+                        DelegationPermission.announcements,
+                      ))
                         const SizedBox(height: 16),
-                      if (DelegationManager.instance
-                          .can(DelegationPermission.posts))
+                      if (DelegationManager.instance.can(
+                        DelegationPermission.posts,
+                      ))
                         _buildOptionCard(
                           context,
-                          image: 'assets/images/publier_bottom/Wavy_Bus-05_Single-03-[Converti] 1 (1).png',
+                          image:
+                              'assets/images/publier_bottom/Wavy_Bus-05_Single-03-[Converti] 1 (1).png',
                           title: 'Créer un post',
                           description:
                               'Partagez avec votre communauté des actualités, des photos, des idées, etc',
@@ -118,7 +121,7 @@ class PublierScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -126,12 +129,7 @@ class PublierScreen extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Image.asset(
-              image,
-              width: 100,
-              height: 100,
-              fit: BoxFit.contain,
-            ),
+            Image.asset(image, width: 100, height: 100, fit: BoxFit.contain),
             const SizedBox(width: 16),
             Expanded(
               child: Column(

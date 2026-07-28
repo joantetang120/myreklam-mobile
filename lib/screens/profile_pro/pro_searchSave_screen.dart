@@ -275,7 +275,9 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                                       child: Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: Colors.red.withOpacity(0.1),
+                                          color: Colors.red.withValues(
+                                            alpha: 0.1,
+                                          ),
                                           borderRadius: BorderRadius.circular(
                                             6,
                                           ),
@@ -474,7 +476,7 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: Color(0xFFEF8A40).withOpacity(0.1),
+          color: Color(0xFFEF8A40).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(4),
           border: Border.all(color: const Color(0xFFEF8A40)),
         ),
@@ -553,7 +555,7 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 2,
             offset: const Offset(-2, 4),
           ),
@@ -572,7 +574,7 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF333333).withOpacity(0.5),
+                      color: Color(0xFF333333).withValues(alpha: 0.5),
                     ),
                   ),
                 ),
@@ -582,7 +584,7 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.9),
+                      color: Colors.blue.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Icon(
@@ -631,7 +633,7 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Color(0xFFEF8A40).withOpacity(0.1),
+        color: Color(0xFFEF8A40).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: const Color(0xFFEF8A40)),
       ),

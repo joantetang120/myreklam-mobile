@@ -2,11 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// Auth state to track authentication status
-enum AuthState {
-  authenticated,
-  unauthenticated,
-  sessionExpired,
-}
+enum AuthState { authenticated, unauthenticated, sessionExpired }
 
 /// Singleton class to manage authentication state across the app
 class AuthStateManager {
@@ -14,7 +10,8 @@ class AuthStateManager {
   factory AuthStateManager() => _instance;
   AuthStateManager._internal();
 
-  final StreamController<AuthState> _authStateController = StreamController<AuthState>.broadcast();
+  final StreamController<AuthState> _authStateController =
+      StreamController<AuthState>.broadcast();
   Stream<AuthState> get authStateStream => _authStateController.stream;
 
   AuthState _currentState = AuthState.unauthenticated;

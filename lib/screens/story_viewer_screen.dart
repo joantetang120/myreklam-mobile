@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
-import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/models/story_model.dart';
 import 'package:myreklam/models/story_overlay.dart';
 import 'package:myreklam/models/delegation.dart';
@@ -447,8 +446,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
             // Pause overlay when paused (by long press or user action)
             if (!_videoController!.value.isPlaying)
               Container(
-                color: Colors.black.withOpacity(0.3),
-                child: Center(child: Container(width: 72, height: 72)),
+                color: Colors.black.withValues(alpha: 0.3),
+                child: Center(child: SizedBox(width: 72, height: 72)),
               ),
           ],
         ),
@@ -535,16 +534,16 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.7),
-                    Colors.black.withOpacity(0.85),
+                    Colors.black.withValues(alpha: 0.7),
+                    Colors.black.withValues(alpha: 0.85),
                   ],
                 )
               : LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.5),
-                    Colors.black.withOpacity(0.75),
+                    Colors.black.withValues(alpha: 0.5),
+                    Colors.black.withValues(alpha: 0.75),
                   ],
                 ),
         ),
@@ -604,9 +603,9 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         textColor == Colors.yellow ||
         textColor == Colors.lime ||
         textColor == Colors.cyan) {
-      bgColor = Colors.black.withOpacity(0.4);
+      bgColor = Colors.black.withValues(alpha: 0.4);
     } else {
-      bgColor = Colors.white.withOpacity(0.9);
+      bgColor = Colors.white.withValues(alpha: 0.9);
     }
 
     // Build text style based on style index
@@ -685,10 +684,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       avatarUrl: widget.avatar,
       displayName: widget.name,
       radius: 20,
-      border: Border.all(
-        color: const Color(0xFF3AAE5E),
-        width: 1.5,
-      ),
+      border: Border.all(color: const Color(0xFF3AAE5E), width: 1.5),
     );
   }
 
@@ -748,162 +744,166 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         child: Transform.translate(
           offset: Offset(0, _dragOffset),
           child: Stack(
-          children: [
-            SafeArea(
-              child: Column(
-                children: [
-                  // Progress bars
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: List.generate(widget.stories.length, (index) {
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(2),
-                              child: index == _currentIndex
-                                  ? AnimatedBuilder(
-                                      animation: _progressController,
-                                      builder: (context, child) {
-                                        return LinearProgressIndicator(
-                                          value: _progressController.value,
-                                          backgroundColor: Colors.white
-                                              .withOpacity(0.3),
-                                          valueColor:
-                                              const AlwaysStoppedAnimation<
-                                                Color
-                                              >(Colors.white),
-                                          minHeight: 2.5,
-                                        );
-                                      },
-                                    )
-                                  : LinearProgressIndicator(
-                                      value: index < _currentIndex ? 1.0 : 0.0,
-                                      backgroundColor: Colors.white.withOpacity(
-                                        0.3,
+            children: [
+              SafeArea(
+                child: Column(
+                  children: [
+                    // Progress bars
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 8,
+                      ),
+                      child: Row(
+                        children: List.generate(widget.stories.length, (index) {
+                          return Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2,
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(2),
+                                child: index == _currentIndex
+                                    ? AnimatedBuilder(
+                                        animation: _progressController,
+                                        builder: (context, child) {
+                                          return LinearProgressIndicator(
+                                            value: _progressController.value,
+                                            backgroundColor: Colors.white
+                                                .withValues(alpha: 0.3),
+                                            valueColor:
+                                                const AlwaysStoppedAnimation<
+                                                  Color
+                                                >(Colors.white),
+                                            minHeight: 2.5,
+                                          );
+                                        },
+                                      )
+                                    : LinearProgressIndicator(
+                                        value: index < _currentIndex
+                                            ? 1.0
+                                            : 0.0,
+                                        backgroundColor: Colors.white
+                                            .withValues(alpha: 0.3),
+                                        valueColor:
+                                            const AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                        minHeight: 2.5,
                                       ),
-                                      valueColor:
-                                          const AlwaysStoppedAnimation<Color>(
-                                            Colors.white,
-                                          ),
-                                      minHeight: 2.5,
-                                    ),
+                              ),
                             ),
-                          ),
-                        );
-                      }),
+                          );
+                        }),
+                      ),
                     ),
-                  ),
 
-                  // Header: avatar, name, time, close
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
-                    ),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        _buildAvatarImage(),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.name,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Text(
-                                story['time'] ?? '',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 50),
-                      child: Stack(
-                        fit: StackFit.expand,
+                    // Header: avatar, name, time, close
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      child: Row(
                         children: [
-                          // Story media - full screen (image or video)
-                          _buildStoryMedia(story),
-
-                          // Story text overlay at bottom
-                          if (story['text'] != null &&
-                              (story['text'] as String).isNotEmpty)
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              child: _buildStoryTextOverlay(
-                                story['text'] as String,
-                              ),
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.white,
+                              size: 22,
                             ),
-
-                          // Story overlay text with position, color, style
-                          if (story['overlay_text'] != null &&
-                              (story['overlay_text'] as String).isNotEmpty)
-                            _buildOverlayText(story),
+                          ),
+                          const SizedBox(width: 10),
+                          _buildAvatarImage(),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  story['time'] ?? '',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            // Structured overlays (stickers, location, drawing) over the media.
-            Positioned.fill(
-              child: IgnorePointer(
-                child: StoryOverlaysView(
-                  overlays: story['overlays'] is List<StoryOverlay>
-                      ? story['overlays'] as List<StoryOverlay>
-                      : const [],
+
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 50),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // Story media - full screen (image or video)
+                            _buildStoryMedia(story),
+
+                            // Story text overlay at bottom
+                            if (story['text'] != null &&
+                                (story['text'] as String).isNotEmpty)
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                child: _buildStoryTextOverlay(
+                                  story['text'] as String,
+                                ),
+                              ),
+
+                            // Story overlay text with position, color, style
+                            if (story['overlay_text'] != null &&
+                                (story['overlay_text'] as String).isNotEmpty)
+                              _buildOverlayText(story),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            if (widget.isOwnStory)
-              _OwnStoryOverlay(
-                viewsCount: viewsCount,
-                onShowViewers: _showViewersModal,
-              )
-            else if (DelegationManager.instance
-                .can(DelegationPermission.messages))
-              _ReplyOverlay(
-                isLiked: _isLiked,
-                focusNode: _replyFocusNode,
-                ownerId: widget.ownerId,
-                ownerName: widget.name,
-                storyId: story['id'] is int ? story['id'] as int : 0,
-                storyImage: story['image'] as String? ?? '',
-                onToggleLike: _toggleLike,
+              // Structured overlays (stickers, location, drawing) over the media.
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: StoryOverlaysView(
+                    overlays: story['overlays'] is List<StoryOverlay>
+                        ? story['overlays'] as List<StoryOverlay>
+                        : const [],
+                  ),
+                ),
               ),
-          ],
-        ),
+              if (widget.isOwnStory)
+                _OwnStoryOverlay(
+                  viewsCount: viewsCount,
+                  onShowViewers: _showViewersModal,
+                )
+              else if (DelegationManager.instance.can(
+                DelegationPermission.messages,
+              ))
+                _ReplyOverlay(
+                  isLiked: _isLiked,
+                  focusNode: _replyFocusNode,
+                  ownerId: widget.ownerId,
+                  ownerName: widget.name,
+                  storyId: story['id'] is int ? story['id'] as int : 0,
+                  storyImage: story['image'] as String? ?? '',
+                  onToggleLike: _toggleLike,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -1039,8 +1039,8 @@ class _ReplyOverlayState extends State<_ReplyOverlay> {
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    Colors.black.withOpacity(0.9),
-                    Colors.black.withOpacity(0.0),
+                    Colors.black.withValues(alpha: 0.9),
+                    Colors.black.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -1053,14 +1053,14 @@ class _ReplyOverlayState extends State<_ReplyOverlay> {
                       padding: const EdgeInsets.symmetric(horizontal: 18),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.25),
+                          color: Colors.white.withValues(alpha: 0.25),
                           width: 0.5,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -1079,7 +1079,7 @@ class _ReplyOverlayState extends State<_ReplyOverlay> {
                         decoration: InputDecoration(
                           hintText: 'Répondre...',
                           hintStyle: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 15,
                           ),
                           border: InputBorder.none,
@@ -1102,7 +1102,9 @@ class _ReplyOverlayState extends State<_ReplyOverlay> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF3AAE5E).withOpacity(0.4),
+                            color: const Color(
+                              0xFF3AAE5E,
+                            ).withValues(alpha: 0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -1131,9 +1133,7 @@ class _ReplyOverlayState extends State<_ReplyOverlay> {
                       duration: const Duration(milliseconds: 150),
                       curve: Curves.easeOut,
                       child: Icon(
-                        widget.isLiked
-                            ? Icons.favorite
-                            : Icons.favorite_border,
+                        widget.isLiked ? Icons.favorite : Icons.favorite_border,
                         color: widget.isLiked ? Colors.red : Colors.white,
                         size: 30,
                       ),
@@ -1171,8 +1171,8 @@ class _OwnStoryOverlay extends StatelessWidget {
               begin: Alignment.bottomCenter,
               end: Alignment.topCenter,
               colors: [
-                Colors.black.withOpacity(0.9),
-                Colors.black.withOpacity(0.0),
+                Colors.black.withValues(alpha: 0.9),
+                Colors.black.withValues(alpha: 0.0),
               ],
             ),
           ),

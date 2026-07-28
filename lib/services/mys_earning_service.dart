@@ -13,9 +13,7 @@ class MysEarningService {
     required String actionType,
     String? referenceId,
   }) async {
-    final body = <String, dynamic>{
-      'action_type': actionType,
-    };
+    final body = <String, dynamic>{'action_type': actionType};
     if (referenceId != null) {
       body['reference_id'] = referenceId;
     }
@@ -39,10 +37,7 @@ class MysEarningService {
   }) async {
     final response = await _api.authenticatedPost(
       '/mys/convert',
-      body: {
-        'amount': amount,
-        'reward_type': rewardType,
-      },
+      body: {'amount': amount, 'reward_type': rewardType},
     );
     return response;
   }

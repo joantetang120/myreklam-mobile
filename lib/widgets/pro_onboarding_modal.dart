@@ -60,13 +60,10 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeInOut,
-    ));
+    _slideAnimation = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeInOut),
+        );
     _slideController.forward();
   }
 
@@ -168,7 +165,9 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
       final Map<String, dynamic> updateData = {};
 
       // Add phone if provided AND user doesn't already have one
-      if (widget.needsPhone && !widget.hasExistingPhone && _phoneController.text.isNotEmpty) {
+      if (widget.needsPhone &&
+          !widget.hasExistingPhone &&
+          _phoneController.text.isNotEmpty) {
         updateData['phone'] = _phoneController.text;
 
         // Award 0.5 My's for phone
@@ -180,7 +179,8 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
       }
 
       // Add social media if provided
-      if (_selectedSocialPlatform != null && _socialLinkController.text.isNotEmpty) {
+      if (_selectedSocialPlatform != null &&
+          _socialLinkController.text.isNotEmpty) {
         updateData['social_links'] = {
           _selectedSocialPlatform!: _socialLinkController.text,
         };
@@ -268,9 +268,9 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
     } catch (e) {
       debugPrint('Error completing onboarding: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: ${e.toString()}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: ${e.toString()}')));
       }
     } finally {
       if (mounted) {
@@ -439,10 +439,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
           Text(
             'Une photo ou un logo augmente la confiance et rend votre profil plus attractif.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
           const SizedBox(height: 24),
           Container(
@@ -454,11 +451,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.stars,
-                  color: Color(0xFF3AAE5E),
-                  size: 16,
-                ),
+                const Icon(Icons.stars, color: Color(0xFF3AAE5E), size: 16),
                 const SizedBox(width: 6),
                 Text(
                   'Gagnez 1 My\'s',
@@ -488,10 +481,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
               child: _selectedImage != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(70),
-                      child: Image.file(
-                        _selectedImage!,
-                        fit: BoxFit.cover,
-                      ),
+                      child: Image.file(_selectedImage!, fit: BoxFit.cover),
                     )
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -552,10 +542,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
           Text(
             'Plus votre profil est complet, plus vous êtes visible et crédible auprès des autres utilisateurs.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
           const SizedBox(height: 16),
           const SizedBox(height: 24),
@@ -571,11 +558,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.stars,
-                    color: Color(0xFF3AAE5E),
-                    size: 18,
-                  ),
+                  const Icon(Icons.stars, color: Color(0xFF3AAE5E), size: 18),
                   const SizedBox(width: 8),
                   Text(
                     'Ajoutez votre numéro (+0.5 My)',
@@ -619,7 +602,11 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle, color: Color(0xFF3AAE5E), size: 20),
+                  const Icon(
+                    Icons.check_circle,
+                    color: Color(0xFF3AAE5E),
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Numéro de téléphone déjà ajouté',
@@ -639,7 +626,10 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE6F7EF),
                   borderRadius: BorderRadius.circular(20),
@@ -647,11 +637,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.stars,
-                      color: Color(0xFF3AAE5E),
-                      size: 18,
-                    ),
+                    const Icon(Icons.stars, color: Color(0xFF3AAE5E), size: 18),
                     const SizedBox(width: 8),
                     Text(
                       'Ajoutez un réseau social (+0.5 My)',
@@ -736,10 +722,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
           Text(
             'Décrivez votre activité professionnelle pour attirer plus de clients.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
           const SizedBox(height: 24),
           Container(
@@ -751,11 +734,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.stars,
-                  color: Color(0xFF3AAE5E),
-                  size: 18,
-                ),
+                const Icon(Icons.stars, color: Color(0xFF3AAE5E), size: 18),
                 const SizedBox(width: 8),
                 Text(
                   'Gagnez 1 My\'s',
@@ -775,7 +754,8 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             maxLength: 500,
             decoration: InputDecoration(
               labelText: 'Votre présentation (Qui sommes nous ?)',
-              hintText: 'Décrivez votre activité, vos services, votre expérience...',
+              hintText:
+                  'Décrivez votre activité, vos services, votre expérience...',
               alignLabelWithHint: true,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -841,8 +821,8 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             color: index == _currentStep
                 ? const Color(0xFF3AAE5E)
                 : index < _currentStep
-                    ? const Color(0xFF3AAE5E).withOpacity(0.5)
-                    : Colors.grey[300],
+                ? const Color(0xFF3AAE5E).withValues(alpha: 0.5)
+                : Colors.grey[300],
           ),
         );
       }),

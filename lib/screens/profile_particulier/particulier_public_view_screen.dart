@@ -25,6 +25,8 @@ import 'package:myreklam/widgets/evenement_card.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
 import 'package:myreklam/utils/blocked_users_manager.dart';
+import 'package:myreklam/utils/public_document_filter.dart';
+import 'package:myreklam/utils/avatar_resolver.dart';
 import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
@@ -219,11 +221,14 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(
-            bottom: BorderSide(color: Colors.grey.withOpacity(0.2), width: 1),
+            bottom: BorderSide(
+              color: Colors.grey.withValues(alpha: 0.2),
+              width: 1,
+            ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.09),
+              color: Colors.black.withValues(alpha: 0.09),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -855,7 +860,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.45),
+                  color: Colors.black.withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -879,7 +884,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.45),
+                    color: Colors.black.withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -918,7 +923,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
           Center(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -973,7 +978,7 @@ class _CarouselMediaItemWidget extends StatelessWidget {
           // Smaller play icon overlay for carousel
           Container(
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -1353,8 +1358,8 @@ class _ParticulierPublicViewScreenState
     });
 
     try {
-      final currentUserId = _profileResponse?['user']?['id']?.toString();
-      if (currentUserId == null) {
+      final profileUserId = _profileResponse?['user']?['id']?.toString().trim();
+      if (profileUserId == null || profileUserId.isEmpty) {
         setState(() {
           _documents = [];
           _isLoadingDocuments = false;
@@ -1365,7 +1370,7 @@ class _ParticulierPublicViewScreenState
       // Fetch documents for the user - only visible ones when viewing others
       final endpoint = _isViewingOwnProfile
           ? '/candidate-documents'
-          : '/candidate-documents?user_id=$currentUserId';
+          : '/candidate-documents?user_id=${Uri.encodeQueryComponent(profileUserId)}';
 
       final response = await ApiClient().authenticatedGet(endpoint);
 
@@ -1373,10 +1378,11 @@ class _ParticulierPublicViewScreenState
 
       if (response['success'] == true && response['data'] is List) {
         final docs = List<Map<String, dynamic>>.from(response['data']);
-        // Filter only visible documents when viewing other users
+        // Never trust the endpoint filter alone: older API responses can leak
+        // documents from another account into a public profile.
         final filteredDocs = _isViewingOwnProfile
             ? docs
-            : docs.where((d) => d['is_visible'] == true).toList();
+            : filterPublicProfileDocuments(docs, profileUserId: profileUserId);
 
         setState(() {
           _documents = filteredDocs;
@@ -1547,7 +1553,8 @@ class _ParticulierPublicViewScreenState
     final targetId = widget.userId;
     final profile = _profileResponse?['profile'];
     final displayName = (profile is Map)
-        ? ((profile['pseudo'] ?? profile['first_name'])?.toString() ?? 'cet utilisateur')
+        ? ((profile['pseudo'] ?? profile['first_name'])?.toString() ??
+              'cet utilisateur')
         : 'cet utilisateur';
     if (targetId == null) return;
 
@@ -1630,7 +1637,8 @@ class _ParticulierPublicViewScreenState
   }
 
   Future<void> _showReportReasonDialog() async {
-    final targetId = widget.userId ?? _profileResponse?['user']?['id']?.toString();
+    final targetId =
+        widget.userId ?? _profileResponse?['user']?['id']?.toString();
     if (targetId == null || targetId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Impossible d\'identifier ce compte.')),
@@ -1763,7 +1771,7 @@ class _ParticulierPublicViewScreenState
     final profile = _profileResponse?['profile'];
     final pseudo = profile is Map ? profile['pseudo']?.toString() : null;
     final displayName = pseudo ?? 'Utilisateur';
-    final avatarUrl = profile is Map ? profile['avatar_url']?.toString() : null;
+    final avatarUrl = AvatarResolver.resolve(_profileResponse);
     final bio = profile is Map ? profile['bio']?.toString() : null;
 
     // Get social links
@@ -1823,8 +1831,10 @@ class _ParticulierPublicViewScreenState
                         children: [
                           Icon(Icons.block, color: Colors.orange, size: 20),
                           SizedBox(width: 8),
-                          Text('Bloquer cet utilisateur',
-                              style: TextStyle(color: Colors.orange)),
+                          Text(
+                            'Bloquer cet utilisateur',
+                            style: TextStyle(color: Colors.orange),
+                          ),
                         ],
                       ),
                     ),
@@ -1894,8 +1904,11 @@ class _ParticulierPublicViewScreenState
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.work_outline,
-                                      size: 14, color: Color(0xFF666666)),
+                                  const Icon(
+                                    Icons.work_outline,
+                                    size: 14,
+                                    color: Color(0xFF666666),
+                                  ),
                                   const SizedBox(width: 4),
                                   Flexible(
                                     child: Text(
@@ -2100,7 +2113,7 @@ class _ParticulierPublicViewScreenState
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF8A40).withOpacity(0.15),
+                      color: const Color(0xFFEF8A40).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: TabBar(
@@ -2191,7 +2204,7 @@ class _ParticulierPublicViewScreenState
       width: 38,
       height: 38,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: IconButton(
@@ -2236,7 +2249,7 @@ class _ParticulierPublicViewScreenState
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(-2, 3),
                 ),
@@ -2250,7 +2263,7 @@ class _ParticulierPublicViewScreenState
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -2286,7 +2299,7 @@ class _ParticulierPublicViewScreenState
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -2416,7 +2429,7 @@ class _ParticulierPublicViewScreenState
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 12),
@@ -2497,7 +2510,7 @@ class _ParticulierPublicViewScreenState
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -2509,7 +2522,7 @@ class _ParticulierPublicViewScreenState
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(iconData, color: iconColor, size: 24),
@@ -2556,7 +2569,7 @@ class _ParticulierPublicViewScreenState
           Padding(
             padding: EdgeInsets.symmetric(vertical: 60),
             child: Center(
-              child: const Text(
+              child: Text(
                 'Aucune annonce',
                 style: TextStyle(color: Color(0xFF666666)),
                 textAlign: TextAlign.center,
@@ -2577,7 +2590,7 @@ class _ParticulierPublicViewScreenState
           Padding(
             padding: EdgeInsets.symmetric(vertical: 60),
             child: Center(
-              child: const Text(
+              child: Text(
                 'Aucune annonce',
                 style: TextStyle(color: Color(0xFF666666)),
                 textAlign: TextAlign.center,
@@ -2598,7 +2611,7 @@ class _ParticulierPublicViewScreenState
           Padding(
             padding: EdgeInsets.symmetric(vertical: 60),
             child: Center(
-              child: const Text(
+              child: Text(
                 'Aucune annonce',
                 style: TextStyle(color: Color(0xFF666666)),
                 textAlign: TextAlign.center,
@@ -2708,15 +2721,15 @@ class _ParticulierPublicViewScreenState
         authorData['particulier_profile'] as Map<String, dynamic>?;
 
     // Get the appropriate profile
-    final profile = proProfile != null ? proProfile : particulierProfile;
+    final profile = proProfile ?? particulierProfile;
 
     // Name: company name for pros, pseudo for particuliers. (Particulier
     // profiles carry an employment `company_name` that must NOT be the name.)
     final String name = proProfile != null
         ? (proProfile['company_name']?.toString().trim().isNotEmpty == true
-            ? proProfile['company_name'].toString()
-            : '${proProfile['first_name']?.toString() ?? ''} ${proProfile['last_name']?.toString() ?? ''}'
-                .trim())
+              ? proProfile['company_name'].toString()
+              : '${proProfile['first_name']?.toString() ?? ''} ${proProfile['last_name']?.toString() ?? ''}'
+                    .trim())
         : (particulierProfile?['pseudo']?.toString() ?? '');
 
     // Extract avatar from profile or fallback to direct fields
@@ -2791,7 +2804,6 @@ class _ParticulierPublicViewScreenState
       ],
     );
   }
-
 
   Future<void> _repostPost(
     String postId, {
@@ -3399,8 +3411,9 @@ class _ParticulierPublicViewScreenState
 
               if (newText == null ||
                   newText.trim().isEmpty ||
-                  newText == currentBody)
+                  newText == currentBody) {
                 return;
+              }
 
               try {
                 final response = await ApiClient().authenticatedPut(
@@ -3533,9 +3546,8 @@ class _ParticulierPublicViewScreenState
               final userId = user['id']?.toString(); // Convertir en String
               final email = user['email']?.toString() ?? '';
 
-              final userProfile = user['pro_profile'] != null
-                  ? user['pro_profile']
-                  : user['particulier_profile'];
+              final userProfile =
+                  user['pro_profile'] ?? user['particulier_profile'];
 
               final displayName = (userId != null && userId == _currentUserId)
                   ? 'Vous'
@@ -3547,9 +3559,9 @@ class _ParticulierPublicViewScreenState
               final likes = _asInt(comment['likes_count']);
               final userReaction = comment['user_reaction']?.toString();
               final isOwner = userId != null && userId == _currentUserId;
-              print("UserId: $userId");
-              print("_currentUserId: $_currentUserId");
-              print("isOwner: $isOwner");
+              debugPrint("UserId: $userId");
+              debugPrint("_currentUserId: $_currentUserId");
+              debugPrint("isOwner: $isOwner");
               final replies =
                   (comment['replies'] as List?)
                       ?.map((r) => Map<String, dynamic>.from(r as Map))
@@ -3570,182 +3582,186 @@ class _ParticulierPublicViewScreenState
                 comment: comment,
                 currentUserId: _currentUserId,
                 child: Padding(
-                padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ReklamAvatar(
-                          avatarUrl: avatarUrl,
-                          radius: isReply ? 14 : 18,
-                          displayName: displayName,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    displayName,
-                                    style: TextStyle(
-                                      fontSize: isReply ? 12 : 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF333333),
+                  padding: EdgeInsets.only(left: isReply ? 32.0 : 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ReklamAvatar(
+                            avatarUrl: avatarUrl,
+                            radius: isReply ? 14 : 18,
+                            displayName: displayName,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      displayName,
+                                      style: TextStyle(
+                                        fontSize: isReply ? 12 : 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF333333),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _buildTimeAgo(createdAt),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                  if (isOwner) ...[
-                                    const Spacer(),
-                                    GestureDetector(
-                                      onTapDown: (TapDownDetails details) {
-                                        showMenu<String>(
-                                          context: context,
-                                          position: RelativeRect.fromLTRB(
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                            details.globalPosition.dx,
-                                            details.globalPosition.dy,
-                                          ),
-                                          items: [
-                                            const PopupMenuItem(
-                                              value: 'edit',
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.edit, size: 18),
-                                                  SizedBox(width: 8),
-                                                  Text('Modifier'),
-                                                ],
-                                              ),
-                                            ),
-                                            const PopupMenuItem(
-                                              value: 'delete',
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.delete,
-                                                    size: 18,
-                                                    color: Colors.redAccent,
-                                                  ),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    'Supprimer',
-                                                    style: TextStyle(
-                                                      color: Colors.redAccent,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ).then((value) {
-                                          if (value == 'edit') {
-                                            editComment(comment);
-                                          } else if (value == 'delete') {
-                                            deleteComment(comment, isReply);
-                                          }
-                                        });
-                                      },
-                                      child: Icon(
-                                        Icons.more_horiz,
-                                        size: 18,
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _buildTimeAgo(createdAt),
+                                      style: TextStyle(
+                                        fontSize: 11,
                                         color: Colors.grey[400],
                                       ),
                                     ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                body,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF4F4F4F),
-                                  height: 1.4,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () =>
-                                        toggleCommentReaction(comment, 'like'),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          userReaction == 'like'
-                                              ? Icons.thumb_up_alt
-                                              : Icons.thumb_up_alt_outlined,
-                                          size: 14,
-                                          color: userReaction == 'like'
-                                              ? const Color(0xFF3AAE5E)
-                                              : Colors.grey[400],
-                                        ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          '$likes',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (!isReply) ...[
-                                    const SizedBox(width: 14),
-                                    GestureDetector(
-                                      onTap: () {
-                                        modalSetState(() {
-                                          replyingToId = comment['id'] as int?;
-                                          replyingToName = displayName;
-                                        });
-                                        FocusScope.of(
-                                          ctx,
-                                        ).requestFocus(FocusNode());
-                                      },
-                                      child: Text(
-                                        'Répondre',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF2E9B5B),
+                                    if (isOwner) ...[
+                                      const Spacer(),
+                                      GestureDetector(
+                                        onTapDown: (TapDownDetails details) {
+                                          showMenu<String>(
+                                            context: context,
+                                            position: RelativeRect.fromLTRB(
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                              details.globalPosition.dx,
+                                              details.globalPosition.dy,
+                                            ),
+                                            items: [
+                                              const PopupMenuItem(
+                                                value: 'edit',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.edit, size: 18),
+                                                    SizedBox(width: 8),
+                                                    Text('Modifier'),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete,
+                                                      size: 18,
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      'Supprimer',
+                                                      style: TextStyle(
+                                                        color: Colors.redAccent,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ).then((value) {
+                                            if (value == 'edit') {
+                                              editComment(comment);
+                                            } else if (value == 'delete') {
+                                              deleteComment(comment, isReply);
+                                            }
+                                          });
+                                        },
+                                        child: Icon(
+                                          Icons.more_horiz,
+                                          size: 18,
+                                          color: Colors.grey[400],
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  body,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF4F4F4F),
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () => toggleCommentReaction(
+                                        comment,
+                                        'like',
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            userReaction == 'like'
+                                                ? Icons.thumb_up_alt
+                                                : Icons.thumb_up_alt_outlined,
+                                            size: 14,
+                                            color: userReaction == 'like'
+                                                ? const Color(0xFF3AAE5E)
+                                                : Colors.grey[400],
+                                          ),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '$likes',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: userReaction == 'like'
+                                                  ? const Color(0xFF3AAE5E)
+                                                  : Colors.grey[500],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (!isReply) ...[
+                                      const SizedBox(width: 14),
+                                      GestureDetector(
+                                        onTap: () {
+                                          modalSetState(() {
+                                            replyingToId =
+                                                comment['id'] as int?;
+                                            replyingToName = displayName;
+                                          });
+                                          FocusScope.of(
+                                            ctx,
+                                          ).requestFocus(FocusNode());
+                                        },
+                                        child: Text(
+                                          'Répondre',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF2E9B5B),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Nested replies
+                      if (!isReply && replies.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ...replies.map(
+                          (r) => Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: buildCommentItem(r, isReply: true),
                           ),
                         ),
                       ],
-                    ),
-                    // Nested replies
-                    if (!isReply && replies.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      ...replies.map(
-                        (r) => Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: buildCommentItem(r, isReply: true),
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ));
+              );
             }
 
             return Padding(
@@ -4100,7 +4116,7 @@ class _ParticulierPublicViewScreenState
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color, color.withOpacity(0.8)],
+          colors: [color, color.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -4110,7 +4126,7 @@ class _ParticulierPublicViewScreenState
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -4332,14 +4348,14 @@ class _ParticulierPublicViewScreenState
 
     return StatefulBuilder(
       builder: (context, setState) {
-        bool _isLoading = false;
+        bool isLoading = false;
 
-        Future<void> _toggleFavorite() async {
-          if (_isLoading) return;
+        Future<void> toggleFavorite() async {
+          if (isLoading) return;
 
           // Toggle immediately for responsive UI
           favoris = !favoris;
-          setState(() => _isLoading = true);
+          setState(() => isLoading = true);
 
           try {
             if (!favoris) {
@@ -4370,7 +4386,7 @@ class _ParticulierPublicViewScreenState
             }
 
             setState(() {
-              _isLoading = false;
+              isLoading = false;
             });
 
             if (context.mounted) {
@@ -4391,7 +4407,7 @@ class _ParticulierPublicViewScreenState
             favoris = !favoris;
             bp['is_favorited'] = favoris;
             setState(() {
-              _isLoading = false;
+              isLoading = false;
             });
 
             if (context.mounted) {
@@ -4411,7 +4427,7 @@ class _ParticulierPublicViewScreenState
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
@@ -4534,7 +4550,9 @@ class _ParticulierPublicViewScreenState
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF2E9B5B).withOpacity(0.1),
+                                color: const Color(
+                                  0xFF2E9B5B,
+                                ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: const Color(0xFF2E9B5B),
@@ -4660,21 +4678,21 @@ class _ParticulierPublicViewScreenState
                 top: 12,
                 left: 12,
                 child: GestureDetector(
-                  onTap: _isLoading ? null : _toggleFavorite,
+                  onTap: isLoading ? null : toggleFavorite,
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: _isLoading
+                    child: isLoading
                         ? SizedBox(
                             width: 20,
                             height: 20,
@@ -5060,8 +5078,8 @@ class _ParticulierPublicViewScreenState
     final coverageArea = isNationwide
         ? 'Toute la France'
         : (event['coverage_area']?.toString() ??
-           event['location']?.toString() ??
-           'Non spécifié');
+              event['location']?.toString() ??
+              'Non spécifié');
 
     final eventId = event['id']?.toString() ?? '';
 
@@ -5092,7 +5110,7 @@ class _ParticulierPublicViewScreenState
 
     return StatefulBuilder(
       builder: (context, cardSetState) {
-        Future<void> _toggleFavorite() async {
+        Future<void> toggleFavorite() async {
           // Toggle immediately for responsive UI
           cardSetState(() {
             favoris = !favoris;
@@ -5212,11 +5230,11 @@ class _ParticulierPublicViewScreenState
           onTapCTA: () => _navigateToEventDetail(event),
           onReport: canReportResource(event)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'events',
-                    entityId: eventId,
-                    title: eventTitle,
-                  )
+                  context: context,
+                  entityType: 'events',
+                  entityId: eventId,
+                  title: eventTitle,
+                )
               : null,
           tags: tags.isNotEmpty ? tags : null,
           onAvatarTap: () {},
@@ -5224,7 +5242,7 @@ class _ParticulierPublicViewScreenState
               ? _buildReactionBar('events', eventId)
               : null,
           isFavorite: favoris,
-          onFavoriteToggle: _toggleFavorite,
+          onFavoriteToggle: toggleFavorite,
         );
       },
     );
@@ -5274,7 +5292,7 @@ class _ParticulierPublicViewScreenState
         '/demandes/$demandeId',
       );
 
-      print("Response: ${response['data']['user']}");
+      debugPrint("Response: ${response['data']['user']}");
 
       if (!mounted) return;
       Navigator.pop(context);
@@ -5530,7 +5548,7 @@ class _ParticulierPublicViewScreenState
           profileImage: profileImage,
           username: username,
           categoryLabel: categoryLabel,
-          accountType: proProfile != null && proProfile!.isNotEmpty
+          accountType: proProfile != null && proProfile.isNotEmpty
               ? 'pro'
               : 'particulier',
           categoryColor: _categoryColor(categoryLabel),
@@ -5550,11 +5568,11 @@ class _ParticulierPublicViewScreenState
           onFavoriteToggle: toggleFavorite,
           onReport: canReportResource(demande)
               ? () => showAnnouncementReportDialog(
-                    context: context,
-                    entityType: 'demandes',
-                    entityId: demandeId,
-                    title: title,
-                  )
+                  context: context,
+                  entityType: 'demandes',
+                  entityId: demandeId,
+                  title: title,
+                )
               : null,
           reactionBar: demandeId.isNotEmpty
               ? _buildReactionBar(
@@ -5803,7 +5821,7 @@ class _ParticulierPublicViewScreenState
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -5834,7 +5852,9 @@ class _ParticulierPublicViewScreenState
           label,
           style: TextStyle(
             fontSize: 12,
-            color: isSelected ? Colors.white : Colors.black.withOpacity(0.5),
+            color: isSelected
+                ? Colors.white
+                : Colors.black.withValues(alpha: 0.5),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),

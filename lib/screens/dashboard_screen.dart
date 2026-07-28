@@ -72,8 +72,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors
-                                  .red, // Added light green background
+                              color: Colors.red, // Added light green background
                               border: Border.all(
                                 color: Colors.white,
                                 width: 1.5,
@@ -94,8 +93,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors
-                                    .red, // Added light green background
+                                color:
+                                    Colors.red, // Added light green background
                                 border: Border.all(
                                   color: Colors.white,
                                   width: 1.5,

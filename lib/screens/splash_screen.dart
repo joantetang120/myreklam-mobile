@@ -76,9 +76,7 @@ class _SplashScreenState extends State<SplashScreen> {
             bottom: 80,
             left: 0,
             right: 0,
-            child: SafeArea(
-              child: Center(child: DotLoader(size: 40)),
-            ),
+            child: SafeArea(child: Center(child: DotLoader(size: 40))),
           ),
         ],
       ),

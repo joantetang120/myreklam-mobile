@@ -196,7 +196,7 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
                           // Play icon overlay for videos
                           if (story.mediaType == 'video')
                             Container(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               child: const Icon(
                                 Icons.play_circle_outline,
                                 color: Colors.white,

@@ -35,7 +35,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   String _selectedPrivacy = 'public';
   bool _isPosting = false;
   bool _isUploadingMedia = false;
-  List<GalleryMedia> _selectedMediaFiles = [];
+  final List<GalleryMedia> _selectedMediaFiles = [];
   List<Map<String, dynamic>> _existingMedia = [];
   final List<int> _deletedMediaIds = [];
   String? _userAvatar;
@@ -113,7 +113,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       return;
     }
     try {
-      final files = await GalleryPicker.pickImagesFromGallery(allowMultiple: true);
+      final files = await GalleryPicker.pickImagesFromGallery(
+        allowMultiple: true,
+      );
       if (files == null || files.isEmpty) return;
       final remaining = 10 - _selectedMediaFiles.length;
       final toAdd = files.take(remaining).toList();
@@ -142,6 +144,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       };
 
       String? postId;
+      var mediaSuccess = true;
       if (_isEditMode) {
         await ApiClient().authenticatedPut(
           '/posts/${widget.postId}',
@@ -156,22 +159,32 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             );
           } catch (_) {}
         }
-        if (postId != null && _selectedMediaFiles.isNotEmpty) {
-          await _uploadMediaFiles(postId);
+        if (_selectedMediaFiles.isNotEmpty) {
+          mediaSuccess = postId != null && await _uploadMediaFiles(postId);
         }
         if (!mounted) return;
-        _showSnack('Post mis à jour avec succès !');
+        _showSnack(
+          mediaSuccess
+              ? 'Post mis à jour avec succès !'
+              : 'Post modifié, mais certaines images n\'ont pas été envoyées.',
+          isError: !mediaSuccess,
+        );
       } else {
         final response = await ApiClient().authenticatedPost(
           '/posts',
           body: body,
         );
         postId = response['data']?['id']?.toString();
-        if (postId != null && _selectedMediaFiles.isNotEmpty) {
-          await _uploadMediaFiles(postId);
+        if (_selectedMediaFiles.isNotEmpty) {
+          mediaSuccess = postId != null && await _uploadMediaFiles(postId);
         }
         if (!mounted) return;
-        _showSnack('Post publié avec succès !');
+        _showSnack(
+          mediaSuccess
+              ? 'Post publié avec succès !'
+              : 'Post publié, mais certaines images n\'ont pas été envoyées.',
+          isError: !mediaSuccess,
+        );
       }
 
       await Future.delayed(const Duration(milliseconds: 800));
@@ -203,23 +216,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ..headers['Authorization'] = 'Bearer $token'
         ..headers['Accept'] = 'application/json';
       for (final file in _selectedMediaFiles) {
-        if (file.path != null) {
-          request.files.add(
-            await http.MultipartFile.fromPath(
-              'files[]',
-              file.path!,
-              filename: file.name,
-            ),
-          );
-        } else if (file.bytes != null) {
-          request.files.add(
-            http.MultipartFile.fromBytes(
-              'files[]',
-              file.bytes!,
-              filename: file.name,
-            ),
-          );
-        }
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'files[]',
+            file.path,
+            filename: file.name,
+          ),
+        );
       }
       final streamed = await request.send();
       final body = await streamed.stream.bytesToString();
@@ -249,8 +252,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           final errors = decoded['errors'];
           if (errors is Map && errors.isNotEmpty) {
             final first = errors.values.first;
-            if (first is List && first.isNotEmpty)
+            if (first is List && first.isNotEmpty) {
               return first.first.toString();
+            }
           }
         }
       }
@@ -600,8 +604,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               borderRadius: BorderRadius.circular(8),
               child: isImage && file.bytes != null
                   ? Image.memory(file.bytes!, fit: BoxFit.cover)
-                  : isVideo && file.path != null
-                  ? _VideoThumbnailWidget(videoPath: file.path!)
+                  : isVideo
+                  ? _VideoThumbnailWidget(videoPath: file.path)
                   : Container(
                       color: Colors.grey[300],
                       child: Center(
@@ -857,7 +861,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
           Center(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.4),
+                color: Colors.black.withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

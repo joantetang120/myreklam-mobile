@@ -77,7 +77,6 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return AppLayout(
@@ -87,8 +86,7 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  ParticulierMainScreen(initialIndex: index),
+              builder: (context) => ParticulierMainScreen(initialIndex: index),
             ),
           );
         }
@@ -202,7 +200,8 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
                 title: 'Votre code de parrainage',
                 content: _parrainageCode ?? 'Chargement...',
                 buttonLabel: 'Copier le code',
-                description: 'Partagez ce code avec vos amis pour qu\'ils puissent s\'inscrire et vous faire gagner des My\'s',
+                description:
+                    'Partagez ce code avec vos amis pour qu\'ils puissent s\'inscrire et vous faire gagner des My\'s',
                 onCopy: () {
                   if (_parrainageCode != null) {
                     _copyToClipboard(_parrainageCode!, 'Code copié !');
@@ -218,16 +217,15 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
                 title: 'Votre lien de parrainage',
                 content: _referralLink,
                 buttonLabel: 'Copier le lien',
-                description: 'Partagez ce lien avec vos amis pour qu\'ils puissent s\'inscrire et vous faire gagner des My\'s',
+                description:
+                    'Partagez ce lien avec vos amis pour qu\'ils puissent s\'inscrire et vous faire gagner des My\'s',
                 onCopy: () => _copyToClipboard(_referralLink, 'Lien copié !'),
               ),
-
 
               const SizedBox(height: 24),
 
               // History list at bottom
-              if (!_isLoading && _error == null)
-                _buildHistorySection(),
+              if (!_isLoading && _error == null) _buildHistorySection(),
 
               const SizedBox(height: 40),
             ],
@@ -258,7 +256,7 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 24),
@@ -330,7 +328,10 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
                 children: [
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 16,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.grey[100],
                         borderRadius: BorderRadius.circular(8),
@@ -356,12 +357,19 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
                             color: const Color(0xFFFFF3E0),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.copy, color: Color(0xFFFF9800), size: 20),
+                          child: const Icon(
+                            Icons.copy,
+                            color: Color(0xFFFF9800),
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           buttonLabel,
-                          style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[500],
+                          ),
                         ),
                       ],
                     ),
@@ -373,7 +381,11 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Text(
                 description,
-                style: TextStyle(fontSize: 11, color: Colors.grey[400], height: 1.4),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey[400],
+                  height: 1.4,
+                ),
               ),
             ),
           ],
@@ -381,7 +393,6 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
       ),
     );
   }
-
 
   Widget _buildHistorySection() {
     return Padding(
@@ -394,7 +405,7 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
           border: Border.all(color: Colors.grey[200]!),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -407,10 +418,7 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Text(
                       'Aucun parrainage pour le moment',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 13, color: Colors.grey[500]),
                     ),
                   ),
                 ]
@@ -425,12 +433,7 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
                     status: item['status'] ?? 'pending',
                   );
                   if (index < _history.length - 1) {
-                    return Column(
-                      children: [
-                        row,
-                        const SizedBox(height: 12),
-                      ],
-                    );
+                    return Column(children: [row, const SizedBox(height: 12)]);
                   }
                   return row;
                 }).toList(),
@@ -439,7 +442,13 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
     );
   }
 
-  Widget _buildHistoryRow(String name, String date, String amount, String type, {String status = 'pending'}) {
+  Widget _buildHistoryRow(
+    String name,
+    String date,
+    String amount,
+    String type, {
+    String status = 'pending',
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -451,7 +460,7 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.grey[350]?.withOpacity(0.5),
+              color: Colors.grey[350]?.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
             child: Icon(Icons.person, color: Colors.grey[500], size: 22),
@@ -472,10 +481,7 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
                 const SizedBox(height: 2),
                 Text(
                   date,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[500],
-                  ),
+                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
                 ),
               ],
             ),
@@ -494,10 +500,7 @@ class _ParrainageScreenState extends State<ParrainageScreen> {
               const SizedBox(height: 2),
               Text(
                 type,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey[500],
-                ),
+                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
               ),
             ],
           ),

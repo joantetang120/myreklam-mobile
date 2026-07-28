@@ -388,7 +388,9 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                        border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.2),
+                        ),
                       ),
                       child: TabBar(
                         controller: _tabController,
@@ -540,7 +542,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
 
   Widget _buildPseudoField() {
     // Determine border color based on validation state
-    Color borderColor = Colors.grey.withOpacity(0.2);
+    Color borderColor = Colors.grey.withValues(alpha: 0.2);
     if (_pseudoIsAvailable == true) {
       borderColor = const Color(0xFF3AAE5E);
     } else if (_pseudoIsAvailable == false) {
@@ -681,9 +683,9 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
+                color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.withOpacity(0.3)),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -792,7 +794,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
           ),
           child: TextField(
             controller: controller,
@@ -844,7 +846,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: TextField(
         controller: controller,
@@ -888,7 +890,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
           ),
           child: TextField(
             controller: controller,
@@ -949,9 +951,9 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         width: double.infinity,
         height: 50,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: isLoading
             ? Center(
@@ -1035,7 +1037,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.8),
+                color: Colors.red.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.close, color: Colors.white, size: 16),
@@ -1050,7 +1052,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
+                color: Colors.black.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Row(

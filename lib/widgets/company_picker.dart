@@ -50,7 +50,11 @@ class CompanyPickerField extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.business_outlined, size: 20, color: Color(0xFF9E9E9E)),
+            const Icon(
+              Icons.business_outlined,
+              size: 20,
+              color: Color(0xFF9E9E9E),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -154,12 +158,16 @@ class _CompanyPickerSheetState extends State<_CompanyPickerSheet> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler')),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-                backgroundColor: _kGreen, foregroundColor: Colors.white),
-            onPressed: () => Navigator.pop(context, emailController.text.trim()),
+              backgroundColor: _kGreen,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () =>
+                Navigator.pop(context, emailController.text.trim()),
             child: const Text('Inviter'),
           ),
         ],
@@ -170,15 +178,16 @@ class _CompanyPickerSheetState extends State<_CompanyPickerSheet> {
     try {
       await _service.invite(companyName: _query, email: email);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invitation envoyée à $email')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Invitation envoyée à $email')));
       // Use the invited name as the (unlinked) company.
       Navigator.pop(context, _CompanyPick(id: null, name: _query));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Échec de l\'invitation: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Échec de l\'invitation: $e')));
       }
     }
   }
@@ -186,7 +195,9 @@ class _CompanyPickerSheetState extends State<_CompanyPickerSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -194,8 +205,10 @@ class _CompanyPickerSheetState extends State<_CompanyPickerSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Entreprise',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Text(
+                'Entreprise',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 12),
               TextField(
                 controller: _controller,
@@ -206,7 +219,8 @@ class _CompanyPickerSheetState extends State<_CompanyPickerSheet> {
                   prefixIcon: const Icon(Icons.search),
                   isDense: true,
                   border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -233,35 +247,48 @@ class _CompanyPickerSheetState extends State<_CompanyPickerSheet> {
     if (_query.length < 2) {
       return Padding(
         padding: const EdgeInsets.all(20),
-        child: Text('Saisissez au moins 2 caractères.',
-            style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+        child: Text(
+          'Saisissez au moins 2 caractères.',
+          style: TextStyle(color: Colors.grey[500], fontSize: 13),
+        ),
       );
     }
     return ListView(
       shrinkWrap: true,
       children: [
-        ..._results.map((c) => ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: ReklamAvatar(
-                  avatarUrl: c.avatar, displayName: c.name, radius: 18),
-              title: Text(c.name, style: const TextStyle(fontSize: 14)),
-              onTap: () =>
-                  Navigator.pop(context, _CompanyPick(id: c.id, name: c.name)),
-            )),
+        ..._results.map(
+          (c) => ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: ReklamAvatar(
+              avatarUrl: c.avatar,
+              displayName: c.name,
+              radius: 18,
+            ),
+            title: Text(c.name, style: const TextStyle(fontSize: 14)),
+            onTap: () =>
+                Navigator.pop(context, _CompanyPick(id: c.id, name: c.name)),
+          ),
+        ),
         // Invite option when nothing matches exactly.
-        if (_results.every(
-            (c) => c.name.toLowerCase() != _query.toLowerCase()))
+        if (_results.every((c) => c.name.toLowerCase() != _query.toLowerCase()))
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const CircleAvatar(
               backgroundColor: Color(0xFFE6F4EC),
               child: Icon(Icons.add_business_outlined, color: _kGreen),
             ),
-            title: Text('Inviter « $_query »',
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600, color: _kGreen)),
-            subtitle: const Text('Pas encore sur Myreklam',
-                style: TextStyle(fontSize: 12)),
+            title: Text(
+              'Inviter « $_query »',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: _kGreen,
+              ),
+            ),
+            subtitle: const Text(
+              'Pas encore sur Myreklam',
+              style: TextStyle(fontSize: 12),
+            ),
             onTap: _invite,
           ),
       ],

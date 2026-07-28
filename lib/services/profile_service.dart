@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:myreklam/services/api_client.dart';
 
 class ProfileService {
@@ -46,21 +47,26 @@ class ProfileService {
     if (ville != null && ville.isNotEmpty) {
       body['ville'] = ville;
     }
-    
+
     // Debug: Log the request body
-    print('📤 PUT /profile/pro/step1 body: $body');
-    
-    final response = await _api.authenticatedPut('/profile/pro/step1', body: body);
-    
+    debugPrint('📤 PUT /profile/pro/step1 body: $body');
+
+    final response = await _api.authenticatedPut(
+      '/profile/pro/step1',
+      body: body,
+    );
+
     // Debug: Log the response
-    print('📥 PUT /profile/pro/step1 response keys: ${response.keys}');
+    debugPrint('📥 PUT /profile/pro/step1 response keys: ${response.keys}');
     if (response['profile'] != null) {
-      print('📥 Profile fields returned: ${response['profile'].keys}');
-      print('📥 secteur_activite: ${response['profile']['secteur_activite']}');
-      print('📥 code_postal: ${response['profile']['code_postal']}');
-      print('📥 ville: ${response['profile']['ville']}');
+      debugPrint('📥 Profile fields returned: ${response['profile'].keys}');
+      debugPrint(
+        '📥 secteur_activite: ${response['profile']['secteur_activite']}',
+      );
+      debugPrint('📥 code_postal: ${response['profile']['code_postal']}');
+      debugPrint('📥 ville: ${response['profile']['ville']}');
     }
-    
+
     return response;
   }
 
@@ -197,7 +203,6 @@ class ProfileService {
       '/profile/pseudo/check?pseudo=$encodedPseudo',
     );
   }
-
 
   /// GET /api/profile/pseudo/suggestions?pseudo=xxx
   Future<List<String>> getPseudoSuggestions(String pseudo) async {

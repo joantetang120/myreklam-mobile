@@ -127,7 +127,9 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                           ),
                         )
                       : Icon(_icon, size: 20),
-                  label: Text(_authenticating ? 'Vérification…' : 'Déverrouiller'),
+                  label: Text(
+                    _authenticating ? 'Vérification…' : 'Déverrouiller',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFE7412A),
                     foregroundColor: Colors.white,

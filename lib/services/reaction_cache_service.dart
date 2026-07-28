@@ -59,9 +59,9 @@ class ReactionCacheService {
     if (_prefs == null) return;
     final userPrefix = _userPrefix();
     final keysToRemove = _prefs!.getKeys().where((key) {
-      return key.contains('${_prefix}${userPrefix}') ||
-          key.contains('${_countPrefix}${userPrefix}') ||
-          key.contains('${_commentCountPrefix}${userPrefix}');
+      return key.contains('$_prefix$userPrefix') ||
+          key.contains('$_countPrefix$userPrefix') ||
+          key.contains('$_commentCountPrefix$userPrefix');
     }).toList();
     for (final key in keysToRemove) {
       await _prefs!.remove(key);
