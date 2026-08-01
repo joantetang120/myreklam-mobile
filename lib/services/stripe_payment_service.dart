@@ -43,7 +43,7 @@ class StripePaymentService {
       final paymentData = await _createPaymentIntent(billingCycle, promoCode);
 
       if (paymentData == null) {
-        _showError(context, 'Failed to initialize payment');
+        _showError(context, 'Impossible d\'initialiser le paiement');
         return false;
       }
 
@@ -69,7 +69,7 @@ class StripePaymentService {
       if (subscriptionData == null) {
         _showError(
           context,
-          'Payment succeeded but failed to create subscription',
+          'Paiement accepté, mais la création de l\'abonnement a échoué',
         );
         return false;
       }
@@ -77,7 +77,7 @@ class StripePaymentService {
       return true;
     } catch (e) {
       debugPrint('Stripe payment error: $e');
-      _showError(context, 'Payment failed: $e');
+      _showError(context, 'Paiement échoué : $e');
       return false;
     }
   }

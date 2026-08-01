@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:myreklam/constants/demande_natures.dart';
 // Bouton partager masqué
 // import 'package:myreklam/services/share_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -5248,18 +5249,7 @@ class _ParticulierPublicViewScreenState
     );
   }
 
-  String _getNatureLabel(String nature) {
-    const natureLabels = {
-      'emploi': 'Recherche d\'emploi',
-      'service': 'Recherche de service',
-      'logement': 'Recherche de logement',
-      'produit': 'Recherche de produit',
-      'formation': 'Recherche de formation',
-      'collaboration': 'Collaboration',
-      'autre': 'Autre demande',
-    };
-    return natureLabels[nature.toLowerCase()] ?? nature;
-  }
+  String _getNatureLabel(String nature) => DemandeNatures.label(nature);
 
   Color _categoryColor(String label) {
     final lower = label.toLowerCase();

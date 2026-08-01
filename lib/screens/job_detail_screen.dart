@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:myreklam/constants/job_labels.dart';
 import 'package:myreklam/models/delegation.dart';
 import 'package:myreklam/services/delegation_manager.dart';
 import 'package:myreklam/utils/address_formatter.dart';
@@ -1956,24 +1957,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     return null;
   }
 
-  String _workTimeLabel(String val) {
-    switch (val) {
-      case 'FULL_TIME':
-        return 'Temps plein';
-      case 'PART_TIME':
-        return 'Temps partiel';
-      case 'INTERIM':
-        return 'Intérim';
-      case 'FREELANCE':
-        return 'Freelance';
-      case 'ALTERNANCE':
-        return 'Alternance';
-      case 'STAGE':
-        return 'Stage';
-      default:
-        return val;
-    }
-  }
+  String _workTimeLabel(String val) => JobLabels.label(val);
 
   String _formatJobSalary(dynamic min, dynamic max) {
     if (min != null && max != null) {

@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:myreklam/constants/annonce_status_labels.dart';
+import 'package:myreklam/constants/demande_natures.dart';
+import 'package:myreklam/constants/job_labels.dart';
 // import 'package:myreklam/services/share_service.dart'; // Bouton partager masqué
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:myreklam/config/api_config.dart';
@@ -1220,20 +1223,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     return input.replaceAll(RegExp(r'<[^>]*>'), '').trim();
   }
 
-  String _workTimeLabel(String workTime) {
-    switch (workTime) {
-      case 'full_time':
-        return 'Temps plein';
-      case 'part_time':
-        return 'Temps partiel';
-      case 'freelance':
-        return 'Freelance';
-      case 'internship':
-        return 'Stage';
-      default:
-        return workTime;
-    }
-  }
+  String _workTimeLabel(String workTime) => JobLabels.label(workTime);
 
   Widget _buildBonPlansList() {
     final items = _bonPlans;
@@ -2852,22 +2842,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     );
   }
 
-  String _statusLabel(String? status) {
-    switch (status?.toUpperCase()) {
-      case 'PUBLISHED':
-        return 'Publié';
-      case 'PENDING_REVIEW':
-        return 'En attente';
-      case 'DRAFT':
-        return 'Brouillon';
-      case 'REJECTED':
-        return 'Rejeté';
-      case 'ARCHIVED':
-        return 'Archivé';
-      default:
-        return status ?? '';
-    }
-  }
+  String _statusLabel(String? status) => AnnonceStatusLabels.label(status);
 
   Color _statusColor(String? status) {
     switch (status?.toUpperCase()) {
@@ -4959,18 +4934,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     );
   }
 
-  String _getNatureLabel(String nature) {
-    const natureLabels = {
-      'emploi': 'Recherche d\'emploi',
-      'service': 'Recherche de service',
-      'logement': 'Recherche de logement',
-      'produit': 'Recherche de produit',
-      'formation': 'Recherche de formation',
-      'collaboration': 'Collaboration',
-      'autre': 'Autre demande',
-    };
-    return natureLabels[nature.toLowerCase()] ?? nature;
-  }
+  String _getNatureLabel(String nature) => DemandeNatures.label(nature);
 
   Color _categoryColor(String label) {
     final lower = label.toLowerCase();

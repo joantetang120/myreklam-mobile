@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/constants/annonce_status_labels.dart';
+import 'package:myreklam/constants/demande_natures.dart';
+import 'package:myreklam/constants/job_labels.dart';
 import 'package:myreklam/utils/address_formatter.dart';
 import 'package:myreklam/screens/demande_detail_screen.dart';
 import 'package:myreklam/screens/event_detail_screen.dart';
@@ -322,22 +325,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     }
   }
 
-  String _statusLabel(String? status) {
-    switch (status?.toUpperCase()) {
-      case 'PUBLISHED':
-        return 'Publié';
-      case 'PENDING_REVIEW':
-        return 'En attente';
-      case 'DRAFT':
-        return 'Brouillon';
-      case 'REJECTED':
-        return 'Rejeté';
-      case 'ARCHIVED':
-        return 'Archivé';
-      default:
-        return status ?? '';
-    }
-  }
+  String _statusLabel(String? status) => AnnonceStatusLabels.label(status);
 
   Color _statusColor(String? status) {
     switch (status?.toUpperCase()) {
@@ -377,16 +365,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     return fullUrl;
   }
 
-  String _workTimeLabel(String val) {
-    switch (val) {
-      case 'FULL_TIME':
-        return 'Temps plein';
-      case 'PART_TIME':
-        return 'Temps partiel';
-      default:
-        return val;
-    }
-  }
+  String _workTimeLabel(String val) => JobLabels.label(val);
 
   String _buildDeliveryInfo(Map<String, dynamic>? pickupMethods) {
     if (pickupMethods == null) return 'Non spécifié';
@@ -2379,54 +2358,5 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     );
   }
 
-  String _getNatureLabel(String nature) {
-    switch (nature.toLowerCase()) {
-      // Main categories from the new table
-      case 'searchjob':
-        return 'Recherche d\'emploi';
-      case 'training':
-        return 'Formation';
-      case 'realestate':
-        return 'Immobilier';
-      case 'servicehelp':
-        return 'Services / Aide';
-      case 'promaterial':
-        return 'Matériel pro';
-      case 'house':
-        return 'Maison';
-      case 'fashion':
-        return 'Mode';
-      case 'vehicle':
-        return 'Véhicules';
-      case 'holiday':
-        return 'Vacances';
-      case 'multimedia':
-        return 'Multimédia';
-      case 'hobbies':
-        return 'Loisirs';
-      case 'animals':
-        return 'Animaux';
-      case 'various':
-        return 'Divers';
-      // Legacy mappings for backward compatibility
-      case 'emploi':
-        return 'Recherche d\'emploi';
-      case 'service':
-        return 'Services / Aide';
-      case 'logement':
-        return 'Immobilier';
-      case 'formation':
-        return 'Formation';
-      case 'internship':
-      case 'stage':
-        return 'Recherche de stage / alternance';
-      case 'product':
-      case 'produit':
-        return 'Recherche de produit';
-      case 'collaboration':
-        return 'Collaboration';
-      default:
-        return nature;
-    }
-  }
+  String _getNatureLabel(String nature) => DemandeNatures.label(nature);
 }

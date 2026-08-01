@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 // Bouton partager masqué — import 'package:myreklam/services/share_service.dart';
+import 'package:myreklam/constants/demande_natures.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
@@ -139,18 +140,7 @@ class _DemandesScreenState extends State<DemandesScreen> {
   String get _defaultAvatar =>
       'assets/images/dashboard_particulier/Ellipse 10.png';
 
-  String _getNatureLabel(String nature) {
-    const natureLabels = {
-      'emploi': 'Recherche d\'emploi',
-      'service': 'Recherche de service',
-      'logement': 'Recherche de logement',
-      'produit': 'Recherche de produit',
-      'formation': 'Recherche de formation',
-      'collaboration': 'Collaboration',
-      'autre': 'Autre demande',
-    };
-    return natureLabels[nature.toLowerCase()] ?? nature;
-  }
+  String _getNatureLabel(String nature) => DemandeNatures.label(nature);
 
   String? _extractMediaUrl(Map<String, dynamic> resource) {
     final media = resource['media'] ?? resource['media_files'];

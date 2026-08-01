@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/constants/demande_natures.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/screens/followers_screen.dart';
 import 'package:myreklam/services/api_client.dart';
@@ -1660,18 +1661,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     }
   }
 
-  String _getNatureLabel(String nature) {
-    const natureLabels = {
-      'emploi': 'Recherche d\'emploi',
-      'service': 'Recherche de service',
-      'logement': 'Recherche de logement',
-      'produit': 'Recherche de produit',
-      'formation': 'Recherche de formation',
-      'collaboration': 'Collaboration',
-      'autre': 'Autre demande',
-    };
-    return natureLabels[nature.toLowerCase()] ?? nature;
-  }
+  String _getNatureLabel(String nature) => DemandeNatures.label(nature);
 
   Color _categoryColor(String label) {
     final lower = label.toLowerCase();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/constants/demande_natures.dart';
 import 'package:myreklam/models/delegation.dart';
 import 'package:myreklam/services/delegation_manager.dart';
 // Bouton partager masqué — import 'package:myreklam/services/share_service.dart';
@@ -125,33 +126,6 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
   Map<String, String> _functionCodeToLabel = {};
   bool _categoriesLoaded = false;
 
-  static const _natureLabels = {
-    'searchjob': 'Recherche d\'emploi',
-    'training': 'Formation',
-    'realestate': 'Immobilier',
-    'servicehelp': 'Services / Aide',
-    'promaterial': 'Matériel pro',
-    'house': 'Maison',
-    'fashion': 'Mode',
-    'vehicle': 'Véhicules',
-    'holiday': 'Vacances',
-    'multimedia': 'Multimédia',
-    'hobbies': 'Loisirs',
-    'animals': 'Animaux',
-    'various': 'Divers',
-    // Legacy mappings for backward compatibility
-    'emploi': 'Recherche d\'emploi',
-    'service': 'Services / Aide',
-    'logement': 'Immobilier',
-    'produit': 'Recherche de produit',
-    'formation': 'Formation',
-    'collaboration': 'Collaboration',
-    'stage': 'Recherche de stage',
-    'internship': 'Recherche de stage / alternance',
-    'jobsearch': 'Recherche d\'emploi',
-    'autre': 'Autre demande',
-  };
-
   static const _typeLabels = {
     // Real Estate subcategories
     'RealEstateInvestment': 'Investissement immobilier',
@@ -237,11 +211,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     return _humanizeApiLabel(type);
   }
 
-  String _getNatureLabel(String? nature) {
-    if (nature == null || nature.isEmpty) return 'Demande';
-    return _natureLabels[nature.trim().toLowerCase()] ??
-        _humanizeApiLabel(nature);
-  }
+  String _getNatureLabel(String? nature) => DemandeNatures.label(nature);
 
   String _humanizeApiLabel(String value) {
     final spaced = value

@@ -66,7 +66,9 @@ class ConversationService {
             .toList();
         return messages;
       } else {
-        throw Exception('Failed to load messages: ${response.statusCode}');
+        throw Exception(
+          'Chargement des messages impossible (${response.statusCode})',
+        );
       }
     } catch (e) {
       debugPrint('❌ Error loading messages: $e');
@@ -101,7 +103,9 @@ class ConversationService {
         final data = json.decode(response.body);
         return ChatMessage.fromJson(data['data'], currentUserId);
       } else {
-        throw Exception('Failed to send message: ${response.statusCode}');
+        throw Exception(
+          'Envoi du message impossible (${response.statusCode})',
+        );
       }
     } catch (e) {
       debugPrint('❌ Error sending message: $e');
@@ -135,7 +139,7 @@ class ConversationService {
         return ChatMessage.fromJson(data['data'], currentUserId);
       } else {
         final data = json.decode(response.body);
-        throw Exception(data['message'] ?? 'Failed to edit message');
+        throw Exception(data['message'] ?? 'Modification du message impossible');
       }
     } catch (e) {
       debugPrint('❌ Error editing message: $e');
@@ -169,7 +173,7 @@ class ConversationService {
 
       if (response.statusCode != 200) {
         final data = json.decode(response.body);
-        throw Exception(data['message'] ?? 'Failed to delete message');
+        throw Exception(data['message'] ?? 'Suppression du message impossible');
       }
     } catch (e) {
       debugPrint('❌ Error deleting message: $e');
@@ -243,7 +247,9 @@ class ConversationService {
             .toList();
         return conversations;
       } else {
-        throw Exception('Failed to load conversations: ${response.statusCode}');
+        throw Exception(
+          'Chargement des conversations impossible (${response.statusCode})',
+        );
       }
     } catch (e) {
       debugPrint('❌ Error loading conversations: $e');
@@ -326,7 +332,7 @@ class ConversationService {
 
       if (response.statusCode != 200) {
         throw Exception(
-          'Failed to delete conversation: ${response.statusCode}',
+          'Suppression de la conversation impossible (${response.statusCode})',
         );
       }
     } catch (e) {

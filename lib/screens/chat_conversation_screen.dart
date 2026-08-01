@@ -332,7 +332,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('$e'), backgroundColor: Colors.red),
+                    SnackBar(
+                      content: Text('Erreur : $e'),
+                      backgroundColor: Colors.red,
+                    ),
                   );
                 }
               }

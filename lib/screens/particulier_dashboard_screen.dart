@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 // Bouton partager masqué
 // import 'package:myreklam/services/share_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:myreklam/constants/demande_natures.dart';
+import 'package:myreklam/constants/job_labels.dart';
 import 'package:myreklam/main.dart' show routeObserver;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/utils/address_formatter.dart';
@@ -3667,56 +3669,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         : 'Date annoncée prochainement';
   }
 
-  String _getNatureLabel(String nature) {
-    switch (nature.toLowerCase()) {
-      // Main categories from the new table
-      case 'searchjob':
-        return 'Recherche d\'emploi';
-      case 'training':
-        return 'Formation';
-      case 'realestate':
-        return 'Immobilier';
-      case 'servicehelp':
-        return 'Services / Aide';
-      case 'promaterial':
-        return 'Matériel pro';
-      case 'house':
-        return 'Maison';
-      case 'fashion':
-        return 'Mode';
-      case 'vehicle':
-        return 'Véhicules';
-      case 'holiday':
-        return 'Vacances';
-      case 'multimedia':
-        return 'Multimédia';
-      case 'hobbies':
-        return 'Loisirs';
-      case 'animals':
-        return 'Animaux';
-      case 'various':
-        return 'Divers';
-      // Legacy mappings for backward compatibility
-      case 'emploi':
-        return 'Recherche d\'emploi';
-      case 'service':
-        return 'Services / Aide';
-      case 'logement':
-        return 'Immobilier';
-      case 'formation':
-        return 'Formation';
-      case 'internship':
-      case 'stage':
-        return 'Recherche de stage / alternance';
-      case 'product':
-      case 'produit':
-        return 'Recherche de produit';
-      case 'collaboration':
-        return 'Collaboration';
-      default:
-        return nature;
-    }
-  }
+  String _getNatureLabel(String nature) => DemandeNatures.label(nature);
 
   Color _categoryColor(String label) {
     final lower = label.toLowerCase();
@@ -6562,24 +6515,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     return 'Salaire non spécifié';
   }
 
-  String _workTimeLabel(String val) {
-    switch (val) {
-      case 'FULL_TIME':
-        return 'Temps plein';
-      case 'PART_TIME':
-        return 'Temps partiel';
-      case 'INTERIM':
-        return 'Intérim';
-      case 'FREELANCE':
-        return 'Freelance';
-      case 'ALTERNANCE':
-        return 'Alternance';
-      case 'STAGE':
-        return 'Stage';
-      default:
-        return val;
-    }
-  }
+  String _workTimeLabel(String val) => JobLabels.label(val);
 
   List<String> _extractImages(List? mediaFiles) {
     if (mediaFiles == null || mediaFiles.isEmpty) {

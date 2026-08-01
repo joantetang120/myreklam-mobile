@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 // Bouton partager masqué
 // import 'package:myreklam/services/share_service.dart';
 import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/constants/job_labels.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
@@ -932,24 +933,7 @@ class _OffresEmploiScreenState extends State<OffresEmploiScreen> {
     return 'Salaire non spécifié';
   }
 
-  String _workTimeLabel(String val) {
-    switch (val) {
-      case 'FULL_TIME':
-        return 'Temps plein';
-      case 'PART_TIME':
-        return 'Temps partiel';
-      case 'INTERIM':
-        return 'Intérim';
-      case 'FREELANCE':
-        return 'Freelance';
-      case 'ALTERNANCE':
-        return 'Alternance';
-      case 'STAGE':
-        return 'Stage';
-      default:
-        return val;
-    }
-  }
+  String _workTimeLabel(String val) => JobLabels.label(val);
 
   String? _buildStorageUrl(String? url) {
     if (url == null || url.isEmpty) return null;

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:myreklam/constants/job_labels.dart';
 import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:http/http.dart' as http;
@@ -963,30 +964,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
   }
 
   // Helper to get display label for enum values (for dropdowns)
-  String _getDisplayLabel(String value, String type) {
-    const apiToDisplay = {
-      'FULL_TIME': 'Temps plein',
-      'PART_TIME': 'Temps partiel',
-      'YEAR': 'Par an',
-      'MONTH': 'Par mois',
-      'DAY': 'Par jour',
-      'HOUR': 'Par heure',
-      'NONE': 'Sans diplôme',
-      'CAP': 'CAP/BEP',
-      'BAC': 'Baccalauréat',
-      'BAC_2': 'Bac+2',
-      'BAC_3': 'Bac+3',
-      'MASTER': 'Master/Bac+5',
-      'DOCTORATE': 'Doctorat',
-      'JUNIOR': 'Débutant',
-      '1_3_YEARS': '1-3 ans',
-      '3_5_YEARS': '3-5 ans',
-      '5_10_YEARS': '5-10 ans',
-      'EXPERT': 'Expert (+10 ans)',
-      'VOLUNTEER': 'Bénévolat',
-    };
-    return apiToDisplay[value] ?? value;
-  }
+  String _getDisplayLabel(String value, String type) => JobLabels.label(value);
 
   void _updateFunctionsForCategory(int? categoryId) {
     if (categoryId == null) {
@@ -2945,7 +2923,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                   side: const BorderSide(color: Colors.grey, width: 1),
                   dense: true,
                   contentPadding: EdgeInsets.zero,
-                  title: Text(option, style: const TextStyle(fontSize: 14)),
+                  title: Text(
+                    JobLabels.label(option),
+                    style: const TextStyle(fontSize: 14),
+                  ),
                   value: isSelected,
                   controlAffinity: ListTileControlAffinity.leading,
                   onChanged: (bool? value) {

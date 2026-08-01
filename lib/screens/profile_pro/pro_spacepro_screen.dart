@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:myreklam/constants/job_labels.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -413,8 +414,23 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
 
   String _applicationStatusLabel(dynamic value) {
     final raw = value?.toString().trim();
-    if (raw == null || raw.isEmpty) return 'actif';
-    return raw;
+    if (raw == null || raw.isEmpty) return 'Actif';
+    switch (raw.toLowerCase()) {
+      case 'confirmed':
+      case 'active':
+      case 'accepted':
+        return 'Acceptée';
+      case 'rejected':
+      case 'refused':
+        return 'Refusée';
+      case 'pending':
+        return 'En attente';
+      case 'cancelled':
+      case 'canceled':
+        return 'Annulée';
+      default:
+        return raw;
+    }
   }
 
   String _companyNameForOffer(Map<String, dynamic> offer) {
@@ -2762,24 +2778,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
     return 'Salaire non spécifié';
   }
 
-  String _workTimeLabel(String val) {
-    switch (val) {
-      case 'FULL_TIME':
-        return 'Temps plein';
-      case 'PART_TIME':
-        return 'Temps partiel';
-      case 'INTERIM':
-        return 'Intérim';
-      case 'FREELANCE':
-        return 'Freelance';
-      case 'ALTERNANCE':
-        return 'Alternance';
-      case 'STAGE':
-        return 'Stage';
-      default:
-        return val;
-    }
-  }
+  String _workTimeLabel(String val) => JobLabels.label(val);
 
   String _timeAgo(String isoDate) {
     try {

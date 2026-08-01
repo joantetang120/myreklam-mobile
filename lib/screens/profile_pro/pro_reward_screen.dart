@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/constants/reward_action_labels.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/mys_history_screen.dart';
@@ -247,27 +248,8 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
     }
   }
 
-  String _getActionLabel(String? actionType) {
-    if (actionType == null) return 'Action';
-    return switch (actionType) {
-      'bon_plan' => 'Bon plan',
-      'demande' => 'Demande',
-      'evenement' => 'Événement',
-      'formation' => 'Formation',
-      'job_offer' => 'Offre d\'emploi',
-      'profile_complete' => 'Profil complété',
-      'comment' => 'Commentaire',
-      'review' => 'Avis',
-      'share' => 'Partage',
-      'event_participation' => 'Participation événement',
-      'training_subscription' => 'Inscription formation',
-      'job_application' => 'Candidature',
-      'referral_particulier' => 'Parrainage particulier',
-      'referral_pro' => 'Parrainage entreprise',
-      'mys_conversion' => 'Conversion récompense',
-      _ => actionType,
-    };
-  }
+  String _getActionLabel(String? actionType) =>
+      RewardActionLabels.label(actionType);
 
   @override
   Widget build(BuildContext context) {
