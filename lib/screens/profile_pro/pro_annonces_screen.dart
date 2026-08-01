@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:myreklam/constants/annonce_status_labels.dart';
 import 'package:myreklam/constants/demande_natures.dart';
+import 'package:myreklam/constants/demande_types.dart';
 import 'package:myreklam/constants/job_labels.dart';
 // import 'package:myreklam/services/share_service.dart'; // Bouton partager masqué
 import 'package:flutter_quill/flutter_quill.dart' as quill;
@@ -1290,8 +1291,8 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
           .toList();
 
       final categoryLabel = (type != null && type.isNotEmpty)
-          ? type
-          : (nature != null && nature.isNotEmpty ? nature : 'Demande');
+          ? DemandeTypes.label(type)
+          : DemandeNatures.label(nature);
 
       final tags = <PostTag>[
         PostTag(
@@ -1313,9 +1314,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
           ),
       ];
 
-      final subTagsCat = nature != null && nature.isNotEmpty
-          ? nature
-          : 'Demande';
+      final subTagsCat = DemandeNatures.label(nature);
 
       final subTag = PostTag(
         title: subTagsCat,

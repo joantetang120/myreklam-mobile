@@ -14,7 +14,7 @@ class SavedSearchService {
     final token = await TokenStorage.getAccessToken();
 
     if (token == null || token.isEmpty) {
-      throw Exception('No authentication token found');
+      throw Exception('Session expirée, veuillez vous reconnecter');
     }
 
     return {

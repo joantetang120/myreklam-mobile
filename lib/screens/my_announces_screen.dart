@@ -4,6 +4,7 @@ import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:myreklam/constants/annonce_status_labels.dart';
 import 'package:myreklam/constants/demande_natures.dart';
+import 'package:myreklam/constants/demande_types.dart';
 import 'package:myreklam/constants/job_labels.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -208,8 +209,8 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
           .toList();
 
       final categoryLabel = (type != null && type.isNotEmpty)
-          ? type
-          : (nature != null && nature.isNotEmpty ? nature : 'Demande');
+          ? DemandeTypes.label(type)
+          : DemandeNatures.label(nature);
 
       final tags = <PostTag>[
         PostTag(

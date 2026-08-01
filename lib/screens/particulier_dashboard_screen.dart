@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 // import 'package:myreklam/services/share_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/constants/demande_natures.dart';
+import 'package:myreklam/constants/demande_types.dart';
 import 'package:myreklam/constants/job_labels.dart';
 import 'package:myreklam/main.dart' show routeObserver;
 import 'package:myreklam/config/api_config.dart';
@@ -6433,8 +6434,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           .toList();
 
       final categoryLabel = (type != null && type.isNotEmpty)
-          ? type
-          : (nature != null && nature.isNotEmpty ? nature : 'Demande');
+          ? DemandeTypes.label(type)
+          : DemandeNatures.label(nature);
 
       final tags = <PostTag>[
         PostTag(

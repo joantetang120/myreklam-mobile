@@ -5,6 +5,7 @@ import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/constants/annonce_status_labels.dart';
 import 'package:myreklam/constants/demande_natures.dart';
+import 'package:myreklam/constants/demande_types.dart';
 import 'package:myreklam/constants/job_labels.dart';
 import 'package:myreklam/utils/address_formatter.dart';
 import 'package:myreklam/screens/demande_detail_screen.dart';
@@ -762,8 +763,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           .toList();
 
       final categoryLabel = (type != null && type.isNotEmpty)
-          ? type
-          : (nature != null && nature.isNotEmpty ? nature : 'Demande');
+          ? DemandeTypes.label(type)
+          : DemandeNatures.label(nature);
 
       final tags = <PostTag>[
         PostTag(
@@ -785,9 +786,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           ),
       ];
 
-      final subTagsCat = nature != null && nature.isNotEmpty
-          ? nature
-          : 'Demande';
+      final subTagsCat = DemandeNatures.label(nature);
 
       final subTag = PostTag(
         title: subTagsCat,

@@ -21,7 +21,9 @@ class PayPalPaymentService {
     );
 
     if (response['success'] != true) {
-      throw Exception(response['message'] ?? 'Failed to create PayPal order');
+      throw Exception(
+        response['message'] ?? 'Création de la commande PayPal impossible',
+      );
     }
 
     return {
@@ -39,7 +41,7 @@ class PayPalPaymentService {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
       return true;
     }
-    throw Exception('Could not launch PayPal checkout');
+    throw Exception('Ouverture du paiement PayPal impossible');
   }
 
   /// Capture PayPal payment after user returns
@@ -51,7 +53,7 @@ class PayPalPaymentService {
 
     if (response['success'] != true) {
       throw Exception(
-        response['message'] ?? 'Failed to capture PayPal payment',
+        response['message'] ?? 'Validation du paiement PayPal impossible',
       );
     }
 

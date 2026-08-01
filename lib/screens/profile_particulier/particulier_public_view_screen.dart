@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:myreklam/constants/demande_natures.dart';
+import 'package:myreklam/constants/demande_types.dart';
 // Bouton partager masqué
 // import 'package:myreklam/services/share_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -5324,8 +5325,8 @@ class _ParticulierPublicViewScreenState
           .toList();
 
       final categoryLabel = (type != null && type.isNotEmpty)
-          ? type
-          : (nature != null && nature.isNotEmpty ? nature : 'Demande');
+          ? DemandeTypes.label(type)
+          : DemandeNatures.label(nature);
 
       final tags = <PostTag>[
         PostTag(
@@ -5347,9 +5348,7 @@ class _ParticulierPublicViewScreenState
           ),
       ];
 
-      final subTagsCat = nature != null && nature.isNotEmpty
-          ? nature
-          : 'Demande';
+      final subTagsCat = DemandeNatures.label(nature);
 
       final subTag = PostTag(
         title: subTagsCat,

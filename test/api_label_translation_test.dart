@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myreklam/constants/annonce_status_labels.dart';
 import 'package:myreklam/constants/demande_natures.dart';
+import 'package:myreklam/constants/demande_types.dart';
 import 'package:myreklam/constants/job_labels.dart';
 import 'package:myreklam/constants/reward_action_labels.dart';
 
@@ -25,6 +26,28 @@ void main() {
       expect(DemandeNatures.label('brand_new_code'), 'Brand new code');
       expect(DemandeNatures.label(null), 'Demande');
       expect(DemandeNatures.label('  '), 'Demande');
+    });
+  });
+
+  group('DemandeTypes', () {
+    test('translates the PascalCase sub-category codes', () {
+      expect(
+        DemandeTypes.label('RealEstateInvestment'),
+        'Investissement immobilier',
+      );
+      expect(DemandeTypes.label('Carpooling'), 'Covoiturage');
+      expect(DemandeTypes.label('MedicalEquipment'), 'Matériel médical');
+      expect(DemandeTypes.label('ConsolesVideoGames'), 'Consoles & Jeux vidéo');
+    });
+
+    test('matches regardless of the casing the API uses', () {
+      expect(DemandeTypes.label('carpooling'), 'Covoiturage');
+      expect(DemandeTypes.label('  Bicycles  '), 'Vélos');
+    });
+
+    test('humanizes an unknown sub-category instead of leaking it', () {
+      expect(DemandeTypes.label('BrandNewSubCategory'), 'Brand new sub category');
+      expect(DemandeTypes.label(null), '');
     });
   });
 

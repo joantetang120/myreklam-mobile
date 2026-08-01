@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // Bouton partager masqué — import 'package:myreklam/services/share_service.dart';
 import 'package:myreklam/constants/demande_natures.dart';
+import 'package:myreklam/constants/demande_types.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
@@ -1802,8 +1803,8 @@ class _DemandesScreenState extends State<DemandesScreen> {
           .toList();
 
       final categoryLabel = (type != null && type.isNotEmpty)
-          ? type
-          : (nature != null && nature.isNotEmpty ? nature : 'Demande');
+          ? DemandeTypes.label(type)
+          : DemandeNatures.label(nature);
 
       final tags = <PostTag>[
         PostTag(
@@ -1825,9 +1826,7 @@ class _DemandesScreenState extends State<DemandesScreen> {
           ),
       ];
 
-      final subTagsCat = nature != null && nature.isNotEmpty
-          ? nature
-          : 'Demande';
+      final subTagsCat = DemandeNatures.label(nature);
 
       final subTag = PostTag(
         title: subTagsCat,
