@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/constants/api_labels.dart';
 import 'package:myreklam/constants/demande_natures.dart';
 import 'package:myreklam/constants/demande_types.dart';
 import 'package:myreklam/models/delegation.dart';
@@ -131,19 +132,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
   String _getNatureLabel(String? nature) => DemandeNatures.label(nature);
 
-  String _humanizeApiLabel(String value) {
-    final spaced = value
-        .trim()
-        .replaceAll(RegExp(r'^secteur[_-]'), '')
-        .replaceAll(RegExp(r'[_-]+'), ' ')
-        .replaceAllMapped(
-          RegExp(r'([a-zà-ÿ])([A-Z])'),
-          (match) => '${match.group(1)} ${match.group(2)}',
-        )
-        .replaceAll(RegExp(r'\s+'), ' ');
-    if (spaced.isEmpty) return value;
-    return '${spaced[0].toUpperCase()}${spaced.substring(1).toLowerCase()}';
-  }
+  String _humanizeApiLabel(String value) => ApiLabels.resolve(value);
 
   String? _translatedValue(dynamic value, Map<String, String> labels) {
     final raw = str(value);

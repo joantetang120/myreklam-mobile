@@ -1,3 +1,5 @@
+import 'package:myreklam/constants/api_labels.dart';
+
 /// French labels for the job-offer enum codes returned by the API.
 ///
 /// The API exchanges SCREAMING_SNAKE_CASE codes (`FULL_TIME`, `MEAL_VOUCHERS`,
@@ -58,12 +60,15 @@ class JobLabels {
   /// French label for [value].
   ///
   /// [value] may already be a French label (some endpoints return labels rather
-  /// than codes), in which case it is returned untouched. An unknown code is
-  /// humanized so `SOME_NEW_CODE` never reaches the UI verbatim.
+  /// than codes), in which case it is returned untouched. Codes the table below
+  /// does not cover are looked up in the dictionary shared with the web app
+  /// (which carries the PascalCase contract types such as `PermanentContract`),
+  /// then humanized so `SOME_NEW_CODE` never reaches the UI verbatim.
   static String label(String? value, {String fallback = ''}) {
     if (value == null || value.trim().isEmpty) return fallback;
     final raw = value.trim();
-    final known = labels[raw] ?? labels[raw.toUpperCase()];
+    final known =
+        labels[raw] ?? labels[raw.toUpperCase()] ?? ApiLabels.lookup(raw);
     if (known != null) return known;
     // Only humanize what actually looks like an API code.
     if (RegExp(r'^[A-Z0-9_]+$').hasMatch(raw)) {

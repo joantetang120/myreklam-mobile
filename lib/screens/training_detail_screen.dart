@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:myreklam/constants/api_labels.dart';
 import 'package:myreklam/utils/address_formatter.dart';
 import 'package:myreklam/widgets/location_map.dart';
 import 'package:myreklam/models/delegation.dart';
@@ -2334,11 +2335,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       return targetPublics[value]!;
     }
 
-    // Fallback: Convert PascalCase / camelCase to readable
-    return value
-        .replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (m) => '${m[1]} ${m[2]}')
-        .replaceAll('_', ' ')
-        .trim();
+    // Fallback: the dictionary shared with the web app, then a readable form of
+    // the raw code (which stays in English, hence the lookup first).
+    return ApiLabels.resolve(value);
   }
 
   void _showDeleteDialog(BuildContext context) {

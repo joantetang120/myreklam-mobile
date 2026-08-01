@@ -1,3 +1,4 @@
+import 'package:myreklam/constants/api_labels.dart';
 import 'package:myreklam/constants/demande_natures.dart';
 
 /// French labels for the demande sub-category codes (`type`) returned by the
@@ -91,11 +92,11 @@ class DemandeTypes {
     for (final entry in labels.entries) entry.key.toLowerCase(): entry.value,
   };
 
-  /// French label for [type], falling back to a humanized version of the raw
-  /// code so `RealEstateInvestment` never reaches the UI verbatim.
+  /// French label for [type], falling back to the shared dictionary then to a
+  /// humanized code, so `RealEstateInvestment` never reaches the UI verbatim.
   static String label(String? type, {String fallback = ''}) {
     if (type == null || type.trim().isEmpty) return fallback;
     final raw = type.trim();
-    return _byLowerCaseKey[raw.toLowerCase()] ?? DemandeNatures.humanize(raw);
+    return _byLowerCaseKey[raw.toLowerCase()] ?? ApiLabels.resolve(raw);
   }
 }

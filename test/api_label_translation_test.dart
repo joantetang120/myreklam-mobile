@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myreklam/constants/annonce_status_labels.dart';
+import 'package:myreklam/constants/api_label_dictionary.g.dart';
+import 'package:myreklam/constants/api_labels.dart';
 import 'package:myreklam/constants/demande_natures.dart';
 import 'package:myreklam/constants/demande_types.dart';
 import 'package:myreklam/constants/job_labels.dart';
@@ -26,6 +28,38 @@ void main() {
       expect(DemandeNatures.label('brand_new_code'), 'Brand new code');
       expect(DemandeNatures.label(null), 'Demande');
       expect(DemandeNatures.label('  '), 'Demande');
+    });
+  });
+
+  group('ApiLabels', () {
+    test('carries the dictionary shared with the web app', () {
+      // A thin dictionary would mean the generator silently failed.
+      expect(kApiLabelDictionary.length, greaterThan(6000));
+    });
+
+    test('translates training sectors instead of humanizing them', () {
+      // Was rendered "Finishing works" on the demande detail screen.
+      expect(ApiLabels.resolve('FinishingWorks'), 'Second œuvre');
+      expect(
+        ApiLabels.resolve('MasonryCarpentryStructuralWork'),
+        'Maçonnerie, charpente, gros œuvre',
+      );
+      expect(ApiLabels.resolve('CivilEngineeringVRD'), 'Génie civil / VRD');
+    });
+
+    test('matches whatever casing the API sends', () {
+      expect(ApiLabels.lookup('finishingworks'), 'Second œuvre');
+      expect(ApiLabels.lookup('  FinishingWorks  '), 'Second œuvre');
+    });
+
+    test('humanizes only what the dictionary does not know', () {
+      expect(ApiLabels.lookup('NotInTheDictionaryAtAll'), isNull);
+      expect(
+        ApiLabels.resolve('NotInTheDictionaryAtAll'),
+        'Not in the dictionary at all',
+      );
+      expect(ApiLabels.lookup(null), isNull);
+      expect(ApiLabels.lookup('  '), isNull);
     });
   });
 

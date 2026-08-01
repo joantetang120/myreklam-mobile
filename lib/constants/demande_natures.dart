@@ -1,3 +1,5 @@
+import 'package:myreklam/constants/api_labels.dart';
+
 /// Shared mapping of demande "nature" codes to their French labels.
 ///
 /// The categories API returns English codes (`searchjob`, `realestate`, ...).
@@ -37,26 +39,10 @@ class DemandeNatures {
     'autre': 'Autre demande',
   };
 
-  /// French label for [nature], falling back to a humanized version of the raw
-  /// code so an unknown API value never surfaces as `searchjob` in the UI.
+  /// French label for [nature], falling back to the shared dictionary then to a
+  /// humanized code, so an unknown API value never surfaces as `searchjob`.
   static String label(String? nature, {String fallback = 'Demande'}) {
     if (nature == null || nature.trim().isEmpty) return fallback;
-    return labels[nature.trim().toLowerCase()] ?? humanize(nature);
-  }
-
-  /// Turns a raw API code (`secteur_realEstate`, `pro-material`) into readable
-  /// text (`Real estate`, `Pro material`) when no explicit label exists.
-  static String humanize(String value) {
-    final spaced = value
-        .trim()
-        .replaceAll(RegExp(r'^secteur[_-]'), '')
-        .replaceAll(RegExp(r'[_-]+'), ' ')
-        .replaceAllMapped(
-          RegExp(r'([a-zà-ÿ])([A-Z])'),
-          (match) => '${match.group(1)} ${match.group(2)}',
-        )
-        .replaceAll(RegExp(r'\s+'), ' ');
-    if (spaced.isEmpty) return value;
-    return '${spaced[0].toUpperCase()}${spaced.substring(1).toLowerCase()}';
+    return labels[nature.trim().toLowerCase()] ?? ApiLabels.resolve(nature);
   }
 }
