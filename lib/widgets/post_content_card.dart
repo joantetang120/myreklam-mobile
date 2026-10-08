@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/social_video_preview.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
 class PostTag {
@@ -89,6 +90,7 @@ class PostContentCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Tags Row
+          SocialVideoPreview(text: title),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(

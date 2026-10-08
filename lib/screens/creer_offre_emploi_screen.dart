@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:myreklam/widgets/announcement_ai_panel.dart';
+import 'package:myreklam/utils/announcement_ai_values.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/constants/job_labels.dart';
 import 'package:myreklam/utils/gallery_picker.dart';
@@ -1161,6 +1163,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
   }
 
   Future<void> _submitJobOffer() async {
+    if (_isSubmitting) return;
     if (!_validateForm()) return;
 
     setState(() => _isSubmitting = true);
@@ -1177,11 +1180,19 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           'period': _toApiValue(_selectedSalaryPeriod),
         };
         if (_selectedSalaryType == 'RANGE') {
-          salary['min'] = double.tryParse(_salaryMinController.text) ?? 0;
-          salary['max'] = double.tryParse(_salaryMaxController.text) ?? 0;
+          salary['min'] = double.tryParse(
+            _salaryMinController.text.replaceAll(',', '.'),
+          );
+          salary['max'] = double.tryParse(
+            _salaryMaxController.text.replaceAll(',', '.'),
+          );
         } else if (_selectedSalaryType == 'EXACT') {
-          salary['min'] = double.tryParse(_salaryExactController.text) ?? 0;
-          salary['max'] = double.tryParse(_salaryExactController.text) ?? 0;
+          salary['min'] = double.tryParse(
+            _salaryExactController.text.replaceAll(',', '.'),
+          );
+          salary['max'] = double.tryParse(
+            _salaryExactController.text.replaceAll(',', '.'),
+          );
         }
       } else if (_selectedSalaryType == 'DEPENDING_ON_PROFILE') {
         salary = {'type': 'DEPENDING_ON_PROFILE'};
@@ -1349,6 +1360,31 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
   }
 
   bool _validateForm() {
+    if (_selectedSalaryType == 'EXACT' &&
+        AnnouncementAiValues.number(_salaryExactController.text) == null) {
+      _showSnack('Veuillez renseigner un salaire valide.', isError: true);
+      return false;
+    }
+    if (_selectedSalaryType == 'RANGE') {
+      final min = AnnouncementAiValues.number(_salaryMinController.text);
+      final max = AnnouncementAiValues.number(_salaryMaxController.text);
+      if (min == null || max == null || double.parse(max) < double.parse(min)) {
+        _showSnack(
+          'Veuillez renseigner une fourchette de salaire valide.',
+          isError: true,
+        );
+        return false;
+      }
+    }
+    if (_availableFromDate != null &&
+        _availableUntilDate != null &&
+        _availableUntilDate!.isBefore(_availableFromDate!)) {
+      _showSnack(
+        'La date de fin doit être après la date de début.',
+        isError: true,
+      );
+      return false;
+    }
     if (_selectedCategoryId == null) {
       _showSnack('Veuillez sélectionner une catégorie', isError: true);
       return false;
@@ -2014,6 +2050,140 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
   }
 
   // ─── STEP 1: Informations ───
+  Map<String, List<String>> _announcementAiCategories() => {
+    for (final c in _categoriesFromApi)
+      c['name'].toString():
+          (_categoryFunctionsMap[int.tryParse(c['id'].toString())] ?? [])
+              .map((s) => s['name'].toString())
+              .toList(),
+  };
+  Widget _buildAnnouncementAiPanel() => AnnouncementAiPanel(
+    linkController: _linkController,
+    kind: 'job-offers',
+    categories: () => _announcementAiCategories(),
+    onResult: (fields, images) {
+      setState(() {
+        _selectedLocation = announcementAiLocation(fields) ?? _selectedLocation;
+        if (fields['title'] != null)
+          _titleController.text = fields['title'].toString().substring(
+            0,
+            fields['title'].toString().length.clamp(0, 255),
+          );
+        if (fields['description'] != null)
+          _descriptionQuillController.document = Document()
+            ..insert(0, '${fields['description']}\n');
+        final category = AnnouncementAiValues.category(
+          fields['category'],
+          _categoriesFromApi,
+        );
+        if (category != null) {
+          _selectedCategoryId = int.tryParse(category['id'].toString());
+          _selectedCategoryName = category['name']?.toString();
+          _functionsForCategory =
+              _categoryFunctionsMap[_selectedCategoryId] ?? [];
+          _selectedFunctionId = null;
+          _selectedFunctionName = null;
+        }
+        final sub = AnnouncementAiValues.category(
+          fields['subCategory'],
+          _functionsForCategory,
+        );
+        if (sub != null) {
+          _selectedFunctionId = int.tryParse(sub['id'].toString());
+          _selectedFunctionName = sub['name']?.toString();
+        }
+        _selectedContractType =
+            AnnouncementAiValues.option(
+              fields['contractType'],
+              _contractTypes,
+              apiValue: _toApiValue,
+            ) ??
+            _selectedContractType;
+        _selectedWorkTime =
+            AnnouncementAiValues.option(
+              fields['workTime'],
+              _workTimes,
+              apiValue: _toApiValue,
+            ) ??
+            _selectedWorkTime;
+        _selectedSalaryType =
+            AnnouncementAiValues.option(fields['salaryType'], [
+              'EXACT',
+              'RANGE',
+              'DEPENDING_ON_PROFILE',
+            ]) ??
+            _selectedSalaryType;
+        _selectedSalaryPeriod =
+            AnnouncementAiValues.option(
+              fields['salaryPeriod'],
+              _salaryPeriods,
+              apiValue: _toApiValue,
+            ) ??
+            _selectedSalaryPeriod;
+        _selectedAvailabilityType =
+            AnnouncementAiValues.option(
+              fields['availabilityType'],
+              _availabilityTypes,
+              apiValue: _toApiValue,
+            ) ??
+            _selectedAvailabilityType;
+        _selectedEducationLevel =
+            AnnouncementAiValues.option(
+              fields['educationLevel'],
+              _educationLevels,
+              apiValue: _toApiValue,
+            ) ??
+            _selectedEducationLevel;
+        _selectedExperienceLevel =
+            AnnouncementAiValues.option(
+              fields['experienceLevel'],
+              _experienceLevels,
+              apiValue: _toApiValue,
+            ) ??
+            _selectedExperienceLevel;
+        _availableFromDate =
+            AnnouncementAiValues.date(fields['availableFrom']) ??
+            _availableFromDate;
+        _availableUntilDate =
+            AnnouncementAiValues.date(fields['availableUntil']) ??
+            _availableUntilDate;
+        if (fields['advantages'] is List)
+          _selectedAdvantages = AnnouncementAiValues.list(
+            fields['advantages'],
+            _advantagesFromApi,
+            apiValue: _toApiValue,
+          );
+        if (fields['isSalaryGross'] is bool)
+          _isSalaryGross = fields['isSalaryGross'];
+        if (fields['teleworkPossible'] is bool)
+          _teleworkPossible = fields['teleworkPossible'];
+        for (final e in {
+          'salaryMin': _salaryMinController,
+          'salaryMax': _salaryMaxController,
+          'salaryExact': _salaryExactController,
+        }.entries) {
+          final n = AnnouncementAiValues.number(fields[e.key]);
+          if (n != null) e.value.text = n;
+        }
+        for (final e in {
+          'companyName': _companyNameController,
+          'companyWebsite': _companyWebsiteController,
+          'externalLink': _linkController,
+        }.entries) {
+          if (fields[e.key] != null) e.value.text = fields[e.key].toString();
+        }
+        if (fields['profileDescription'] != null)
+          _profileDescQuillController.document = Document()
+            ..insert(0, '${fields['profileDescription']}\n');
+        for (final image in images) {
+          if (!_selectedMediaFiles.any((m) => m.path == image.path))
+            _selectedMediaFiles.add(image);
+        }
+      });
+      _saveFormProgress();
+    },
+  );
+
   Widget _buildStep1Informations() {
     final categoryNames = _categoriesFromApi
         .map((c) => c['name'].toString())
@@ -2025,6 +2195,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildAnnouncementAiPanel(),
         _buildFormCard(
           icon: Icons.card_giftcard,
           title: 'Catégorie',

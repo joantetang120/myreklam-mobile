@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/screens/managed_accounts_screen.dart';
+import 'package:myreklam/screens/notification_preferences_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/biometric_service.dart';
 import 'package:myreklam/screens/login_screen.dart';
@@ -430,6 +431,9 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  // Conservé temporairement pour faciliter le retrait de l'ancien composant
+  // visuel sans exposer des interrupteurs locaux non synchronisés.
+  bool get _showLegacyNotificationSettings => false;
   // Notification toggles - Email
   bool _emailNewMessages = true;
   bool _emailAlerts = true;
@@ -557,159 +561,183 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Réseaux sociaux / Notifications section
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
+                child: Card(
+                  elevation: 0,
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.notifications_outlined,
+                      color: Color(0xFFFF9800),
+                    ),
+                    title: const Text('Notifications'),
+                    subtitle: const Text(
+                      'Push et e-mail synchronisés avec le site Web',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationPreferencesScreen(),
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // Header
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFF3E0),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.notifications_outlined,
-                                color: Color(0xFFFF9800),
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Réseaux sociaux',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF2D2D2D),
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Gérez vos préférences de notifications',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[500],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Divider(height: 1, color: Colors.grey[200]),
-
-                      // Table header
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              flex: 3,
-                              child: Text(
-                                'Type',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF2D2D2D),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: const Text(
-                                  'Email',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF2D2D2D),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: const Text(
-                                  'Mobile',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF2D2D2D),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Divider(height: 1, color: Colors.grey[100]),
-
-                      // Toggle rows
-                      _buildToggleRow(
-                        'Nouveaux messages',
-                        _emailNewMessages,
-                        _mobileNewMessages,
-                        (val) => setState(() => _emailNewMessages = val),
-                        (val) => setState(() => _mobileNewMessages = val),
-                      ),
-                      Divider(height: 1, color: Colors.grey[100]),
-                      _buildToggleRow(
-                        'Alertes',
-                        _emailAlerts,
-                        _mobileAlerts,
-                        (val) => setState(() => _emailAlerts = val),
-                        (val) => setState(() => _mobileAlerts = val),
-                      ),
-                      Divider(height: 1, color: Colors.grey[100]),
-                      _buildToggleRow(
-                        'Commentaires',
-                        _emailComments,
-                        _mobileComments,
-                        (val) => setState(() => _emailComments = val),
-                        (val) => setState(() => _mobileComments = val),
-                      ),
-                      Divider(height: 1, color: Colors.grey[100]),
-                      _buildToggleRow(
-                        'Avis',
-                        _emailAvis,
-                        _mobileAvis,
-                        (val) => setState(() => _emailAvis = val),
-                        (val) => setState(() => _mobileAvis = val),
-                      ),
-                      Divider(height: 1, color: Colors.grey[100]),
-                      _buildToggleRow(
-                        'Newsletter',
-                        _emailNewsletter,
-                        _mobileNewsletter,
-                        (val) => setState(() => _emailNewsletter = val),
-                        (val) => setState(() => _mobileNewsletter = val),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
+                    ),
                   ),
                 ),
               ),
+              if (_showLegacyNotificationSettings)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Header
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF3E0),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.notifications_outlined,
+                                  color: Color(0xFFFF9800),
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Réseaux sociaux',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF2D2D2D),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Gérez vos préférences de notifications',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        Divider(height: 1, color: Colors.grey[200]),
+
+                        // Table header
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          child: Row(
+                            children: [
+                              const Expanded(
+                                flex: 3,
+                                child: Text(
+                                  'Type',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF2D2D2D),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Center(
+                                  child: const Text(
+                                    'Email',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF2D2D2D),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Center(
+                                  child: const Text(
+                                    'Mobile',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF2D2D2D),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Divider(height: 1, color: Colors.grey[100]),
+
+                        // Toggle rows
+                        _buildToggleRow(
+                          'Nouveaux messages',
+                          _emailNewMessages,
+                          _mobileNewMessages,
+                          (val) => setState(() => _emailNewMessages = val),
+                          (val) => setState(() => _mobileNewMessages = val),
+                        ),
+                        Divider(height: 1, color: Colors.grey[100]),
+                        _buildToggleRow(
+                          'Alertes',
+                          _emailAlerts,
+                          _mobileAlerts,
+                          (val) => setState(() => _emailAlerts = val),
+                          (val) => setState(() => _mobileAlerts = val),
+                        ),
+                        Divider(height: 1, color: Colors.grey[100]),
+                        _buildToggleRow(
+                          'Commentaires',
+                          _emailComments,
+                          _mobileComments,
+                          (val) => setState(() => _emailComments = val),
+                          (val) => setState(() => _mobileComments = val),
+                        ),
+                        Divider(height: 1, color: Colors.grey[100]),
+                        _buildToggleRow(
+                          'Avis',
+                          _emailAvis,
+                          _mobileAvis,
+                          (val) => setState(() => _emailAvis = val),
+                          (val) => setState(() => _mobileAvis = val),
+                        ),
+                        Divider(height: 1, color: Colors.grey[100]),
+                        _buildToggleRow(
+                          'Newsletter',
+                          _emailNewsletter,
+                          _mobileNewsletter,
+                          (val) => setState(() => _emailNewsletter = val),
+                          (val) => setState(() => _mobileNewsletter = val),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  ),
+                ),
 
               const SizedBox(height: 20),
 

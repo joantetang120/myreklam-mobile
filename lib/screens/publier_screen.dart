@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/delegation_manager.dart';
 import 'package:myreklam/models/delegation.dart';
+import 'package:myreklam/screens/create_reel_screen.dart';
 
 class PublierScreen extends StatelessWidget {
   const PublierScreen({super.key});
@@ -51,6 +52,19 @@ class PublierScreen extends StatelessWidget {
                           description:
                               'Partagez avec votre communauté des actualités, des photos, des idées, etc',
                         ),
+                      if (DelegationManager.instance.can(
+                        DelegationPermission.posts,
+                      )) ...[
+                        const SizedBox(height: 16),
+                        _buildOptionCard(
+                          context,
+                          image:
+                              'assets/images/publier_bottom/Wavy_Bus-05_Single-03-[Converti] 1 (1).png',
+                          title: 'Créer un Reel',
+                          description:
+                              'Publiez une courte vidéo auprès de votre communauté.',
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -110,6 +124,11 @@ class PublierScreen extends StatelessWidget {
                 showCreatePost: true,
               ),
             ),
+          );
+        } else if (title == 'Créer un Reel') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const CreateReelScreen()),
           );
         }
       },

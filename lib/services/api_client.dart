@@ -77,6 +77,7 @@ class ApiClient {
     String endpoint, {
     Map<String, dynamic>? body,
     bool auth = false,
+    Duration? timeout,
   }) async {
     final token = auth ? await TokenStorage.getAccessToken() : null;
     final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
@@ -88,7 +89,7 @@ class ApiClient {
             headers: _headers(token: token),
             body: body != null ? jsonEncode(body) : null,
           )
-          .timeout(ApiConfig.connectTimeout);
+          .timeout(timeout ?? ApiConfig.connectTimeout);
 
       return _handleResponse(response);
     } on TimeoutException {
@@ -167,14 +168,15 @@ class ApiClient {
   Future<Map<String, dynamic>> authenticatedPost(
     String endpoint, {
     Map<String, dynamic>? body,
+    Duration? timeout,
   }) async {
     try {
-      return await post(endpoint, body: body, auth: true);
+      return await post(endpoint, body: body, auth: true, timeout: timeout);
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         final refreshed = await _tryRefreshToken();
         if (refreshed) {
-          return await post(endpoint, body: body, auth: true);
+          return await post(endpoint, body: body, auth: true, timeout: timeout);
         }
       }
       rethrow;
@@ -219,6 +221,7 @@ class ApiClient {
     required String fileField,
     String method = 'POST',
     Map<String, String>? fields,
+    Duration? timeout,
   }) async {
     try {
       final token = await TokenStorage.getAccessToken();
@@ -243,9 +246,9 @@ class ApiClient {
       request.files.add(multipartFile);
 
       final streamedResponse = await request.send().timeout(
-        ApiConfig.connectTimeout,
+        timeout ?? ApiConfig.connectTimeout,
       );
-      final response = await http.Response.fromStream(streamedResponse);
+      final response = await http.Response.fromStream(streamedResponse).timeout(timeout ?? ApiConfig.receiveTimeout);
 
       return _handleResponse(response);
     } on ApiException catch (e) {
@@ -265,9 +268,9 @@ class ApiClient {
           );
           request.files.add(multipartFile);
           final streamedResponse = await request.send().timeout(
-            ApiConfig.connectTimeout,
+            timeout ?? ApiConfig.connectTimeout,
           );
-          final response = await http.Response.fromStream(streamedResponse);
+          final response = await http.Response.fromStream(streamedResponse).timeout(timeout ?? ApiConfig.receiveTimeout);
           return _handleResponse(response);
         }
       }
@@ -366,13 +369,18 @@ class ApiClient {
   Future<Map<String, dynamic>> delete(
     String endpoint, {
     bool auth = false,
+    Map<String, dynamic>? body,
   }) async {
     final token = auth ? await TokenStorage.getAccessToken() : null;
     final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
 
     try {
       final response = await _client
-          .delete(url, headers: _headers(token: token))
+          .delete(
+            url,
+            headers: _headers(token: token),
+            body: body == null ? null : jsonEncode(body),
+          )
           .timeout(ApiConfig.connectTimeout);
 
       return _handleResponse(response);
@@ -395,14 +403,17 @@ class ApiClient {
     }
   }
 
-  Future<Map<String, dynamic>> authenticatedDelete(String endpoint) async {
+  Future<Map<String, dynamic>> authenticatedDelete(
+    String endpoint, {
+    Map<String, dynamic>? body,
+  }) async {
     try {
-      return await delete(endpoint, auth: true);
+      return await delete(endpoint, auth: true, body: body);
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
         final refreshed = await _tryRefreshToken();
         if (refreshed) {
-          return await delete(endpoint, auth: true);
+          return await delete(endpoint, auth: true, body: body);
         }
       }
       rethrow;

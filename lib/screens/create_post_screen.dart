@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:flutter/material.dart';
@@ -6,9 +7,11 @@ import 'package:http/http.dart' as http;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/token_storage.dart';
+import 'package:myreklam/services/video_compression_service.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
+import 'package:myreklam/widgets/social_video_preview.dart';
 
 class CreatePostScreen extends StatefulWidget {
   final String? postId;
@@ -31,10 +34,13 @@ class CreatePostScreen extends StatefulWidget {
 }
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
+  static const int _maxMediaFiles = 10;
+  static const int _maxMediaBytes = 50 * 1024 * 1024;
   final TextEditingController _postController = TextEditingController();
   String _selectedPrivacy = 'public';
   bool _isPosting = false;
   bool _isUploadingMedia = false;
+  bool _isCompressingVideo = false;
   final List<GalleryMedia> _selectedMediaFiles = [];
   List<Map<String, dynamic>> _existingMedia = [];
   final List<int> _deletedMediaIds = [];
@@ -108,20 +114,94 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   Future<void> _pickMedia() async {
-    if (_selectedMediaFiles.length >= 10) {
+    if (_selectedMediaFiles.length >= _maxMediaFiles) {
       _showSnack('Maximum 10 fichiers autorisés.', isError: true);
       return;
     }
+
+    final mediaKind = await showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choisir des photos'),
+              onTap: () => Navigator.pop(sheetContext, 'images'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.video_library_outlined),
+              title: const Text('Choisir une vidéo'),
+              subtitle: const Text('MP4, MOV ou AVI - 50 Mo maximum'),
+              onTap: () => Navigator.pop(sheetContext, 'video'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mediaKind == null) return;
+    if (mediaKind == 'video') {
+      await _pickVideo();
+      return;
+    }
+
     try {
       final files = await GalleryPicker.pickImagesFromGallery(
         allowMultiple: true,
       );
       if (files == null || files.isEmpty) return;
-      final remaining = 10 - _selectedMediaFiles.length;
+      final remaining = _maxMediaFiles - _selectedMediaFiles.length;
       final toAdd = files.take(remaining).toList();
       setState(() => _selectedMediaFiles.addAll(toAdd));
     } catch (_) {
       _showSnack('Impossible d\'accéder à la galerie.', isError: true);
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    try {
+      final file = await GalleryPicker.pickVideoFromGallery();
+      if (file == null) return;
+      final extension = file.extension?.toLowerCase() ?? '';
+      if (!['mp4', 'mov', 'avi', 'webm', 'mkv'].contains(extension)) {
+        _showSnack('Ce format vidéo n\'est pas pris en charge.', isError: true);
+        return;
+      }
+      if (mounted) setState(() => _isCompressingVideo = true);
+      final compressed = await VideoCompressionService.compress(
+        File(file.path),
+      );
+      if (compressed.compressedBytes > _maxMediaBytes) {
+        _showSnack(
+          'La vidéo reste supérieure à 50 Mo après compression.',
+          isError: true,
+        );
+        return;
+      }
+      final output = compressed.file;
+      final outputName = output.path.split(Platform.pathSeparator).last;
+      if (!mounted) return;
+      setState(
+        () => _selectedMediaFiles.add(
+          GalleryMedia(
+            path: output.path,
+            name: outputName,
+            extension: outputName.split('.').last.toLowerCase(),
+            size: compressed.compressedBytes,
+          ),
+        ),
+      );
+      if (compressed.wasCompressed) {
+        final before = compressed.originalBytes / (1024 * 1024);
+        final after = compressed.compressedBytes / (1024 * 1024);
+        _showSnack(
+          'Vidéo compressée : ${before.toStringAsFixed(1)} Mo → ${after.toStringAsFixed(1)} Mo.',
+        );
+      }
+    } catch (_) {
+      _showSnack('Impossible d\'accéder aux vidéos.', isError: true);
+    } finally {
+      if (mounted) setState(() => _isCompressingVideo = false);
     }
   }
 
@@ -438,7 +518,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: (_isPosting || _isUploadingMedia)
+                    onPressed:
+                        (_isPosting || _isUploadingMedia || _isCompressingVideo)
                         ? null
                         : _publishPost,
                     style: ElevatedButton.styleFrom(
@@ -518,6 +599,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               const SizedBox(height: 20),
 
               // Existing media previews (edit mode)
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _postController,
+                builder: (_, value, __) => SocialVideoPreview(text: value.text),
+              ),
               if (_existingMedia.isNotEmpty) ...[
                 _buildExistingMediaGrid(),
                 const SizedBox(height: 12),
@@ -530,12 +615,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
               // Action buttons
               _buildActionButton(
-                icon: Icons.image_outlined,
-                label: _selectedMediaFiles.isEmpty
+                icon: _isCompressingVideo
+                    ? Icons.compress
+                    : Icons.image_outlined,
+                label: _isCompressingVideo
+                    ? 'Compression de la vidéo…'
+                    : _selectedMediaFiles.isEmpty
                     ? 'Photos / Vidéos'
                     : 'Photos / Vidéos (${_selectedMediaFiles.length}/10)',
                 color: const Color(0xFF00BCD4),
-                onTap: _pickMedia,
+                onTap: _isCompressingVideo ? null : _pickMedia,
               ),
               const SizedBox(height: 40),
 
@@ -543,7 +632,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: (_isPosting || _isUploadingMedia)
+                  onPressed:
+                      (_isPosting || _isUploadingMedia || _isCompressingVideo)
                       ? null
                       : _publishPost,
                   style: ElevatedButton.styleFrom(
@@ -776,7 +866,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     required IconData icon,
     required String label,
     required Color color,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
   }) {
     return InkWell(
       onTap: onTap,

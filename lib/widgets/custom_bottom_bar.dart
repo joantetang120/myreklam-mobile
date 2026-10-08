@@ -45,7 +45,8 @@ class CustomBottomBar extends StatefulWidget {
   State<CustomBottomBar> createState() => _CustomBottomBarState();
 }
 
-class _CustomBottomBarState extends State<CustomBottomBar> {
+class _CustomBottomBarState extends State<CustomBottomBar>
+    with WidgetsBindingObserver {
   String? _avatarUrl;
   String? _displayName;
   int _unreadNotifCount = 0;
@@ -54,6 +55,7 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadAvatar();
     _loadUnreadCount();
     _loadChatUnreadCount();
@@ -71,6 +73,7 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     CustomBottomBar.avatarNotifier.removeListener(_onAvatarChanged);
     CustomBottomBar.refreshAvatarNotifier.removeListener(_onRefreshAvatar);
     CustomBottomBar.notificationCountNotifier.removeListener(
@@ -82,6 +85,14 @@ class _CustomBottomBarState extends State<CustomBottomBar> {
     CustomBottomBar.chatCountNotifier.removeListener(_onChatCountChanged);
     CustomBottomBar.refreshChatNotifier.removeListener(_onRefreshChatCount);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadChatUnreadCount();
+      _loadUnreadCount();
+    }
   }
 
   void _onNotificationCountChanged() {

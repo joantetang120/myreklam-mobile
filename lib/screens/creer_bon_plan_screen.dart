@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:myreklam/widgets/announcement_ai_panel.dart';
+import 'package:myreklam/utils/announcement_ai_values.dart';
 
 import 'package:myreklam/utils/gallery_picker.dart';
 import 'package:flutter/material.dart';
@@ -407,6 +409,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         'valid_from': _validFrom?.toIso8601String(),
         'valid_until': _validUntil?.toIso8601String(),
         'promo_code': _promoCodeController.text,
+        'shipping_option': _shippingOption,
+        'shipping_cost': _shippingCostController.text,
+        'nationwide': _touteFrance,
+        'in_store': _moyenRetraitMagasin,
+        'delivery': _moyenRetraitEnLigne,
+        'drive': _moyenRetraitDrive,
       };
 
       await prefs.setString('bon_plan_draft', jsonEncode(formData));
@@ -444,6 +452,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         _conditionsController.text = formData['conditions'] ?? '';
         _validityType = formData['validity_type'] ?? 'permanent';
         _promoCodeController.text = formData['promo_code'] ?? '';
+        _shippingOption = formData['shipping_option'] ?? 'free';
+        _shippingCostController.text = formData['shipping_cost'] ?? '';
+        _touteFrance = formData['nationwide'] == true;
+        _moyenRetraitMagasin = formData['in_store'] == true;
+        _moyenRetraitEnLigne = formData['delivery'] == true;
+        _moyenRetraitDrive = formData['drive'] == true;
 
         if (formData['valid_from'] != null) {
           _validFrom = DateTime.parse(formData['valid_from']);
@@ -1194,6 +1208,13 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   }
 
   String? _validateForm() {
+    if (!_isFreeType &&
+        AnnouncementAiValues.number(_prixFinalController.text) == null)
+      return 'Veuillez renseigner un prix final valide.';
+    if (_isOnlineOnly &&
+        _shippingOption == 'paid' &&
+        AnnouncementAiValues.number(_shippingCostController.text) == null)
+      return 'Veuillez renseigner les frais de livraison.';
     if (_selectedCategory == null) {
       return 'Veuillez sélectionner une catégorie.';
     }
@@ -1246,6 +1267,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   }
 
   Future<void> _submitBonPlan() async {
+    if (_isSubmitting) return;
     final validationError = _validateForm();
     if (validationError != null) {
       _showSnack(validationError, isError: true);
@@ -1282,6 +1304,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       'available_location_type': _selectedDisponibleLocation,
       'link': link.isEmpty ? null : link,
       'brand_website': brandWebsite.isEmpty ? null : brandWebsite,
+      'shipping_option': _isOnlineOnly ? _shippingOption : null,
+      'shipping_cost': _isOnlineOnly && _shippingOption == 'paid'
+          ? _parsePrice(_shippingCostController.text)
+          : null,
       'validity_type': _validityType,
       'valid_from': _validFrom?.toIso8601String(),
       'valid_until': _validUntil?.toIso8601String(),
@@ -2120,10 +2146,105 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
   }
 
   // ─── STEP 1: Informations ───
+  Map<String, List<String>> _announcementAiCategories() =>
+      _categorySubCategories;
+  Widget _buildAnnouncementAiPanel() => AnnouncementAiPanel(
+    linkController: _linkController,
+    kind: 'bonplans',
+    categories: () => _announcementAiCategories(),
+    onResult: (fields, images) {
+      setState(() {
+        _selectedLocation = announcementAiLocation(fields) ?? _selectedLocation;
+        if (fields['title'] != null)
+          _titleController.text = fields['title'].toString().substring(
+            0,
+            fields['title'].toString().length.clamp(0, 255),
+          );
+        if (fields['description'] != null)
+          _descriptionQuillController.document = Document()
+            ..insert(0, '${fields['description']}\n');
+        final nextCategory = AnnouncementAiValues.option(
+          fields['category'],
+          _categories,
+        );
+        if (nextCategory != null && nextCategory != _selectedCategory) {
+          _selectedSubCategory = null;
+        }
+        _selectedCategory = nextCategory ?? _selectedCategory;
+        _availableSubCategories =
+            _categorySubCategories[_selectedCategory] ?? [];
+        _selectedSubCategory =
+            AnnouncementAiValues.option(
+              fields['subCategory'],
+              _availableSubCategories,
+            ) ??
+            _selectedSubCategory;
+        _selectedType =
+            AnnouncementAiValues.option(fields['type'], _types) ??
+            _selectedType;
+        _selectedDisponibleLocation =
+            AnnouncementAiValues.option(
+              fields['availableLocationType'],
+              _locationOptions,
+            ) ??
+            _selectedDisponibleLocation;
+        for (final e in {
+          'availableAtName': _disponibleChezController,
+          'promoCode': _promoCodeController,
+          'brandWebsite': _siteWebController,
+          'conditions': _conditionsController,
+          'link': _linkController,
+        }.entries) {
+          if (fields[e.key] != null) e.value.text = fields[e.key].toString();
+        }
+        final currency = fields['currency']?.toString().toUpperCase();
+        if (currency == null || currency == 'EUR') {
+          for (final e in {
+            'priceBefore': _prixAvantReductionController,
+            'priceFinal': _prixFinalController,
+            'shippingCost': _shippingCostController,
+          }.entries) {
+            final n = AnnouncementAiValues.number(fields[e.key]);
+            if (n != null) e.value.text = n;
+          }
+        } else {
+          _showSnack(
+            'Prix en $currency : renseignez les montants en euros.',
+            isError: true,
+          );
+        }
+        _shippingOption =
+            AnnouncementAiValues.option(fields['shippingOption'], [
+              'free',
+              'paid',
+            ]) ??
+            _shippingOption;
+        _validFrom =
+            AnnouncementAiValues.date(fields['validFrom']) ?? _validFrom;
+        _validUntil =
+            AnnouncementAiValues.date(fields['validUntil']) ?? _validUntil;
+        if (fields.containsKey('validFrom') || fields.containsKey('validUntil'))
+          _validityType = 'dates';
+        if (fields['nationwide'] is bool) _touteFrance = fields['nationwide'];
+        if (fields['inStore'] is bool) _moyenRetraitMagasin = fields['inStore'];
+        if (fields['delivery'] is bool)
+          _moyenRetraitEnLigne = fields['delivery'];
+        if (fields['drive'] is bool) _moyenRetraitDrive = fields['drive'];
+        for (final image in images) {
+          if (!_selectedMediaFiles.any((m) => m.path == image.path))
+            _selectedMediaFiles.add(image);
+        }
+      });
+      _recalculateDiscount();
+      _saveFormProgress();
+    },
+  );
+
   Widget _buildStep1Informations() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildAnnouncementAiPanel(),
         _buildFormCard(
           icon: Icons.info_outline,
           title: 'Informations',

@@ -8,8 +8,12 @@ import 'package:myreklam/screens/demande_detail_screen.dart';
 import 'package:myreklam/screens/event_detail_screen.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/screens/pro_post_detail_screen.dart';
+import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
+import 'package:myreklam/screens/story_viewer_screen.dart';
+import 'package:myreklam/screens/reels_screen.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/story_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/post_content_card.dart';
 import 'package:myreklam/widgets/job_announcement_card.dart';
@@ -26,6 +30,8 @@ class DeepLinkService {
 
   final _appLinks = AppLinks();
   StreamSubscription<Uri>? _sub;
+  ({String type, String id})? _pendingNavigation;
+  Timer? _navigationRetry;
 
   /// Call once from main() after Firebase is ready.
   Future<void> init() async {
@@ -39,7 +45,10 @@ class DeepLinkService {
     if (initial != null) _handleUri(initial);
   }
 
-  void dispose() => _sub?.cancel();
+  void dispose() {
+    _sub?.cancel();
+    _navigationRetry?.cancel();
+  }
 
   void _handleUri(Uri uri) {
     debugPrint('DeepLinkService: received $uri');
@@ -70,6 +79,7 @@ class DeepLinkService {
       case 'deal':
         return 'bons-plans';
       case 'emplois':
+      case 'offres-emploi':
       case 'emploi':
       case 'job':
       case 'job-offer':
@@ -88,6 +98,17 @@ class DeepLinkService {
       case 'demande':
       case 'request':
         return 'demandes';
+      case 'publications':
+      case 'publication':
+      case 'posts':
+      case 'post':
+        return 'publications';
+      case 'stories':
+      case 'story':
+        return 'stories';
+      case 'reels':
+      case 'reel':
+        return 'reels';
       default:
         return type;
     }
@@ -95,7 +116,12 @@ class DeepLinkService {
 
   Future<void> _navigate(String type, String id) async {
     final ctx = navigatorKey.currentContext;
-    if (ctx == null) return;
+    if (ctx == null) {
+      _pendingNavigation = (type: type, id: id);
+      _schedulePendingNavigation();
+      return;
+    }
+    _pendingNavigation = null;
     try {
       switch (type) {
         case 'bons-plans':
@@ -113,12 +139,43 @@ class DeepLinkService {
         case 'demandes':
           await _openDemande(ctx, id);
           break;
+        case 'publications':
+          await _openPost(id);
+          break;
+        case 'stories':
+          await _openStory(id);
+          break;
+        case 'reels':
+          Navigator.push(
+            ctx,
+            MaterialPageRoute(builder: (_) => ReelsScreen(initialReelId: id)),
+          );
+          break;
         default:
           debugPrint('DeepLinkService: unknown type "$type"');
       }
     } catch (e) {
       debugPrint('DeepLinkService: error navigating to $type/$id: $e');
     }
+  }
+
+  void _schedulePendingNavigation() {
+    if (_navigationRetry?.isActive == true) return;
+    var attempts = 0;
+    _navigationRetry = Timer.periodic(const Duration(milliseconds: 300), (
+      timer,
+    ) {
+      attempts++;
+      final pending = _pendingNavigation;
+      if (pending == null || attempts >= 40) {
+        timer.cancel();
+        return;
+      }
+      if (navigatorKey.currentContext != null) {
+        timer.cancel();
+        _navigate(pending.type, pending.id);
+      }
+    });
   }
 
   // ─── helpers ──────────────────────────────────────────────────────────────
@@ -181,8 +238,10 @@ class DeepLinkService {
           color: Colors.grey,
         ),
     ];
+    final currentContext = navigatorKey.currentContext;
+    if (currentContext == null || !currentContext.mounted) return;
     Navigator.push(
-      ctx,
+      currentContext,
       MaterialPageRoute(
         builder: (_) => ProPostDetailScreen(
           images: images,
@@ -230,6 +289,106 @@ class DeepLinkService {
         ),
       ),
     );
+  }
+
+  Future<void> _openPost(String id) async {
+    final response = await ApiClient().authenticatedGet('/posts/$id');
+    final data = response['data'] as Map<String, dynamic>? ?? response;
+    final user = data['user'] as Map<String, dynamic>? ?? const {};
+    final media = data['media_files'] as List? ?? data['media'] as List?;
+    final images = _extractImages(media);
+    final displayName =
+        user['display_name']?.toString() ??
+        user['name']?.toString() ??
+        user['pseudo']?.toString() ??
+        'Utilisateur';
+
+    final currentContext = navigatorKey.currentContext;
+    if (currentContext == null || !currentContext.mounted) return;
+    Navigator.push(
+      currentContext,
+      MaterialPageRoute(
+        builder: (_) => PostDetailFullScreen(
+          author: {
+            'displayName': displayName,
+            'accountType': user['account_type']?.toString() ?? 'particulier',
+            'avatar':
+                user['avatar_url']?.toString() ??
+                user['avatar']?.toString() ??
+                '',
+          },
+          content: _stripHtml(
+            data['content']?.toString() ??
+                data['description']?.toString() ??
+                '',
+          ),
+          timeAgo: _timeAgo(data['created_at']?.toString()),
+          mediaUrls: images,
+          reactionBar: const SizedBox.shrink(),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openStory(String id) async {
+    final storyId = int.tryParse(id);
+    if (storyId == null) return;
+
+    final groups = await StoryService().getFeed();
+    for (final group in groups) {
+      final initialIndex = group.stories.indexWhere(
+        (story) => story.id == storyId,
+      );
+      if (initialIndex < 0) continue;
+
+      final stories = group.stories.map((story) {
+        final diff = DateTime.now().difference(story.timestamp);
+        final time = diff.inMinutes < 1
+            ? 'À l’instant'
+            : diff.inMinutes < 60
+            ? 'il y a ${diff.inMinutes} min'
+            : 'il y a ${diff.inHours}h';
+        return <String, dynamic>{
+          'image': story.mediaUrl ?? '',
+          'media_type': story.mediaType ?? 'image',
+          'text': story.caption,
+          'time': time,
+          'id': story.id,
+          'views_count': story.viewsCount,
+          'likes_count': story.likesCount,
+          'is_liked': story.isLiked,
+          'overlays': story.overlays,
+          'overlay_text': story.overlayText,
+          'overlay_color': story.overlayColor,
+          'overlay_style': story.overlayStyle,
+          'overlay_x': story.overlayX,
+          'overlay_y': story.overlayY,
+        };
+      }).toList();
+      final currentContext = navigatorKey.currentContext;
+      if (currentContext == null || !currentContext.mounted) return;
+      Navigator.push(
+        currentContext,
+        MaterialPageRoute(
+          builder: (_) => StoryViewerScreen(
+            name: group.userName,
+            avatar: group.userAvatar ?? '',
+            stories: stories,
+            initialIndex: initialIndex,
+            isOwnStory: group.isOwn,
+            ownerId: group.userId,
+          ),
+        ),
+      );
+      return;
+    }
+
+    final currentContext = navigatorKey.currentContext;
+    if (currentContext != null && currentContext.mounted) {
+      ScaffoldMessenger.of(currentContext).showSnackBar(
+        const SnackBar(content: Text('Cette Story n’est plus disponible.')),
+      );
+    }
   }
 
   Future<void> _openJobOffer(BuildContext ctx, String id) async {

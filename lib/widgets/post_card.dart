@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/social_video_preview.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
 class PostCard extends StatelessWidget {
@@ -46,6 +47,7 @@ class PostCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
+          SocialVideoPreview(text: postText),
           Row(
             children: [
               ReklamAvatar(

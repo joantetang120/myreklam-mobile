@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-// Bouton partager masqué
-// import 'package:myreklam/services/share_service.dart';
+import 'package:myreklam/widgets/social_video_preview.dart';
+import 'package:myreklam/services/share_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/constants/demande_natures.dart';
 import 'package:myreklam/constants/demande_types.dart';
@@ -32,7 +32,9 @@ import 'package:myreklam/screens/evenements_screen.dart';
 import 'package:myreklam/screens/demandes_screen.dart';
 import 'package:myreklam/screens/categories_screen.dart';
 import 'package:myreklam/screens/add_story_screen.dart';
+import 'package:myreklam/screens/reels_screen.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
+import 'package:myreklam/widgets/feed_section_header.dart';
 import 'package:myreklam/models/story_model.dart';
 import 'package:myreklam/screens/my_stories_screen.dart';
 import 'package:myreklam/services/story_store.dart';
@@ -857,6 +859,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               ),
             ],
             // Quote repost: show repost_content then embedded original post
+            SocialVideoPreview(text: widget.content),
             if (widget.isQuoteRepost) ...[
               if (mainContent.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -1973,7 +1976,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader("Fil d'actualités"),
+        FeedSectionHeader(
+          onOpenReels: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ReelsScreen()),
+          ),
+        ),
         const SizedBox(height: 12),
         if (_isLoadingFeed)
           _buildStatusPlaceholder(
@@ -4657,8 +4665,26 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ),
             ),
           ],
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: () => ShareService.shareEntity(
+              'posts',
+              entityId,
+              title: postData?['content']?.toString(),
+              mediaUrl: _firstPostVideoUrl(postData),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Text(
+                  'Partager',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
         ],
-        // Bouton partager masqué
         // For bon plans: show author avatar and name on the left
         if (isBonPlan && authorData != null) ...[
           const Spacer(),
@@ -4688,6 +4714,28 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   // ── Real comments sheet ─────────────────────────────────────────
+
+  String? _firstPostVideoUrl(Map<String, dynamic>? postData) {
+    if (postData == null) return null;
+    for (final key in ['media', 'media_files']) {
+      final collection = postData[key];
+      if (collection is! List) continue;
+      for (final item in collection.whereType<Map>()) {
+        final rawUrl =
+            item['url']?.toString() ??
+            item['file_path']?.toString() ??
+            item['path']?.toString();
+        final type =
+            item['file_type']?.toString().toLowerCase() ??
+            item['type']?.toString().toLowerCase() ??
+            '';
+        if (rawUrl != null && (type.contains('video') || _isVideoUrl(rawUrl))) {
+          return ApiConfig.resolveMediaUrl(rawUrl);
+        }
+      }
+    }
+    return null;
+  }
 
   Future<void> _showEntityCommentsSheet(String apiSlug, String entityId) async {
     if (!_requireAuth('voir et ecrire des commentaires')) return;

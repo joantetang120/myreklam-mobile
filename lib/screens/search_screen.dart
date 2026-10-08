@@ -369,7 +369,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       Icon(Icons.bookmark_border, size: 20),
                       SizedBox(width: 8),
                       Text(
-                        'Sauvegarder cette recherche',
+                        'Sauvegarder et recevoir des alertes',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,

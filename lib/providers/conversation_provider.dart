@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:myreklam/services/api_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:myreklam/models/chat_message.dart';
 import 'package:myreklam/services/chat_service.dart';
@@ -19,6 +21,24 @@ class ConversationProvider extends ChangeNotifier {
   }
 
   bool get isLoading => _isLoading;
+
+  Future<void> sendImage(int conversationId, File image) async {
+    _currentUserId ??= await _chatService.getCurrentUserId();
+    if (_currentUserId == null) throw StateError('User not authenticated');
+    final response = await ApiClient().authenticatedMultipart(
+      '/conversations/$conversationId/messages',
+      file: image,
+      fileField: 'image',
+      fields: {'text': 'Photo'},
+    );
+    final message = ChatMessage.fromJson(
+      Map<String, dynamic>.from(response['data'] as Map),
+      _currentUserId!,
+    );
+    await _db.saveMessage(message, _currentUserId!);
+    _addMessageToList(conversationId, message);
+    notifyListeners();
+  }
 
   // Charger les messages d'une conversation
   Future<void> loadMessages(int conversationId) async {

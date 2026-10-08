@@ -64,14 +64,17 @@ class GalleryPicker {
     try {
       final file = await _picker.pickVideo(source: ImageSource.gallery);
       if (file == null) return null;
-      return await _toGalleryMedia(file);
+      return await _toGalleryMedia(file, loadBytes: false);
     } catch (e) {
       debugPrint('GalleryPicker error: $e');
       return null;
     }
   }
 
-  static Future<GalleryMedia> _toGalleryMedia(XFile xfile) async {
+  static Future<GalleryMedia> _toGalleryMedia(
+    XFile xfile, {
+    bool loadBytes = true,
+  }) async {
     final path = xfile.path;
     final name = path.split(Platform.pathSeparator).last;
     final ext = name.contains('.') ? name.split('.').last.toLowerCase() : null;
@@ -81,9 +84,11 @@ class GalleryPicker {
       final file = File(path);
       fileSize = await file.length();
     } catch (_) {}
-    try {
-      bytes = await xfile.readAsBytes();
-    } catch (_) {}
+    if (loadBytes) {
+      try {
+        bytes = await xfile.readAsBytes();
+      } catch (_) {}
+    }
     return GalleryMedia(
       path: path,
       name: name,

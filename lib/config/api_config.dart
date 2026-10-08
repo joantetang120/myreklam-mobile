@@ -4,7 +4,12 @@ class ApiConfig {
   // ============================================================
   // 🔧 CHANGE THIS URL TO POINT TO YOUR BACKEND SERVER
   // ============================================================
-  static const String baseUrl = 'https://myreklam-admin.maisoft-group.com/api';
+  static const String baseUrl = String.fromEnvironment(
+    'MYREKLAM_API_BASE_URL',
+    defaultValue: 'https://myadmin.myreklam.fr/api',
+  );
+
+  static String get backendOrigin => Uri.parse(baseUrl).origin;
   // static const String baseUrl = 'http://192.168.1.237:8000/api';
   // Examples:
   //   Local Android emulator:  'http://10.0.2.2:8000/api'

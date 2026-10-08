@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:myreklam/widgets/announcement_ai_panel.dart';
+import 'package:myreklam/utils/announcement_ai_values.dart';
 import 'dart:io';
 
 import 'package:myreklam/utils/gallery_picker.dart';
@@ -810,6 +812,15 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           return 'Précisez si l\'événement est gratuit ou payant.';
         }
         if (_selectedPrixEntree == 'Payant') {
+          if (_selectedPricingMode == 'Prix unique' &&
+              AnnouncementAiValues.number(_prixEntreeController.text) == null)
+            return 'Le prix doit être un nombre positif.';
+          if (_selectedPricingMode == 'Catégories' &&
+              _priceCategories.any(
+                (row) =>
+                    AnnouncementAiValues.number(row['price']!.text) == null,
+              ))
+            return 'Les prix des catégories doivent être des nombres positifs.';
           if (_selectedPricingMode == null) {
             return 'Veuillez choisir un type de tarification.';
           }
@@ -902,7 +913,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     return '$hour:$minute';
   }
 
-  void _showSuccessDialog() {
+  void _showSuccessDialog({bool mediaSuccess = true}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -940,9 +951,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                _isEditMode
+                !mediaSuccess
+                    ? 'Événement enregistré, mais les photos n’ont pas été envoyées. Ajoutez-les en modifiant cette annonce ; ne la republiez pas.'
+                    : _isEditMode
                     ? 'Votre événement a été mis à jour avec succès'
-                    : 'Vous pouvez consulter cela au niveau de votre espace ',
+                    : 'Vous pouvez consulter cela au niveau de votre espace.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -1052,6 +1065,18 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   }
 
   Future<void> _submitEvent() async {
+    if (_isSubmitting) return;
+    final previousStep = _currentStep;
+    for (var step = 0; step < _totalSteps; step++) {
+      _currentStep = step;
+      final error = _validateCurrentStep();
+      if (error != null) {
+        setState(() => _currentStep = step);
+        _showSnack(error, isError: true);
+        return;
+      }
+    }
+    _currentStep = previousStep;
     setState(() {
       _isSubmitting = true;
       _submitError = null;
@@ -1081,14 +1106,19 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             ? widget.eventId
             : (response['data'] as Map<String, dynamic>?)?['id']?.toString();
 
+        var mediaSuccess = true;
         if (eventId != null && _selectedMediaFiles.isNotEmpty) {
-          await _uploadMedia(eventId);
+          try {
+            await _uploadMedia(eventId);
+          } catch (_) {
+            mediaSuccess = false;
+          }
         }
 
         if (!_isEditMode) await _clearSavedProgress();
         if (mounted) {
           setState(() => _isSubmitting = false);
-          _showSuccessDialog();
+          _showSuccessDialog(mediaSuccess: mediaSuccess);
         }
 
         // Award My's for creating an event (only on create, not edit)
@@ -1884,6 +1914,138 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
   }
 
   // ─── STEP 1: Informations ───
+  Map<String, List<String>> _announcementAiCategories() => {
+    for (final c in _categoryOptions)
+      c['label']!: _getSubCategoriesForCode(
+        c['code'],
+      ).map((s) => s['label']!).toList(),
+  };
+  Widget _buildAnnouncementAiPanel() => AnnouncementAiPanel(
+    linkController: _linkController,
+    kind: 'events',
+    categories: () => _announcementAiCategories(),
+    onResult: (fields, images) {
+      setState(() {
+        _selectedLocation = announcementAiLocation(fields) ?? _selectedLocation;
+        if (fields['title'] != null)
+          _titleController.text = fields['title'].toString().substring(
+            0,
+            fields['title'].toString().length.clamp(0, 255),
+          );
+        if (fields['description'] != null)
+          _descriptionQuillController.document = Document()
+            ..insert(0, '${fields['description']}\n');
+        final category = AnnouncementAiValues.category(
+          fields['category'],
+          _categoryOptions,
+        );
+        if (category != null) {
+          _selectedCategory = category['code']?.toString();
+          _subCategoryOptions = _getSubCategoriesForCode(_selectedCategory);
+          _selectedSubCategory = null;
+        }
+        final sub = AnnouncementAiValues.category(
+          fields['subCategory'],
+          _subCategoryOptions,
+        );
+        if (sub != null) _selectedSubCategory = sub['code']?.toString();
+        _selectedType =
+            AnnouncementAiValues.option(fields['formatType'], _types) ??
+            _selectedType;
+        _selectedPrixEntree =
+            ({'gratuit': 'Gratuit', 'payant': 'Payant'}[fields['priceType']]) ??
+            _selectedPrixEntree;
+        _selectedPricingMode =
+            ({
+              'unique': 'Prix unique',
+              'categories': 'Catégories',
+            }[fields['pricingMode']]) ??
+            _selectedPricingMode;
+        final amount = AnnouncementAiValues.number(fields['priceAmount']);
+        if (amount != null) {
+          _prixEntreeController.text = amount;
+          _selectedPricingMode ??= 'Prix unique';
+        }
+        if (fields['priceCategories'] is List) {
+          final rows = (fields['priceCategories'] as List)
+              .whereType<Map>()
+              .where(
+                (r) =>
+                    r['name'] is String &&
+                    AnnouncementAiValues.number(r['price']) != null,
+              )
+              .toList();
+          if (rows.isNotEmpty) {
+            for (final row in _priceCategories) {
+              row['name']!.dispose();
+              row['price']!.dispose();
+            }
+            _priceCategories = rows
+                .map(
+                  (r) => {
+                    'name': TextEditingController(text: r['name']),
+                    'price': TextEditingController(
+                      text: AnnouncementAiValues.number(r['price']),
+                    ),
+                  },
+                )
+                .toList();
+            _selectedPricingMode = 'Catégories';
+          }
+        }
+        _selectedModeReservation =
+            ({
+              'sans_inscription': 'Sans inscription',
+              'inscription': 'Inscription requise',
+              'achat_billet': 'Achat de billet obligatoire',
+            }[fields['reservationMode']]) ??
+            _selectedModeReservation;
+        _selectedTimeEvenement =
+            ({
+              'one_day': 'Sur une journée',
+              'multi_day': 'Sur plusieurs jours',
+              'permanent': 'Permanent',
+            }[fields['durationType']]) ??
+            _selectedTimeEvenement;
+        selectedDate =
+            AnnouncementAiValues.date(fields['eventDate']) ?? selectedDate;
+        startDate = AnnouncementAiValues.date(fields['startDate']) ?? startDate;
+        endDate = AnnouncementAiValues.date(fields['endDate']) ?? endDate;
+        _startTime =
+            AnnouncementAiValues.time(fields['startTime']) ?? _startTime;
+        _endTime = AnnouncementAiValues.time(fields['endTime']) ?? _endTime;
+        if (fields['daysOfWeek'] is List)
+          _selectedDaysOfWeek = AnnouncementAiValues.list(
+            fields['daysOfWeek'],
+            [
+              'monday',
+              'tuesday',
+              'wednesday',
+              'thursday',
+              'friday',
+              'saturday',
+              'sunday',
+            ],
+          );
+        if (fields['organizerName'] != null) {
+          _organizerNameController.text = fields['organizerName'].toString();
+          selectedOptionOrg = 'Non';
+        }
+        for (final e in {
+          'websiteUrl': _siteWebController,
+          'link': _linkController,
+        }.entries) {
+          if (fields[e.key] != null) e.value.text = fields[e.key].toString();
+        }
+        for (final image in images) {
+          if (!_selectedMediaFiles.any((m) => m.path == image.path))
+            _selectedMediaFiles.add(image);
+        }
+      });
+      _saveFormProgress();
+    },
+  );
+
   Widget _buildStep1Categories() {
     final categoryItems = _categoryOptions
         .map(
@@ -1925,6 +2087,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildAnnouncementAiPanel(),
         _buildFormCard(
           icon: Icons.info_outline,
           title: 'Catégorie',

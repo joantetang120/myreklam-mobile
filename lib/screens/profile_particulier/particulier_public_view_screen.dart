@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/social_video_preview.dart';
 import 'package:myreklam/constants/demande_natures.dart';
 import 'package:myreklam/constants/demande_types.dart';
 // Bouton partager masqué
@@ -428,6 +429,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               ),
             ],
             // Media images (only for non-quote posts)
+            SocialVideoPreview(text: widget.content),
             if (!widget.isQuoteRepost && widget.mediaUrls.isNotEmpty) ...[
               const SizedBox(height: 12),
               _buildMediaSection(widget.mediaUrls),
@@ -1594,50 +1596,6 @@ class _ParticulierPublicViewScreenState
     Navigator.pop(context);
   }
 
-  void _showReportConfirmation() {
-    final profile = _profileResponse?['profile'];
-    final displayName = (profile is Map)
-        ? (profile['company_name']?.toString() ?? 'ce compte')
-        : 'ce compte';
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Signaler le compte'),
-        content: Text('Voulez-vous vraiment signaler $displayName ?'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Implement report API call
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Signalement envoyé'),
-                  backgroundColor: Color(0xFF3AAE5E),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Signaler',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _showReportReasonDialog() async {
     final targetId =
         widget.userId ?? _profileResponse?['user']?['id']?.toString();
@@ -1718,7 +1676,7 @@ class _ParticulierPublicViewScreenState
 
                         try {
                           await _profileService.reportUser(targetId, reason);
-                          if (!mounted) return;
+                          if (!mounted || !dialogContext.mounted) return;
                           Navigator.pop(dialogContext);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -1727,7 +1685,7 @@ class _ParticulierPublicViewScreenState
                             ),
                           );
                         } catch (e) {
-                          if (!mounted) return;
+                          if (!mounted || !dialogContext.mounted) return;
                           setDialogState(() {
                             isSubmitting = false;
                             reasonError = e is ApiException

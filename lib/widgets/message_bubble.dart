@@ -1,4 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/config/api_config.dart';
+import 'package:myreklam/services/token_storage.dart';
+
+class _PrivateChatImage extends StatefulWidget {
+  final String path;
+  const _PrivateChatImage({required this.path});
+  @override
+  State<_PrivateChatImage> createState() => _PrivateChatImageState();
+}
+
+class _PrivateChatImageState extends State<_PrivateChatImage> {
+  late final Future<String?> _token = TokenStorage.getAccessToken();
+  @override
+  Widget build(BuildContext context) {
+    // A bearer token must never be sent to a URL supplied by another user.
+    if (!RegExp(
+      r'^/api/conversations/\d+/images/[a-fA-F0-9-]{36}\.(jpg|jpeg|png|webp)$',
+    ).hasMatch(widget.path))
+      return const Text('Photo indisponible');
+    return FutureBuilder<String?>(
+      future: _token,
+      builder: (_, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done)
+          return const SizedBox(
+            height: 80,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        if (snapshot.data == null)
+          return const Text('Reconnectez-vous pour voir la photo.');
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Image.network(
+            '${ApiConfig.backendOrigin}${widget.path}',
+            headers: {'Authorization': 'Bearer ${snapshot.data}'},
+            width: 220,
+            height: 220,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) =>
+                const Text('Photo indisponible. Rouvrez la conversation.'),
+          ),
+        );
+      },
+    );
+  }
+}
 
 class MessageBubble extends StatelessWidget {
   final String message;
@@ -95,6 +140,10 @@ class MessageBubble extends StatelessWidget {
                         ],
                       ),
                     ] else ...[
+                      if (attachments?['type'] == 'image')
+                        _PrivateChatImage(
+                          path: attachments?['image_url']?.toString() ?? '',
+                        ),
                       if (attachments != null &&
                           attachments!['type'] == 'story_reply')
                         _StoryReplyPreview(

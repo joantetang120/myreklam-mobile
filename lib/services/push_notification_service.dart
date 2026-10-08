@@ -7,6 +7,10 @@ import 'package:myreklam/firebase_options.dart';
 import 'package:myreklam/main.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
+import 'package:myreklam/screens/notification_preferences_screen.dart';
+import 'package:myreklam/screens/pro_subscription_screen.dart';
+import 'package:myreklam/screens/settings_screen.dart';
+import 'package:myreklam/screens/reels_screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/services/api_client.dart';
@@ -34,6 +38,8 @@ class PushNotificationService {
   static const _channelName = 'Myreklam Notifications';
 
   String? _fcmToken;
+  Map<String, dynamic>? _pendingNavigationData;
+  Timer? _navigationRetry;
 
   /// Initialize push notifications (Firebase must already be initialized)
   Future<void> init() async {
@@ -108,7 +114,7 @@ class PushNotificationService {
 
   /// Request notification permission
   Future<void> _requestPermission() async {
-    if (Platform.isIOS) {
+    {
       final settings = await _messaging.requestPermission(
         alert: true,
         badge: true,
@@ -156,7 +162,7 @@ class PushNotificationService {
     try {
       await ApiClient().authenticatedPost(
         '/push-tokens',
-        body: {'token': token},
+        body: {'token': token, 'platform': Platform.isIOS ? 'ios' : 'android'},
       );
       debugPrint('🔔 FCM token registered with backend');
     } catch (e) {
@@ -217,7 +223,10 @@ class PushNotificationService {
   Future<void> unregisterToken() async {
     if (_fcmToken == null) return;
     try {
-      await ApiClient().authenticatedDelete('/push-tokens?token=$_fcmToken');
+      await ApiClient().authenticatedDelete(
+        '/push-tokens',
+        body: {'token': _fcmToken},
+      );
       debugPrint('🔔 FCM token unregistered from backend');
     } catch (e) {
       debugPrint('❌ Failed to unregister FCM token: $e');
@@ -229,6 +238,10 @@ class PushNotificationService {
     debugPrint('🔔 Foreground message: ${message.notification?.title}');
 
     final notification = message.notification;
+    if (_isChatNotification(message.data)) {
+      _incrementChatCount();
+      refreshChatCount();
+    }
     if (notification == null) return;
 
     // Increment notification badge count
@@ -260,6 +273,9 @@ class PushNotificationService {
 
   /// Handle message when app is opened from notification
   void _handleMessageOpenedApp(RemoteMessage message) {
+    if (_isChatNotification(message.data)) {
+      refreshChatCount();
+    }
     debugPrint('🔔 Message opened app: ${message.notification?.title}');
     _navigateFromData(message.data);
   }
@@ -281,6 +297,11 @@ class PushNotificationService {
     _navigateFromData(_decodePayload(payload));
   }
 
+  /// Reuses the exact same routing for an item opened from the in-app center.
+  void openNotificationData(Map<String, dynamic> data) {
+    _navigateFromData(data);
+  }
+
   /// Navigate based on notification data.
   ///
   /// Supported payload schemas (keys are tolerant of common aliases):
@@ -292,22 +313,37 @@ class PushNotificationService {
   void _navigateFromData(Map<String, dynamic> data) {
     final context = navigatorKey.currentContext;
     if (context == null) {
-      debugPrint('❌ Context not available for navigation');
+      _pendingNavigationData = Map<String, dynamic>.from(data);
+      _schedulePendingNavigation();
       return;
     }
+    _pendingNavigationData = null;
 
-    final type = (data['type'] ?? '').toString();
+    final type = (data['type'] ?? '').toString().toLowerCase();
     final referenceType = (data['reference_type'] ?? data['ref_type'] ?? '')
         .toString();
     final referenceId =
         (data['reference_id'] ?? data['ref_id'] ?? data['id'] ?? '').toString();
+
+    final notificationId = data['notification_id']?.toString();
+    if (notificationId != null && notificationId.isNotEmpty) {
+      unawaited(_markNotificationAsRead(notificationId));
+    }
 
     debugPrint(
       '🔔 Navigating from notification: type=$type, ref=$referenceType, id=$referenceId',
     );
 
     // 1. Chat message → open the conversation.
-    if (type == 'chat' || type == 'new_message') {
+    if ({
+      'chat',
+      'new_message',
+      'message_received',
+      'direct_message_received',
+      'message_request_received',
+      'conversation_mentioned',
+      'unread_messages_reminder',
+    }.contains(type)) {
       final conversationId =
           (data['conversation_id'] ?? data['conversationId'] ?? referenceId)
               .toString();
@@ -330,7 +366,7 @@ class PushNotificationService {
     }
 
     // 2. New follower → open the follower's public profile.
-    if (type == 'new_follower') {
+    if (type == 'new_follower' || type == 'follow_request_received') {
       final followerId =
           (data['follower_id'] ?? data['follower'] ?? referenceId).toString();
       if (followerId.isNotEmpty) {
@@ -347,8 +383,115 @@ class PushNotificationService {
       return;
     }
 
+    final target =
+        (data['link'] ?? data['target_url'] ?? data['deep_link'] ?? '')
+            .toString();
+    if (_openTargetLink(context, target)) return;
+
     // 4. Anything else → the in-app notifications list.
     _openNotificationsScreen(context);
+  }
+
+  bool _openTargetLink(BuildContext context, String target) {
+    if (target.isEmpty) return false;
+
+    final uri = Uri.tryParse(target);
+    if (uri == null) return false;
+    final segments = uri.pathSegments.where((part) => part.isNotEmpty).toList();
+    if (segments.isEmpty) return false;
+
+    final entityRoutes = <String>{
+      'bons-plans',
+      'offres-emploi',
+      'emplois',
+      'formations',
+      'evenements',
+      'demandes',
+      'publications',
+      'stories',
+      'reels',
+    };
+    if (segments.length >= 2 && entityRoutes.contains(segments.first)) {
+      unawaited(
+        DeepLinkService.instance.openEntity(segments.first, segments[1]),
+      );
+      return true;
+    }
+
+    if (segments.first == 'reels') {
+      final reelId =
+          uri.queryParameters['reel'] ??
+          (segments.length >= 2 ? segments[1] : null);
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ReelsScreen(initialReelId: reelId)),
+      );
+      return true;
+    }
+
+    if (segments.first == 'profil' && segments.length >= 2) {
+      unawaited(_openFollowerProfile(context, segments[1]));
+      return true;
+    }
+
+    if (segments.contains('abonnement')) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ProSubscriptionScreen()),
+      );
+      return true;
+    }
+
+    if (segments.contains('notifications') && segments.contains('parametres')) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const NotificationPreferencesScreen(),
+        ),
+      );
+      return true;
+    }
+
+    if (segments.contains('parametres')) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+      );
+      return true;
+    }
+
+    return false;
+  }
+
+  void _schedulePendingNavigation() {
+    if (_navigationRetry?.isActive == true) return;
+    var attempts = 0;
+    _navigationRetry = Timer.periodic(const Duration(milliseconds: 300), (
+      timer,
+    ) {
+      attempts++;
+      final pending = _pendingNavigationData;
+      if (pending == null || attempts >= 40) {
+        timer.cancel();
+        return;
+      }
+      if (navigatorKey.currentContext != null) {
+        timer.cancel();
+        _navigateFromData(pending);
+      }
+    });
+  }
+
+  Future<void> _markNotificationAsRead(String notificationId) async {
+    try {
+      await ApiClient().authenticatedPut(
+        '/notifications/$notificationId/read',
+        body: const {},
+      );
+      refreshNotificationCount();
+    } catch (e) {
+      debugPrint('Unable to mark notification as read: $e');
+    }
   }
 
   void _openNotificationsScreen(BuildContext context) {
@@ -409,6 +552,38 @@ class PushNotificationService {
   void _incrementNotificationCount() {
     final currentCount = CustomBottomBar.notificationCountNotifier.value;
     CustomBottomBar.notificationCountNotifier.value = currentCount + 1;
+  }
+
+  bool _isChatNotification(Map<String, dynamic> data) {
+    final type = (data['type'] ?? data['event_key'] ?? '')
+        .toString()
+        .toLowerCase();
+    final referenceType = (data['reference_type'] ?? data['ref_type'] ?? '')
+        .toString()
+        .toLowerCase();
+
+    return {
+          'chat',
+          'new_message',
+          'message_received',
+          'direct_message_received',
+          'message_request_received',
+          'conversation_mentioned',
+          'unread_messages_reminder',
+        }.contains(type) ||
+        {'chat', 'conversation', 'message'}.contains(referenceType) ||
+        data.containsKey('conversation_id') ||
+        data.containsKey('conversationId');
+  }
+
+  void _incrementChatCount() {
+    CustomBottomBar.chatCountNotifier.value =
+        CustomBottomBar.chatCountNotifier.value + 1;
+  }
+
+  void refreshChatCount() {
+    CustomBottomBar.refreshChatNotifier.value =
+        !CustomBottomBar.refreshChatNotifier.value;
   }
 
   /// Refresh notification count from backend (call when app comes to foreground)

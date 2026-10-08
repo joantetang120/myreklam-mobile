@@ -40,7 +40,7 @@ void main() {
     test('resolves generic relative backend media paths', () {
       expect(
         ApiConfig.resolveMediaUrl('img/company.png'),
-        'https://myreklam-admin.maisoft-group.com/img/company.png',
+        '${Uri.parse(ApiConfig.baseUrl).origin}/img/company.png',
       );
     });
   });

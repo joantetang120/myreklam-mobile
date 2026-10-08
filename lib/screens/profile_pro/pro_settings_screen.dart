@@ -9,6 +9,7 @@ import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/biometric_service.dart';
 import 'package:myreklam/screens/manage_users_screen.dart';
 import 'package:myreklam/screens/managed_accounts_screen.dart';
+import 'package:myreklam/screens/notification_preferences_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
 
 class ProSettingsScreen extends StatefulWidget {
@@ -164,6 +165,13 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
               iconBgColor: const Color(0xFFEF8A40).withValues(alpha: 0.1),
               title: 'Réseaux sociaux',
               subtitle: 'Gérez vos préférences de notifications',
+              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const NotificationPreferencesScreen(),
+                ),
+              ),
               child: Column(
                 children: [
                   // Header row
@@ -673,7 +681,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
               ),
             ),
           ),
-          if (child != null) ...[
+          if (child != null && onTap == null) ...[
             Divider(height: 1, color: Colors.grey[300]),
             child,
           ],

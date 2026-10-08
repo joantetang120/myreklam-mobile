@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:myreklam/widgets/announcement_ai_panel.dart';
+import 'package:myreklam/utils/announcement_ai_values.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -777,6 +779,23 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   }
 
   String? _validateStep3() {
+    if (_selectedTrainingType == null)
+      return 'Veuillez sélectionner un type de formation.';
+    if (_selectedCategoryName == null || _selectedSubCategoryName == null)
+      return 'Veuillez sélectionner la catégorie et la sous-catégorie.';
+    if (_selectedPriceType == null)
+      return 'Veuillez sélectionner le type de tarif.';
+    if (_priceController.text.trim().isNotEmpty &&
+        AnnouncementAiValues.number(_priceController.text) == null)
+      return 'Le prix doit être un nombre positif.';
+    if (_durationController.text.trim().isNotEmpty &&
+        (int.tryParse(_durationController.text.trim()) ?? 0) < 1)
+      return 'La durée doit être un nombre entier supérieur à zéro.';
+    if (!_dateToDefine &&
+        _startDate != null &&
+        _endDate != null &&
+        _endDate!.isBefore(_startDate!))
+      return 'La date de fin doit être après la date de début.';
     if (_titleController.text.trim().length < 5) {
       return 'Le titre doit contenir au moins 5 caractères.';
     }
@@ -799,6 +818,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   }
 
   Future<void> _submitTraining() async {
+    if (_isSubmitting) return;
     final validationError = _validateStep3();
     if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -841,7 +861,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       }
 
       if (_priceController.text.trim().isNotEmpty) {
-        trainingData['price'] = double.tryParse(_priceController.text.trim());
+        trainingData['price'] = double.tryParse(
+          _priceController.text.trim().replaceAll(',', '.'),
+        );
       }
 
       if (_selectedPublicType != null) {
@@ -904,6 +926,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       }
 
       if (response['success'] == true) {
+        var attachmentsComplete = true;
         final trainingId = _isEditMode
             ? widget.trainingId
             : (response['data']?['id'])?.toString();
@@ -919,6 +942,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               }
             } catch (e) {
               debugPrint('Error uploading media: $e');
+              attachmentsComplete = false;
             }
           }
 
@@ -933,6 +957,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               }
             } catch (e) {
               debugPrint('Error uploading documents: $e');
+              attachmentsComplete = false;
             }
           }
         }
@@ -940,7 +965,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         if (!_isEditMode) await _clearDraft();
         if (!mounted) return;
         setState(() => _isSubmitting = false);
-        _showSuccessDialog();
+        _showSuccessDialog(attachmentsComplete: attachmentsComplete);
 
         // Award My's for creating a formation (only on create, not edit)
         if (!_isEditMode) {
@@ -993,7 +1018,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     }
   }
 
-  void _showSuccessDialog() {
+  void _showSuccessDialog({bool attachmentsComplete = true}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1054,9 +1079,11 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                _isEditMode
+                !attachmentsComplete
+                    ? 'Formation enregistrée, mais certaines photos ou pièces jointes n’ont pas été envoyées. Ajoutez-les en modifiant cette annonce ; ne la republiez pas.'
+                    : _isEditMode
                     ? 'Votre formation a été mise à jour avec succès'
-                    : 'Vous pouvez consulter cela au niveau de votre espace  ',
+                    : 'Vous pouvez consulter cela au niveau de votre espace.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -1911,6 +1938,134 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
   }
 
   // ─── STEP 1: Type & Category ───
+  Map<String, List<String>> _announcementAiCategories() => {
+    for (final c in _categoriesFromApi)
+      c['name'].toString(): (c['subcategories'] as List? ?? [])
+          .whereType<Map>()
+          .map((s) => s['name'].toString())
+          .toList(),
+  };
+  Widget _buildAnnouncementAiPanel() => AnnouncementAiPanel(
+    linkController: _linkController,
+    kind: 'trainings',
+    categories: () => _announcementAiCategories(),
+    onResult: (fields, images) {
+      setState(() {
+        _selectedLocation = announcementAiLocation(fields) ?? _selectedLocation;
+        if (fields['title'] != null)
+          _titleController.text = fields['title'].toString().substring(
+            0,
+            fields['title'].toString().length.clamp(0, 255),
+          );
+        if (fields['description'] != null)
+          _descriptionQuillController.document = Document()
+            ..insert(0, '${fields['description']}\n');
+        final category = AnnouncementAiValues.category(
+          fields['category'],
+          _categoriesFromApi,
+        );
+        if (category != null) {
+          _selectedCategoryId = int.tryParse(category['id'].toString());
+          _selectedCategoryName = category['name']?.toString();
+          _subCategoriesForCategory = List<Map<String, dynamic>>.from(
+            category['subcategories'] ?? [],
+          );
+          _selectedSubCategoryId = null;
+          _selectedSubCategoryName = null;
+        }
+        final sub = AnnouncementAiValues.category(
+          fields['subCategory'],
+          _subCategoriesForCategory,
+        );
+        if (sub != null) {
+          _selectedSubCategoryId = int.tryParse(sub['id'].toString());
+          _selectedSubCategoryName = sub['name']?.toString();
+        }
+        _selectedTrainingType =
+            AnnouncementAiValues.key(
+              fields['trainingType'],
+              _trainingTypesMap,
+            ) ??
+            _selectedTrainingType;
+        _selectedPriceType =
+            AnnouncementAiValues.key(fields['priceType'], _priceTypes) ??
+            _selectedPriceType;
+        _selectedPublicType =
+            AnnouncementAiValues.key(fields['publicType'], _publicTypes) ??
+            _selectedPublicType;
+        _selectedTempo =
+            AnnouncementAiValues.key(fields['tempo'], _tempoTypes) ??
+            _selectedTempo;
+        _selectedDurationUnit =
+            AnnouncementAiValues.key(fields['durationUnit'], _durationUnits) ??
+            _selectedDurationUnit;
+        if (fields['teachingStyles'] is List)
+          _selectedTeachingStyles = AnnouncementAiValues.keys(
+            fields['teachingStyles'],
+            _metadata['teaching_types'] as Map? ?? {},
+          );
+        if (fields['targetPublics'] is List)
+          _selectedTargetPublics = AnnouncementAiValues.keys(
+            fields['targetPublics'],
+            _metadata['target_publics'] as Map? ?? {},
+          );
+        if (fields['fundings'] is List)
+          _selectedFunding = AnnouncementAiValues.keys(
+            fields['fundings'],
+            _metadata['funding_options'] as Map? ?? {},
+          );
+        if (fields['requiredLevels'] is List) {
+          _selectedRequiredLevels = (fields['requiredLevels'] as List)
+              .whereType<String>()
+              .toSet()
+              .toList();
+          _customRequiredLevels = _selectedRequiredLevels
+              .where((v) => !_requiredLevels.contains(v))
+              .toList();
+        }
+        if (fields['certifications'] is List) {
+          _selectedCertifications = (fields['certifications'] as List)
+              .whereType<String>()
+              .toSet()
+              .toList();
+          _customCertifications = _selectedCertifications
+              .where((v) => !_certifications.contains(v))
+              .toList();
+        }
+        for (final e in {
+          'price': _priceController,
+          'durationInHours': _durationController,
+        }.entries) {
+          final n = AnnouncementAiValues.number(fields[e.key]);
+          if (n != null) {
+            final number = double.parse(n);
+            e.value.text =
+                e.key == 'durationInHours' &&
+                    number == number.truncateToDouble()
+                ? number.toInt().toString()
+                : n;
+          }
+        }
+        for (final e in {
+          'website': _websiteController,
+          'link': _linkController,
+        }.entries) {
+          if (fields[e.key] != null) e.value.text = fields[e.key].toString();
+        }
+        if (fields['dateToDefine'] is bool)
+          _dateToDefine = fields['dateToDefine'];
+        _startDate =
+            AnnouncementAiValues.date(fields['startDate']) ?? _startDate;
+        _endDate = AnnouncementAiValues.date(fields['endDate']) ?? _endDate;
+        for (final image in images) {
+          if (!_selectedMediaFiles.any((m) => m.path == image.path))
+            _selectedMediaFiles.add(image);
+        }
+      });
+      _saveDraft();
+    },
+  );
+
   Widget _buildStep1Type() {
     final categoryNames = _categoriesFromApi
         .map((c) => c['name'].toString())
@@ -1922,6 +2077,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        _buildAnnouncementAiPanel(),
         _buildFormCard(
           icon: Icons.school_outlined,
           title: 'Catégorie et Type',

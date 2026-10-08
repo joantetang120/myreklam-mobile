@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/social_video_preview.dart';
 // import 'package:myreklam/services/share_service.dart'; // Bouton partager masqué
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/create_post_screen.dart';
@@ -735,6 +736,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               ),
             ],
             // Media images (only for non-quote posts)
+            SocialVideoPreview(text: widget.content),
             if (!widget.isQuoteRepost && widget.mediaUrls.isNotEmpty) ...[
               const SizedBox(height: 12),
               _buildMediaSection(widget.mediaUrls),

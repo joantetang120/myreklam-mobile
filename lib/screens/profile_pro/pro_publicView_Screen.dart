@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/social_video_preview.dart';
 import 'package:myreklam/constants/annonce_status_labels.dart';
 import 'package:myreklam/constants/demande_natures.dart';
 import 'package:myreklam/constants/demande_types.dart';
@@ -885,6 +886,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               ),
             ],
             // Media images (only for non-quote posts)
+            SocialVideoPreview(text: widget.content),
             if (!widget.isQuoteRepost && widget.mediaUrls.isNotEmpty) ...[
               const SizedBox(height: 12),
               _buildMediaSection(widget.mediaUrls),

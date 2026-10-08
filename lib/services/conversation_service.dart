@@ -103,9 +103,7 @@ class ConversationService {
         final data = json.decode(response.body);
         return ChatMessage.fromJson(data['data'], currentUserId);
       } else {
-        throw Exception(
-          'Envoi du message impossible (${response.statusCode})',
-        );
+        throw Exception('Envoi du message impossible (${response.statusCode})');
       }
     } catch (e) {
       debugPrint('❌ Error sending message: $e');
@@ -139,7 +137,9 @@ class ConversationService {
         return ChatMessage.fromJson(data['data'], currentUserId);
       } else {
         final data = json.decode(response.body);
-        throw Exception(data['message'] ?? 'Modification du message impossible');
+        throw Exception(
+          data['message'] ?? 'Modification du message impossible',
+        );
       }
     } catch (e) {
       debugPrint('❌ Error editing message: $e');
@@ -216,7 +216,7 @@ class ConversationService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return int.tryParse(data['user']['id']);
+        return int.tryParse(data['user']['id'].toString());
       }
       return null;
     } catch (e) {
@@ -271,7 +271,8 @@ class ConversationService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return data['count'] ?? 0;
+        final count = data['count'] ?? data['unread_count'] ?? 0;
+        return count is num ? count.toInt() : int.tryParse('$count') ?? 0;
       }
       return 0;
     } catch (e) {

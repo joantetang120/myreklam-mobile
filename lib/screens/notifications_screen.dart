@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
-import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
-import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/profile_service.dart';
+import 'package:myreklam/services/push_notification_service.dart';
 import 'package:intl/intl.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -25,11 +24,89 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _hasMorePages = true;
   final ScrollController _scrollController = ScrollController();
 
+  /// Nom du membre connecte, pour la salutation du message de bienvenue.
+  ///
+  /// Vide tant que le profil n'est pas charge, et vide aussi lorsque le compte
+  /// n'a ni pseudo ni raison sociale : les deux cas se traitent pareil, la
+  /// salutation est alors omise plutot que de nommer quelqu'un au hasard.
+  String _viewerName = '';
+
   @override
   void initState() {
     super.initState();
     _loadNotifications();
+    _loadViewerName();
     _scrollController.addListener(_onScroll);
+  }
+
+  /// Charge le nom du membre, sans bloquer l'affichage des notifications.
+  ///
+  /// L'appel est independant de `_loadNotifications` : si le profil tarde ou
+  /// echoue, la liste s'affiche quand meme — simplement sans salutation
+  /// nominative. Un echec ici ne doit pas priver le membre de ses
+  /// notifications.
+  Future<void> _loadViewerName() async {
+    try {
+      final response = await ProfileService().getProfile();
+      if (!mounted) return;
+
+      final profile = response['profile'];
+      if (profile is! Map) return;
+
+      // Un particulier s'identifie par son pseudo, un pro par sa raison
+      // sociale — meme ordre que sur le web.
+      final name = (profile['pseudo'] ?? profile['company_name'])?.toString();
+      if (name == null || name.trim().isEmpty) return;
+
+      setState(() => _viewerName = name.trim());
+    } catch (_) {
+      // Sans nom, la salutation tombe : voir `_welcomeTitle`.
+    }
+  }
+
+  /// Titre d'une notification, tel qu'il doit se lire a l'ecran.
+  ///
+  /// Le message de bienvenue s'intitule « Bienvenue sur Myreklam ! » et son
+  /// corps commence par « Bonjour Myreklam ! ». Le nouveau membre est donc
+  /// salue du nom de l'application. Ce n'est pas un defaut d'affichage : le
+  /// texte est ecrit par l'API et stocke tel quel.
+  ///
+  /// La cause se lit dans l'inscription — `POST /auth/register` ne transporte
+  /// qu'une adresse et un mot de passe. Au moment ou la notification s'ecrit,
+  /// le compte n'a pas encore de nom, et le gabarit retombe sur celui du site.
+  ///
+  /// Le correctif durable appartient au backend. En attendant, la salutation
+  /// est refaite ici : cette liste est celle du membre connecte, et le saluer
+  /// par son nom est juste par construction. La regle s'annule d'elle-meme le
+  /// jour ou l'API enverra le vrai nom — l'expression ne reconnaitra plus
+  /// rien, et le titre sera rendu intact.
+  String _welcomeTitle(Map<String, dynamic> notif) {
+    final title = notif['title']?.toString() ?? '';
+    if (notif['type'] != 'welcome' || _viewerName.isEmpty) return title;
+
+    return title.replaceFirst(
+      RegExp(r'\bBienvenue\s+sur\s+Myreklam\b', caseSensitive: false),
+      'Bienvenue $_viewerName',
+    );
+  }
+
+  /// Corps d'une notification, ampute de sa salutation pour un message de
+  /// bienvenue : elle passe dans le titre, ou elle est lue en premier.
+  ///
+  /// La garder aux deux endroits donnerait « Bienvenue Thomas ! » suivi de
+  /// « Bonjour Thomas ! » — deux salutations pour une arrivee. Ce qui reste,
+  /// « Bienvenue sur Myreklam. Commencez a explorer… », se lit tres bien seul,
+  /// y compris lorsque le nom du membre est inconnu.
+  String _welcomeBody(Map<String, dynamic> notif) {
+    final body = notif['body']?.toString() ?? '';
+    if (notif['type'] != 'welcome') return body;
+
+    return body
+        .replaceFirst(
+          RegExp(r'^\s*Bonjour\s+[^!]*!\s*', caseSensitive: false),
+          '',
+        )
+        .trim();
   }
 
   @override
@@ -137,31 +214,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       });
     } catch (e) {
       debugPrint('Error marking all as read: $e');
-    }
-  }
-
-  Future<void> _navigateToFollowerProfile(Map<String, dynamic> notif) async {
-    final data = notif['data'] as Map<String, dynamic>?;
-    final followerId =
-        data?['follower_id']?.toString() ?? notif['reference_id']?.toString();
-    if (followerId == null || followerId.isEmpty) return;
-
-    try {
-      final profile = await ProfileService().getUserProfile(followerId);
-      if (!mounted) return;
-      final user = profile['user'] as Map<String, dynamic>?;
-      final accountType = user?['account_type']?.toString().toLowerCase() ?? '';
-      final isPro = accountType == 'pro' || accountType == 'professionnel';
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => isPro
-              ? ProPublicViewScreen(userId: followerId)
-              : ParticulierPublicViewScreen(userId: followerId),
-        ),
-      );
-    } catch (e) {
-      debugPrint('Error navigating to follower profile: $e');
     }
   }
 
@@ -439,13 +491,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final IconData icon = _getNotificationIcon(type);
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         if (!isRead) {
-          _markAsRead(notif['id']);
+          await _markAsRead(notif['id'].toString());
         }
-        if (type == 'new_follower') {
-          _navigateToFollowerProfile(notif);
-        }
+        if (!mounted) return;
+        final payload = Map<String, dynamic>.from(
+          notif['data'] as Map? ?? const {},
+        );
+        payload.addAll({
+          'type': notif['event_key'] ?? notif['type'] ?? '',
+          'reference_type':
+              notif['reference_type'] ?? payload['reference_type'] ?? '',
+          'reference_id':
+              notif['reference_id'] ?? payload['reference_id'] ?? '',
+          'notification_id': notif['id'].toString(),
+          if (notif['target_url'] != null)
+            'link': notif['target_url'].toString(),
+        });
+        PushNotificationService.instance.openNotificationData(payload);
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 4),
@@ -472,7 +536,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    notif['title'] ?? '',
+                    _welcomeTitle(notif),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
@@ -481,7 +545,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    notif['body'] ?? '',
+                    _welcomeBody(notif),
                     style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,

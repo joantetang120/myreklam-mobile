@@ -7,5 +7,10 @@
 	     for local debug builds. -->
 	<key>aps-environment</key>
 	<string>development</string>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:myadmin.myreklam.fr</string>
+		<string>applinks:myreklam-admin.maisoft-group.com</string>
+	</array>
 </dict>
 </plist>

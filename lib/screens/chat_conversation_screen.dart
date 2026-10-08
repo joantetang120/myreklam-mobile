@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/models/delegation.dart';
 import 'package:myreklam/services/delegation_manager.dart';
@@ -60,6 +62,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     // Écouter les changements de messages pour auto-scroll
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       _conversationProvider = Provider.of<ConversationProvider>(
         context,
         listen: false,
@@ -81,7 +84,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
       final userData = response['user'];
       if (mounted && userData != null) {
         setState(() {
-          _currentUserId = int.tryParse(userData['id']);
+          _currentUserId = int.tryParse(userData['id'].toString());
           _isLoading = false;
         });
 
@@ -168,14 +171,37 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   }
 
   Future<void> _sendImage() async {
-    // TODO: Implémenter l'envoi d'images via l'API Laravel
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Envoi d\'images bientôt disponible'),
-          backgroundColor: Colors.orange,
-        ),
+    if (_isSending || _currentUserId == null) return;
+    setState(() => _isSending = true);
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 85,
       );
+      if (picked == null || !mounted) return;
+      final file = File(picked.path);
+      if (await file.length() > 8 * 1024 * 1024)
+        throw StateError('La photo dépasse 8 Mo.');
+      final conversationId = int.tryParse(widget.conversationId);
+      if (conversationId == null) throw StateError('Conversation invalide.');
+      await _conversationProvider.sendImage(conversationId, file);
+      if (mounted) _scrollToBottom();
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error is ApiException
+                  ? error.firstError
+                  : 'Impossible d’envoyer la photo. Réessayez.',
+            ),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+    } finally {
+      if (mounted) setState(() => _isSending = false);
     }
   }
 
