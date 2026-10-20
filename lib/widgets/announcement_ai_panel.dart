@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -130,12 +131,18 @@ class _AnnouncementAiPanelState extends State<AnnouncementAiPanel> {
 
   @override
   Widget build(BuildContext context) => Card(
-    color: const Color(0xffeafaf5),
+    color: AdaptiveColors.surface(context, const Color(0xffeafaf5)),
     child: Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Text(
+              'Le lien ou l’image envoyé sera analysé par nos prestataires IA pour préremplir votre annonce. N’envoyez aucune donnée sensible ni document personnel. Vérifiez les informations avant publication.',
+            ),
+          ),
           const Text(
             'Préremplir avec l’IA',
             style: TextStyle(fontWeight: FontWeight.bold),

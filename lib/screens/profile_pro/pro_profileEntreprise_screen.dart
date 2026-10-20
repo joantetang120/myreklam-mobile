@@ -1,4 +1,6 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:io';
+import 'package:myreklam/utils/social_url.dart';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -41,6 +43,12 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
   final TextEditingController _linkedinController = TextEditingController();
   final TextEditingController _youtubeController = TextEditingController();
   final TextEditingController _snapchatController = TextEditingController();
+  final _extraSocialControllers = {
+    'website': TextEditingController(),
+    'x': TextEditingController(),
+    'tiktok': TextEditingController(),
+    'dribbble': TextEditingController(),
+  };
 
   String? _selectedSecteur;
   String? _bannerUrl;
@@ -107,6 +115,9 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
             _linkedinController.text = links['linkedin'] ?? '';
             _youtubeController.text = links['youtube'] ?? '';
             _snapchatController.text = links['snapchat'] ?? '';
+            for (final entry in _extraSocialControllers.entries) {
+              entry.value.text = links[entry.key]?.toString() ?? '';
+            }
           }
           _isLoading = false;
         });
@@ -135,24 +146,30 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
     _linkedinController.dispose();
     _youtubeController.dispose();
     _snapchatController.dispose();
+    for (final controller in _extraSocialControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
       appBar: AppBar(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2E9B5B)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Profil entreprise',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -170,15 +187,27 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                   padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                   height: 44,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF8A40).withValues(alpha: 0.15),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFEF8A40),
+                    ).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: TabBar(
                     controller: _tabController,
                     indicatorSize: TabBarIndicatorSize.tab,
-                    dividerColor: Colors.transparent,
-                    labelColor: Colors.white,
-                    unselectedLabelColor: const Color(0xFF666666),
+                    dividerColor: AdaptiveColors.border(
+                      context,
+                      Colors.transparent,
+                    ),
+                    labelColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
+                    unselectedLabelColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF666666),
+                    ),
                     labelStyle: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -189,7 +218,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                     ),
                     labelPadding: EdgeInsets.zero,
                     indicator: BoxDecoration(
-                      color: const Color(0xFFEF8A40),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFEF8A40),
+                      ),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     tabs: const [
@@ -302,9 +334,11 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(
+                  color: AdaptiveColors.border(context, Colors.grey[300]!),
+                ),
               ),
               child: TextField(
                 controller: _presentationController,
@@ -313,7 +347,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                   border: InputBorder.none,
                   hintText: 'Décrivez votre entreprise...',
                 ),
-                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AdaptiveColors.foreground(context, Colors.grey[700]),
+                ),
               ),
             ),
           ),
@@ -330,8 +367,14 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEF8A40),
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFEF8A40),
+                ),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
                 elevation: 0,
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(
@@ -359,9 +402,12 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
             child: Column(
               children: [
                 _buildSocialField(
-                  iconWidget: const Icon(
+                  iconWidget: Icon(
                     Icons.facebook,
-                    color: Color(0xFF1877F2),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF1877F2),
+                    ),
                     size: 20,
                   ),
                   label: 'facebook',
@@ -369,9 +415,12 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                 ),
                 const SizedBox(height: 12),
                 _buildSocialField(
-                  iconWidget: const Icon(
+                  iconWidget: Icon(
                     FontAwesomeIcons.squareInstagram,
-                    color: Color(0xFF0077B5),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF0077B5),
+                    ),
                     size: 20,
                   ),
                   label: 'instagram',
@@ -379,9 +428,12 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                 ),
                 const SizedBox(height: 12),
                 _buildSocialField(
-                  iconWidget: const Icon(
+                  iconWidget: Icon(
                     FontAwesomeIcons.linkedin,
-                    color: Color(0xFF0077B5),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF0077B5),
+                    ),
                     size: 20,
                   ),
                   label: 'Linkedin',
@@ -389,9 +441,12 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                 ),
                 const SizedBox(height: 12),
                 _buildSocialField(
-                  iconWidget: const Icon(
+                  iconWidget: Icon(
                     FontAwesomeIcons.youtube,
-                    color: Color(0xFFFF0000),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFFF0000),
+                    ),
                     size: 20,
                   ),
                   label: 'Youtube',
@@ -399,14 +454,36 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                 ),
                 const SizedBox(height: 12),
                 _buildSocialField(
-                  iconWidget: const Icon(
+                  iconWidget: Icon(
                     FontAwesomeIcons.snapchat,
-                    color: Color(0xFFFFFC00),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFFFFC00),
+                    ),
                     size: 20,
                   ),
                   label: 'Snapchat',
                   controller: _snapchatController,
                 ),
+                for (final entry in _extraSocialControllers.entries) ...[
+                  const SizedBox(height: 12),
+                  _buildSocialField(
+                    iconWidget: Icon(
+                      Icons.link,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF006D4D),
+                      ),
+                    ),
+                    label: {
+                      'website': 'Site web',
+                      'x': 'X',
+                      'tiktok': 'TikTok',
+                      'dribbble': 'Dribbble',
+                    }[entry.key]!,
+                    controller: entry.value,
+                  ),
+                ],
               ],
             ),
           ),
@@ -430,7 +507,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                         return Container(
                           width: double.infinity,
                           height: 120,
-                          color: Colors.grey[300],
+                          color: AdaptiveColors.surface(
+                            context,
+                            Colors.grey[300],
+                          ),
                           child: const Icon(Icons.image_not_supported),
                         );
                       },
@@ -442,7 +522,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                   label: _bannerUrl != null && _bannerUrl!.isNotEmpty
                       ? 'Changer la bannière'
                       : 'Importer une bannière',
-                  color: const Color(0xFF2E9B5B),
+                  color: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFF2E9B5B),
+                  ),
                   onTap: _pickAndUploadBanner,
                   isLoading: _isUploadingBanner,
                 ),
@@ -476,7 +559,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                 ],
                 _buildUploadButton(
                   label: 'Ajouter un media',
-                  color: const Color(0xFF2E9B5B),
+                  color: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFF2E9B5B),
+                  ),
                   onTap: _showMediaPickerChoice,
                   isLoading: _isUploadingGallery,
                 ),
@@ -496,8 +582,14 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEF8A40),
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFEF8A40),
+                ),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
                 elevation: 0,
                 minimumSize: const Size(double.infinity, 48),
                 shape: RoundedRectangleBorder(
@@ -522,7 +614,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: AdaptiveColors.surface(context, Colors.grey[100]),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -538,20 +630,27 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Row(
               children: [
-                Icon(icon, size: 18, color: Colors.grey[600]),
+                Icon(
+                  icon,
+                  size: 18,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
                 const SizedBox(width: 8),
                 Text(
                   title,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Colors.black,
+                    ).withValues(alpha: 0.5),
                   ),
                 ),
               ],
             ),
           ),
-          Divider(color: Colors.grey[300]),
+          Divider(color: AdaptiveColors.border(context, Colors.grey[300])),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: child,
@@ -571,11 +670,18 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
       children: [
         Row(
           children: [
-            Icon(icon, size: 16, color: Colors.grey[500]),
+            Icon(
+              icon,
+              size: 16,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 12,
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
             ),
           ],
         ),
@@ -586,22 +692,28 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
             controller: controller,
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.white,
+              fillColor: AdaptiveColors.surface(context, Colors.white),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,
                 vertical: 10,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(
+                  color: AdaptiveColors.border(context, Colors.grey[300]!),
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(
+                  color: AdaptiveColors.border(context, Colors.grey[300]!),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Color(0xFF2E9B5B)),
+                borderSide: BorderSide(
+                  color: AdaptiveColors.border(context, Color(0xFF2E9B5B)),
+                ),
               ),
             ),
             style: const TextStyle(fontSize: 14),
@@ -623,11 +735,18 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
       children: [
         Row(
           children: [
-            Icon(icon, size: 16, color: Colors.grey[500]),
+            Icon(
+              icon,
+              size: 16,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 12,
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
             ),
           ],
         ),
@@ -636,16 +755,26 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
           height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: AdaptiveColors.border(context, Colors.grey[300]!),
+            ),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: value,
-              hint: Text('', style: TextStyle(color: Colors.grey[400])),
+              hint: Text(
+                '',
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.grey[400]),
+                ),
+              ),
               isExpanded: true,
-              icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[500]),
+              icon: Icon(
+                Icons.keyboard_arrow_down,
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              ),
               items: items
                   .map(
                     (item) => DropdownMenuItem(value: item, child: Text(item)),
@@ -673,7 +802,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[700]),
+              ),
             ),
           ],
         ),
@@ -684,22 +816,28 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
             controller: controller,
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.white,
+              fillColor: AdaptiveColors.surface(context, Colors.white),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 12,
                 vertical: 14,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(
+                  color: AdaptiveColors.border(context, Colors.grey[300]!),
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(
+                  color: AdaptiveColors.border(context, Colors.grey[300]!),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: const BorderSide(color: Color(0xFF2E9B5B)),
+                borderSide: BorderSide(
+                  color: AdaptiveColors.border(context, Color(0xFF2E9B5B)),
+                ),
               ),
             ),
             style: const TextStyle(fontSize: 14),
@@ -725,9 +863,9 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
     if (!await originalFile.exists()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Fichier introuvable'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -739,9 +877,9 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
     if (fileSize == 0) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Fichier vide'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -772,9 +910,12 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('Bannière mise à jour avec succès !'),
-              backgroundColor: Color(0xFF2E9B5B),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                Color(0xFF2E9B5B),
+              ),
             ),
           );
         }
@@ -792,7 +933,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
           errorMessage = 'Erreur: ${e.toString().split('\n').first}';
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
+          ),
         );
       }
     } finally {
@@ -816,9 +960,9 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
           child: Wrap(
             children: [
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.photo_library,
-                  color: Color(0xFF2E9B5B),
+                  color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
                 ),
                 title: const Text('Importer des images'),
                 subtitle: const Text('Sélectionner plusieurs photos'),
@@ -828,7 +972,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.videocam, color: Color(0xFFEF8A40)),
+                leading: Icon(
+                  Icons.videocam,
+                  color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+                ),
                 title: const Text('Importer une vidéo'),
                 subtitle: const Text('Sélectionner une vidéo'),
                 onTap: () {
@@ -838,7 +985,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
               ),
               const Divider(),
               ListTile(
-                leading: const Icon(Icons.close, color: Colors.grey),
+                leading: Icon(
+                  Icons.close,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
                 title: const Text('Annuler'),
                 onTap: () => Navigator.pop(context),
               ),
@@ -877,7 +1027,10 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
               content: Text(
                 '${pickedFiles.length} image(s) ajoutée(s) à la galerie !',
               ),
-              backgroundColor: const Color(0xFF2E9B5B),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF2E9B5B),
+              ),
             ),
           );
         }
@@ -887,7 +1040,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de l\'upload: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -919,9 +1072,12 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('Vidéo ajoutée à la galerie !'),
-              backgroundColor: Color(0xFF2E9B5B),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                Color(0xFF2E9B5B),
+              ),
             ),
           );
         }
@@ -931,7 +1087,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de l\'upload: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -952,9 +1108,12 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('Image supprimée de la galerie'),
-              backgroundColor: Color(0xFF2E9B5B),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                Color(0xFF2E9B5B),
+              ),
             ),
           );
         }
@@ -964,7 +1123,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de la suppression: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -988,11 +1147,11 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
               ? Container(
                   width: double.infinity,
                   height: double.infinity,
-                  color: Colors.grey[800],
-                  child: const Center(
+                  color: AdaptiveColors.surface(context, Colors.grey[800]),
+                  child: Center(
                     child: Icon(
                       Icons.play_circle_outline,
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       size: 40,
                     ),
                   ),
@@ -1004,7 +1163,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      color: Colors.grey[300],
+                      color: AdaptiveColors.surface(context, Colors.grey[300]),
                       child: const Icon(Icons.image_not_supported),
                     );
                   },
@@ -1019,10 +1178,17 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.8),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.red,
+                ).withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close, color: Colors.white, size: 16),
+              child: Icon(
+                Icons.close,
+                color: AdaptiveColors.foreground(context, Colors.white),
+                size: 16,
+              ),
             ),
           ),
         ),
@@ -1034,18 +1200,25 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.videocam, color: Colors.white, size: 12),
+                  Icon(
+                    Icons.videocam,
+                    color: AdaptiveColors.foreground(context, Colors.white),
+                    size: 12,
+                  ),
                   SizedBox(width: 4),
                   Text(
                     'VIDÉO',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1126,11 +1299,16 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
         'presentation': _presentationController.text,
         'secteur_activite': _selectedSecteur,
         'social_links': {
-          'facebook': _facebookController.text,
-          'instagram': _instagramController.text,
-          'linkedin': _linkedinController.text,
-          'youtube': _youtubeController.text,
-          'snapchat': _snapchatController.text,
+          for (final entry in _extraSocialControllers.entries)
+            entry.key: normalizeSocialUrl(entry.key, entry.value.text),
+          'facebook': normalizeSocialUrl('facebook', _facebookController.text),
+          'instagram': normalizeSocialUrl(
+            'instagram',
+            _instagramController.text,
+          ),
+          'linkedin': normalizeSocialUrl('linkedin', _linkedinController.text),
+          'youtube': normalizeSocialUrl('youtube', _youtubeController.text),
+          'snapchat': normalizeSocialUrl('snapchat', _snapchatController.text),
         },
       };
 
@@ -1138,9 +1316,9 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Modifications enregistrées avec succès !'),
-          backgroundColor: Color(0xFF2E9B5B),
+          backgroundColor: AdaptiveColors.surface(context, Color(0xFF2E9B5B)),
         ),
       );
       setState(() => _isLoading = false);
@@ -1185,7 +1363,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur lors de la mise à jour: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     }

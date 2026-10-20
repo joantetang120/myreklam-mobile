@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/services/announcement_report_service.dart';
 import 'package:myreklam/services/api_client.dart';
@@ -80,7 +81,7 @@ Future<void> showCommentReportActionSheet({
 
   final action = await showModalBottomSheet<String>(
     context: context,
-    backgroundColor: Colors.white,
+    backgroundColor: AdaptiveColors.surface(context, Colors.white),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
     ),
@@ -93,25 +94,36 @@ Future<void> showCommentReportActionSheet({
             width: 42,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: AdaptiveColors.surface(context, Colors.grey[300]),
               borderRadius: BorderRadius.circular(50),
             ),
           ),
           const SizedBox(height: 8),
           ListTile(
-            leading: const Icon(Icons.flag_outlined, color: Colors.redAccent),
-            title: const Text(
+            leading: Icon(
+              Icons.flag_outlined,
+              color: AdaptiveColors.foreground(context, Colors.redAccent),
+            ),
+            title: Text(
               'Signaler ce commentaire',
               style: TextStyle(
-                color: Colors.redAccent,
+                color: AdaptiveColors.foreground(context, Colors.redAccent),
                 fontWeight: FontWeight.w600,
               ),
             ),
             onTap: () => Navigator.pop(sheetContext, 'report'),
           ),
           ListTile(
-            leading: Icon(Icons.close, color: Colors.grey[600]),
-            title: Text('Annuler', style: TextStyle(color: Colors.grey[700])),
+            leading: Icon(
+              Icons.close,
+              color: AdaptiveColors.foreground(context, Colors.grey[600]),
+            ),
+            title: Text(
+              'Annuler',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.grey[700]),
+              ),
+            ),
             onTap: () => Navigator.pop(sheetContext),
           ),
         ],
@@ -169,7 +181,12 @@ Future<void> showCommentReportDialog({
               onPressed: isSubmitting
                   ? null
                   : () => Navigator.pop(dialogContext),
-              child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+              child: Text(
+                'Annuler',
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
+              ),
             ),
             ElevatedButton(
               onPressed: isSubmitting
@@ -197,9 +214,12 @@ Future<void> showCommentReportDialog({
                         if (!context.mounted) return;
                         Navigator.pop(dialogContext);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
+                          SnackBar(
                             content: Text('Signalement envoye'),
-                            backgroundColor: Color(0xFF3AAE5E),
+                            backgroundColor: AdaptiveColors.surface(
+                              context,
+                              Color(0xFF3AAE5E),
+                            ),
                           ),
                         );
                       } catch (e) {
@@ -213,23 +233,28 @@ Future<void> showCommentReportDialog({
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  Colors.redAccent,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: isSubmitting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                       ),
                     )
-                  : const Text(
+                  : Text(
                       'Signaler',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(context, Colors.white),
+                      ),
                     ),
             ),
           ],
@@ -295,7 +320,12 @@ Future<void> showAnnouncementReportDialog({
               onPressed: isSubmitting
                   ? null
                   : () => Navigator.pop(dialogContext),
-              child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+              child: Text(
+                'Annuler',
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
+              ),
             ),
             ElevatedButton(
               onPressed: isSubmitting
@@ -324,9 +354,12 @@ Future<void> showAnnouncementReportDialog({
                         if (!context.mounted) return;
                         Navigator.pop(dialogContext);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
+                          SnackBar(
                             content: Text('Signalement envoye'),
-                            backgroundColor: Color(0xFF3AAE5E),
+                            backgroundColor: AdaptiveColors.surface(
+                              context,
+                              Color(0xFF3AAE5E),
+                            ),
                           ),
                         );
                       } catch (e) {
@@ -340,23 +373,28 @@ Future<void> showAnnouncementReportDialog({
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  Colors.redAccent,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: isSubmitting
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                       ),
                     )
-                  : const Text(
+                  : Text(
                       'Signaler',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(context, Colors.white),
+                      ),
                     ),
             ),
           ],

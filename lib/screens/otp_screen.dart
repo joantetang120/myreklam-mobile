@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'account_type_screen.dart';
@@ -87,9 +88,9 @@ class _OtpScreenState extends State<OtpScreen> {
 
     if (widget.email == null || widget.purpose == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Session de vérification invalide. Recommencez.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
       return;
@@ -144,14 +145,17 @@ class _OtpScreenState extends State<OtpScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.firstError),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Une erreur est survenue. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     } finally {
@@ -182,22 +186,25 @@ class _OtpScreenState extends State<OtpScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Code renvoyé avec succès.'),
-          backgroundColor: Color(0xFF1B8D4B),
+          backgroundColor: AdaptiveColors.surface(context, Color(0xFF1B8D4B)),
         ),
       );
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.firstError),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Erreur lors du renvoi du code.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     }
@@ -206,24 +213,26 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
         leading: IconButton(
           icon: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFE8E8E8)),
+              border: Border.all(
+                color: AdaptiveColors.border(context, const Color(0xFFE8E8E8)),
+              ),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back,
-              color: Color(0xFF1B8D4B),
+              color: AdaptiveColors.foreground(context, Color(0xFF1B8D4B)),
               size: 20,
             ),
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -237,19 +246,23 @@ class _OtpScreenState extends State<OtpScreen> {
                 height: 200,
               ),
               const SizedBox(height: 30),
-              const Text(
+              Text(
                 'Verifier Votre compte',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1B8D4B),
+                  color: AdaptiveColors.foreground(context, Color(0xFF1B8D4B)),
                 ),
               ),
               const SizedBox(height: 15),
-              const Text(
+              Text(
                 'Pour vérifier votre compte Saisissez le code qui vous a été envoyé par e-mail.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 30),
               Row(
@@ -259,7 +272,12 @@ class _OtpScreenState extends State<OtpScreen> {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFF1B8D4B)),
+                      border: Border.all(
+                        color: AdaptiveColors.border(
+                          context,
+                          const Color(0xFF1B8D4B),
+                        ),
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
@@ -293,7 +311,9 @@ class _OtpScreenState extends State<OtpScreen> {
               const SizedBox(height: 30),
               Text(
                 'Le code expire dans : ${_formatTime(_start)}',
-                style: const TextStyle(color: Colors.grey),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
               ),
               const SizedBox(height: 40),
               SizedBox(
@@ -301,7 +321,10 @@ class _OtpScreenState extends State<OtpScreen> {
                 height: 56,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1B8D4B),
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF1B8D4B),
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -309,18 +332,24 @@ class _OtpScreenState extends State<OtpScreen> {
                   ),
                   onPressed: _isLoading ? null : _verify,
                   child: _isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 24,
                           height: 24,
                           child: CircularProgressIndicator(
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             strokeWidth: 2.5,
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Vérifier',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -333,16 +362,21 @@ class _OtpScreenState extends State<OtpScreen> {
                 height: 56,
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFF1B8D4B)),
+                    side: BorderSide(
+                      color: AdaptiveColors.border(context, Color(0xFF1B8D4B)),
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   onPressed: _handleResend,
-                  child: const Text(
+                  child: Text(
                     'Renvoyer le code',
                     style: TextStyle(
-                      color: Color(0xFF1B8D4B),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1B8D4B),
+                      ),
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),

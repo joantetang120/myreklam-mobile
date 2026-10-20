@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/constants/reward_action_labels.dart';
 import 'package:myreklam/services/api_client.dart';
@@ -145,22 +146,22 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             size: 18,
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Historique des My\'s',
           style: TextStyle(
-            color: Color(0xFF2D2D2D),
+            color: AdaptiveColors.foreground(context, Color(0xFF2D2D2D)),
             fontFamily: 'Manjari',
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -179,8 +180,11 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                     margin: const EdgeInsets.all(16),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF9800), Color(0xFFFFB74D)],
+                      gradient: LinearGradient(
+                        colors: [
+                          AdaptiveColors.surface(context, Color(0xFFFF9800)),
+                          AdaptiveColors.surface(context, Color(0xFFFFB74D)),
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -199,10 +203,13 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Total gagné',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -212,17 +219,23 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                               children: [
                                 Text(
                                   '${widget.totalMys}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 36,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                const Text(
+                                Text(
                                   'My\'s',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -234,12 +247,18 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: AdaptiveColors.surface(
+                              context,
+                              Colors.white,
+                            ).withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.emoji_events,
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             size: 32,
                           ),
                         ),
@@ -257,13 +276,19 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                                 Icon(
                                   Icons.history,
                                   size: 64,
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'Aucun historique disponible',
                                   style: TextStyle(
-                                    color: Colors.grey[600],
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[600],
+                                    ),
                                     fontSize: 16,
                                   ),
                                 ),
@@ -290,7 +315,10 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                                 margin: const EdgeInsets.only(bottom: 12),
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
@@ -307,12 +335,18 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                                     Container(
                                       padding: const EdgeInsets.all(10),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFFFF3E0),
+                                        color: AdaptiveColors.surface(
+                                          context,
+                                          const Color(0xFFFFF3E0),
+                                        ),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Icon(
                                         _getActionIcon(earning['action_type']),
-                                        color: const Color(0xFFFF9800),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          const Color(0xFFFF9800),
+                                        ),
                                         size: 24,
                                       ),
                                     ),
@@ -327,10 +361,13 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                                                 _getActionLabel(
                                                   earning['action_type'],
                                                 ),
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
-                                              color: Color(0xFF2D2D2D),
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Color(0xFF2D2D2D),
+                                              ),
                                             ),
                                           ),
                                           const SizedBox(height: 4),
@@ -339,7 +376,11 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                                               Icon(
                                                 Icons.access_time,
                                                 size: 12,
-                                                color: Colors.grey[500],
+                                                color:
+                                                    AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.grey[500],
+                                                    ),
                                               ),
                                               const SizedBox(width: 4),
                                               Text(
@@ -348,7 +389,11 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                                                 ),
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.grey[600],
+                                                  color:
+                                                      AdaptiveColors.foreground(
+                                                        context,
+                                                        Colors.grey[600],
+                                                      ),
                                                 ),
                                               ),
                                             ],
@@ -362,15 +407,21 @@ class _MysHistoryScreenState extends State<MysHistoryScreen> {
                                         vertical: 6,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFFFF3E0),
+                                        color: AdaptiveColors.surface(
+                                          context,
+                                          const Color(0xFFFFF3E0),
+                                        ),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
                                         _formatMysAmount(earning['amount']),
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
-                                          color: Color(0xFFFF9800),
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Color(0xFFFF9800),
+                                          ),
                                         ),
                                       ),
                                     ),

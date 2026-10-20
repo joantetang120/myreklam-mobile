@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 /// Fixed carousel widget that properly tracks page changes for dot indicators.
@@ -43,7 +44,7 @@ class _BonPlanCarouselState extends State<BonPlanCarousel> {
                   if (loadingProgress == null) return child;
                   return Container(
                     height: widget.height,
-                    color: Colors.grey[100],
+                    color: AdaptiveColors.surface(context, Colors.grey[100]),
                     child: const Center(
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
@@ -51,11 +52,11 @@ class _BonPlanCarouselState extends State<BonPlanCarousel> {
                 },
                 errorBuilder: (_, error, ___) => Container(
                   height: widget.height,
-                  color: Colors.grey[200],
-                  child: const Center(
+                  color: AdaptiveColors.surface(context, Colors.grey[200]),
+                  child: Center(
                     child: Icon(
                       Icons.image_not_supported,
-                      color: Colors.grey,
+                      color: AdaptiveColors.foreground(context, Colors.grey),
                       size: 48,
                     ),
                   ),
@@ -77,8 +78,8 @@ class _BonPlanCarouselState extends State<BonPlanCarousel> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: index == _currentPage
-                      ? const Color(0xFFFF9800)
-                      : Colors.grey[300],
+                      ? AdaptiveColors.surface(context, const Color(0xFFFF9800))
+                      : AdaptiveColors.surface(context, Colors.grey[300]),
                 ),
               );
             }),

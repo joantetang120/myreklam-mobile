@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
@@ -100,11 +101,11 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
       return ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: maxVideoHeight),
         child: Container(
-          color: Colors.black,
+          color: AdaptiveColors.surface(context, Colors.black),
           alignment: Alignment.center,
-          child: const Icon(
+          child: Icon(
             Icons.play_circle_outline,
-            color: Colors.white,
+            color: AdaptiveColors.foreground(context, Colors.white),
             size: 48,
           ),
         ),
@@ -116,9 +117,11 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
       return ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: maxVideoHeight),
         child: Container(
-          color: Colors.black,
+          color: AdaptiveColors.surface(context, Colors.black),
           alignment: Alignment.center,
-          child: const CircularProgressIndicator(color: Colors.white),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
         ),
       );
     }
@@ -143,13 +146,16 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.45),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 _formatDuration(remaining),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.white),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -165,13 +171,16 @@ class _InlineVideoPlayerState extends State<_InlineVideoPlayer> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.45),
+                  color: AdaptiveColors.surface(
+                    context,
+                    Colors.black,
+                  ).withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   _isMuted ? Icons.volume_off : Icons.volume_up,
                   size: 16,
-                  color: Colors.white,
+                  color: AdaptiveColors.foreground(context, Colors.white),
                 ),
               ),
             ),
@@ -201,18 +210,21 @@ class PostDetailFullScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Colors.black87),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Publication',
           style: TextStyle(
-            color: Colors.black87,
+            color: AdaptiveColors.foreground(context, Colors.black87),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -240,17 +252,23 @@ class PostDetailFullScreen extends StatelessWidget {
                       children: [
                         Text(
                           author['displayName'] ?? 'Utilisateur',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.black87,
+                            ),
                           ),
                         ),
                         Text(
                           '${author['accountType']} • $timeAgo',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[600],
+                            ),
                           ),
                         ),
                       ],
@@ -269,9 +287,12 @@ class PostDetailFullScreen extends StatelessWidget {
                 ),
                 child: Text(
                   content,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    color: Color(0xFF333333),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF333333),
+                    ),
                     height: 1.5,
                   ),
                 ),

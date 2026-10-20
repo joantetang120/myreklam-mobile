@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/models/delegation.dart';
 import 'package:myreklam/services/delegation_manager.dart';
@@ -78,18 +79,21 @@ class _ExpandableDescriptionStatefulState
                 text: text.length > 100
                     ? '${text.substring(0, 100)}... '
                     : text,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                   height: 1.4,
                 ),
               ),
               if (text.length > 100)
-                const TextSpan(
+                TextSpan(
                   text: 'voir plus',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -98,9 +102,9 @@ class _ExpandableDescriptionStatefulState
         ),
         secondChild: Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Color(0xFF666666),
+            color: AdaptiveColors.foreground(context, Color(0xFF666666)),
             height: 1.4,
           ),
         ),
@@ -562,12 +566,16 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.white),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -606,7 +614,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         if (loadingProgress == null) return child;
         return Container(
           height: 220,
-          color: Colors.grey[100],
+          color: AdaptiveColors.surface(context, Colors.grey[100]),
           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         );
       },
@@ -614,11 +622,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         debugPrint('Image load error: $error');
         return Container(
           height: 220,
-          color: Colors.grey[200],
-          child: const Center(
+          color: AdaptiveColors.surface(context, Colors.grey[200]),
+          child: Center(
             child: Icon(
               Icons.image_not_supported,
-              color: Colors.grey,
+              color: AdaptiveColors.foreground(context, Colors.grey),
               size: 40,
             ),
           ),
@@ -798,7 +806,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (ctx, modalSetState) {
@@ -969,21 +977,34 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () =>
                           Navigator.pop(context, editController.text),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enregistrer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1016,7 +1037,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       content: Text(
                         'Erreur lors de la modification: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -1043,20 +1067,33 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       onPressed: () => Navigator.pop(context, false),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          Colors.redAccent,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Supprimer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1106,7 +1143,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       content: Text(
                         'Erreur lors de la suppression: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -1183,7 +1223,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                       style: TextStyle(
                                         fontSize: isReply ? 12 : 13,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF333333),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          const Color(0xFF333333),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -1191,7 +1234,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                       _buildTimeAgo(createdAt),
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey[400],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[400],
+                                        ),
                                       ),
                                     ),
                                     if (isOwner) ...[
@@ -1217,20 +1263,28 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                                   ],
                                                 ),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'delete',
                                                 child: Row(
                                                   children: [
                                                     Icon(
                                                       Icons.delete,
                                                       size: 18,
-                                                      color: Colors.redAccent,
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Colors.redAccent,
+                                                          ),
                                                     ),
                                                     SizedBox(width: 8),
                                                     Text(
                                                       'Supprimer',
                                                       style: TextStyle(
-                                                        color: Colors.redAccent,
+                                                        color:
+                                                            AdaptiveColors.foreground(
+                                                              context,
+                                                              Colors.redAccent,
+                                                            ),
                                                       ),
                                                     ),
                                                   ],
@@ -1248,7 +1302,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                         child: Icon(
                                           Icons.more_horiz,
                                           size: 18,
-                                          color: Colors.grey[400],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[400],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -1257,9 +1314,12 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   body,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF4F4F4F),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF4F4F4F),
+                                    ),
                                     height: 1.4,
                                   ),
                                 ),
@@ -1279,8 +1339,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                                 : Icons.thumb_up_alt_outlined,
                                             size: 14,
                                             color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[400],
+                                                ? AdaptiveColors.foreground(
+                                                    context,
+                                                    const Color(0xFF3AAE5E),
+                                                  )
+                                                : AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.grey[400],
+                                                  ),
                                           ),
                                           const SizedBox(width: 3),
                                           Text(
@@ -1288,8 +1354,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: userReaction == 'like'
-                                                  ? const Color(0xFF3AAE5E)
-                                                  : Colors.grey[500],
+                                                  ? AdaptiveColors.foreground(
+                                                      context,
+                                                      const Color(0xFF3AAE5E),
+                                                    )
+                                                  : AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.grey[500],
+                                                    ),
                                             ),
                                           ),
                                         ],
@@ -1313,7 +1385,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2E9B5B),
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              const Color(0xFF2E9B5B),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -1351,8 +1426,8 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(ctx).size.height * 0.75,
                 ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Colors.white),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(24),
                     topRight: Radius.circular(24),
@@ -1365,7 +1440,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[300],
+                        ),
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
@@ -1376,29 +1454,38 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Commentaires',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2A2A2A),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF2A2A2A),
+                                ),
                               ),
                             ),
                           ),
                           GestureDetector(
                             onTap: () => Navigator.pop(ctx),
-                            child: const Icon(
+                            child: Icon(
                               Icons.close,
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                               size: 22,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Comment list
                     Expanded(
                       child: isLoading
@@ -1407,15 +1494,25 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           ? Center(
                               child: Text(
                                 'Erreur: $error',
-                                style: const TextStyle(color: Colors.red),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.red,
+                                  ),
+                                ),
                               ),
                             )
                           : comments.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
                                 'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey,
+                                  ),
+                                ),
                               ),
                             )
                           : ListView.separated(
@@ -1430,7 +1527,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                   buildCommentItem(comments[i]),
                             ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Reply indicator
                     if (replyingToId != null)
                       Container(
@@ -1438,14 +1538,20 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           horizontal: 16,
                           vertical: 6,
                         ),
-                        color: const Color(0xFFF5F5F5),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFF5F5F5),
+                        ),
                         child: Row(
                           children: [
                             Text(
                               'Répondre à $replyingToName',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                             const Spacer(),
@@ -1454,10 +1560,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 replyingToId = null;
                                 replyingToName = null;
                               }),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close,
                                 size: 16,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                           ],
@@ -1474,12 +1583,15 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 horizontal: 14,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F5),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFF5F5F5),
+                                ),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: TextField(
                                 controller: commentCtrl,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   isCollapsed: true,
                                   contentPadding: EdgeInsets.symmetric(
                                     vertical: 10,
@@ -1487,7 +1599,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                   border: InputBorder.none,
                                   hintText: 'Écrire un commentaire...',
                                   hintStyle: TextStyle(
-                                    color: Color(0xFF9E9E9E),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF9E9E9E),
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -1501,14 +1616,20 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                             onTap: submitComment,
                             child: Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF3AAE5E),
+                              decoration: BoxDecoration(
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  Color(0xFF3AAE5E),
+                                ),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.send,
                                 size: 18,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -1531,9 +1652,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Publication republiée avec succès'),
-            backgroundColor: Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
             duration: Duration(seconds: 2),
           ),
         );
@@ -1544,7 +1665,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de la republication: ${e.toString()}'),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AdaptiveColors.surface(context, Colors.redAccent),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -1559,11 +1680,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (context) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
@@ -1573,24 +1694,30 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'Partager ce bon plan',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               const SizedBox(height: 20),
               ListTile(
-                leading: const Icon(Icons.copy, color: Color(0xFF3AAE5E)),
+                leading: Icon(
+                  Icons.copy,
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+                ),
                 title: const Text('Copier le lien'),
                 onTap: () {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text('Lien copié dans le presse-papiers'),
-                      backgroundColor: Color(0xFF3AAE5E),
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Color(0xFF3AAE5E),
+                      ),
                     ),
                   );
                 },
@@ -1636,7 +1763,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.grey[300],
+            color: AdaptiveColors.surface(context, Colors.grey[300]),
             image:
                 avatarUrl != null &&
                     avatarUrl.isNotEmpty &&
@@ -1656,7 +1783,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       : null),
           ),
           child: avatarUrl == null || avatarUrl.isEmpty
-              ? Icon(Icons.person, size: 16, color: Colors.grey[600])
+              ? Icon(
+                  Icons.person,
+                  size: 16,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                )
               : null,
         ),
         const SizedBox(width: 8),
@@ -1669,7 +1800,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
+                color: AdaptiveColors.foreground(context, Colors.grey[800]),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1679,15 +1810,18 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 margin: const EdgeInsets.only(top: 2),
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3AAE5E),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
+                child: Text(
                   'PRO',
                   style: TextStyle(
                     fontSize: 7,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                   ),
                 ),
               ),
@@ -1718,7 +1852,12 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               Icon(
                 isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                 size: 18,
-                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                color: isLiked
+                    ? AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      )
+                    : AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               GestureDetector(
@@ -1727,7 +1866,12 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   data.likesCount.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    color: isLiked
+                        ? AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -1744,12 +1888,15 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               Icon(
                 Icons.chat_bubble_outline,
                 size: 17,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               Text(
                 data.commentsCount.toString(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -1947,19 +2094,19 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
           PostTag(
             title: category,
             icon: Icons.local_offer_outlined,
-            color: Colors.orange,
+            color: AdaptiveColors.foreground(context, Colors.orange),
           ),
         if (subCategory.isNotEmpty)
           PostTag(
             title: subCategory,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (type.isNotEmpty)
           PostTag(
             title: type,
             icon: Icons.check_circle_outline,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
       ];
 
@@ -2037,7 +2184,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     debugPrint('===========================');
 
     return AppLayout(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF9F9FB)),
       onTabTapped: (index) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
@@ -2047,7 +2194,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         );
       },
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leadingWidth: 56,
         leading: Padding(
@@ -2058,19 +2205,19 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               width: 36,
               height: 36,
               alignment: Alignment.center,
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios,
                 size: 18,
-                color: Color(0xFF616161),
+                color: AdaptiveColors.foreground(context, Color(0xFF616161)),
               ),
             ),
           ),
         ),
-        title: const Text(
+        title: Text(
           'Details Bons Plans',
           style: TextStyle(
             fontSize: 18,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             fontFamily: 'Manjari',
             fontWeight: FontWeight.bold,
           ),
@@ -2081,9 +2228,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
-                icon: const Icon(
+                icon: Icon(
                   Icons.more_vert,
-                  color: Color(0xFF616161),
+                  color: AdaptiveColors.foreground(context, Color(0xFF616161)),
                   size: 24,
                 ),
                 offset: const Offset(0, 45),
@@ -2119,14 +2266,17 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       DelegationManager.instance.can(
                         DelegationPermission.announcements,
                       ))
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
                           Icon(
                             Icons.edit_outlined,
                             size: 20,
-                            color: Color(0xFF616161),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF616161),
+                            ),
                           ),
                           SizedBox(width: 12),
                           Text('Modifier'),
@@ -2136,19 +2286,27 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   if (DelegationManager.instance.can(
                     DelegationPermission.announcements,
                   ))
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
                           Icon(
                             Icons.delete_outline,
                             size: 20,
-                            color: Colors.red,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red,
+                            ),
                           ),
                           SizedBox(width: 12),
                           Text(
                             'Supprimer',
-                            style: TextStyle(color: Colors.red),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.red,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -2170,15 +2328,24 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   height: 36,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFE6F7EF),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFE6F7EF),
+                    ),
                     border: Border.all(
-                      color: const Color(0xFF2A8143),
+                      color: AdaptiveColors.border(
+                        context,
+                        const Color(0xFF2A8143),
+                      ),
                       width: 1.5,
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.notifications,
-                    color: Color(0xFF2A8143),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF2A8143),
+                    ),
                     size: 18,
                   ),
                 ),
@@ -2206,7 +2373,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: widget.bonPlanData?['is_expired'] == true
-                      ? const Color(0xFF757575)
+                      ? AdaptiveColors.surface(context, const Color(0xFF757575))
                       : const Color.fromARGB(136, 231, 28, 28),
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -2218,7 +2385,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       widget.bonPlanData?['is_expired'] == true
                           ? Icons.event_busy
                           : Icons.access_time,
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       size: 18,
                     ),
                     const SizedBox(width: 8),
@@ -2227,8 +2394,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         widget.bonPlanData?['is_expired'] == true
                             ? 'Ce bon plan est terminé (date de fin dépassée).'
                             : _formatExpirationDate(),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -2259,7 +2429,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 : widget.bonPlanData!['category']?.toString() ??
                                       '',
                             Icons.local_offer_outlined,
-                            const Color(0xFF3AAE5E),
+                            AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFF3AAE5E),
+                            ),
                           ),
                         // Subcategory tag
                         if (widget.bonPlanData!['sub_category'] != null)
@@ -2272,7 +2445,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                           ?.toString() ??
                                       '',
                             Icons.subdirectory_arrow_right,
-                            Colors.orange,
+                            AdaptiveColors.foreground(context, Colors.orange),
                           ),
                         // Type tag
                         if (widget.bonPlanData!['type'] != null &&
@@ -2280,7 +2453,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           _buildTag(
                             widget.bonPlanData!['type']?.toString() ?? '',
                             Icons.label_outline,
-                            Colors.blue,
+                            AdaptiveColors.foreground(context, Colors.blue),
                           ),
                       ],
                     ),
@@ -2288,10 +2461,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   // Title - big and bold
                   Text(
                     widget.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1A1A1A),
+                      ),
                       height: 1.3,
                     ),
                   ),
@@ -2304,10 +2480,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       widget.originalPrice != null && widget.price == null
                           ? Text(
                               '${widget.originalPrice}€',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF2E9B5B),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF2E9B5B),
+                                ),
                               ),
                             )
                           : (widget.tags.length > 2 &&
@@ -2319,10 +2498,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                             widget.price.toString().isNotEmpty
                                         ? '${widget.price}€'
                                         : 'Gratuit',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF2E9B5B),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF2E9B5B),
+                                      ),
                                     ),
                                   )),
                       if (widget.price != null &&
@@ -2333,7 +2515,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           '${widget.originalPrice}€',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                             decoration: TextDecoration.lineThrough,
                           ),
                         ),
@@ -2347,15 +2532,21 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFF5722),
+                              color: AdaptiveColors.surface(
+                                context,
+                                const Color(0xFFFF5722),
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               '-${_calculateDiscount(widget.originalPrice, widget.price)}%',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -2371,13 +2562,19 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF2E9B5B),
+                            color: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFF2E9B5B),
+                            ),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             widget.discount!,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
@@ -2396,10 +2593,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 ClipboardData(text: widget.promo_code!),
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   content: Text('Code copié !'),
                                   duration: Duration(seconds: 2),
-                                  backgroundColor: Color(0xFF2E9B5B),
+                                  backgroundColor: AdaptiveColors.surface(
+                                    context,
+                                    Color(0xFF2E9B5B),
+                                  ),
                                 ),
                               );
                             },
@@ -2409,30 +2609,40 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2E9B5B,
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFF2E9B5B),
                                 ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: const Color(0xFF2E9B5B),
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    const Color(0xFF2E9B5B),
+                                  ),
                                   width: 1,
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.local_offer_outlined,
                                     size: 14,
-                                    color: Color(0xFF2E9B5B),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF2E9B5B),
+                                    ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Code promo: ${widget.promo_code}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF2E9B5B),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF2E9B5B),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -2450,22 +2660,34 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       Icon(
                         Icons.local_shipping_outlined,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'Dispo. chez ',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                       Text(
                         widget.availability.isNotEmpty &&
                                 widget.availability != 'Non spécifié'
                             ? widget.availability
                             : 'Moto Axxe',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF1A1A1A),
+                          ),
                         ),
                       ),
                     ],
@@ -2494,8 +2716,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF9800),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFF9800),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -2528,8 +2756,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                         ? Icons.favorite
                                         : Icons.favorite_outline,
                                     color: _isFavorite
-                                        ? Colors.red
-                                        : Colors.grey[600],
+                                        ? AdaptiveColors.foreground(
+                                            context,
+                                            Colors.red,
+                                          )
+                                        : AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[600],
+                                          ),
                                     size: 24,
                                   ),
                           ),
@@ -2538,8 +2772,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               color: _isFavorite
-                                  ? Colors.red
-                                  : Colors.grey[600],
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      Colors.red,
+                                    )
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[600],
+                                    ),
                             ),
                           ),
                         ],
@@ -2553,7 +2793,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     widget.time.isNotEmpty
                         ? "Posté ${widget.time}"
                         : 'Posté il y a 4 h.',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[500],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -2564,12 +2810,15 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Description',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1A1A1A),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -2584,20 +2833,29 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Details du bon plan',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1A1A1A),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   // Disponibilité
                   _buildDetailItem(
                     icon: Icons.public,
-                    iconColor: const Color(0xFF3AAE5E),
-                    bgColor: const Color(0xFFE6F7EF),
+                    iconColor: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ),
+                    bgColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFE6F7EF),
+                    ),
                     label: 'Disponibilité',
                     value: widget.availability,
                     prefixValue: 'Chez ',
@@ -2606,8 +2864,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   // Validité
                   _buildDetailItem(
                     icon: Icons.calendar_month_outlined,
-                    iconColor: Colors.lightBlue,
-                    bgColor: Colors.lightBlue.withValues(alpha: 0.1),
+                    iconColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.lightBlue,
+                    ),
+                    bgColor: AdaptiveColors.surface(
+                      context,
+                      Colors.lightBlue,
+                    ).withValues(alpha: 0.1),
                     label: 'Validité',
                     value: _formatValidity(),
                   ),
@@ -2615,8 +2879,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   // Livraison / Frais de port
                   _buildDetailItem(
                     icon: Icons.local_shipping_outlined,
-                    iconColor: Colors.purpleAccent,
-                    bgColor: Colors.purpleAccent.withValues(alpha: 0.05),
+                    iconColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.purpleAccent,
+                    ),
+                    bgColor: AdaptiveColors.surface(
+                      context,
+                      Colors.purpleAccent,
+                    ).withValues(alpha: 0.05),
                     label:
                         widget.deliveryInfo == 'Livraison disponible' ||
                             widget.deliveryInfo == 'En magasin uniquement' ||
@@ -2631,8 +2901,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     const SizedBox(height: 16),
                     _buildDetailItem(
                       icon: Icons.info_outline,
-                      iconColor: Colors.orange,
-                      bgColor: Colors.orange.withValues(alpha: 0.1),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.orange,
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        Colors.orange,
+                      ).withValues(alpha: 0.1),
                       label: 'Conditions',
                       value: widget.conditions!,
                     ),
@@ -2668,10 +2944,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         children: [
                           Text(
                             widget.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A1A),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF1A1A1A),
+                              ),
                             ),
                           ),
                           Container(
@@ -2681,7 +2960,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                               vertical: 1,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF3AAE5E),
+                              color: AdaptiveColors.surface(
+                                context,
+                                const Color(0xFF3AAE5E),
+                              ),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -2689,7 +2971,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -2709,8 +2994,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                             onPressed: _toggleFollow,
                             style: TextButton.styleFrom(
                               foregroundColor: _isFollowing
-                                  ? Colors.grey[600]
-                                  : const Color(0xFF3AAE5E),
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[600],
+                                    )
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      const Color(0xFF3AAE5E),
+                                    ),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 8,
@@ -2719,8 +3010,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 borderRadius: BorderRadius.circular(20),
                                 side: BorderSide(
                                   color: _isFollowing
-                                      ? Colors.grey[400]!
-                                      : const Color(0xFF3AAE5E),
+                                      ? AdaptiveColors.border(
+                                          context,
+                                          Colors.grey[400]!,
+                                        )
+                                      : AdaptiveColors.border(
+                                          context,
+                                          const Color(0xFF3AAE5E),
+                                        ),
                                 ),
                               ),
                             ),
@@ -2762,8 +3059,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     icon: const Icon(Icons.chat_outlined, size: 20),
                     label: const Text('Contacter'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3AAE5E),
-                      foregroundColor: Colors.white,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
+                      foregroundColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.white,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -2784,12 +3087,15 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Localisation',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF1A1A1A),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -2820,9 +3126,12 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 city: widget.locationCity,
                               )
                             : widget.location!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF616161),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF616161),
+                          ),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -2831,7 +3140,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         'Localisation non spécifiée',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[500],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[500],
+                          ),
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -2845,9 +3157,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 20),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+                border: Border.all(
+                  color: AdaptiveColors.border(
+                    context,
+                    Colors.grey,
+                  ).withValues(alpha: 0.15),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -2861,9 +3178,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.chat_bubble_outline,
-                        color: Colors.grey,
+                        color: AdaptiveColors.foreground(context, Colors.grey),
                         size: 22,
                       ),
                       const SizedBox(width: 8),
@@ -2872,13 +3189,22 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey[600],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
                         ),
                       ),
                       const Spacer(),
                       Text(
                         '${_localCommentsCount ?? _comments.length}',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[500],
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -2900,7 +3226,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           'Aucun commentaire. Soyez le premier !',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -2931,8 +3260,16 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                             : 'Voir tous les commentaires',
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF3AAE5E),
-                        side: const BorderSide(color: Color(0xFF3AAE5E)),
+                        foregroundColor: AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
+                        side: BorderSide(
+                          color: AdaptiveColors.border(
+                            context,
+                            Color(0xFF3AAE5E),
+                          ),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -2944,13 +3281,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
             ),
             const SizedBox(height: 24),
 
-            const Center(
+            Center(
               child: Text(
                 "Autres bons plans qui pourraient vous intéresser",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF616161),
+                  color: AdaptiveColors.foreground(context, Color(0xFF616161)),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -2963,7 +3300,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
               ), // space on sides
               child: Container(
                 height: 1, // thin line
-                color: Colors.grey[300], // light gray
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.grey[300],
+                ), // light gray
               ),
             ),
 
@@ -2983,7 +3323,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     'Aucun bon plan disponible',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[500],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[500],
+                      ),
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -3095,10 +3438,18 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 isFavoritedNotifier.value
                                     ? 'Ajouté aux favoris'
                                     : 'Retiré des favoris',
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
+                                ),
                               ),
                               duration: const Duration(seconds: 2),
-                              backgroundColor: Colors.green,
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                Colors.green,
+                              ),
                             ),
                           );
                         }
@@ -3112,11 +3463,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            SnackBar(
                               content: Text(
                                 'Erreur lors de la mise à jour des favoris',
                               ),
-                              backgroundColor: Colors.red,
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                Colors.red,
+                              ),
                             ),
                           );
                         }
@@ -3126,7 +3480,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AdaptiveColors.surface(context, Colors.white),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.05),
@@ -3154,10 +3508,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 ),
                                 child: Text(
                                   title,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF333333),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF333333),
+                                    ),
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -3185,10 +3542,13 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                             bp['price'] == null
                                         ? Text(
                                             '${bp['original_price']}€',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 20,
                                               fontWeight: FontWeight.bold,
-                                              color: Color(0xFF2E9B5B),
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Color(0xFF2E9B5B),
+                                              ),
                                             ),
                                           )
                                         : (type == 'Infos pouvoir d\'achat'
@@ -3200,10 +3560,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                                               .isNotEmpty
                                                       ? '${bp['price']}€'
                                                       : 'Gratuit',
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontSize: 20,
                                                     fontWeight: FontWeight.bold,
-                                                    color: Color(0xFF2E9B5B),
+                                                    color:
+                                                        AdaptiveColors.foreground(
+                                                          context,
+                                                          Color(0xFF2E9B5B),
+                                                        ),
                                                   ),
                                                 )),
                                     if (bp['price'] != null &&
@@ -3216,7 +3580,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                         '${bp['original_price']}€',
                                         style: TextStyle(
                                           fontSize: 14,
-                                          color: Colors.grey[500],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[500],
+                                          ),
                                           decoration:
                                               TextDecoration.lineThrough,
                                         ),
@@ -3233,17 +3600,23 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                             vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFFF5722),
+                                            color: AdaptiveColors.surface(
+                                              context,
+                                              const Color(0xFFFF5722),
+                                            ),
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
                                           ),
                                           child: Text(
                                             '-${_calculateDiscount(bp['original_price'], bp['price'])}%',
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.white,
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Colors.white,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -3265,32 +3638,44 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                             vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: const Color(
-                                              0xFF2E9B5B,
+                                            color: AdaptiveColors.surface(
+                                              context,
+                                              const Color(0xFF2E9B5B),
                                             ).withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(
                                               20,
                                             ),
                                             border: Border.all(
-                                              color: const Color(0xFF2E9B5B),
+                                              color: AdaptiveColors.border(
+                                                context,
+                                                const Color(0xFF2E9B5B),
+                                              ),
                                               width: 1,
                                             ),
                                           ),
                                           child: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
-                                              const Icon(
+                                              Icon(
                                                 Icons.local_offer_outlined,
                                                 size: 14,
-                                                color: Color(0xFF2E9B5B),
+                                                color:
+                                                    AdaptiveColors.foreground(
+                                                      context,
+                                                      Color(0xFF2E9B5B),
+                                                    ),
                                               ),
                                               const SizedBox(width: 6),
                                               Text(
                                                 'Code promo: ${bp['promo_code']}',
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 10,
                                                   fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF2E9B5B),
+                                                  color:
+                                                      AdaptiveColors.foreground(
+                                                        context,
+                                                        Color(0xFF2E9B5B),
+                                                      ),
                                                 ),
                                               ),
                                             ],
@@ -3314,7 +3699,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                       Icon(
                                         Icons.store_outlined,
                                         size: 14,
-                                        color: Colors.grey[500],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[500],
+                                        ),
                                       ),
                                       const SizedBox(width: 4),
                                       Expanded(
@@ -3322,7 +3710,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                           '$locationType chez $merchantName',
                                           style: TextStyle(
                                             fontSize: 12,
-                                            color: Colors.grey[600],
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              Colors.grey[600],
+                                            ),
                                           ),
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -3333,14 +3724,20 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                       Icon(
                                         Icons.access_time,
                                         size: 14,
-                                        color: Colors.grey[500],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[500],
+                                        ),
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
                                         _buildTimeAgo(createdAt),
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[600],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -3401,8 +3798,15 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                     ),
                                     label: const Text('VOIR LE BON PLAN'),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFFFF9800),
-                                      foregroundColor: Colors.white,
+                                      backgroundColor: AdaptiveColors.surface(
+                                        context,
+                                        const Color(0xFFFF9800),
+                                      ),
+                                      foregroundColor:
+                                          AdaptiveColors.foreground(
+                                            context,
+                                            Colors.white,
+                                          ),
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 12,
                                       ),
@@ -3425,7 +3829,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                               child: Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.9),
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    Colors.white,
+                                  ).withValues(alpha: 0.9),
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
@@ -3443,7 +3850,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                         height: 20,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          color: Colors.grey[600],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[600],
+                                          ),
                                         ),
                                       )
                                     : Icon(
@@ -3451,8 +3861,14 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                             ? Icons.favorite
                                             : Icons.favorite_border,
                                         color: isFavoritedNotifier.value
-                                            ? Colors.red
-                                            : Colors.grey[600],
+                                            ? AdaptiveColors.foreground(
+                                                context,
+                                                Colors.red,
+                                              )
+                                            : AdaptiveColors.foreground(
+                                                context,
+                                                Colors.grey[600],
+                                              ),
                                         size: 20,
                                       ),
                               ),
@@ -3464,7 +3880,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                             right: 12,
                             child: _buildTypeTag(
                               'Bon Plan',
-                              const Color(0xFFFF9800),
+                              AdaptiveColors.surface(
+                                context,
+                                const Color(0xFFFF9800),
+                              ),
                               Icons.local_offer,
                             ),
                           ),
@@ -3640,9 +4059,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
 
     if (authorId == null || authorId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Impossible de démarrer la conversation'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: AdaptiveColors.surface(context, Colors.redAccent),
         ),
       );
       return;
@@ -3651,9 +4070,9 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     final otherUserId = int.tryParse(authorId);
     if (otherUserId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('ID utilisateur invalide'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: AdaptiveColors.surface(context, Colors.redAccent),
         ),
       );
       return;
@@ -3708,7 +4127,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AdaptiveColors.surface(context, Colors.redAccent),
             duration: const Duration(seconds: 4),
           ),
         );
@@ -3807,7 +4226,11 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
       widget.description.isNotEmpty
           ? widget.description
           : 'Aucune description disponible.',
-      style: TextStyle(fontSize: 13, color: Colors.grey[600], height: 1.5),
+      style: TextStyle(
+        fontSize: 13,
+        color: AdaptiveColors.foreground(context, Colors.grey[600]),
+        height: 1.5,
+      ),
     );
   }
 
@@ -3863,9 +4286,12 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                               response.statusCode < 300) {
                             Navigator.pop(dialogContext);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                 content: Text('Bon plan supprimé avec succès'),
-                                backgroundColor: Color(0xFF3AAE5E),
+                                backgroundColor: AdaptiveColors.surface(
+                                  context,
+                                  Color(0xFF3AAE5E),
+                                ),
                               ),
                             );
                             Navigator.pop(context, 'deleted');
@@ -3879,21 +4305,30 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                               content: Text(
                                 'Erreur: ${e.toString().replaceFirst("Exception: ", "")}',
                               ),
-                              backgroundColor: Colors.red,
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                Colors.red,
+                              ),
                             ),
                           );
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
+                  foregroundColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
                 ),
                 child: isDeleting
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           strokeWidth: 2,
                         ),
                       )
@@ -3936,7 +4371,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[500],
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -3948,17 +4383,23 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       prefixValue,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   Expanded(
                     child: Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF424242),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF424242),
+                        ),
                       ),
                     ),
                   ),
@@ -3969,7 +4410,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                   'Au lieu de $originalValue',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[400],
+                    color: AdaptiveColors.foreground(context, Colors.grey[400]),
                     decoration: TextDecoration.lineThrough,
                   ),
                 ),
@@ -4058,16 +4499,25 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     children: [
                       Text(
                         authorName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: Color(0xFF424242),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF424242),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         timeAgo,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[400],
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -4076,7 +4526,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                     body,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
                       height: 1.4,
                     ),
                   ),
@@ -4098,7 +4551,7 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -4218,21 +4671,34 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       onPressed: () => Navigator.pop(dialogCtx),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () =>
                           Navigator.pop(dialogCtx, editController.text),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enregistrer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -4266,7 +4732,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       content: Text(
                         'Erreur lors de la modification: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -4293,20 +4762,33 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       onPressed: () => Navigator.pop(dialogCtx, false),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(dialogCtx, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          Colors.redAccent,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Supprimer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -4349,7 +4831,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       content: Text(
                         'Erreur lors de la suppression: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -4450,7 +4935,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                       style: TextStyle(
                                         fontSize: isReply ? 12 : 13,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF333333),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          const Color(0xFF333333),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 6),
@@ -4458,7 +4946,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                       timeAgo,
                                       style: TextStyle(
                                         fontSize: isReply ? 10 : 11,
-                                        color: Colors.grey[500],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[500],
+                                        ),
                                       ),
                                     ),
                                     if (isOwner) ...[
@@ -4484,20 +4975,28 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                                   ],
                                                 ),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'delete',
                                                 child: Row(
                                                   children: [
                                                     Icon(
                                                       Icons.delete,
                                                       size: 18,
-                                                      color: Colors.redAccent,
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Colors.redAccent,
+                                                          ),
                                                     ),
                                                     SizedBox(width: 8),
                                                     Text(
                                                       'Supprimer',
                                                       style: TextStyle(
-                                                        color: Colors.redAccent,
+                                                        color:
+                                                            AdaptiveColors.foreground(
+                                                              context,
+                                                              Colors.redAccent,
+                                                            ),
                                                       ),
                                                     ),
                                                   ],
@@ -4514,7 +5013,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                         child: Icon(
                                           Icons.more_horiz,
                                           size: 18,
-                                          color: Colors.grey[400],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[400],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -4525,7 +5027,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                   body,
                                   style: TextStyle(
                                     fontSize: isReply ? 12 : 13,
-                                    color: Colors.grey[700],
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[700],
+                                    ),
                                     height: 1.4,
                                   ),
                                 ),
@@ -4543,7 +5048,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                       'Répondre',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.grey[600],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[600],
+                                        ),
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -4582,7 +5090,12 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       ),
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.grey[200]!),
+                          bottom: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey[200]!,
+                            ),
+                          ),
                         ),
                       ),
                       child: Row(
@@ -4612,7 +5125,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                 'Aucun commentaire\nSoyez le premier à commenter !',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Colors.grey[500],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[500],
+                                  ),
                                   fontSize: 14,
                                 ),
                               ),
@@ -4633,14 +5149,20 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           horizontal: 16,
                           vertical: 8,
                         ),
-                        color: Colors.grey[100],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[100],
+                        ),
                         child: Row(
                           children: [
                             Text(
                               'Répondre à $replyingToName',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                             const Spacer(),
@@ -4667,7 +5189,12 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                       ),
                       decoration: BoxDecoration(
                         border: Border(
-                          top: BorderSide(color: Colors.grey[200]!),
+                          top: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey[200]!,
+                            ),
+                          ),
                         ),
                       ),
                       child: Row(
@@ -4680,7 +5207,10 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                                     ? 'Répondre à $replyingToName...'
                                     : 'Ajouter un commentaire...',
                                 filled: true,
-                                fillColor: Colors.grey[100],
+                                fillColor: AdaptiveColors.surface(
+                                  context,
+                                  Colors.grey[100],
+                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(24),
                                   borderSide: BorderSide.none,
@@ -4699,12 +5229,18 @@ class _ProPostDetailScreenState extends State<ProPostDetailScreen> {
                           const SizedBox(width: 8),
                           IconButton(
                             onPressed: submitComment,
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.send,
-                              color: Color(0xFF3AAE5E),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
                             ),
                             style: IconButton.styleFrom(
-                              backgroundColor: const Color(0xFFE6F7EF),
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                const Color(0xFFE6F7EF),
+                              ),
                               shape: const CircleBorder(),
                             ),
                           ),

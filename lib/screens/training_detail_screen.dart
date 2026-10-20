@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -7,7 +8,7 @@ import 'package:myreklam/widgets/location_map.dart';
 import 'package:myreklam/models/delegation.dart';
 import 'package:myreklam/services/delegation_manager.dart';
 // Bouton partager masqué
-// import 'package:myreklam/services/share_service.dart';
+import 'package:myreklam/services/share_service.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
@@ -450,9 +451,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       if (response.statusCode == 201) {
         setState(() => _isSubscribed = true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Inscription enregistrée avec succès'),
-            backgroundColor: Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
           ),
         );
 
@@ -520,8 +521,11 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Voulez-vous vraiment vous inscrire à cette formation ?',
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                'Votre inscription et les informations de profil accessibles dans ce parcours seront transmises à l’organisme de formation. Il peut les traiter pour gérer votre demande ; contactez-le pour ses usages et vos droits sur ses propres copies. Confirmer l’inscription ?',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AdaptiveColors.foreground(context, Colors.grey[700]),
+                ),
               ),
               const SizedBox(height: 12),
               Text(
@@ -535,7 +539,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               const SizedBox(height: 12),
               Text(
                 'Organisme: ${_resolveOwnerName()}',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -552,15 +559,21 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       await _subscribe();
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF9800),
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFFF9800),
+                ),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
               ),
               child: _isLoadingSubscription
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 18,
                       width: 18,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                         strokeWidth: 2,
                       ),
                     )
@@ -1000,7 +1013,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return AppLayout(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF9F9FB)),
       onTabTapped: (index) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
@@ -1010,21 +1023,21 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
         );
       },
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
           padding: const EdgeInsets.only(left: 10),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
             size: 18,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Details de la formation',
           style: TextStyle(
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             fontFamily: 'Manjari',
             fontWeight: FontWeight.bold,
           ),
@@ -1035,9 +1048,9 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
-                icon: const Icon(
+                icon: Icon(
                   Icons.more_vert,
-                  color: Color(0xFF616161),
+                  color: AdaptiveColors.foreground(context, Color(0xFF616161)),
                   size: 24,
                 ),
                 offset: const Offset(0, 45),
@@ -1066,14 +1079,17 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       DelegationManager.instance.can(
                         DelegationPermission.announcements,
                       ))
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
                           Icon(
                             Icons.edit_outlined,
                             size: 20,
-                            color: Color(0xFF616161),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF616161),
+                            ),
                           ),
                           SizedBox(width: 12),
                           Text('Modifier'),
@@ -1083,19 +1099,27 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   if (DelegationManager.instance.can(
                     DelegationPermission.announcements,
                   ))
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
                           Icon(
                             Icons.delete_outline,
                             size: 20,
-                            color: Colors.red,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red,
+                            ),
                           ),
                           SizedBox(width: 12),
                           Text(
                             'Supprimer',
-                            style: TextStyle(color: Colors.red),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.red,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -1117,15 +1141,24 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   height: 36,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFE6F7EF),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFE6F7EF),
+                    ),
                     border: Border.all(
-                      color: const Color(0xFF2A8143),
+                      color: AdaptiveColors.border(
+                        context,
+                        const Color(0xFF2A8143),
+                      ),
                       width: 1.5,
                     ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.notifications,
-                    color: Color(0xFF2A8143),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF2A8143),
+                    ),
                     size: 18,
                   ),
                 ),
@@ -1157,13 +1190,16 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           _buildTag(
                             widget.trainingCategory!,
                             Icons.category_outlined,
-                            const Color(0xFF9C27B0),
+                            AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFF9C27B0),
+                            ),
                           ),
                         if (widget.trainingType != null)
                           _buildTag(
                             _formatEnumLabel(widget.trainingType!),
                             Icons.school_outlined,
-                            Colors.blue,
+                            AdaptiveColors.foreground(context, Colors.blue),
                           ),
                       ],
                     ),
@@ -1174,10 +1210,13 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   // Title - big and bold
                   Text(
                     widget.trainingTitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1A1A1A),
+                      ),
                       height: 1.3,
                     ),
                   ),
@@ -1221,12 +1260,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Description',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1A1A1A),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1242,12 +1284,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Informations',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1A1A1A),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -1255,8 +1300,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   if (widget.trainingStyle.isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.laptop_chromebook,
-                      iconColor: Colors.orange,
-                      bgColor: Colors.orange.withValues(alpha: 0.1),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.orange,
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        Colors.orange,
+                      ).withValues(alpha: 0.1),
                       label: 'Type d\'enseignement',
                       value: widget.trainingStyle
                           .map(_formatEnumLabel)
@@ -1268,8 +1319,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   if (widget.trainingPublic.isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.people_outline,
-                      iconColor: Colors.teal,
-                      bgColor: Colors.teal.withValues(alpha: 0.1),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.teal,
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        Colors.teal,
+                      ).withValues(alpha: 0.1),
                       label: 'Public cible',
                       value: widget.trainingPublic
                           .map(_formatEnumLabel)
@@ -1281,8 +1338,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   if (widget.requiredLevels.isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.school_outlined,
-                      iconColor: Colors.purple,
-                      bgColor: Colors.purple.withValues(alpha: 0.1),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.purple,
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        Colors.purple,
+                      ).withValues(alpha: 0.1),
                       label: 'Prérequis',
                       value: widget.requiredLevels.join(', '),
                     ),
@@ -1292,8 +1355,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   if (widget.durationInH != null)
                     _buildDetailItem(
                       icon: Icons.timer_outlined,
-                      iconColor: const Color(0xFF3AAE5E),
-                      bgColor: const Color(0xFFE6F7EF),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFE6F7EF),
+                      ),
                       label: 'Durée',
                       value:
                           '${widget.durationInH} ${_durationUnitLabel(widget.durationUnit)}',
@@ -1304,16 +1373,28 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       (widget.startDate != null || widget.endDate != null))
                     _buildDetailItem(
                       icon: Icons.calendar_today_outlined,
-                      iconColor: Colors.blue,
-                      bgColor: Colors.blue.withValues(alpha: 0.1),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.blue,
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        Colors.blue,
+                      ).withValues(alpha: 0.1),
                       label: 'Dates',
                       value: _formatDates(widget.startDate, widget.endDate),
                     ),
                   if (widget.dateToDefine)
                     _buildDetailItem(
                       icon: Icons.calendar_today_outlined,
-                      iconColor: Colors.blue,
-                      bgColor: Colors.blue.withValues(alpha: 0.1),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.blue,
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        Colors.blue,
+                      ).withValues(alpha: 0.1),
                       label: 'Dates',
                       value: 'À définir',
                     ),
@@ -1325,8 +1406,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   if (widget.certification.isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.verified_outlined,
-                      iconColor: const Color(0xFFFF9800),
-                      bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFFFF9800),
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFFF9800),
+                      ).withValues(alpha: 0.1),
                       label: 'Certifications',
                       value: widget.certification.join(', '),
                     ),
@@ -1336,8 +1423,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   if (widget.trainingFunding.contains('CPF'))
                     _buildDetailItem(
                       icon: Icons.account_balance_wallet_outlined,
-                      iconColor: const Color(0xFF3AAE5E),
-                      bgColor: const Color(0xFFE6F7EF),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFE6F7EF),
+                      ),
                       label: 'Financement',
                       value: 'Éligible CPF',
                     ),
@@ -1346,8 +1439,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   // 8. Prix
                   _buildDetailItem(
                     icon: Icons.euro,
-                    iconColor: const Color(0xFF3AAE5E),
-                    bgColor: const Color(0xFFE6F7EF),
+                    iconColor: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ),
+                    bgColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFE6F7EF),
+                    ),
                     label: 'Prix',
                     value: _formatPrice(),
                   ),
@@ -1368,8 +1467,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     icon: const Icon(Icons.download_outlined, size: 18),
                     label: const Text('Voir le programme'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3AAE5E),
-                      foregroundColor: Colors.white,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
+                      foregroundColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.white,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1395,9 +1500,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                             : () => _showSubscriptionDialog(),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _isSubscribed
-                              ? Colors.grey
-                              : const Color(0xFFFF9800),
-                          foregroundColor: Colors.white,
+                              ? AdaptiveColors.surface(context, Colors.grey)
+                              : AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFFF9800),
+                                ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1405,12 +1516,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           elevation: 0,
                         ),
                         child: _isSubscribed
-                            ? const Row(
+                            ? Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
                                     Icons.check_circle,
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     size: 18,
                                   ),
                                   SizedBox(width: 6),
@@ -1441,8 +1555,16 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       icon: const Icon(Icons.language, size: 18),
                       label: const Text("Site de l'organisme"),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFFF9800),
-                        side: const BorderSide(color: Color(0xFFFF9800)),
+                        foregroundColor: AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFFFF9800),
+                        ),
+                        side: BorderSide(
+                          color: AdaptiveColors.border(
+                            context,
+                            Color(0xFFFF9800),
+                          ),
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1476,8 +1598,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                   ? Icons.favorite
                                   : Icons.favorite_outline,
                               color: _isFavorite
-                                  ? Colors.red
-                                  : Colors.grey[600],
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      Colors.red,
+                                    )
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[600],
+                                    ),
                               size: 24,
                             ),
                     ),
@@ -1485,12 +1613,26 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       'Favoris',
                       style: TextStyle(
                         fontSize: 12,
-                        color: _isFavorite ? Colors.red : Colors.grey[600],
+                        color: _isFavorite
+                            ? AdaptiveColors.foreground(context, Colors.red)
+                            : AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                       ),
                     ),
                   ],
                 ),
-                // Bouton partager masqué
+                if (widget.trainingId?.isNotEmpty == true)
+                  IconButton(
+                    tooltip: 'Partager cette formation',
+                    icon: const Icon(Icons.share_outlined),
+                    onPressed: () => ShareService.shareEntity(
+                      'trainings',
+                      widget.trainingId!,
+                      title: widget.trainingTitle,
+                    ),
+                  ),
                 //         color: Colors.grey[600],
                 //       ),
                 //     ),
@@ -1527,17 +1669,23 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         children: [
                           Text(
                             _resolveOwnerName(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A1A),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF1A1A1A),
+                              ),
                             ),
                           ),
                           Text(
                             'Pro',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                         ],
@@ -1556,8 +1704,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                             onPressed: _toggleFollow,
                             style: TextButton.styleFrom(
                               foregroundColor: _isFollowing
-                                  ? Colors.grey[600]
-                                  : const Color(0xFF3AAE5E),
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[600],
+                                    )
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      const Color(0xFF3AAE5E),
+                                    ),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 8,
@@ -1566,8 +1720,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                 borderRadius: BorderRadius.circular(20),
                                 side: BorderSide(
                                   color: _isFollowing
-                                      ? Colors.grey[400]!
-                                      : const Color(0xFF3AAE5E),
+                                      ? AdaptiveColors.border(
+                                          context,
+                                          Colors.grey[400]!,
+                                        )
+                                      : AdaptiveColors.border(
+                                          context,
+                                          const Color(0xFF3AAE5E),
+                                        ),
                                 ),
                               ),
                             ),
@@ -1588,7 +1748,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 widget.timeAgo.isNotEmpty ? widget.timeAgo : 'Posté récemment',
-                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -1601,12 +1764,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Localisation',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF1A1A1A),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -1630,9 +1796,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                               city: widget.addressCity,
                             )
                           : 'Localisation non spécifiée',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF616161),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF616161),
+                        ),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -1648,9 +1817,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+                border: Border.all(
+                  color: AdaptiveColors.border(
+                    context,
+                    Colors.grey,
+                  ).withValues(alpha: 0.15),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -1664,9 +1838,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.comment_outlined,
-                        color: Color(0xFF616161),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF616161),
+                        ),
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -1675,13 +1852,22 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[700],
+                          ),
                         ),
                       ),
                       const Spacer(),
                       Text(
                         '${_localCommentsCount ?? _comments.length}',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[500],
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -1702,7 +1888,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           'Aucun commentaire. Soyez le premier !',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -1732,8 +1921,16 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                             : 'Voir tous les commentaires',
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF3AAE5E),
-                        side: const BorderSide(color: Color(0xFF3AAE5E)),
+                        foregroundColor: AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
+                        side: BorderSide(
+                          color: AdaptiveColors.border(
+                            context,
+                            Color(0xFF3AAE5E),
+                          ),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -1747,13 +1944,16 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
             // 11. Similar formations header
             if (_similarTrainings.isNotEmpty || _isLoadingSimilar) ...[
-              const Center(
+              Center(
                 child: Text(
                   'Autres formations qui pourraient vous intéresser',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF616161),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF616161),
+                    ),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -1763,7 +1963,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   horizontal: 20,
                   vertical: 10,
                 ),
-                child: Container(height: 1, color: Colors.grey[300]),
+                child: Container(
+                  height: 1,
+                  color: AdaptiveColors.surface(context, Colors.grey[300]),
+                ),
               ),
               const SizedBox(height: 16),
               // Similar formations cards
@@ -2070,7 +2273,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                         : 'Retiré des favoris',
                                   ),
                                   duration: const Duration(seconds: 2),
-                                  backgroundColor: Colors.green,
+                                  backgroundColor: AdaptiveColors.surface(
+                                    context,
+                                    Colors.green,
+                                  ),
                                 ),
                               );
                             }
@@ -2080,11 +2286,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   content: Text(
                                     'Erreur lors de la mise à jour des favoris',
                                   ),
-                                  backgroundColor: Colors.red,
+                                  backgroundColor: AdaptiveColors.surface(
+                                    context,
+                                    Colors.red,
+                                  ),
                                 ),
                               );
                             }
@@ -2179,7 +2388,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               Icon(
                 isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                 size: 18,
-                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                color: isLiked
+                    ? AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      )
+                    : AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               GestureDetector(
@@ -2188,7 +2402,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                   data.likesCount.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    color: isLiked
+                        ? AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -2205,12 +2424,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
               Icon(
                 Icons.chat_bubble_outline,
                 size: 17,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               Text(
                 data.commentsCount.toString(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -2225,7 +2447,11 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     if (widget.description.isNotEmpty) {
       return Text(
         widget.description,
-        style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
+        style: TextStyle(
+          fontSize: 14,
+          color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          height: 1.5,
+        ),
       );
     }
 
@@ -2304,7 +2530,11 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
 
     return Text(
       'Aucune description disponible.',
-      style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
+      style: TextStyle(
+        fontSize: 14,
+        color: AdaptiveColors.foreground(context, Colors.grey[600]),
+        height: 1.5,
+      ),
     );
   }
 
@@ -2394,11 +2624,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                               response.statusCode < 300) {
                             Navigator.pop(dialogContext);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                 content: Text(
                                   'Formation supprimée avec succès',
                                 ),
-                                backgroundColor: Color(0xFF3AAE5E),
+                                backgroundColor: AdaptiveColors.surface(
+                                  context,
+                                  Color(0xFF3AAE5E),
+                                ),
                               ),
                             );
                             Navigator.pop(context, 'deleted');
@@ -2412,21 +2645,30 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                               content: Text(
                                 'Erreur: ${e.toString().replaceFirst("Exception: ", "")}',
                               ),
-                              backgroundColor: Colors.red,
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                Colors.red,
+                              ),
                             ),
                           );
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
+                  foregroundColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
                 ),
                 child: isDeleting
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           strokeWidth: 2,
                         ),
                       )
@@ -2657,7 +2899,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                             style: TextStyle(
                               fontSize: isReply ? 12 : 13,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF333333),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                const Color(0xFF333333),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -2665,7 +2910,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                             timeAgo,
                             style: TextStyle(
                               fontSize: isReply ? 10 : 11,
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                             ),
                           ),
                           if (isOwner &&
@@ -2692,20 +2940,26 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                         ],
                                       ),
                                     ),
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'delete',
                                       child: Row(
                                         children: [
                                           Icon(
                                             Icons.delete,
                                             size: 18,
-                                            color: Colors.redAccent,
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              Colors.redAccent,
+                                            ),
                                           ),
                                           SizedBox(width: 8),
                                           Text(
                                             'Supprimer',
                                             style: TextStyle(
-                                              color: Colors.redAccent,
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Colors.redAccent,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -2722,7 +2976,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                               child: Icon(
                                 Icons.more_horiz,
                                 size: 18,
-                                color: Colors.grey[400],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[400],
+                                ),
                               ),
                             ),
                           ],
@@ -2733,7 +2990,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         body,
                         style: TextStyle(
                           fontSize: isReply ? 12 : 13,
-                          color: Colors.grey[700],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[700],
+                          ),
                           height: 1.4,
                         ),
                       ),
@@ -2751,7 +3011,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                             'Répondre',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -2793,7 +3056,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -2929,21 +3192,34 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       onPressed: () => Navigator.pop(dialogCtx),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () =>
                           Navigator.pop(dialogCtx, editController.text),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enregistrer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -2975,7 +3251,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       content: Text(
                         'Erreur lors de la modification: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -3002,20 +3281,33 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       onPressed: () => Navigator.pop(dialogCtx, false),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(dialogCtx, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          Colors.redAccent,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Supprimer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -3040,7 +3332,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       content: Text(
                         'Erreur lors de la suppression: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -3060,7 +3355,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.grey[200]!),
+                          bottom: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey[200]!,
+                            ),
+                          ),
                         ),
                       ),
                       child: Row(
@@ -3089,7 +3389,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                               child: Text(
                                 'Aucun commentaire',
                                 style: TextStyle(
-                                  color: Colors.grey[500],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[500],
+                                  ),
                                   fontSize: 14,
                                 ),
                               ),
@@ -3119,13 +3422,19 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           horizontal: 16,
                           vertical: 6,
                         ),
-                        color: Colors.grey[100],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[100],
+                        ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.reply,
                               size: 16,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                             const SizedBox(width: 6),
                             Expanded(
@@ -3133,7 +3442,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                 'Répondre à $replyingToName',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey[600],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                                 ),
                               ),
                             ),
@@ -3160,7 +3472,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                       ),
                       decoration: BoxDecoration(
                         border: Border(
-                          top: BorderSide(color: Colors.grey[200]!),
+                          top: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey[200]!,
+                            ),
+                          ),
                         ),
                       ),
                       child: Row(
@@ -3171,7 +3488,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                               decoration: InputDecoration(
                                 hintText: 'Ajouter un commentaire...',
                                 filled: true,
-                                fillColor: Colors.grey[100],
+                                fillColor: AdaptiveColors.surface(
+                                  context,
+                                  Colors.grey[100],
+                                ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(24),
                                   borderSide: BorderSide.none,
@@ -3186,9 +3506,12 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           const SizedBox(width: 8),
                           IconButton(
                             onPressed: submitComment,
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.send,
-                              color: Color(0xFF3AAE5E),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
                             ),
                           ),
                         ],
@@ -3319,7 +3642,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (sheetCtx) => StatefulBuilder(
         builder: (ctx, ms) {
           if (isLoading && comments.isEmpty) {
@@ -3435,21 +3758,31 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       'Annuler',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
+                      ),
                     ),
                   ),
                   ElevatedButton(
                     onPressed: () =>
                         Navigator.pop(context, editController.text),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3AAE5E),
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Enregistrer',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(context, Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -3481,7 +3814,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     content: Text(
                       'Erreur lors de la modification: ${e.toString()}',
                     ),
-                    backgroundColor: Colors.redAccent,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      Colors.redAccent,
+                    ),
                   ),
                 );
               }
@@ -3508,20 +3844,30 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     onPressed: () => Navigator.pop(context, false),
                     child: Text(
                       'Annuler',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
+                      ),
                     ),
                   ),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Supprimer',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(context, Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -3571,7 +3917,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     content: Text(
                       'Erreur lors de la suppression: ${e.toString()}',
                     ),
-                    backgroundColor: Colors.redAccent,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      Colors.redAccent,
+                    ),
                   ),
                 );
               }
@@ -3678,7 +4027,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                     style: TextStyle(
                                       fontSize: isReply ? 12 : 13,
                                       fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF333333),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        const Color(0xFF333333),
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 6),
@@ -3686,7 +4038,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                     timeAgo,
                                     style: TextStyle(
                                       fontSize: isReply ? 10 : 11,
-                                      color: Colors.grey[500],
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[500],
+                                      ),
                                     ),
                                   ),
                                   if (isOwner) ...[
@@ -3712,20 +4067,28 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                                 ],
                                               ),
                                             ),
-                                            const PopupMenuItem(
+                                            PopupMenuItem(
                                               value: 'delete',
                                               child: Row(
                                                 children: [
                                                   Icon(
                                                     Icons.delete,
                                                     size: 18,
-                                                    color: Colors.redAccent,
+                                                    color:
+                                                        AdaptiveColors.foreground(
+                                                          context,
+                                                          Colors.redAccent,
+                                                        ),
                                                   ),
                                                   SizedBox(width: 8),
                                                   Text(
                                                     'Supprimer',
                                                     style: TextStyle(
-                                                      color: Colors.redAccent,
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Colors.redAccent,
+                                                          ),
                                                     ),
                                                   ),
                                                 ],
@@ -3742,7 +4105,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                       child: Icon(
                                         Icons.more_horiz,
                                         size: 18,
-                                        color: Colors.grey[400],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[400],
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -3753,7 +4119,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                 body,
                                 style: TextStyle(
                                   fontSize: isReply ? 12 : 13,
-                                  color: Colors.grey[700],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[700],
+                                  ),
                                   height: 1.4,
                                 ),
                               ),
@@ -3803,8 +4172,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                               : Icons.thumb_up_alt_outlined,
                                           size: isReply ? 12 : 14,
                                           color: isLiked
-                                              ? const Color(0xFF3AAE5E)
-                                              : Colors.grey[500],
+                                              ? AdaptiveColors.foreground(
+                                                  context,
+                                                  const Color(0xFF3AAE5E),
+                                                )
+                                              : AdaptiveColors.foreground(
+                                                  context,
+                                                  Colors.grey[500],
+                                                ),
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
@@ -3812,8 +4187,14 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                           style: TextStyle(
                                             fontSize: isReply ? 11 : 12,
                                             color: isLiked
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[600],
+                                                ? AdaptiveColors.foreground(
+                                                    context,
+                                                    const Color(0xFF3AAE5E),
+                                                  )
+                                                : AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.grey[600],
+                                                  ),
                                             fontWeight: isLiked
                                                 ? FontWeight.w600
                                                 : FontWeight.normal,
@@ -3836,7 +4217,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                         'Répondre',
                                         style: TextStyle(
                                           fontSize: isReply ? 11 : 12,
-                                          color: Colors.grey[600],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[600],
+                                          ),
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -3863,8 +4247,8 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
             maxChildSize: 0.95,
             minChildSize: 0.3,
             builder: (_, sc) => Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
@@ -3874,7 +4258,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: AdaptiveColors.surface(context, Colors.grey[300]),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -3907,7 +4291,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                         horizontal: 16,
                         vertical: 8,
                       ),
-                      color: Colors.grey[100],
+                      color: AdaptiveColors.surface(context, Colors.grey[100]),
                       child: Row(
                         children: [
                           Expanded(
@@ -3915,7 +4299,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                               'Répondre à $replyingToName',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -3925,10 +4312,13 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                               replyingToId = null;
                               replyingToName = null;
                             }),
-                            child: const Icon(
+                            child: Icon(
                               Icons.close,
                               size: 18,
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                             ),
                           ),
                         ],
@@ -3955,7 +4345,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                                   ? 'Écrire une réponse...'
                                   : 'Écrire un commentaire...',
                               filled: true,
-                              fillColor: Colors.grey[100],
+                              fillColor: AdaptiveColors.surface(
+                                context,
+                                Colors.grey[100],
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(24),
                                 borderSide: BorderSide.none,
@@ -3972,13 +4365,19 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                           onTap: submitComment,
                           child: Container(
                             padding: const EdgeInsets.all(10),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF3AAE5E),
+                            decoration: BoxDecoration(
+                              color: AdaptiveColors.surface(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.send,
-                              color: Colors.white,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               size: 20,
                             ),
                           ),
@@ -4009,14 +4408,24 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 Icon(
                   isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                   size: 18,
-                  color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                  color: isLiked
+                      ? AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        )
+                      : AdaptiveColors.foreground(context, Colors.grey[500]),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   d.likesCount.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    color: isLiked
+                        ? AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -4031,12 +4440,15 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 Icon(
                   Icons.chat_bubble_outline,
                   size: 17,
-                  color: Colors.grey[500],
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   d.commentsCount.toString(),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ],
             ),
@@ -4266,7 +4678,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[500],
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -4275,7 +4687,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
                 value,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[800],
+                  color: AdaptiveColors.foreground(context, Colors.grey[800]),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -4395,7 +4807,10 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Document téléchargé: $finalFileName'),
-          backgroundColor: const Color(0xFF3AAE5E),
+          backgroundColor: AdaptiveColors.surface(
+            context,
+            const Color(0xFF3AAE5E),
+          ),
         ),
       );
     } catch (e) {
@@ -4403,7 +4818,7 @@ class _TrainingDetailScreenState extends State<TrainingDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur lors du téléchargement: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     }

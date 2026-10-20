@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -123,7 +124,9 @@ class _CreateReelScreenState extends State<CreateReelScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(text),
-        backgroundColor: error ? Colors.red.shade700 : null,
+        backgroundColor: error
+            ? AdaptiveColors.surface(context, Colors.red.shade700)
+            : null,
       ),
     );
   }
@@ -131,10 +134,13 @@ class _CreateReelScreenState extends State<CreateReelScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF08110E),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFF08110E)),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF08110E),
-        foregroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(
+          context,
+          const Color(0xFF08110E),
+        ),
+        foregroundColor: AdaptiveColors.foreground(context, Colors.white),
         title: const Text('Créer un Reel'),
       ),
       body: SafeArea(
@@ -144,13 +150,19 @@ class _CreateReelScreenState extends State<CreateReelScreen> {
             TextField(
               controller: _link,
               enabled: !_publishing && !_compressing,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.white),
+              ),
               keyboardType: TextInputType.url,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Ou collez un lien vidéo',
                 hintText: 'YouTube, Facebook, Instagram ou TikTok',
-                labelStyle: TextStyle(color: Colors.white70),
-                hintStyle: TextStyle(color: Colors.white54),
+                labelStyle: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.white70),
+                ),
+                hintStyle: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.white54),
+                ),
               ),
               onChanged: (_) {
                 final previous = _controller;
@@ -163,9 +175,11 @@ class _CreateReelScreenState extends State<CreateReelScreen> {
             ),
             if (_link.text.isNotEmpty) SocialVideoPreview(text: _link.text),
             if (_link.text.isNotEmpty && SocialVideo.parse(_link.text) == null)
-              const Text(
+              Text(
                 'Collez un lien vidéo public valide.',
-                style: TextStyle(color: Colors.orange),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.orange),
+                ),
               ),
             if (_link.text.isEmpty)
               AspectRatio(
@@ -182,29 +196,43 @@ class _CreateReelScreenState extends State<CreateReelScreen> {
                           child: VideoPlayer(_controller!),
                         )
                       : Material(
-                          color: Colors.white.withValues(alpha: .08),
+                          color: AdaptiveColors.surface(
+                            context,
+                            Colors.white,
+                          ).withValues(alpha: .08),
                           child: InkWell(
                             onTap: _compressing ? null : _pickVideo,
-                            child: const Column(
+                            child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
                                   Icons.video_library_outlined,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   size: 52,
                                 ),
                                 SizedBox(height: 12),
                                 Text(
                                   'Choisir une vidéo',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 SizedBox(height: 6),
                                 Text(
                                   'Compression automatique · 50 Mo maximum',
-                                  style: TextStyle(color: Colors.white60),
+                                  style: TextStyle(
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white60,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -219,7 +247,7 @@ class _CreateReelScreenState extends State<CreateReelScreen> {
                 label: const Text('Changer la vidéo'),
               ),
             if (_compressing)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -231,7 +259,12 @@ class _CreateReelScreenState extends State<CreateReelScreen> {
                     SizedBox(width: 10),
                     Text(
                       'Compression de la vidéo…',
-                      style: TextStyle(color: Colors.white70),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.white70,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -241,12 +274,19 @@ class _CreateReelScreenState extends State<CreateReelScreen> {
               controller: _caption,
               maxLength: 500,
               maxLines: 4,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.white),
+              ),
               decoration: InputDecoration(
                 labelText: 'Légende',
-                labelStyle: const TextStyle(color: Colors.white70),
+                labelStyle: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.white70),
+                ),
                 filled: true,
-                fillColor: Colors.white.withValues(alpha: .08),
+                fillColor: AdaptiveColors.surface(
+                  context,
+                  Colors.white,
+                ).withValues(alpha: .08),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
@@ -255,11 +295,18 @@ class _CreateReelScreenState extends State<CreateReelScreen> {
             ),
             DropdownButtonFormField<String>(
               initialValue: _visibility,
-              dropdownColor: const Color(0xFF17221E),
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
+              dropdownColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF17221E),
+              ),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.white),
+              ),
+              decoration: InputDecoration(
                 labelText: 'Visibilité',
-                labelStyle: TextStyle(color: Colors.white70),
+                labelStyle: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.white70),
+                ),
               ),
               items: const [
                 DropdownMenuItem(value: 'public', child: Text('Public')),

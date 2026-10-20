@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/utils/avatar_resolver.dart';
@@ -52,50 +53,54 @@ class ReklamAvatar extends StatelessWidget {
     );
   }
 
-  Color _defaultBackgroundColor() {
+  Color _defaultBackgroundColor(BuildContext context) {
     if (backgroundColor != null) return backgroundColor!;
     if (_initial == null) {
       return accountType == 'pro'
-          ? const Color(0xFF2E9B5B).withValues(alpha: 0.2)
-          : Colors.grey[300]!;
+          ? AdaptiveColors.foreground(
+              context,
+              const Color(0xFF2E9B5B),
+            ).withValues(alpha: 0.2)
+          : AdaptiveColors.foreground(context, Colors.grey[300]!);
     }
     final colors = [
-      const Color(0xFF2E9B5B),
-      const Color(0xFF2196F3),
-      const Color(0xFF9C27B0),
-      const Color(0xFFFF9800),
-      const Color(0xFFE91E63),
-      const Color(0xFF00BCD4),
-      const Color(0xFF795548),
-      const Color(0xFF607D8B),
+      AdaptiveColors.foreground(context, const Color(0xFF2E9B5B)),
+      AdaptiveColors.foreground(context, const Color(0xFF2196F3)),
+      AdaptiveColors.foreground(context, const Color(0xFF9C27B0)),
+      AdaptiveColors.foreground(context, const Color(0xFFFF9800)),
+      AdaptiveColors.foreground(context, const Color(0xFFE91E63)),
+      AdaptiveColors.foreground(context, const Color(0xFF00BCD4)),
+      AdaptiveColors.foreground(context, const Color(0xFF795548)),
+      AdaptiveColors.foreground(context, const Color(0xFF607D8B)),
     ];
     final index = _initial!.codeUnitAt(0) % colors.length;
     return colors[index].withValues(alpha: 0.2);
   }
 
-  Color _defaultTextColor() {
+  Color _defaultTextColor(BuildContext context) {
     if (textColor != null) return textColor!;
-    if (_initial == null) return Colors.white;
+    if (_initial == null)
+      return AdaptiveColors.foreground(context, Colors.white);
     final colors = [
-      const Color(0xFF2E9B5B),
-      const Color(0xFF2196F3),
-      const Color(0xFF9C27B0),
-      const Color(0xFFFF9800),
-      const Color(0xFFE91E63),
-      const Color(0xFF00BCD4),
-      const Color(0xFF795548),
-      const Color(0xFF607D8B),
+      AdaptiveColors.foreground(context, const Color(0xFF2E9B5B)),
+      AdaptiveColors.foreground(context, const Color(0xFF2196F3)),
+      AdaptiveColors.foreground(context, const Color(0xFF9C27B0)),
+      AdaptiveColors.foreground(context, const Color(0xFFFF9800)),
+      AdaptiveColors.foreground(context, const Color(0xFFE91E63)),
+      AdaptiveColors.foreground(context, const Color(0xFF00BCD4)),
+      AdaptiveColors.foreground(context, const Color(0xFF795548)),
+      AdaptiveColors.foreground(context, const Color(0xFF607D8B)),
     ];
     final index = _initial!.codeUnitAt(0) % colors.length;
     return colors[index];
   }
 
-  Widget _buildFallbackContent() {
+  Widget _buildFallbackContent(BuildContext context) {
     if (_initial != null) {
       return Text(
         _initial!,
         style: TextStyle(
-          color: _defaultTextColor(),
+          color: _defaultTextColor(context),
           fontSize: textSize,
           fontWeight: FontWeight.bold,
         ),
@@ -104,19 +109,19 @@ class ReklamAvatar extends StatelessWidget {
     return Icon(
       accountType == 'pro' ? Icons.business : Icons.person,
       size: radius * 0.8,
-      color: Colors.white,
+      color: AdaptiveColors.foreground(context, Colors.white),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final fallback = Center(child: _buildFallbackContent());
+    final fallback = Center(child: _buildFallbackContent(context));
     final avatarWidget = Container(
       width: radius * 2,
       height: radius * 2,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: _defaultBackgroundColor(),
+        color: _defaultBackgroundColor(context),
         border: border,
       ),
       clipBehavior: Clip.antiAlias,

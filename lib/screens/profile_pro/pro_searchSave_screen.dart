@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/saved_search_service.dart';
@@ -49,7 +50,9 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFFEF8A40)),
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+            ),
           ),
           child: child!,
         );
@@ -95,7 +98,9 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: AdaptiveColors.foreground(context, Colors.red),
+            ),
             child: const Text('Supprimer'),
           ),
         ],
@@ -106,17 +111,17 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
       final success = await _savedSearchService.deleteSearch(searchId);
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Recherche supprimée'),
-            backgroundColor: Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
           ),
         );
         await _loadSavedSearches();
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Erreur lors de la suppression'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -153,18 +158,21 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
       appBar: AppBar(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2E9B5B)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Mes recherches sauvegardées',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -184,14 +192,20 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                         Icon(
                           Icons.search_off,
                           size: 64,
-                          color: Colors.grey[400],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[400],
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'Aucune recherche sauvegardée',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.grey[600],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[600],
+                            ),
                           ),
                         ),
                       ],
@@ -209,7 +223,10 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                               height: 1.4,
                             ),
                           ),
@@ -232,13 +249,22 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: _selectedDate != null
-                                              ? const Color(0xFFEF8A40)
-                                              : Colors.white,
+                                              ? AdaptiveColors.surface(
+                                                  context,
+                                                  const Color(0xFFEF8A40),
+                                                )
+                                              : AdaptiveColors.surface(
+                                                  context,
+                                                  Colors.white,
+                                                ),
                                           borderRadius: BorderRadius.circular(
                                             6,
                                           ),
                                           border: Border.all(
-                                            color: const Color(0xFFEF8A40),
+                                            color: AdaptiveColors.border(
+                                              context,
+                                              const Color(0xFFEF8A40),
+                                            ),
                                           ),
                                         ),
                                         child: Row(
@@ -247,8 +273,14 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                                               Icons.calendar_today,
                                               size: 16,
                                               color: _selectedDate != null
-                                                  ? Colors.white
-                                                  : const Color(0xFFEF8A40),
+                                                  ? AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.white,
+                                                    )
+                                                  : AdaptiveColors.foreground(
+                                                      context,
+                                                      const Color(0xFFEF8A40),
+                                                    ),
                                             ),
                                             const SizedBox(width: 8),
                                             Text(
@@ -259,8 +291,14 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w500,
                                                 color: _selectedDate != null
-                                                    ? Colors.white
-                                                    : const Color(0xFFEF8A40),
+                                                    ? AdaptiveColors.foreground(
+                                                        context,
+                                                        Colors.white,
+                                                      )
+                                                    : AdaptiveColors.foreground(
+                                                        context,
+                                                        const Color(0xFFEF8A40),
+                                                      ),
                                               ),
                                             ),
                                           ],
@@ -275,17 +313,21 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                                       child: Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: Colors.red.withValues(
-                                            alpha: 0.1,
-                                          ),
+                                          color: AdaptiveColors.surface(
+                                            context,
+                                            Colors.red,
+                                          ).withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(
                                             6,
                                           ),
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.clear,
                                           size: 18,
-                                          color: Colors.red,
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.red,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -309,13 +351,22 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                                           color:
                                               _sortBy == 'created_at' &&
                                                   _sortOrder == 'desc'
-                                              ? const Color(0xFFEF8A40)
-                                              : Colors.white,
+                                              ? AdaptiveColors.surface(
+                                                  context,
+                                                  const Color(0xFFEF8A40),
+                                                )
+                                              : AdaptiveColors.surface(
+                                                  context,
+                                                  Colors.white,
+                                                ),
                                           borderRadius: BorderRadius.circular(
                                             6,
                                           ),
                                           border: Border.all(
-                                            color: const Color(0xFFEF8A40),
+                                            color: AdaptiveColors.border(
+                                              context,
+                                              const Color(0xFFEF8A40),
+                                            ),
                                           ),
                                         ),
                                         child: Row(
@@ -328,8 +379,14 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                                               color:
                                                   _sortBy == 'created_at' &&
                                                       _sortOrder == 'desc'
-                                                  ? Colors.white
-                                                  : const Color(0xFFEF8A40),
+                                                  ? AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.white,
+                                                    )
+                                                  : AdaptiveColors.foreground(
+                                                      context,
+                                                      const Color(0xFFEF8A40),
+                                                    ),
                                             ),
                                             const SizedBox(width: 6),
                                             Text(
@@ -340,8 +397,14 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                                                 color:
                                                     _sortBy == 'created_at' &&
                                                         _sortOrder == 'desc'
-                                                    ? Colors.white
-                                                    : const Color(0xFFEF8A40),
+                                                    ? AdaptiveColors.foreground(
+                                                        context,
+                                                        Colors.white,
+                                                      )
+                                                    : AdaptiveColors.foreground(
+                                                        context,
+                                                        const Color(0xFFEF8A40),
+                                                      ),
                                               ),
                                             ),
                                           ],
@@ -363,13 +426,22 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                                           color:
                                               _sortBy == 'created_at' &&
                                                   _sortOrder == 'asc'
-                                              ? const Color(0xFFEF8A40)
-                                              : Colors.white,
+                                              ? AdaptiveColors.surface(
+                                                  context,
+                                                  const Color(0xFFEF8A40),
+                                                )
+                                              : AdaptiveColors.surface(
+                                                  context,
+                                                  Colors.white,
+                                                ),
                                           borderRadius: BorderRadius.circular(
                                             6,
                                           ),
                                           border: Border.all(
-                                            color: const Color(0xFFEF8A40),
+                                            color: AdaptiveColors.border(
+                                              context,
+                                              const Color(0xFFEF8A40),
+                                            ),
                                           ),
                                         ),
                                         child: Row(
@@ -382,8 +454,14 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                                               color:
                                                   _sortBy == 'created_at' &&
                                                       _sortOrder == 'asc'
-                                                  ? Colors.white
-                                                  : const Color(0xFFEF8A40),
+                                                  ? AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.white,
+                                                    )
+                                                  : AdaptiveColors.foreground(
+                                                      context,
+                                                      const Color(0xFFEF8A40),
+                                                    ),
                                             ),
                                             const SizedBox(width: 6),
                                             Text(
@@ -394,8 +472,14 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                                                 color:
                                                     _sortBy == 'created_at' &&
                                                         _sortOrder == 'asc'
-                                                    ? Colors.white
-                                                    : const Color(0xFFEF8A40),
+                                                    ? AdaptiveColors.foreground(
+                                                        context,
+                                                        Colors.white,
+                                                      )
+                                                    : AdaptiveColors.foreground(
+                                                        context,
+                                                        const Color(0xFFEF8A40),
+                                                      ),
                                               ),
                                             ),
                                           ],
@@ -416,7 +500,10 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: Colors.grey[700],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[700],
+                              ),
                             ),
                           ),
                         ),
@@ -436,7 +523,9 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
           ),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(color: Colors.white),
+            decoration: BoxDecoration(
+              color: AdaptiveColors.surface(context, Colors.white),
+            ),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -450,8 +539,14 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEF8A40),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFEF8A40),
+                  ),
+                  foregroundColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
@@ -476,19 +571,31 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: Color(0xFFEF8A40).withValues(alpha: 0.1),
+          color: AdaptiveColors.surface(
+            context,
+            Color(0xFFEF8A40),
+          ).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: const Color(0xFFEF8A40)),
+          border: Border.all(
+            color: AdaptiveColors.border(context, const Color(0xFFEF8A40)),
+          ),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: const Color(0xFFEF8A40)),
+            Icon(
+              icon,
+              size: 18,
+              color: AdaptiveColors.foreground(
+                context,
+                const Color(0xFFEF8A40),
+              ),
+            ),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: Color(0xFFEF8A40),
+                color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -499,23 +606,31 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
       decoration: BoxDecoration(
-        color: const Color(0xFFEF8A40),
+        color: AdaptiveColors.surface(context, const Color(0xFFEF8A40)),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: Colors.white),
+          Icon(
+            icon,
+            size: 18,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
           const SizedBox(width: 8),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: Colors.white,
+              color: AdaptiveColors.foreground(context, Colors.white),
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(width: 4),
-          const Icon(Icons.keyboard_arrow_down, size: 18, color: Colors.white),
+          Icon(
+            Icons.keyboard_arrow_down,
+            size: 18,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
         ],
       ),
     );
@@ -551,7 +666,7 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
     return Container(
       margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: AdaptiveColors.surface(context, Colors.grey[100]),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -574,7 +689,10 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF333333).withValues(alpha: 0.5),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF333333),
+                      ).withValues(alpha: 0.5),
                     ),
                   ),
                 ),
@@ -584,12 +702,15 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha: 0.9),
+                      color: AdaptiveColors.surface(
+                        context,
+                        Colors.blue,
+                      ).withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.visibility_outlined,
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       size: 18,
                     ),
                   ),
@@ -601,12 +722,15 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF44336),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFF44336),
+                      ),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.delete_outline,
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       size: 18,
                     ),
                   ),
@@ -614,7 +738,10 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
               ],
             ),
           ),
-          Divider(color: Colors.grey[300], height: 1),
+          Divider(
+            color: AdaptiveColors.border(context, Colors.grey[300]),
+            height: 1,
+          ),
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
@@ -633,15 +760,20 @@ class _ProSearchSaveScreenState extends State<ProSearchSaveScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Color(0xFFEF8A40).withValues(alpha: 0.1),
+        color: AdaptiveColors.surface(
+          context,
+          Color(0xFFEF8A40),
+        ).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFFEF8A40)),
+        border: Border.all(
+          color: AdaptiveColors.border(context, const Color(0xFFEF8A40)),
+        ),
       ),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
-          color: Color(0xFFEF8A40),
+          color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
           fontWeight: FontWeight.w500,
         ),
       ),

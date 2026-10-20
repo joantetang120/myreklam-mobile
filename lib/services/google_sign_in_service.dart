@@ -14,7 +14,11 @@ class GoogleSignInService {
 
   final _authService = AuthService();
 
-  Future<Map<String, dynamic>> signIn() async {
+  Future<Map<String, dynamic>> signIn({
+    String? ageBand,
+    Future<String?> Function()? confirmNewAccountAge,
+    Future<bool> Function()? confirmNewAccountTerms,
+  }) async {
     // Trigger Google sign-in flow
     final GoogleSignInAccount? account = await _googleSignIn.signIn();
 
@@ -38,6 +42,9 @@ class GoogleSignInService {
       provider: 'google',
       token: token,
       email: account.email,
+      ageBand: ageBand,
+      confirmNewAccountAge: confirmNewAccountAge,
+      confirmNewAccountTerms: confirmNewAccountTerms,
     );
 
     return response;

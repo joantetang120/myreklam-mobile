@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
@@ -158,7 +159,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Echec de l\'envoi'),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AdaptiveColors.surface(context, Colors.redAccent),
           ),
         );
       }
@@ -197,7 +198,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   ? error.firstError
                   : 'Impossible d’envoyer la photo. Réessayez.',
             ),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AdaptiveColors.surface(context, Colors.redAccent),
           ),
         );
     } finally {
@@ -261,7 +262,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -276,17 +277,26 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: AdaptiveColors.surface(context, Colors.grey[300]),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               if (canEdit)
                 ListTile(
-                  leading: const Icon(Icons.edit, color: Color(0xFF3AAE5E)),
+                  leading: Icon(
+                    Icons.edit,
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
+                  ),
                   title: const Text('Modifier'),
-                  subtitle: const Text(
+                  subtitle: Text(
                     'Disponible dans les 2 premi\u00e8res minutes',
-                    style: TextStyle(fontSize: 11, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AdaptiveColors.foreground(context, Colors.grey),
+                    ),
                   ),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -295,7 +305,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 ),
               if (message.isMe)
                 ListTile(
-                  leading: const Icon(Icons.delete_outline, color: Colors.red),
+                  leading: Icon(
+                    Icons.delete_outline,
+                    color: AdaptiveColors.foreground(context, Colors.red),
+                  ),
                   title: const Text('Supprimer pour tout le monde'),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -305,7 +318,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               ListTile(
                 leading: Icon(
                   Icons.delete_sweep_outlined,
-                  color: Colors.grey[700],
+                  color: AdaptiveColors.foreground(context, Colors.grey[700]),
                 ),
                 title: const Text('Supprimer pour moi'),
                 onTap: () {
@@ -339,7 +352,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Annuler', style: TextStyle(color: Colors.grey)),
+            child: Text(
+              'Annuler',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.grey),
+              ),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -360,15 +378,20 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Erreur : $e'),
-                      backgroundColor: Colors.red,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.red,
+                      ),
                     ),
                   );
                 }
               }
             },
-            child: const Text(
+            child: Text(
               'Modifier',
-              style: TextStyle(color: Color(0xFF3AAE5E)),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+              ),
             ),
           ),
         ],
@@ -390,7 +413,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
+          ),
         );
       }
     }
@@ -457,12 +483,18 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF9F9FB)),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF3AAE5E),
+        backgroundColor: AdaptiveColors.surface(
+          context,
+          const Color(0xFF3AAE5E),
+        ),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
@@ -472,7 +504,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white,
+                color: AdaptiveColors.surface(context, Colors.white),
                 image:
                     widget.avatar != null &&
                         (widget.avatar!.startsWith('https') ||
@@ -502,8 +534,8 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                 children: [
                   Text(
                     widget.name,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -515,8 +547,14 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       _statusText,
                       style: TextStyle(
                         color: _statusText == 'En ligne'
-                            ? const Color(0xFFB9F6CA)
-                            : Colors.white70,
+                            ? AdaptiveColors.foreground(
+                                context,
+                                const Color(0xFFB9F6CA),
+                              )
+                            : AdaptiveColors.foreground(
+                                context,
+                                Colors.white70,
+                              ),
                         fontSize: 12,
                       ),
                     ),
@@ -609,10 +647,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                         widget.conversationId,
                       );
                       if (conversationId == null) {
-                        return const Center(
+                        return Center(
                           child: Text(
                             'ID de conversation invalide',
-                            style: TextStyle(color: Colors.red),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.red,
+                              ),
+                            ),
                           ),
                         );
                       }
@@ -627,7 +670,12 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                         return Center(
                           child: Text(
                             'Commencer a discuter avec ${widget.name}',
-                            style: const TextStyle(color: Colors.grey),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
+                            ),
                           ),
                         );
                       }
@@ -670,14 +718,20 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                                       vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.grey[300],
+                                      color: AdaptiveColors.surface(
+                                        context,
+                                        Colors.grey[300],
+                                      ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
                                       _formatDateHeader(message.createdAt),
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.grey[700],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[700],
+                                        ),
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -705,14 +759,23 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           // Annonce Preview above input
           if (_pendingAnnonce != null)
             Container(
-              color: Colors.white,
+              color: AdaptiveColors.surface(context, Colors.white),
               padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF0F0F0),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFF0F0F0),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border(
-                    left: BorderSide(color: const Color(0xFF3AAE5E), width: 4),
+                    left: BorderSide(
+                      color: AdaptiveColors.border(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
+                      width: 4,
+                    ),
                   ),
                 ),
                 padding: const EdgeInsets.all(8),
@@ -726,10 +789,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                           Text(
                             _pendingAnnonce!['author_name']?.toString() ??
                                 'Annonce',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF3AAE5E),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -739,7 +805,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                             _pendingAnnonce!['title']?.toString() ?? '',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[700],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[700],
+                              ),
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -761,11 +830,17 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                             errorBuilder: (_, __, ___) => Container(
                               width: 48,
                               height: 48,
-                              color: Colors.grey[300],
+                              color: AdaptiveColors.surface(
+                                context,
+                                Colors.grey[300],
+                              ),
                               child: Icon(
                                 Icons.image,
                                 size: 20,
-                                color: Colors.grey[500],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[500],
+                                ),
                               ),
                             ),
                           ),
@@ -778,7 +853,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                         child: Icon(
                           Icons.close,
                           size: 18,
-                          color: Colors.grey[500],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[500],
+                          ),
                         ),
                       ),
                     ),
@@ -796,7 +874,7 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
               20 + MediaQuery.paddingOf(context).bottom,
             ),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AdaptiveColors.surface(context, Colors.white),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
@@ -811,7 +889,10 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFF5F5F5),
+                      ),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: TextField(
@@ -826,8 +907,11 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                             )
                             ? 'Tapez votre message...'
                             : "Messagerie non autorisée",
-                        hintStyle: const TextStyle(
-                          color: Colors.grey,
+                        hintStyle: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey,
+                          ),
                           fontSize: 14,
                         ),
                         border: InputBorder.none,
@@ -851,12 +935,18 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[300],
+                        ),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.image,
-                        color: Colors.grey[700],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[700],
+                        ),
                         size: 20,
                       ),
                     ),
@@ -872,23 +962,32 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       height: 44,
                       decoration: BoxDecoration(
                         color: _isSending
-                            ? Colors.grey
-                            : const Color(0xFF3AAE5E),
+                            ? AdaptiveColors.surface(context, Colors.grey)
+                            : AdaptiveColors.surface(
+                                context,
+                                const Color(0xFF3AAE5E),
+                              ),
                         shape: BoxShape.circle,
                       ),
                       child: _isSending
-                          ? const Padding(
+                          ? Padding(
                               padding: EdgeInsets.all(12.0),
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                                  AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               ),
                             )
-                          : const Icon(
+                          : Icon(
                               Icons.send,
-                              color: Colors.white,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               size: 20,
                             ),
                     ),

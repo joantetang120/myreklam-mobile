@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -105,9 +106,12 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
 
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 content: Text('SIRET vérifié avec succès'),
-                backgroundColor: Color(0xFF1B8D4B),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  Color(0xFF1B8D4B),
+                ),
               ),
             );
           }
@@ -168,9 +172,9 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
         if (fileSize > 5 * 1024 * 1024) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 content: Text('Le fichier ne doit pas dépasser 5 MB'),
-                backgroundColor: Colors.red,
+                backgroundColor: AdaptiveColors.surface(context, Colors.red),
               ),
             );
           }
@@ -192,9 +196,9 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
         _contactEmailController.text.isEmpty ||
         _contactMessageController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Veuillez remplir tous les champs obligatoires'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
       return;
@@ -217,9 +221,9 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Votre demande a été envoyée avec succès'),
-          backgroundColor: Color(0xFF1B8D4B),
+          backgroundColor: AdaptiveColors.surface(context, Color(0xFF1B8D4B)),
         ),
       );
     }
@@ -260,14 +264,17 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.firstError),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Une erreur est survenue. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     } finally {
@@ -278,18 +285,21 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.grey),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Colors.grey),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Information professionnel',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -301,9 +311,12 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
           Column(
             children: [
               const SizedBox(height: 10),
-              const Text(
+              Text(
                 'Complétez les informations de votre entreprise',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                  fontSize: 14,
+                ),
               ),
               const SizedBox(height: 30),
               // Progress Bar
@@ -312,7 +325,7 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                 height: 6,
                 margin: const EdgeInsets.symmetric(horizontal: 20),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: AdaptiveColors.surface(context, Colors.grey[200]),
                   borderRadius: BorderRadius.circular(3),
                 ),
                 child: FractionallySizedBox(
@@ -320,7 +333,10 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                   widthFactor: 0.5, // 50% for step 1 of 2
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1B8D4B),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF1B8D4B),
+                      ),
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -337,7 +353,10 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                         Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
+                            color: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFF5F5F5),
+                            ),
                             borderRadius: BorderRadius.circular(15),
                             boxShadow: [
                               BoxShadow(
@@ -357,23 +376,32 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(8),
-                                      decoration: const BoxDecoration(
-                                        color: Color(0xFFE8F5E8),
+                                      decoration: BoxDecoration(
+                                        color: AdaptiveColors.surface(
+                                          context,
+                                          Color(0xFFE8F5E8),
+                                        ),
                                         shape: BoxShape.circle,
                                       ),
-                                      child: const Icon(
+                                      child: Icon(
                                         Icons.business_rounded,
-                                        color: Color(0xFF1B8D4B),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Color(0xFF1B8D4B),
+                                        ),
                                         size: 20,
                                       ),
                                     ),
                                     const SizedBox(width: 12),
-                                    const Text(
+                                    Text(
                                       'Informations entreprise',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.grey,
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -386,17 +414,23 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
+                                    Text(
                                       'SIRET*',
                                       style: TextStyle(
-                                        color: Colors.grey,
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey,
+                                        ),
                                         fontSize: 14,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: AdaptiveColors.surface(
+                                          context,
+                                          Colors.white,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: TextFormField(
@@ -441,8 +475,11 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                            borderSide: const BorderSide(
-                                              color: Color(0xFF1B8D4B),
+                                            borderSide: BorderSide(
+                                              color: AdaptiveColors.border(
+                                                context,
+                                                Color(0xFF1B8D4B),
+                                              ),
                                               width: 2,
                                             ),
                                           ),
@@ -450,8 +487,11 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                            borderSide: const BorderSide(
-                                              color: Color(0xFFD32F2F),
+                                            borderSide: BorderSide(
+                                              color: AdaptiveColors.border(
+                                                context,
+                                                Color(0xFFD32F2F),
+                                              ),
                                               width: 2,
                                             ),
                                           ),
@@ -459,62 +499,82 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                               OutlineInputBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(8),
-                                                borderSide: const BorderSide(
-                                                  color: Color(0xFFD32F2F),
+                                                borderSide: BorderSide(
+                                                  color: AdaptiveColors.border(
+                                                    context,
+                                                    Color(0xFFD32F2F),
+                                                  ),
                                                   width: 2,
                                                 ),
                                               ),
-                                          errorStyle: const TextStyle(
+                                          errorStyle: TextStyle(
                                             fontSize: 12,
                                             height: 1.2,
-                                            color: Color(0xFFD32F2F),
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              Color(0xFFD32F2F),
+                                            ),
                                           ),
                                           errorMaxLines: 2,
                                           suffixIcon: _isVerifyingSiret
-                                              ? const Padding(
+                                              ? Padding(
                                                   padding: EdgeInsets.all(12),
                                                   child: SizedBox(
                                                     width: 20,
                                                     height: 20,
-                                                    child:
-                                                        CircularProgressIndicator(
-                                                          strokeWidth: 2,
-                                                          color: Color(
-                                                            0xFF1B8D4B,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Color(0xFF1B8D4B),
                                                           ),
-                                                        ),
+                                                    ),
                                                   ),
                                                 )
                                               : _siretVerified
-                                              ? const Icon(
+                                              ? Icon(
                                                   Icons.check_circle,
-                                                  color: Color(0xFF1B8D4B),
+                                                  color:
+                                                      AdaptiveColors.foreground(
+                                                        context,
+                                                        Color(0xFF1B8D4B),
+                                                      ),
                                                 )
                                               : null,
                                         ),
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-                                    const Text(
+                                    Text(
                                       'Les informations seront automatiquement chargées',
                                       style: TextStyle(
-                                        color: Color(0xFF1B8D4B),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Color(0xFF1B8D4B),
+                                        ),
                                         fontSize: 12,
                                         fontStyle: FontStyle.italic,
                                       ),
                                     ),
                                     const SizedBox(height: 20),
-                                    const Text(
+                                    Text(
                                       'Nom de l\'entreprise*',
                                       style: TextStyle(
-                                        color: Colors.grey,
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey,
+                                        ),
                                         fontSize: 14,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: AdaptiveColors.surface(
+                                          context,
+                                          Colors.white,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: TextFormField(
@@ -548,8 +608,11 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                            borderSide: const BorderSide(
-                                              color: Color(0xFF1B8D4B),
+                                            borderSide: BorderSide(
+                                              color: AdaptiveColors.border(
+                                                context,
+                                                Color(0xFF1B8D4B),
+                                              ),
                                               width: 2,
                                             ),
                                           ),
@@ -557,8 +620,11 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                            borderSide: const BorderSide(
-                                              color: Color(0xFFD32F2F),
+                                            borderSide: BorderSide(
+                                              color: AdaptiveColors.border(
+                                                context,
+                                                Color(0xFFD32F2F),
+                                              ),
                                               width: 2,
                                             ),
                                           ),
@@ -566,32 +632,44 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                               OutlineInputBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(8),
-                                                borderSide: const BorderSide(
-                                                  color: Color(0xFFD32F2F),
+                                                borderSide: BorderSide(
+                                                  color: AdaptiveColors.border(
+                                                    context,
+                                                    Color(0xFFD32F2F),
+                                                  ),
                                                   width: 2,
                                                 ),
                                               ),
-                                          errorStyle: const TextStyle(
+                                          errorStyle: TextStyle(
                                             fontSize: 12,
                                             height: 1.2,
-                                            color: Color(0xFFD32F2F),
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              Color(0xFFD32F2F),
+                                            ),
                                           ),
                                           errorMaxLines: 2,
                                         ),
                                       ),
                                     ),
                                     const SizedBox(height: 20),
-                                    const Text(
+                                    Text(
                                       'Secteur d\'activité',
                                       style: TextStyle(
-                                        color: Colors.grey,
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey,
+                                        ),
                                         fontSize: 14,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: AdaptiveColors.surface(
+                                          context,
+                                          Colors.white,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: DropdownButtonFormField<String>(
@@ -618,8 +696,11 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                            borderSide: const BorderSide(
-                                              color: Color(0xFF1B8D4B),
+                                            borderSide: BorderSide(
+                                              color: AdaptiveColors.border(
+                                                context,
+                                                Color(0xFF1B8D4B),
+                                              ),
                                               width: 2,
                                             ),
                                           ),
@@ -652,7 +733,10 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                       const SizedBox(height: 12),
                                       Container(
                                         decoration: BoxDecoration(
-                                          color: Colors.white,
+                                          color: AdaptiveColors.surface(
+                                            context,
+                                            Colors.white,
+                                          ),
                                           borderRadius: BorderRadius.circular(
                                             8,
                                           ),
@@ -689,16 +773,22 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                             focusedBorder: OutlineInputBorder(
                                               borderRadius:
                                                   BorderRadius.circular(8),
-                                              borderSide: const BorderSide(
-                                                color: Color(0xFF1B8D4B),
+                                              borderSide: BorderSide(
+                                                color: AdaptiveColors.border(
+                                                  context,
+                                                  Color(0xFF1B8D4B),
+                                                ),
                                                 width: 2,
                                               ),
                                             ),
                                             errorBorder: OutlineInputBorder(
                                               borderRadius:
                                                   BorderRadius.circular(8),
-                                              borderSide: const BorderSide(
-                                                color: Color(0xFFD32F2F),
+                                              borderSide: BorderSide(
+                                                color: AdaptiveColors.border(
+                                                  context,
+                                                  Color(0xFFD32F2F),
+                                                ),
                                                 width: 2,
                                               ),
                                             ),
@@ -706,32 +796,45 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                                 OutlineInputBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(8),
-                                                  borderSide: const BorderSide(
-                                                    color: Color(0xFFD32F2F),
+                                                  borderSide: BorderSide(
+                                                    color:
+                                                        AdaptiveColors.border(
+                                                          context,
+                                                          Color(0xFFD32F2F),
+                                                        ),
                                                     width: 2,
                                                   ),
                                                 ),
-                                            errorStyle: const TextStyle(
+                                            errorStyle: TextStyle(
                                               fontSize: 12,
                                               height: 1.2,
-                                              color: Color(0xFFD32F2F),
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Color(0xFFD32F2F),
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ),
                                     ],
                                     const SizedBox(height: 20),
-                                    const Text(
+                                    Text(
                                       'Numéro de téléphone',
                                       style: TextStyle(
-                                        color: Colors.grey,
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey,
+                                        ),
                                         fontSize: 14,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: AdaptiveColors.surface(
+                                          context,
+                                          Colors.white,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(
@@ -750,11 +853,15 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                                   width: 24,
                                                 ),
                                                 const SizedBox(width: 8),
-                                                const Text(
+                                                Text(
                                                   '+33',
                                                   style: TextStyle(
                                                     fontSize: 16,
-                                                    color: Colors.grey,
+                                                    color:
+                                                        AdaptiveColors.foreground(
+                                                          context,
+                                                          Colors.grey,
+                                                        ),
                                                   ),
                                                 ),
                                               ],
@@ -798,25 +905,27 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                                       borderSide:
                                                           BorderSide.none,
                                                     ),
-                                                focusedBorder:
-                                                    OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                            8,
-                                                          ),
-                                                      borderSide:
-                                                          const BorderSide(
-                                                            color: Color(
-                                                              0xFF1B8D4B,
-                                                            ),
-                                                            width: 2,
-                                                          ),
-                                                    ),
+                                                focusedBorder: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  borderSide: BorderSide(
+                                                    color:
+                                                        AdaptiveColors.border(
+                                                          context,
+                                                          Color(0xFF1B8D4B),
+                                                        ),
+                                                    width: 2,
+                                                  ),
+                                                ),
                                                 errorBorder: OutlineInputBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(8),
-                                                  borderSide: const BorderSide(
-                                                    color: Color(0xFFD32F2F),
+                                                  borderSide: BorderSide(
+                                                    color:
+                                                        AdaptiveColors.border(
+                                                          context,
+                                                          Color(0xFFD32F2F),
+                                                        ),
                                                     width: 2,
                                                   ),
                                                 ),
@@ -826,18 +935,23 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                                           BorderRadius.circular(
                                                             8,
                                                           ),
-                                                      borderSide:
-                                                          const BorderSide(
-                                                            color: Color(
-                                                              0xFFD32F2F,
+                                                      borderSide: BorderSide(
+                                                        color:
+                                                            AdaptiveColors.border(
+                                                              context,
+                                                              Color(0xFFD32F2F),
                                                             ),
-                                                            width: 2,
-                                                          ),
+                                                        width: 2,
+                                                      ),
                                                     ),
-                                                errorStyle: const TextStyle(
+                                                errorStyle: TextStyle(
                                                   fontSize: 12,
                                                   height: 1.2,
-                                                  color: Color(0xFFD32F2F),
+                                                  color:
+                                                      AdaptiveColors.foreground(
+                                                        context,
+                                                        Color(0xFFD32F2F),
+                                                      ),
                                                 ),
                                                 errorMaxLines: 2,
                                               ),
@@ -847,17 +961,23 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 20),
-                                    const Text(
+                                    Text(
                                       'Adresse*',
                                       style: TextStyle(
-                                        color: Colors.grey,
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey,
+                                        ),
                                         fontSize: 14,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: AdaptiveColors.surface(
+                                          context,
+                                          Colors.white,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: TextFormField(
@@ -891,8 +1011,11 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                            borderSide: const BorderSide(
-                                              color: Color(0xFF1B8D4B),
+                                            borderSide: BorderSide(
+                                              color: AdaptiveColors.border(
+                                                context,
+                                                Color(0xFF1B8D4B),
+                                              ),
                                               width: 2,
                                             ),
                                           ),
@@ -900,8 +1023,11 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                            borderSide: const BorderSide(
-                                              color: Color(0xFFD32F2F),
+                                            borderSide: BorderSide(
+                                              color: AdaptiveColors.border(
+                                                context,
+                                                Color(0xFFD32F2F),
+                                              ),
                                               width: 2,
                                             ),
                                           ),
@@ -909,32 +1035,44 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                               OutlineInputBorder(
                                                 borderRadius:
                                                     BorderRadius.circular(8),
-                                                borderSide: const BorderSide(
-                                                  color: Color(0xFFD32F2F),
+                                                borderSide: BorderSide(
+                                                  color: AdaptiveColors.border(
+                                                    context,
+                                                    Color(0xFFD32F2F),
+                                                  ),
                                                   width: 2,
                                                 ),
                                               ),
-                                          errorStyle: const TextStyle(
+                                          errorStyle: TextStyle(
                                             fontSize: 12,
                                             height: 1.2,
-                                            color: Color(0xFFD32F2F),
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              Color(0xFFD32F2F),
+                                            ),
                                           ),
                                           errorMaxLines: 2,
                                         ),
                                       ),
                                     ),
                                     const SizedBox(height: 20),
-                                    const Text(
+                                    Text(
                                       'Code postal',
                                       style: TextStyle(
-                                        color: Colors.grey,
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey,
+                                        ),
                                         fontSize: 14,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: AdaptiveColors.surface(
+                                          context,
+                                          Colors.white,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: TextFormField(
@@ -963,8 +1101,11 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                            borderSide: const BorderSide(
-                                              color: Color(0xFF1B8D4B),
+                                            borderSide: BorderSide(
+                                              color: AdaptiveColors.border(
+                                                context,
+                                                Color(0xFF1B8D4B),
+                                              ),
                                               width: 2,
                                             ),
                                           ),
@@ -972,17 +1113,23 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 20),
-                                    const Text(
+                                    Text(
                                       'Ville',
                                       style: TextStyle(
-                                        color: Colors.grey,
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey,
+                                        ),
                                         fontSize: 14,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                     Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.white,
+                                        color: AdaptiveColors.surface(
+                                          context,
+                                          Colors.white,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: TextFormField(
@@ -1010,8 +1157,11 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                            borderSide: const BorderSide(
-                                              color: Color(0xFF1B8D4B),
+                                            borderSide: BorderSide(
+                                              color: AdaptiveColors.border(
+                                                context,
+                                                Color(0xFF1B8D4B),
+                                              ),
                                               width: 2,
                                             ),
                                           ),
@@ -1031,7 +1181,10 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                           height: 56,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1B8D4B),
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                const Color(0xFF1B8D4B),
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -1041,21 +1194,27 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                 ? null
                                 : () => _handleSubmit(),
                             child: _isLoading
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 24,
                                     height: 24,
                                     child: CircularProgressIndicator(
-                                      color: Colors.white,
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       strokeWidth: 2.5,
                                     ),
                                   )
                                 : Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
+                                    children: [
                                       Text(
                                         'Suivant',
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.white,
+                                          ),
                                           fontSize: 18,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -1063,7 +1222,10 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                       SizedBox(width: 8),
                                       Icon(
                                         Icons.arrow_forward_rounded,
-                                        color: Colors.white,
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.white,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -1079,13 +1241,13 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
           // Manual Validation Modal
           if (_showManualValidationModal)
             Container(
-              color: Colors.black54,
+              color: AdaptiveColors.surface(context, Colors.black54),
               child: Center(
                 child: Container(
                   margin: const EdgeInsets.all(20),
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AdaptiveColors.surface(context, Colors.white),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: SingleChildScrollView(
@@ -1096,12 +1258,15 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
+                            Text(
                               'SIRET non trouvé',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF333333),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF333333),
+                                ),
                               ),
                             ),
                             IconButton(
@@ -1113,9 +1278,15 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        const Text(
+                        Text(
                           'Nous n\'avons pas pu vérifier votre SIRET automatiquement. Contactez notre support pour une validation manuelle.',
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                          style: TextStyle(
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey,
+                            ),
+                            fontSize: 14,
+                          ),
                         ),
                         const SizedBox(height: 24),
                         const Text(
@@ -1199,14 +1370,22 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade300),
+                              border: Border.all(
+                                color: AdaptiveColors.border(
+                                  context,
+                                  Colors.grey.shade300,
+                                ),
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.attach_file,
-                                  color: Colors.grey,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey,
+                                  ),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
@@ -1215,8 +1394,14 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                         'Joindre un fichier PDF (max 5 MB)',
                                     style: TextStyle(
                                       color: _kbisFileName != null
-                                          ? Colors.black
-                                          : Colors.grey,
+                                          ? AdaptiveColors.foreground(
+                                              context,
+                                              Colors.black,
+                                            )
+                                          : AdaptiveColors.foreground(
+                                              context,
+                                              Colors.grey,
+                                            ),
                                       fontSize: 14,
                                     ),
                                   ),
@@ -1241,7 +1426,10 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                           height: 48,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1B8D4B),
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                const Color(0xFF1B8D4B),
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -1250,18 +1438,24 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                                 ? null
                                 : _sendManualValidationRequest,
                             child: _isSendingContactRequest
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 20,
                                     height: 20,
                                     child: CircularProgressIndicator(
-                                      color: Colors.white,
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text(
+                                : Text(
                                     'Envoyer la demande',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -1277,13 +1471,13 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
           // Confirmation Modal
           if (_showConfirmationModal)
             Container(
-              color: Colors.black54,
+              color: AdaptiveColors.surface(context, Colors.black54),
               child: Center(
                 child: Container(
                   margin: const EdgeInsets.all(20),
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AdaptiveColors.surface(context, Colors.white),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -1293,29 +1487,44 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                         width: 60,
                         height: 60,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1B8D4B).withValues(alpha: 0.1),
+                          color: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF1B8D4B),
+                          ).withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.check_circle,
-                          color: Color(0xFF1B8D4B),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF1B8D4B),
+                          ),
                           size: 40,
                         ),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'Demande envoyée',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF333333),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
-                      const Text(
+                      Text(
                         'Votre demande a été envoyée avec succès. Nous vous contacterons rapidement pour valider votre SIRET.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey,
+                          ),
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(height: 24),
                       SizedBox(
@@ -1323,7 +1532,10 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                         height: 48,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1B8D4B),
+                            backgroundColor: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFF1B8D4B),
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -1331,10 +1543,13 @@ class _ProInfoScreenState extends State<ProInfoScreen> {
                           onPressed: () {
                             setState(() => _showConfirmationModal = false);
                           },
-                          child: const Text(
+                          child: Text(
                             'Continuer',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),

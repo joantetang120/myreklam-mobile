@@ -1,7 +1,9 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import '../widgets/dot_loader.dart';
 import 'onboarding_screen.dart';
 import 'biometric_lock_screen.dart';
+import 'privacy_screen.dart';
 import 'package:myreklam/services/auth_service.dart';
 import 'package:myreklam/services/biometric_service.dart';
 import 'package:myreklam/services/token_storage.dart';
@@ -43,6 +45,8 @@ class _SplashScreenState extends State<SplashScreen> {
           );
           return;
         }
+        await ensureAgeConfirmation(context);
+        if (!mounted) return;
         AuthNavigator.navigateAfterAuth(context, user);
         return;
       }
@@ -61,7 +65,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       body: Stack(
         clipBehavior: Clip.none,
         children: [

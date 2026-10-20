@@ -1,4 +1,6 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:myreklam/theme/theme_controller.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'api_client.dart';
@@ -151,7 +153,7 @@ class StripePaymentService {
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: clientSecret,
           merchantDisplayName: 'Myreklam',
-          style: ThemeMode.light,
+          style: ThemeController.instance.mode,
           allowsDelayedPaymentMethods: false,
         ),
       );
@@ -232,7 +234,7 @@ class StripePaymentService {
         paymentSheetParameters: SetupPaymentSheetParameters(
           paymentIntentClientSecret: clientSecret,
           merchantDisplayName: 'Myreklam',
-          style: ThemeMode.light,
+          style: ThemeController.instance.mode,
           allowsDelayedPaymentMethods: false,
         ),
       );
@@ -255,7 +257,10 @@ class StripePaymentService {
   void _showError(BuildContext context, String message) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(message),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     }
   }

@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -351,16 +352,16 @@ class _MessageScreenState extends State<MessageScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF9F9FB)),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
           padding: const EdgeInsets.only(left: 10),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
             size: 18,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
           ),
           onPressed: () {
             Navigator.pushReplacement(
@@ -372,10 +373,10 @@ class _MessageScreenState extends State<MessageScreen> {
             );
           },
         ),
-        title: const Text(
+        title: Text(
           'Messages',
           style: TextStyle(
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             fontFamily: 'Manjari',
             fontWeight: FontWeight.bold,
           ),
@@ -398,15 +399,23 @@ class _MessageScreenState extends State<MessageScreen> {
                   child: Container(
                     height: 48,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFF5F5F5),
+                      ),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: TextField(
                       controller: _searchController,
                       onChanged: _onSearchChanged,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Faites une recherche...',
-                        hintStyle: TextStyle(color: Colors.grey),
+                        hintStyle: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey,
+                          ),
+                        ),
                         prefixIcon: Icon(Icons.search),
                         border: InputBorder.none,
                       ),
@@ -480,14 +489,26 @@ class _MessageScreenState extends State<MessageScreen> {
                                             color:
                                                 hasOwnStories &&
                                                     !ownStoriesViewed
-                                                ? const Color(0xFFE6F7EF)
-                                                : Colors.grey.shade200,
+                                                ? AdaptiveColors.surface(
+                                                    context,
+                                                    const Color(0xFFE6F7EF),
+                                                  )
+                                                : AdaptiveColors.surface(
+                                                    context,
+                                                    Colors.grey.shade200,
+                                                  ),
                                             border: Border.all(
                                               color:
                                                   hasOwnStories &&
                                                       !ownStoriesViewed
-                                                  ? const Color(0xFF3AAE5E)
-                                                  : Colors.grey.shade400,
+                                                  ? AdaptiveColors.border(
+                                                      context,
+                                                      const Color(0xFF3AAE5E),
+                                                    )
+                                                  : AdaptiveColors.border(
+                                                      context,
+                                                      Colors.grey.shade400,
+                                                    ),
                                               width: hasOwnStories ? 2.5 : 1.5,
                                             ),
                                           ),
@@ -505,10 +526,14 @@ class _MessageScreenState extends State<MessageScreen> {
                                                   displayName: 'Vous',
                                                   radius: 22,
                                                 )
-                                              : const Center(
+                                              : Center(
                                                   child: Icon(
                                                     Icons.add,
-                                                    color: Color(0xFF3AAE5E),
+                                                    color:
+                                                        AdaptiveColors.foreground(
+                                                          context,
+                                                          Color(0xFF3AAE5E),
+                                                        ),
                                                   ),
                                                 ),
                                         ),
@@ -534,16 +559,26 @@ class _MessageScreenState extends State<MessageScreen> {
                                             child: Container(
                                               padding: const EdgeInsets.all(3),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFF3AAE5E),
+                                                color: AdaptiveColors.surface(
+                                                  context,
+                                                  const Color(0xFF3AAE5E),
+                                                ),
                                                 shape: BoxShape.circle,
                                                 border: Border.all(
-                                                  color: Colors.white,
+                                                  color: AdaptiveColors.border(
+                                                    context,
+                                                    Colors.white,
+                                                  ),
                                                   width: 2,
                                                 ),
                                               ),
-                                              child: const Icon(
+                                              child: Icon(
                                                 Icons.add,
-                                                color: Colors.white,
+                                                color:
+                                                    AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.white,
+                                                    ),
                                                 size: 12,
                                               ),
                                             ),
@@ -584,14 +619,17 @@ class _MessageScreenState extends State<MessageScreen> {
                 const SizedBox(height: 20),
 
                 // Messages Label
-                const Align(
+                Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     "Messages",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF616161),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF616161),
+                      ),
                     ),
                   ),
                 ),
@@ -628,12 +666,17 @@ class _MessageScreenState extends State<MessageScreen> {
                     ),
                   )
                 else if (_currentUserId == null)
-                  const Center(
+                  Center(
                     child: Padding(
                       padding: EdgeInsets.all(32.0),
                       child: Text(
                         'Erreur de chargement',
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey,
+                          ),
+                        ),
                       ),
                     ),
                   )
@@ -650,7 +693,12 @@ class _MessageScreenState extends State<MessageScreen> {
                               _showAllMessages
                                   ? 'Aucune conversation'
                                   : 'Aucun message non lu',
-                              style: const TextStyle(color: Colors.grey),
+                              style: TextStyle(
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
+                              ),
                             ),
                           ),
                         );
@@ -658,17 +706,20 @@ class _MessageScreenState extends State<MessageScreen> {
 
                       return Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AdaptiveColors.surface(context, Colors.white),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: displayedConvs.length,
-                          separatorBuilder: (context, index) => const Divider(
+                          separatorBuilder: (context, index) => Divider(
                             height: 1,
                             thickness: 1,
-                            color: Color(0xFFF0F0F0),
+                            color: AdaptiveColors.border(
+                              context,
+                              Color(0xFFF0F0F0),
+                            ),
                             indent: 16,
                             endIndent: 16,
                           ),
@@ -689,20 +740,29 @@ class _MessageScreenState extends State<MessageScreen> {
                               background: Container(
                                 alignment: Alignment.centerRight,
                                 padding: const EdgeInsets.only(right: 20),
-                                color: Colors.red,
-                                child: const Column(
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  Colors.red,
+                                ),
+                                child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
                                       Icons.delete,
-                                      color: Colors.white,
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       size: 28,
                                     ),
                                     SizedBox(height: 4),
                                     Text(
                                       'Supprimer',
                                       style: TextStyle(
-                                        color: Colors.white,
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.white,
+                                        ),
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -730,8 +790,16 @@ class _MessageScreenState extends State<MessageScreen> {
                                         onPressed: () =>
                                             Navigator.pop(ctx, true),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
-                                          foregroundColor: Colors.white,
+                                          backgroundColor:
+                                              AdaptiveColors.surface(
+                                                context,
+                                                Colors.red,
+                                              ),
+                                          foregroundColor:
+                                              AdaptiveColors.foreground(
+                                                context,
+                                                Colors.white,
+                                              ),
                                         ),
                                         child: const Text('Supprimer'),
                                       ),
@@ -754,9 +822,12 @@ class _MessageScreenState extends State<MessageScreen> {
                                   });
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text('Conversation supprimée'),
-                                        backgroundColor: Color(0xFF3AAE5E),
+                                        backgroundColor: AdaptiveColors.surface(
+                                          context,
+                                          Color(0xFF3AAE5E),
+                                        ),
                                       ),
                                     );
                                   }
@@ -766,7 +837,10 @@ class _MessageScreenState extends State<MessageScreen> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text('Erreur: $e'),
-                                        backgroundColor: Colors.red,
+                                        backgroundColor: AdaptiveColors.surface(
+                                          context,
+                                          Colors.red,
+                                        ),
                                       ),
                                     );
                                   }
@@ -818,7 +892,9 @@ class _MessageScreenState extends State<MessageScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[200],
+          color: isSelected
+              ? AdaptiveColors.surface(context, const Color(0xFF3AAE5E))
+              : AdaptiveColors.surface(context, Colors.grey[200]),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -826,7 +902,9 @@ class _MessageScreenState extends State<MessageScreen> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : Colors.grey[600],
+            color: isSelected
+                ? AdaptiveColors.foreground(context, Colors.white)
+                : AdaptiveColors.foreground(context, Colors.grey[600]),
           ),
         ),
       ),
@@ -835,16 +913,16 @@ class _MessageScreenState extends State<MessageScreen> {
 
   Widget _buildPremiumLockScreen(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF9F9FB)),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
           padding: const EdgeInsets.only(left: 10),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
             size: 18,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
           ),
           onPressed: () {
             Navigator.pushReplacement(
@@ -856,10 +934,10 @@ class _MessageScreenState extends State<MessageScreen> {
             );
           },
         ),
-        title: const Text(
+        title: Text(
           'Messages',
           style: TextStyle(
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             fontFamily: 'Manjari',
             fontWeight: FontWeight.bold,
           ),
@@ -875,30 +953,36 @@ class _MessageScreenState extends State<MessageScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF9800).withValues(alpha: 0.1),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFFF9800),
+                  ).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.lock_outline,
                   size: 48,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'Messagerie réservée aux comptes Premium',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
+                  color: AdaptiveColors.foreground(context, Color(0xFF1A1A1A)),
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Passez à la version Premium pour accéder à la messagerie et communiquer avec les autres utilisateurs.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Color(0xFF8D8D8D)),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AdaptiveColors.foreground(context, Color(0xFF8D8D8D)),
+                ),
               ),
               const SizedBox(height: 32),
               SizedBox(
@@ -913,8 +997,14 @@ class _MessageScreenState extends State<MessageScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E9B5B),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF2E9B5B),
+                    ),
+                    foregroundColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -937,9 +1027,14 @@ class _MessageScreenState extends State<MessageScreen> {
                     ),
                   );
                 },
-                child: const Text(
+                child: Text(
                   'Retour à l\'accueil',
-                  style: TextStyle(color: Color(0xFF8D8D8D)),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF8D8D8D),
+                    ),
+                  ),
                 ),
               ),
             ],

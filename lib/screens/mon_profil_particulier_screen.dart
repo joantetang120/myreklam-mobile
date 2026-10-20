@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:myreklam/services/mys_earning_service.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/widgets/mys_reward_modal.dart';
 import 'package:myreklam/widgets/company_picker.dart';
+import 'package:myreklam/utils/social_url.dart';
 
 class MonProfilParticulierScreen extends StatefulWidget {
   const MonProfilParticulierScreen({super.key});
@@ -41,10 +43,20 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _presentationController = TextEditingController();
   final TextEditingController _jobController = TextEditingController();
+  final TextEditingController _studyController = TextEditingController();
+  final TextEditingController _institutionController = TextEditingController();
 
   // Company (Entreprise) selection
   int? _companyId;
   String? _companyName;
+  List<String> _careerStatuses = [];
+  static const _careerOptions = {
+    'job': "En recherche d'emploi",
+    'internship': 'En recherche de stage',
+    'apprenticeship': "En recherche d'alternance",
+    'training': 'En recherche de formation',
+    'student': 'Étudiant',
+  };
 
   // Social media controllers
   final TextEditingController _facebookController = TextEditingController();
@@ -52,6 +64,12 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
   final TextEditingController _linkedinController = TextEditingController();
   final TextEditingController _youtubeController = TextEditingController();
   final TextEditingController _snapchatController = TextEditingController();
+  final _extraSocialControllers = {
+    'website': TextEditingController(),
+    'x': TextEditingController(),
+    'tiktok': TextEditingController(),
+    'dribbble': TextEditingController(),
+  };
 
   bool _showEmailPublic = false;
   bool _showPhonePublic = false;
@@ -165,10 +183,18 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
           _phoneController.text = profile['phone']?.toString() ?? '';
           _presentationController.text = profile['bio'] ?? '';
           _jobController.text = profile['job_title']?.toString() ?? '';
+          _studyController.text = profile['study_program']?.toString() ?? '';
+          _institutionController.text =
+              profile['educational_institution']?.toString() ?? '';
           _companyId = profile['company_id'] is int
               ? profile['company_id']
               : int.tryParse(profile['company_id']?.toString() ?? '');
           _companyName = profile['company_name']?.toString();
+          _careerStatuses = (profile['career_statuses'] as List? ?? [])
+              .whereType<String>()
+              .where(_careerOptions.containsKey)
+              .toSet()
+              .toList();
           _showEmailPublic =
               profile['show_email_public'] == 1 ||
               profile['show_email_public'] == true;
@@ -184,6 +210,9 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             _linkedinController.text = links['linkedin'] ?? '';
             _youtubeController.text = links['youtube'] ?? '';
             _snapchatController.text = links['snapchat'] ?? '';
+            for (final entry in _extraSocialControllers.entries) {
+              entry.value.text = links[entry.key]?.toString() ?? '';
+            }
           }
 
           // Load gallery
@@ -209,16 +238,24 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         'bio': _presentationController.text,
         'phone': _phoneController.text,
         'job_title': _jobController.text,
+        'study_program': _studyController.text.trim(),
+        'educational_institution': _institutionController.text.trim(),
         'company_id': _companyId,
         'company_name': _companyName,
+        'career_statuses': _careerStatuses,
         'show_email_public': _showEmailPublic ? 1 : 0,
         'show_phone_public': _showPhonePublic ? 1 : 0,
         'social_links': {
-          'facebook': _facebookController.text,
-          'instagram': _instagramController.text,
-          'linkedin': _linkedinController.text,
-          'youtube': _youtubeController.text,
-          'snapchat': _snapchatController.text,
+          for (final entry in _extraSocialControllers.entries)
+            entry.key: normalizeSocialUrl(entry.key, entry.value.text),
+          'facebook': normalizeSocialUrl('facebook', _facebookController.text),
+          'instagram': normalizeSocialUrl(
+            'instagram',
+            _instagramController.text,
+          ),
+          'linkedin': normalizeSocialUrl('linkedin', _linkedinController.text),
+          'youtube': normalizeSocialUrl('youtube', _youtubeController.text),
+          'snapchat': normalizeSocialUrl('snapchat', _snapchatController.text),
         },
       };
 
@@ -226,9 +263,9 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Profil mis à jour avec succès'),
-          backgroundColor: Colors.green,
+          backgroundColor: AdaptiveColors.surface(context, Colors.green),
         ),
       );
       setState(() => _isLoading = false);
@@ -271,7 +308,10 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('$e'),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     }
   }
@@ -318,18 +358,23 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
     _phoneController.dispose();
     _presentationController.dispose();
     _jobController.dispose();
+    _studyController.dispose();
+    _institutionController.dispose();
     _facebookController.dispose();
     _instagramController.dispose();
     _linkedinController.dispose();
     _youtubeController.dispose();
     _snapchatController.dispose();
+    for (final controller in _extraSocialControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AppLayout(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF9F9FB)),
       currentIndex: 4,
       onTabTapped: (index) {
         Navigator.of(context).pushAndRemoveUntil(
@@ -359,20 +404,26 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
                           alignment: Alignment.centerLeft,
                           child: GestureDetector(
                             onTap: () => Navigator.pop(context),
-                            child: const Icon(
+                            child: Icon(
                               Icons.arrow_back,
-                              color: Color(0xFF616161),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF616161),
+                              ),
                               size: 24,
                             ),
                           ),
                         ),
-                        const Text(
+                        Text(
                           'Mon profil',
                           style: TextStyle(
                             fontSize: 20,
                             fontFamily: 'Manjari',
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF424242),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF424242),
+                            ),
                           ),
                         ),
                       ],
@@ -386,21 +437,33 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
                     child: Container(
                       height: 45,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AdaptiveColors.surface(context, Colors.white),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: Colors.grey.withValues(alpha: 0.2),
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey,
+                          ).withValues(alpha: 0.2),
                         ),
                       ),
                       child: TabBar(
                         controller: _tabController,
                         indicator: BoxDecoration(
-                          color: const Color(0xFFEF8A40),
+                          color: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFEF8A40),
+                          ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         indicatorSize: TabBarIndicatorSize.tab,
-                        labelColor: Colors.white,
-                        unselectedLabelColor: Colors.grey[400],
+                        labelColor: AdaptiveColors.foreground(
+                          context,
+                          Colors.white,
+                        ),
+                        unselectedLabelColor: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[400],
+                        ),
                         labelStyle: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -431,8 +494,14 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
                       child: ElevatedButton(
                         onPressed: _saveProfile,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF8A40),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFEF8A40),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           elevation: 2,
                           shape: RoundedRectangleBorder(
@@ -492,48 +561,88 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             },
           ),
           const SizedBox(height: 24),
-          _buildSectionHeader(Icons.work_outline, 'Profession'),
+          _buildSectionHeader(
+            Icons.work_outline,
+            _careerStatuses.contains('student') ? 'Études' : 'Profession',
+          ),
           const SizedBox(height: 16),
           _buildTextField(
-            label: 'Emploi',
-            controller: _jobController,
+            label: _careerStatuses.contains('student')
+                ? 'Formation suivie'
+                : 'Intitulé de poste',
+            controller: _careerStatuses.contains('student')
+                ? _studyController
+                : _jobController,
             icon: Icons.badge_outlined,
           ),
           const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Entreprise',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF333333),
+          if (_careerStatuses.contains('student'))
+            _buildTextField(
+              label: 'Établissement',
+              controller: _institutionController,
+              icon: Icons.school_outlined,
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Entreprise',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF333333),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                CompanyPickerField(
-                  companyId: _companyId,
-                  companyName: _companyName,
-                  onChanged: (id, name) {
-                    setState(() {
-                      _companyId = id;
-                      _companyName = name;
-                    });
-                  },
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  CompanyPickerField(
+                    companyId: _companyId,
+                    companyName: _companyName,
+                    onChanged: (id, name) {
+                      setState(() {
+                        _companyId = id;
+                        _companyName = name;
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
           const SizedBox(height: 24),
-          _buildSectionHeader(Icons.description_outlined, 'Bio'),
+          _buildSectionHeader(Icons.work_outline, 'Situation professionnelle'),
+          const SizedBox(height: 8),
+          const Text('Le premier statut sélectionné apparaît sur votre photo.'),
+          for (final option in _careerOptions.entries)
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(option.value),
+              value: _careerStatuses.contains(option.key),
+              onChanged: (selected) => setState(() {
+                if (selected == true) {
+                  if (!_careerStatuses.contains(option.key)) {
+                    _careerStatuses.add(option.key);
+                  }
+                } else {
+                  _careerStatuses.remove(option.key);
+                }
+              }),
+            ),
+          const SizedBox(height: 24),
+          _buildSectionHeader(Icons.description_outlined, 'Présentation'),
           const SizedBox(height: 16),
           _buildTextArea(
             controller: _presentationController,
             hint: 'Décrivez-vous en quelques mots...',
           ),
+          const SizedBox(height: 24),
+          _buildSectionHeader(Icons.photo_library_outlined, 'Galerie'),
+          const SizedBox(height: 16),
+          _buildMediaUploadBox(),
           const SizedBox(height: 20),
         ],
       ),
@@ -542,11 +651,14 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
 
   Widget _buildPseudoField() {
     // Determine border color based on validation state
-    Color borderColor = Colors.grey.withValues(alpha: 0.2);
+    Color borderColor = AdaptiveColors.foreground(
+      context,
+      Colors.grey,
+    ).withValues(alpha: 0.2);
     if (_pseudoIsAvailable == true) {
-      borderColor = const Color(0xFF3AAE5E);
+      borderColor = AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
     } else if (_pseudoIsAvailable == false) {
-      borderColor = Colors.red;
+      borderColor = AdaptiveColors.foreground(context, Colors.red);
     }
 
     return Column(
@@ -555,11 +667,18 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         // Label
         Row(
           children: [
-            Icon(Icons.person_outline, size: 16, color: Colors.grey[400]),
+            Icon(
+              Icons.person_outline,
+              size: 16,
+              color: AdaptiveColors.foreground(context, Colors.grey[400]),
+            ),
             const SizedBox(width: 8),
             Text(
               'Pseudo',
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              style: TextStyle(
+                fontSize: 12,
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              ),
             ),
             const Spacer(),
             // Change limit indicator
@@ -569,8 +688,8 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
                 style: TextStyle(
                   fontSize: 11,
                   color: _pseudoChangeLimitReached
-                      ? Colors.red
-                      : Colors.grey[500],
+                      ? AdaptiveColors.foreground(context, Colors.red)
+                      : AdaptiveColors.foreground(context, Colors.grey[500]),
                 ),
               ),
           ],
@@ -580,7 +699,9 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         // Pseudo input field
         Container(
           decoration: BoxDecoration(
-            color: _pseudoChangeLimitReached ? Colors.grey[100] : Colors.white,
+            color: _pseudoChangeLimitReached
+                ? AdaptiveColors.surface(context, Colors.grey[100])
+                : AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: borderColor,
@@ -593,8 +714,8 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             style: TextStyle(
               fontSize: 14,
               color: _pseudoChangeLimitReached
-                  ? Colors.grey
-                  : const Color(0xFF424242),
+                  ? AdaptiveColors.foreground(context, Colors.grey)
+                  : AdaptiveColors.foreground(context, const Color(0xFF424242)),
             ),
             decoration: InputDecoration(
               contentPadding: const EdgeInsets.symmetric(
@@ -611,9 +732,18 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
                       ),
                     )
                   : _pseudoIsAvailable == true
-                  ? const Icon(Icons.check_circle, color: Color(0xFF3AAE5E))
+                  ? Icon(
+                      Icons.check_circle,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF3AAE5E),
+                      ),
+                    )
                   : _pseudoIsAvailable == false
-                  ? const Icon(Icons.error, color: Colors.red)
+                  ? Icon(
+                      Icons.error,
+                      color: AdaptiveColors.foreground(context, Colors.red),
+                    )
                   : null,
             ),
           ),
@@ -625,7 +755,10 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             padding: const EdgeInsets.only(top: 6),
             child: Text(
               _pseudoErrorMessage,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.red),
+                fontSize: 12,
+              ),
             ),
           ),
 
@@ -636,11 +769,14 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Suggestions disponibles:',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -656,14 +792,25 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE6F7EF),
+                          color: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFE6F7EF),
+                          ),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF3AAE5E)),
+                          border: Border.all(
+                            color: AdaptiveColors.border(
+                              context,
+                              const Color(0xFF3AAE5E),
+                            ),
+                          ),
                         ),
                         child: Text(
                           suggestion,
-                          style: const TextStyle(
-                            color: Color(0xFF3AAE5E),
+                          style: TextStyle(
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF3AAE5E),
+                            ),
                             fontWeight: FontWeight.w600,
                             fontSize: 12,
                           ),
@@ -683,18 +830,33 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.red,
+                ).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AdaptiveColors.border(
+                    context,
+                    Colors.red,
+                  ).withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.lock, color: Colors.red, size: 16),
+                  Icon(
+                    Icons.lock,
+                    color: AdaptiveColors.foreground(context, Colors.red),
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Vous avez atteint la limite de $_maxPseudoChanges changements de pseudo.',
-                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(context, Colors.red),
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ],
@@ -712,40 +874,55 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader(Icons.share_outlined, 'Réseaux sociaux'),
+          const Text('Saisissez votre identifiant ou le lien complet.'),
+          for (final entry in _extraSocialControllers.entries) ...[
+            const SizedBox(height: 12),
+            _buildSocialField(
+              {
+                'website': 'Site web',
+                'x': 'X',
+                'tiktok': 'TikTok',
+                'dribbble': 'Dribbble',
+              }[entry.key]!,
+              entry.value,
+              Icons.link,
+              AdaptiveColors.foreground(context, const Color(0xFF006D4D)),
+            ),
+          ],
           const SizedBox(height: 16),
           _buildSocialField(
             'facebook',
             _facebookController,
             Icons.facebook,
-            const Color(0xFF1877F2),
+            AdaptiveColors.foreground(context, const Color(0xFF1877F2)),
           ),
           const SizedBox(height: 12),
           _buildSocialField(
             'instagram',
             _instagramController,
             Icons.camera_alt_outlined,
-            const Color(0xFFE4405F),
+            AdaptiveColors.foreground(context, const Color(0xFFE4405F)),
           ),
           const SizedBox(height: 12),
           _buildSocialField(
             'LinkedIn',
             _linkedinController,
             Icons.link_outlined,
-            const Color(0xFF0A66C2),
+            AdaptiveColors.foreground(context, const Color(0xFF0A66C2)),
           ),
           const SizedBox(height: 12),
           _buildSocialField(
             'Youtube',
             _youtubeController,
             Icons.play_circle_outline,
-            const Color(0xFFFF0000),
+            AdaptiveColors.foreground(context, const Color(0xFFFF0000)),
           ),
           const SizedBox(height: 12),
           _buildSocialField(
             'Snapchat',
             _snapchatController,
             Icons.chat_bubble_outline,
-            const Color(0xFFFEE101),
+            AdaptiveColors.foreground(context, const Color(0xFFFEE101)),
           ),
           const SizedBox(height: 20),
         ],
@@ -756,14 +933,18 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
   Widget _buildSectionHeader(IconData icon, String title) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: const Color(0xFF616161)),
+        Icon(
+          icon,
+          size: 20,
+          color: AdaptiveColors.foreground(context, const Color(0xFF616161)),
+        ),
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
           ),
         ),
       ],
@@ -781,25 +962,40 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
       children: [
         Row(
           children: [
-            Icon(icon, size: 16, color: Colors.grey[400]),
+            Icon(
+              icon,
+              size: 16,
+              color: AdaptiveColors.foreground(context, Colors.grey[400]),
+            ),
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              style: TextStyle(
+                fontSize: 12,
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: AdaptiveColors.border(
+                context,
+                Colors.grey,
+              ).withValues(alpha: 0.2),
+            ),
           ),
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF424242)),
+            style: TextStyle(
+              fontSize: 14,
+              color: AdaptiveColors.foreground(context, Color(0xFF424242)),
+            ),
             decoration: const InputDecoration(
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 16,
@@ -825,14 +1021,26 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
           child: Checkbox(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF3AAE5E),
+            activeColor: AdaptiveColors.foreground(
+              context,
+              const Color(0xFF3AAE5E),
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
             ),
-            side: BorderSide(color: Colors.grey[300]!, width: 1),
+            side: BorderSide(
+              color: AdaptiveColors.border(context, Colors.grey[300]!),
+              width: 1,
+            ),
           ),
         ),
-        Text(title, style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 11,
+            color: AdaptiveColors.foreground(context, Colors.grey[500]),
+          ),
+        ),
       ],
     );
   }
@@ -844,21 +1052,29 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
       ),
       child: TextField(
         controller: controller,
         maxLines: 5,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
           height: 1.5,
-          color: Color(0xFF424242),
+          color: AdaptiveColors.foreground(context, Color(0xFF424242)),
         ),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+          hintStyle: TextStyle(
+            fontSize: 13,
+            color: AdaptiveColors.foreground(context, Colors.grey[400]),
+          ),
           border: InputBorder.none,
           contentPadding: EdgeInsets.zero,
         ),
@@ -881,20 +1097,31 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              style: TextStyle(
+                fontSize: 12,
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: AdaptiveColors.border(
+                context,
+                Colors.grey,
+              ).withValues(alpha: 0.2),
+            ),
           ),
           child: TextField(
             controller: controller,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF424242)),
+            style: TextStyle(
+              fontSize: 14,
+              color: AdaptiveColors.foreground(context, Color(0xFF424242)),
+            ),
             decoration: const InputDecoration(
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 16,
@@ -931,7 +1158,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         // Upload button
         _buildUploadButton(
           label: 'Ajouter un media',
-          color: const Color(0xFF3AAE5E),
+          color: AdaptiveColors.foreground(context, const Color(0xFF3AAE5E)),
           onTap: _showMediaPickerChoice,
           isLoading: _isUploadingGallery,
         ),
@@ -1006,11 +1233,11 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
               ? Container(
                   width: double.infinity,
                   height: double.infinity,
-                  color: Colors.grey[800],
-                  child: const Center(
+                  color: AdaptiveColors.surface(context, Colors.grey[800]),
+                  child: Center(
                     child: Icon(
                       Icons.play_circle_outline,
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       size: 40,
                     ),
                   ),
@@ -1022,7 +1249,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      color: Colors.grey[300],
+                      color: AdaptiveColors.surface(context, Colors.grey[300]),
                       child: const Icon(Icons.image_not_supported),
                     );
                   },
@@ -1037,10 +1264,17 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.8),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.red,
+                ).withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close, color: Colors.white, size: 16),
+              child: Icon(
+                Icons.close,
+                color: AdaptiveColors.foreground(context, Colors.white),
+                size: 16,
+              ),
             ),
           ),
         ),
@@ -1052,18 +1286,25 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.videocam, color: Colors.white, size: 12),
+                  Icon(
+                    Icons.videocam,
+                    color: AdaptiveColors.foreground(context, Colors.white),
+                    size: 12,
+                  ),
                   SizedBox(width: 4),
                   Text(
                     'VIDÉO',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1091,9 +1332,9 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
           child: Wrap(
             children: [
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.photo_library,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                 ),
                 title: const Text('Importer des images'),
                 subtitle: const Text('Sélectionner plusieurs photos'),
@@ -1103,7 +1344,10 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.videocam, color: Color(0xFFEF8A40)),
+                leading: Icon(
+                  Icons.videocam,
+                  color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+                ),
                 title: const Text('Importer une vidéo'),
                 subtitle: const Text('Sélectionner une vidéo'),
                 onTap: () {
@@ -1113,7 +1357,10 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
               ),
               const Divider(),
               ListTile(
-                leading: const Icon(Icons.close, color: Colors.grey),
+                leading: Icon(
+                  Icons.close,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
                 title: const Text('Annuler'),
                 onTap: () => Navigator.pop(context),
               ),
@@ -1152,7 +1399,10 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
               content: Text(
                 '${pickedFiles.length} image(s) ajoutée(s) à la galerie !',
               ),
-              backgroundColor: const Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
             ),
           );
         }
@@ -1162,7 +1412,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de l\'upload: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -1194,9 +1444,12 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('Vidéo ajoutée à la galerie !'),
-              backgroundColor: Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                Color(0xFF3AAE5E),
+              ),
             ),
           );
         }
@@ -1206,7 +1459,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de l\'upload: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -1229,9 +1482,12 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('Média supprimé'),
-              backgroundColor: Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                Color(0xFF3AAE5E),
+              ),
             ),
           );
         }
@@ -1241,7 +1497,7 @@ class _MonProfilParticulierScreenState extends State<MonProfilParticulierScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de la suppression: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }

@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/models/delegation.dart';
 import 'package:myreklam/services/delegation_manager.dart';
@@ -39,21 +40,24 @@ class ProSubscriptionScreen extends StatelessWidget {
         _safeBack(context);
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         appBar: AppBar(
           automaticallyImplyLeading: false,
           leading: forceChoice
               ? null
               : IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.grey),
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                   onPressed: () => _safeBack(context),
                 ),
           elevation: 0,
-          backgroundColor: Colors.white,
-          title: const Text(
+          backgroundColor: AdaptiveColors.surface(context, Colors.white),
+          title: Text(
             'Choisissez votre abonnement',
             style: TextStyle(
-              color: Colors.black,
+              color: AdaptiveColors.foreground(context, Colors.black),
               fontSize: 20,
               fontWeight: FontWeight.bold,
               fontFamily: 'Manjari',
@@ -61,7 +65,7 @@ class ProSubscriptionScreen extends StatelessWidget {
           ),
           centerTitle: true,
         ),
-        body: const Column(
+        body: Column(
           children: [
             SizedBox(height: 14),
             Padding(
@@ -69,7 +73,10 @@ class ProSubscriptionScreen extends StatelessWidget {
               child: Text(
                 'Développez votre activité avec Myreklam : choisissez l\'offre qui correspond à vos ambitions.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Color(0xFF8D8D8D)),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AdaptiveColors.foreground(context, Color(0xFF8D8D8D)),
+                ),
               ),
             ),
             SizedBox(height: 18),
@@ -141,7 +148,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 20),
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: AdaptiveColors.surface(context, Colors.grey[300]),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -153,7 +160,13 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                   const SizedBox(height: 8),
                   Text(
                     'Abonnement Premium - ${_cycle == _BillingCycle.monthly ? 'Mensuel' : 'Annuel'}',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
@@ -194,19 +207,28 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                         height: 46,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1B8D4B),
-                            foregroundColor: Colors.white,
+                            backgroundColor: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFF1B8D4B),
+                            ),
+                            foregroundColor: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                           ),
                           onPressed: (_checkingPromo || _promoValid)
                               ? null
                               : () => _applyPromo(setModalState),
                           child: _checkingPromo
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 18,
                                   height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                   ),
                                 )
                               : const Text('Appliquer'),
@@ -221,8 +243,11 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                       style: TextStyle(
                         fontSize: 12.5,
                         color: _promoValid
-                            ? const Color(0xFF1B8D4B)
-                            : Colors.red,
+                            ? AdaptiveColors.foreground(
+                                context,
+                                const Color(0xFF1B8D4B),
+                              )
+                            : AdaptiveColors.foreground(context, Colors.red),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -231,7 +256,10 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                   _PaymentOptionTile(
                     icon: Icons.payment,
                     label: 'PayPal',
-                    color: const Color(0xFF0070BA),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF0070BA),
+                    ),
                     onTap: () {
                       Navigator.pop(ctx);
                       _processPayPalPayment();
@@ -241,7 +269,10 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                   _PaymentOptionTile(
                     icon: Icons.credit_card,
                     label: 'Stripe (Carte bancaire)',
-                    color: const Color(0xFF635BFF),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF635BFF),
+                    ),
                     onTap: () {
                       Navigator.pop(ctx);
                       _processStripePayment();
@@ -338,9 +369,9 @@ class _PremiumPlanState extends State<_PremiumPlan> {
       if (success && mounted) {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Paiement réussi ! Abonnement Premium activé.'),
-            backgroundColor: Colors.green,
+            backgroundColor: AdaptiveColors.surface(context, Colors.green),
           ),
         );
 
@@ -361,7 +392,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur de paiement: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -401,9 +432,9 @@ class _PremiumPlanState extends State<_PremiumPlan> {
       if (success && mounted) {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Paiement réussi ! Abonnement Premium activé.'),
-            backgroundColor: Colors.green,
+            backgroundColor: AdaptiveColors.surface(context, Colors.green),
           ),
         );
 
@@ -424,7 +455,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur de paiement PayPal: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -461,9 +492,11 @@ class _PremiumPlanState extends State<_PremiumPlan> {
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AdaptiveColors.surface(context, Colors.white),
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: const Color(0xFFE2F3EA)),
+              border: Border.all(
+                color: AdaptiveColors.border(context, const Color(0xFFE2F3EA)),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFF2E9B5B).withValues(alpha: 0.12),
@@ -481,8 +514,8 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(30, 36, 30, 32),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      color: AdaptiveColors.surface(context, Colors.white),
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(0),
                         topRight: Radius.circular(28),
@@ -506,10 +539,13 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                                 children: [
                                   Text(
                                     pricing.price,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 40,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF2E9B5B),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF2E9B5B),
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
@@ -517,8 +553,11 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                                     padding: const EdgeInsets.only(bottom: 6),
                                     child: Text(
                                       pricing.cadence,
-                                      style: const TextStyle(
-                                        color: Color(0xFF6D7278),
+                                      style: TextStyle(
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Color(0xFF6D7278),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -527,8 +566,11 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                               const SizedBox(height: 6),
                               Text(
                                 pricing.subLabel,
-                                style: const TextStyle(
-                                  color: Color(0xFF6D7278),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF6D7278),
+                                  ),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -540,13 +582,19 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                                     vertical: 10,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFE0F7EA),
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      const Color(0xFFE0F7EA),
+                                    ),
                                     borderRadius: BorderRadius.circular(30),
                                   ),
                                   child: Text(
                                     pricing.savingsLabel!,
-                                    style: const TextStyle(
-                                      color: Color(0xFF2E9B5B),
+                                    style: TextStyle(
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF2E9B5B),
+                                      ),
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -559,6 +607,7 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                         const _CenteredPremiumIntro(),
                         const SizedBox(height: 24),
                         _buildFeatureGroup(
+                          context,
                           title: 'TROUVER',
                           items: const [
                             FeatureItem(
@@ -582,9 +631,13 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                               FeatureStatus.available,
                             ),
                           ],
-                          headerColor: const Color(0xFF2E9B5B),
+                          headerColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF2E9B5B),
+                          ),
                         ),
                         _buildFeatureGroup(
+                          context,
                           title: 'PROMOUVOIR',
                           items: const [
                             FeatureItem(
@@ -596,9 +649,13 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                               FeatureStatus.available,
                             ),
                           ],
-                          headerColor: const Color(0xFF2E9B5B),
+                          headerColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF2E9B5B),
+                          ),
                         ),
                         _buildFeatureGroup(
+                          context,
                           title: 'COMMUNIQUER',
                           items: const [
                             FeatureItem(
@@ -610,9 +667,13 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                               FeatureStatus.available,
                             ),
                           ],
-                          headerColor: const Color(0xFF2E9B5B),
+                          headerColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF2E9B5B),
+                          ),
                         ),
                         _buildFeatureGroup(
+                          context,
                           title: 'DIFFUSER',
                           items: const [
                             FeatureItem(
@@ -628,13 +689,25 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                               FeatureStatus.available,
                             ),
                           ],
-                          headerColor: const Color(0xFF2E9B5B),
+                          headerColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF2E9B5B),
+                          ),
                         ),
                         const SizedBox(height: 16),
                         _GradientButton(
                           label: 'Continuer en Premium',
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF04BC7B), Color(0xFF03CD85)],
+                          gradient: LinearGradient(
+                            colors: [
+                              AdaptiveColors.surface(
+                                context,
+                                Color(0xFF04BC7B),
+                              ),
+                              AdaptiveColors.surface(
+                                context,
+                                Color(0xFF03CD85),
+                              ),
+                            ],
                             begin: Alignment.centerLeft,
                             end: Alignment.centerRight,
                           ),
@@ -647,17 +720,20 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                             onPressed: _isProcessingPayment
                                 ? null
                                 : _continueFree,
-                            child: const Text(
+                            child: Text(
                               'Continuer avec la version gratuite',
                               style: TextStyle(
-                                color: Color(0xFF616161),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF616161),
+                                ),
                                 fontWeight: FontWeight.w600,
                                 decoration: TextDecoration.underline,
                               ),
                             ),
                           ),
                         ),
-                        const Center(
+                        Center(
                           child: Padding(
                             padding: EdgeInsets.symmetric(horizontal: 24),
                             child: Text(
@@ -665,7 +741,10 @@ class _PremiumPlanState extends State<_PremiumPlan> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 11.5,
-                                color: Color(0xFF9E9E9E),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF9E9E9E),
+                                ),
                                 height: 1.4,
                               ),
                             ),
@@ -700,9 +779,9 @@ class _PremiumPlanState extends State<_PremiumPlan> {
       if (mounted && Navigator.canPop(context)) Navigator.pop(context);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Version gratuite activée.'),
-            backgroundColor: Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
           ),
         );
         Navigator.pushAndRemoveUntil(
@@ -715,7 +794,10 @@ class _PremiumPlanState extends State<_PremiumPlan> {
       if (mounted && Navigator.canPop(context)) Navigator.pop(context);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
+          ),
         );
       }
     } finally {
@@ -749,18 +831,20 @@ class _BillingToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF7F0),
+        color: AdaptiveColors.surface(context, const Color(0xFFEAF7F0)),
         borderRadius: BorderRadius.circular(32),
       ),
       child: Row(
         children: [
           _buildOption(
+            context,
             label: 'Mensuel',
             isActive: activeCycle == _BillingCycle.monthly,
             onTap: () => onChanged(_BillingCycle.monthly),
           ),
           const SizedBox(width: 8),
           _buildOption(
+            context,
             label: 'Annuel',
             isActive: activeCycle == _BillingCycle.annual,
             onTap: () => onChanged(_BillingCycle.annual),
@@ -770,7 +854,8 @@ class _BillingToggle extends StatelessWidget {
     );
   }
 
-  Expanded _buildOption({
+  Expanded _buildOption(
+    BuildContext context, {
     required String label,
     required bool isActive,
     required VoidCallback onTap,
@@ -782,7 +867,9 @@ class _BillingToggle extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.transparent,
+            color: isActive
+                ? AdaptiveColors.surface(context, Colors.white)
+                : AdaptiveColors.surface(context, Colors.transparent),
             borderRadius: BorderRadius.circular(26),
             boxShadow: isActive
                 ? [
@@ -800,8 +887,14 @@ class _BillingToggle extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 color: isActive
-                    ? const Color(0xFF2E9B5B)
-                    : const Color(0xFF6D7278),
+                    ? AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF2E9B5B),
+                      )
+                    : AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF6D7278),
+                      ),
               ),
             ),
           ),
@@ -819,9 +912,11 @@ class _CenteredPremiumIntro extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const Text(
+        Text(
           'Choisissez une formule et un moyen de paiement pour activer Premium.',
-          style: TextStyle(color: Color(0xFF6D7278)),
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Color(0xFF6D7278)),
+          ),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 18),
@@ -847,9 +942,11 @@ class _PremiumHighlights extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFFE9F9F0),
+        color: AdaptiveColors.surface(context, const Color(0xFFE9F9F0)),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFFB8E4CF)),
+        border: Border.all(
+          color: AdaptiveColors.border(context, const Color(0xFFB8E4CF)),
+        ),
       ),
       child: GridView.builder(
         shrinkWrap: true,
@@ -887,22 +984,29 @@ class _HighlightTile extends StatelessWidget {
           height: 40,
           width: 40,
           decoration: BoxDecoration(
-            color: const Color(0xFFDFF5E8),
+            color: AdaptiveColors.surface(context, const Color(0xFFDFF5E8)),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: const Color(0xFF2E9B5B).withValues(alpha: 0.25),
+              color: AdaptiveColors.border(
+                context,
+                const Color(0xFF2E9B5B),
+              ).withValues(alpha: 0.25),
             ),
           ),
-          child: Icon(item.icon, color: const Color(0xFF24A05B), size: 16),
+          child: Icon(
+            item.icon,
+            color: AdaptiveColors.foreground(context, const Color(0xFF24A05B)),
+            size: 16,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             item.label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w400,
-              color: Color(0xFF1F4830),
+              color: AdaptiveColors.foreground(context, Color(0xFF1F4830)),
             ),
           ),
         ),
@@ -927,7 +1031,7 @@ class _GradientButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: Material(
-        color: Colors.transparent,
+        color: AdaptiveColors.surface(context, Colors.transparent),
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
@@ -948,8 +1052,8 @@ class _GradientButton extends StatelessWidget {
             child: Center(
               child: Text(
                 label,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.white),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1031,9 +1135,12 @@ class _PremiumPlanHeader extends StatelessWidget {
       child: Container(
         height: 170,
         padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF04BC7B), Color(0xFF03CD85)],
+            colors: [
+              AdaptiveColors.surface(context, Color(0xFF04BC7B)),
+              AdaptiveColors.surface(context, Color(0xFF03CD85)),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -1058,7 +1165,10 @@ class _PremiumPlanHeader extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: AdaptiveColors.surface(
+                      context,
+                      Colors.white,
+                    ).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -1068,13 +1178,16 @@ class _PremiumPlanHeader extends StatelessWidget {
                         'assets/images/solar_star-fall-line-duotone.png',
                         width: 18,
                         height: 18,
-                        color: Colors.white,
+                        color: AdaptiveColors.surface(context, Colors.white),
                       ),
                       const SizedBox(width: 6),
-                      const Text(
+                      Text(
                         'Recommandée pour les pros',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.3,
@@ -1084,18 +1197,21 @@ class _PremiumPlanHeader extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   '| Version PREMIUM',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                   'Maximisez votre visibilité et développez votre activité sans limites.',
-                  style: TextStyle(color: Colors.white, fontSize: 13),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.white),
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -1140,7 +1256,8 @@ class FeatureItem {
 
 enum FeatureStatus { available, warning, unavailable }
 
-Widget _buildFeatureGroup({
+Widget _buildFeatureGroup(
+  BuildContext context, {
   required String title,
   required List<FeatureItem> items,
   required Color headerColor,
@@ -1153,25 +1270,25 @@ Widget _buildFeatureGroup({
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Color(0xFF04BC7B),
+            color: AdaptiveColors.surface(context, Color(0xFF04BC7B)),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.white),
               fontWeight: FontWeight.w700,
             ),
           ),
         ),
         const SizedBox(height: 10),
-        ...items.map(_buildFeatureLine),
+        ...items.map((value) => _buildFeatureLine(context, value)),
       ],
     ),
   );
 }
 
-Widget _buildFeatureLine(FeatureItem item) {
+Widget _buildFeatureLine(BuildContext context, FeatureItem item) {
   late final IconData icon;
   late final Color iconColor;
   late final Color backgroundColor;
@@ -1179,18 +1296,27 @@ Widget _buildFeatureLine(FeatureItem item) {
   switch (item.status) {
     case FeatureStatus.available:
       icon = Icons.check_rounded;
-      iconColor = Colors.white;
-      backgroundColor = const Color(0xFFFFC433);
+      iconColor = AdaptiveColors.foreground(context, Colors.white);
+      backgroundColor = AdaptiveColors.surface(
+        context,
+        const Color(0xFFFFC433),
+      );
       break;
     case FeatureStatus.warning:
       icon = Icons.warning_amber_rounded;
-      iconColor = const Color(0xFFB97B00);
-      backgroundColor = const Color(0xFFFFF0D9);
+      iconColor = AdaptiveColors.foreground(context, const Color(0xFFB97B00));
+      backgroundColor = AdaptiveColors.surface(
+        context,
+        const Color(0xFFFFF0D9),
+      );
       break;
     case FeatureStatus.unavailable:
       icon = Icons.close;
-      iconColor = const Color(0xFFD32F2F);
-      backgroundColor = const Color(0xFFFDE5E5);
+      iconColor = AdaptiveColors.foreground(context, const Color(0xFFD32F2F));
+      backgroundColor = AdaptiveColors.surface(
+        context,
+        const Color(0xFFFDE5E5),
+      );
       break;
   }
 
@@ -1214,7 +1340,10 @@ Widget _buildFeatureLine(FeatureItem item) {
             item.label,
             style: TextStyle(
               fontSize: 12,
-              color: const Color(0xFF4A4A4A),
+              color: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF4A4A4A),
+              ),
               decoration: item.strike
                   ? TextDecoration.lineThrough
                   : TextDecoration.none,

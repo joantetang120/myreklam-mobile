@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
@@ -34,7 +35,7 @@ class CommentCard extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(left: isReply ? 50 : 20, right: 20, bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -64,10 +65,13 @@ class CommentCard extends StatelessWidget {
                             children: [
                               Text(
                                 name,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
-                                  color: Color(0xFF424242),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF424242),
+                                  ),
                                 ),
                               ),
                               Row(
@@ -75,14 +79,20 @@ class CommentCard extends StatelessWidget {
                                   Icon(
                                     Icons.access_time,
                                     size: 14,
-                                    color: Colors.grey[600],
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[600],
+                                    ),
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     time,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[600],
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -94,7 +104,10 @@ class CommentCard extends StatelessWidget {
                             content,
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[700],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[700],
+                              ),
                               height: 1.4,
                             ),
                           ),
@@ -111,7 +124,12 @@ class CommentCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+                top: BorderSide(
+                  color: AdaptiveColors.border(
+                    context,
+                    Colors.grey,
+                  ).withValues(alpha: 0.2),
+                ),
               ),
             ),
             child: Row(
@@ -123,12 +141,21 @@ class CommentCard extends StatelessWidget {
                       Icon(
                         Icons.thumb_up_outlined,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         '$likes',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -137,7 +164,10 @@ class CommentCard extends StatelessWidget {
                 Container(
                   height: 12,
                   width: 1,
-                  color: Colors.grey.withValues(alpha: 0.4),
+                  color: AdaptiveColors.surface(
+                    context,
+                    Colors.grey,
+                  ).withValues(alpha: 0.4),
                 ),
                 const SizedBox(width: 16),
                 GestureDetector(
@@ -146,12 +176,24 @@ class CommentCard extends StatelessWidget {
                     children: [
                       Text(
                         'Répondre',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '$responsesCount',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ],
                   ),

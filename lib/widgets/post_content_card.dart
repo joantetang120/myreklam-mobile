@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/social_video_preview.dart';
@@ -75,9 +76,14 @@ class PostContentCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(top: 16, left: 14, right: 14, bottom: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.15),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -104,9 +110,9 @@ class PostContentCard extends StatelessWidget {
           // Title
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
-              color: Color(0xFF616161),
+              color: AdaptiveColors.foreground(context, Color(0xFF616161)),
               height: 1.4,
             ),
           ),
@@ -117,7 +123,13 @@ class PostContentCard extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           // Divider
-          Container(height: 1, color: Colors.grey.withValues(alpha: 0.1)),
+          Container(
+            height: 1,
+            color: AdaptiveColors.surface(
+              context,
+              Colors.grey,
+            ).withValues(alpha: 0.1),
+          ),
           // Footer
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -126,12 +138,25 @@ class PostContentCard extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.access_time, size: 18, color: Colors.grey[600]),
+                    Icon(
+                      Icons.access_time,
+                      size: 18,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
+                    ),
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
                         time,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                          fontSize: 14,
+                        ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
@@ -163,7 +188,10 @@ class PostContentCard extends StatelessWidget {
                       onPressed: onMorePressed,
                       icon: Icon(
                         Icons.more_vert,
-                        color: Colors.grey[500],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[500],
+                        ),
                         size: 20,
                       ),
                       padding: EdgeInsets.zero,
@@ -367,11 +395,11 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
             )
           else
             Container(
-              color: Colors.black87,
+              color: AdaptiveColors.surface(context, Colors.black87),
               child: _isLoading
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                         strokeWidth: 2,
                       ),
                     )
@@ -381,13 +409,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
           Center(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.play_circle_outline,
                 size: 40,
-                color: Colors.white,
+                color: AdaptiveColors.foreground(context, Colors.white),
               ),
             ),
           ),
@@ -398,13 +429,13 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.black54,
+                color: AdaptiveColors.surface(context, Colors.black54),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: const Text(
+              child: Text(
                 'VIDEO',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AdaptiveColors.foreground(context, Colors.white),
                   fontSize: 8,
                   fontWeight: FontWeight.bold,
                 ),

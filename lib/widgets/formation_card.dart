@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class FormationCard extends StatelessWidget {
@@ -38,7 +39,7 @@ class FormationCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -46,7 +47,12 @@ class FormationCard extends StatelessWidget {
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.1),
+        ),
       ),
       child: Stack(
         children: [
@@ -64,7 +70,10 @@ class FormationCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: Colors.grey.withValues(alpha: 0.2),
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey,
+                          ).withValues(alpha: 0.2),
                         ),
                         image: DecorationImage(
                           image: companyLogo.startsWith('http')
@@ -84,10 +93,13 @@ class FormationCard extends StatelessWidget {
                           onTap: onAvatarTap,
                           child: Text(
                             companyName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF616161),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF616161),
+                              ),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -99,19 +111,26 @@ class FormationCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE6F7EF),
+                            color: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFE6F7EF),
+                            ),
                             borderRadius: BorderRadius.circular(5),
                             border: Border.all(
-                              color: const Color(
-                                0xFF3AAE5E,
+                              color: AdaptiveColors.border(
+                                context,
+                                const Color(0xFF3AAE5E),
                               ).withValues(alpha: 0.2),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Pro',
                             style: TextStyle(
                               fontSize: 10,
-                              color: Color(0xFF3AAE5E),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -126,19 +145,19 @@ class FormationCard extends StatelessWidget {
               // Formation Title
               Text(
                 formationTitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF757575),
+                  color: AdaptiveColors.foreground(context, Color(0xFF757575)),
                 ),
               ),
               const SizedBox(height: 8),
               // Description
               Text(
                 description,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF616161),
+                  color: AdaptiveColors.foreground(context, Color(0xFF616161)),
                   height: 1.5,
                 ),
               ),
@@ -149,7 +168,7 @@ class FormationCard extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: tags.map((tag) => _buildTag(tag)).toList(),
+                children: tags.map((tag) => _buildTag(context, tag)).toList(),
               ),
               const SizedBox(height: 15),
               const Divider(height: 1),
@@ -162,8 +181,14 @@ class FormationCard extends StatelessWidget {
                   icon: const Icon(Icons.school_outlined, size: 18),
                   label: const Text('Voir la formation'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9800),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFF9800),
+                    ),
+                    foregroundColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
@@ -188,11 +213,18 @@ class FormationCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 16, left: 4, right: 4),
                 child: Row(
                   children: [
-                    const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                    Icon(
+                      Icons.access_time,
+                      size: 14,
+                      color: AdaptiveColors.foreground(context, Colors.grey),
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       timeAgo,
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AdaptiveColors.foreground(context, Colors.grey),
+                      ),
                     ),
                   ],
                 ),
@@ -212,7 +244,10 @@ class FormationCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AdaptiveColors.surface(
+                        context,
+                        Colors.white,
+                      ).withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -228,14 +263,22 @@ class FormationCard extends StatelessWidget {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           )
                         : Icon(
                             isFavorited
                                 ? Icons.favorite
                                 : Icons.favorite_border,
-                            color: isFavorited ? Colors.red : Colors.grey[600],
+                            color: isFavorited
+                                ? AdaptiveColors.foreground(context, Colors.red)
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                             size: 20,
                           ),
                   ),
@@ -247,7 +290,10 @@ class FormationCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.white,
+                        ).withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
@@ -257,9 +303,12 @@ class FormationCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.report_outlined,
-                        color: Colors.redAccent,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.redAccent,
+                        ),
                         size: 20,
                       ),
                     ),
@@ -275,8 +324,14 @@ class FormationCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF9C27B0),
-                        const Color(0xFF9C27B0).withValues(alpha: 0.8),
+                        AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF9C27B0),
+                        ),
+                        AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF9C27B0),
+                        ).withValues(alpha: 0.8),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -293,19 +348,22 @@ class FormationCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.school_outlined,
                         size: 14,
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                       ),
                       SizedBox(width: 4),
                       Text(
                         'Formation',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.3,
@@ -322,17 +380,25 @@ class FormationCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTag(FormationTag tag) {
+  Widget _buildTag(BuildContext context, FormationTag tag) {
     final isSpecial = tag.isSpecial;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: isSpecial ? const Color(0xFFE6F7EF) : const Color(0xFFF5F5F5),
+        color: isSpecial
+            ? AdaptiveColors.surface(context, const Color(0xFFE6F7EF))
+            : AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isSpecial
-              ? const Color(0xFF3AAE5E).withValues(alpha: 0.5)
-              : Colors.grey.withValues(alpha: 0.2),
+              ? AdaptiveColors.border(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ).withValues(alpha: 0.5)
+              : AdaptiveColors.border(
+                  context,
+                  Colors.grey,
+                ).withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -341,14 +407,18 @@ class FormationCard extends StatelessWidget {
           Icon(
             tag.icon,
             size: 16,
-            color: isSpecial ? const Color(0xFF3AAE5E) : Colors.grey,
+            color: isSpecial
+                ? AdaptiveColors.foreground(context, const Color(0xFF3AAE5E))
+                : AdaptiveColors.foreground(context, Colors.grey),
           ),
           const SizedBox(width: 6),
           Text(
             tag.text,
             style: TextStyle(
               fontSize: 12,
-              color: isSpecial ? const Color(0xFF3AAE5E) : Colors.grey,
+              color: isSpecial
+                  ? AdaptiveColors.foreground(context, const Color(0xFF3AAE5E))
+                  : AdaptiveColors.foreground(context, Colors.grey),
               fontWeight: isSpecial ? FontWeight.bold : FontWeight.w500,
             ),
           ),

@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'otp_screen.dart';
 import 'package:myreklam/services/auth_service.dart';
@@ -46,14 +47,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.firstError),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Une erreur est survenue. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     } finally {
@@ -64,26 +68,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFE0E0E0)),
+              border: Border.all(
+                color: AdaptiveColors.border(context, const Color(0xFFE0E0E0)),
+              ),
             ),
             child: IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back,
-                color: Color(0xFF1B8D4B),
+                color: AdaptiveColors.foreground(context, Color(0xFF1B8D4B)),
                 size: 20,
               ),
               onPressed: () => Navigator.pop(context),
             ),
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -99,20 +105,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
             const SizedBox(height: 30),
             // Title
-            const Text(
+            Text(
               'Mot de passe oublié',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1B8D4B),
+                color: AdaptiveColors.foreground(context, Color(0xFF1B8D4B)),
               ),
             ),
             const SizedBox(height: 15),
             // Subtitle
-            const Text(
+            Text(
               'Saisissez votre adresse e-mail. Un code de réinitialisation vous sera envoyé pour votre mot de passe.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
+              style: TextStyle(
+                fontSize: 14,
+                color: AdaptiveColors.foreground(context, Colors.grey),
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 40),
             Form(
@@ -141,7 +151,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               height: 56,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1B8D4B),
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF1B8D4B),
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -149,18 +162,24 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 onPressed: _isLoading ? null : () => _handleForgotPassword(),
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           strokeWidth: 2.5,
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'Suivant',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -184,11 +203,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       validator: validator,
       keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Colors.grey),
+        prefixIcon: Icon(
+          icon,
+          color: AdaptiveColors.foreground(context, Colors.grey),
+        ),
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey),
+        hintStyle: TextStyle(
+          color: AdaptiveColors.foreground(context, Colors.grey),
+        ),
         filled: true,
-        fillColor: const Color(0xFFF5F5F5),
+        fillColor: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 18,
           horizontal: 16,
@@ -203,20 +227,29 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF1B8D4B), width: 2),
+          borderSide: BorderSide(
+            color: AdaptiveColors.border(context, Color(0xFF1B8D4B)),
+            width: 2,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
+          borderSide: BorderSide(
+            color: AdaptiveColors.border(context, Color(0xFFD32F2F)),
+            width: 2,
+          ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
+          borderSide: BorderSide(
+            color: AdaptiveColors.border(context, Color(0xFFD32F2F)),
+            width: 2,
+          ),
         ),
-        errorStyle: const TextStyle(
+        errorStyle: TextStyle(
           fontSize: 12,
           height: 1.2,
-          color: Color(0xFFD32F2F),
+          color: AdaptiveColors.foreground(context, Color(0xFFD32F2F)),
         ),
         errorMaxLines: 2,
       ),

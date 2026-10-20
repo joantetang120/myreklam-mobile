@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
@@ -41,7 +42,10 @@ class FollowerUserCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subname,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ],
             ),
@@ -49,9 +53,15 @@ class FollowerUserCard extends StatelessWidget {
           OutlinedButton(
             onPressed: onFollow,
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF3AAE5E),
+              foregroundColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              side: const BorderSide(color: Color(0xFF3AAE5E), width: 1.5),
+              side: BorderSide(
+                color: AdaptiveColors.border(context, Color(0xFF3AAE5E)),
+                width: 1.5,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -61,7 +71,11 @@ class FollowerUserCard extends StatelessWidget {
           const SizedBox(width: 8),
           GestureDetector(
             onTap: onRemove,
-            child: Icon(Icons.close, color: Colors.grey[600], size: 20),
+            child: Icon(
+              Icons.close,
+              color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              size: 20,
+            ),
           ),
         ],
       ),

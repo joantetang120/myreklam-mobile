@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -115,7 +116,7 @@ class _LocationMapState extends State<LocationMap> {
   Widget _buildContent() {
     if (_loading) {
       return Container(
-        color: const Color(0xFFF0F0F0),
+        color: AdaptiveColors.surface(context, const Color(0xFFF0F0F0)),
         child: const Center(
           child: SizedBox(
             width: 22,
@@ -127,9 +128,13 @@ class _LocationMapState extends State<LocationMap> {
     }
     if (_center == null) {
       return Container(
-        color: const Color(0xFFF0F0F0),
-        child: const Center(
-          child: Icon(Icons.map_outlined, color: Colors.grey, size: 40),
+        color: AdaptiveColors.surface(context, const Color(0xFFF0F0F0)),
+        child: Center(
+          child: Icon(
+            Icons.map_outlined,
+            color: AdaptiveColors.foreground(context, Colors.grey),
+            size: 40,
+          ),
         ),
       );
     }
@@ -158,9 +163,12 @@ class _LocationMapState extends State<LocationMap> {
                   width: 44,
                   height: 44,
                   alignment: Alignment.topCenter,
-                  child: const Icon(
+                  child: Icon(
                     Icons.location_on,
-                    color: Color(0xFFE53935),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFE53935),
+                    ),
                     size: 40,
                   ),
                 ),
@@ -173,25 +181,35 @@ class _LocationMapState extends State<LocationMap> {
           right: 10,
           bottom: 10,
           child: Material(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(20),
             elevation: 2,
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: _openInMaps,
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.directions, size: 16, color: Color(0xFF1B8D4B)),
+                    Icon(
+                      Icons.directions,
+                      size: 16,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1B8D4B),
+                      ),
+                    ),
                     SizedBox(width: 5),
                     Text(
                       'Itinéraire',
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1B8D4B),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF1B8D4B),
+                        ),
                       ),
                     ),
                   ],

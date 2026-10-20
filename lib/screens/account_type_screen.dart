@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/services/auth_service.dart';
 import 'package:myreklam/services/api_client.dart';
@@ -37,14 +38,17 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.firstError),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Une erreur est survenue. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     } finally {
@@ -64,11 +68,14 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
             right: 0,
             height: MediaQuery.of(context).size.height * 0.35,
             child: Container(
-              color: const Color(0xFF1B8D4B),
+              color: AdaptiveColors.surface(context, const Color(0xFF1B8D4B)),
               child: Image.asset(
                 'assets/images/auth/Rectangle 4.png',
                 fit: BoxFit.cover,
-                color: Colors.white.withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.white,
+                ).withValues(alpha: 0.1),
                 colorBlendMode: BlendMode.dstIn,
               ),
             ),
@@ -82,27 +89,27 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.check_rounded,
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       size: 40,
                     ),
                     const SizedBox(width: 10),
-                    const Text(
+                    Text(
                       'Myreklam',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
-                const Text(
+                Text(
                   'Êtes-vous une entreprise ou un particulier ?',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
                   ),
@@ -124,7 +131,10 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                                 'je souhaite découvrir et partager des bons plans, évènement et opportunités',
                             buttonText: 'Continuer en tant que particulier',
                             icon: Icons.person_outline_rounded,
-                            primaryColor: const Color(0xFFFF9800), // Orange
+                            primaryColor: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFFF9800),
+                            ), // Orange
                             onTap: _isLoading
                                 ? () {}
                                 : () => _selectAccountType('particulier'),
@@ -137,7 +147,10 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
                                 'je représente une entreprise et souhaite promouvoir mes services et offres',
                             buttonText: 'Continuer en tant que Professionnel',
                             icon: Icons.business_rounded,
-                            primaryColor: const Color(0xFF1B8D4B), // Green
+                            primaryColor: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFF1B8D4B),
+                            ), // Green
                             onTap: _isLoading
                                 ? () {}
                                 : () => _selectAccountType('pro'),
@@ -168,7 +181,7 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -208,9 +221,9 @@ class _AccountTypeScreenState extends State<AccountTypeScreen> {
             Text(
               description,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey,
+                color: AdaptiveColors.foreground(context, Colors.grey),
                 height: 1.4,
               ),
             ),

@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/social_video_preview.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
@@ -32,7 +33,7 @@ class PostCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -41,7 +42,12 @@ class PostCard extends StatelessWidget {
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,10 +71,13 @@ class PostCard extends StatelessWidget {
                   children: [
                     Text(
                       username,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF616161),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -78,17 +87,26 @@ class PostCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFF5F5F5),
+                        ),
                         borderRadius: BorderRadius.circular(5),
                         border: Border.all(
-                          color: Colors.grey.withValues(alpha: 0.2),
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey,
+                          ).withValues(alpha: 0.2),
                         ),
                       ),
                       child: Text(
                         userType,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
-                          color: Colors.grey,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey,
+                          ),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -100,19 +118,28 @@ class PostCard extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.favorite_border,
-                    color: Colors.grey.withValues(alpha: 0.7),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Colors.grey,
+                    ).withValues(alpha: 0.7),
                     size: 20,
                   ),
                   const SizedBox(width: 10),
                   Icon(
                     Icons.more_horiz,
-                    color: Colors.grey.withValues(alpha: 0.7),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Colors.grey,
+                    ).withValues(alpha: 0.7),
                     size: 20,
                   ),
                   const SizedBox(width: 10),
                   Icon(
                     Icons.close,
-                    color: Colors.grey.withValues(alpha: 0.7),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Colors.grey,
+                    ).withValues(alpha: 0.7),
                     size: 20,
                   ),
                 ],
@@ -123,9 +150,9 @@ class PostCard extends StatelessWidget {
           // Post Text
           Text(
             postText,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF757575),
+              color: AdaptiveColors.foreground(context, Color(0xFF757575)),
               height: 1.5,
             ),
           ),
@@ -134,7 +161,7 @@ class PostCard extends StatelessWidget {
           if (postImage != null && postImage!.isNotEmpty) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(15),
-              child: _buildPostImage(postImage!),
+              child: _buildPostImage(context, postImage!),
             ),
             const SizedBox(height: 20),
           ],
@@ -143,17 +170,24 @@ class PostCard extends StatelessWidget {
             padding: const EdgeInsets.only(top: 10),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
+                top: BorderSide(
+                  color: AdaptiveColors.border(
+                    context,
+                    Colors.grey,
+                  ).withValues(alpha: 0.1),
+                ),
               ),
             ),
             child: Row(
               children: [
                 _buildAction(
+                  context,
                   Icons.thumb_up_alt_outlined,
                   likesCount.toString(),
                 ),
                 const SizedBox(width: 20),
                 _buildAction(
+                  context,
                   Icons.chat_bubble_outline,
                   commentsCount.toString(),
                   onTap: onCommentsTap,
@@ -164,13 +198,19 @@ class PostCard extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.access_time,
-                      color: Colors.grey.withValues(alpha: 0.7),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey,
+                      ).withValues(alpha: 0.7),
                       size: 16,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       timeAgo,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AdaptiveColors.foreground(context, Colors.grey),
+                      ),
                     ),
                   ],
                 ),
@@ -182,16 +222,28 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAction(IconData icon, String count, {VoidCallback? onTap}) {
+  Widget _buildAction(
+    BuildContext context,
+    IconData icon,
+    String count, {
+    VoidCallback? onTap,
+  }) {
     final content = Row(
       children: [
-        Icon(icon, color: Colors.grey.withValues(alpha: 0.7), size: 18),
+        Icon(
+          icon,
+          color: AdaptiveColors.foreground(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.7),
+          size: 18,
+        ),
         const SizedBox(width: 6),
         Text(
           count,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -209,14 +261,14 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPostImage(String path) {
+  Widget _buildPostImage(BuildContext context, String path) {
     final image = path.startsWith('http')
         ? Image.network(
             path,
             width: double.infinity,
             height: 200,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+            errorBuilder: (_, __, ___) => _buildImagePlaceholder(context),
             loadingBuilder: (context, child, progress) {
               if (progress == null) return child;
               return SizedBox(
@@ -238,19 +290,19 @@ class PostCard extends StatelessWidget {
             width: double.infinity,
             height: 200,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+            errorBuilder: (_, __, ___) => _buildImagePlaceholder(context),
           );
     return image;
   }
 
-  Widget _buildImagePlaceholder() {
+  Widget _buildImagePlaceholder(BuildContext context) {
     return Container(
       width: double.infinity,
       height: 200,
-      color: Colors.grey[200],
-      child: const Icon(
+      color: AdaptiveColors.surface(context, Colors.grey[200]),
+      child: Icon(
         Icons.image_not_supported,
-        color: Colors.grey,
+        color: AdaptiveColors.foreground(context, Colors.grey),
         size: 40,
       ),
     );

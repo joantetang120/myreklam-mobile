@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
@@ -293,16 +294,40 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Color _getNotificationColor(String? type) {
     return switch (type) {
-      'welcome' => const Color(0xFF9C27B0),
-      'mys_earned' => const Color(0xFFFF9800),
-      'new_follower' => const Color(0xFF2196F3),
-      'new_candidate' => const Color(0xFF4CAF50),
-      'content_published' => const Color(0xFF3AAE5E),
-      'event_participation' => const Color(0xFFE91E63),
-      'training_subscription' => const Color(0xFF00BCD4),
-      'story_like' => const Color(0xFFE53935),
-      'story_mention' => const Color(0xFF8E24AA),
-      _ => const Color(0xFF757575),
+      'welcome' => AdaptiveColors.foreground(context, const Color(0xFF9C27B0)),
+      'mys_earned' => AdaptiveColors.foreground(
+        context,
+        const Color(0xFFFF9800),
+      ),
+      'new_follower' => AdaptiveColors.foreground(
+        context,
+        const Color(0xFF2196F3),
+      ),
+      'new_candidate' => AdaptiveColors.foreground(
+        context,
+        const Color(0xFF4CAF50),
+      ),
+      'content_published' => AdaptiveColors.foreground(
+        context,
+        const Color(0xFF3AAE5E),
+      ),
+      'event_participation' => AdaptiveColors.foreground(
+        context,
+        const Color(0xFFE91E63),
+      ),
+      'training_subscription' => AdaptiveColors.foreground(
+        context,
+        const Color(0xFF00BCD4),
+      ),
+      'story_like' => AdaptiveColors.foreground(
+        context,
+        const Color(0xFFE53935),
+      ),
+      'story_mention' => AdaptiveColors.foreground(
+        context,
+        const Color(0xFF8E24AA),
+      ),
+      _ => AdaptiveColors.foreground(context, const Color(0xFF757575)),
     };
   }
 
@@ -312,7 +337,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final grouped = _groupNotifications(filtered);
 
     return AppLayout(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF9F9FB)),
       onTabTapped: (index) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
@@ -340,20 +365,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     alignment: Alignment.centerLeft,
                     child: GestureDetector(
                       onTap: () => Navigator.pop(context),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back,
-                        color: Color(0xFF616161),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF616161),
+                        ),
                         size: 24,
                       ),
                     ),
                   ),
-                  const Text(
+                  Text(
                     'Notifications',
                     style: TextStyle(
                       fontSize: 24,
                       fontFamily: 'Manjari',
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF424242),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF424242),
+                      ),
                     ),
                   ),
                   if (_unreadCount > 0)
@@ -361,9 +392,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       alignment: Alignment.centerRight,
                       child: GestureDetector(
                         onTap: _markAllAsRead,
-                        child: const Icon(
+                        child: Icon(
                           Icons.done_all,
-                          color: Color(0xFF3AAE5E),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF3AAE5E),
+                          ),
                           size: 24,
                         ),
                       ),
@@ -396,7 +430,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           Icon(
                             Icons.notifications_none,
                             size: 64,
-                            color: Colors.grey[400],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[400],
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -404,7 +441,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 ? 'Aucune notification'
                                 : 'Aucune notification non lue',
                             style: TextStyle(
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                               fontSize: 14,
                             ),
                           ),
@@ -437,7 +477,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 groupLabel,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey[500],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[500],
+                                  ),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -464,19 +507,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF3AAE5E) : Colors.transparent,
+          color: isSelected
+              ? AdaptiveColors.surface(context, const Color(0xFF3AAE5E))
+              : AdaptiveColors.surface(context, Colors.transparent),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF3AAE5E)
-                : Colors.grey.withValues(alpha: 0.3),
+                ? AdaptiveColors.border(context, const Color(0xFF3AAE5E))
+                : AdaptiveColors.border(
+                    context,
+                    Colors.grey,
+                  ).withValues(alpha: 0.3),
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 12,
-            color: isSelected ? Colors.white : Colors.grey,
+            color: isSelected
+                ? AdaptiveColors.foreground(context, Colors.white)
+                : AdaptiveColors.foreground(context, Colors.grey),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -515,7 +565,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         decoration: BoxDecoration(
-          color: isRead ? Colors.transparent : color.withValues(alpha: 0.05),
+          color: isRead
+              ? AdaptiveColors.surface(context, Colors.transparent)
+              : color.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -540,20 +592,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
-                      color: const Color(0xFF424242),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF424242),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     _welcomeBody(notif),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[500],
+                      ),
+                    ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _formatTime(notif['created_at']),
-                    style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                    ),
                   ),
                 ],
               ),

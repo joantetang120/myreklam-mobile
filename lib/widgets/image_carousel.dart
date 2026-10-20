@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/full_screen_image_viewer.dart';
 
@@ -35,7 +36,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
           return Container(
-            color: Colors.grey[200],
+            color: AdaptiveColors.surface(context, Colors.grey[200]),
             child: Center(
               child: CircularProgressIndicator(
                 value: loadingProgress.expectedTotalBytes != null
@@ -49,11 +50,11 @@ class _ImageCarouselState extends State<ImageCarousel> {
         },
         errorBuilder: (context, error, stackTrace) {
           return Container(
-            color: Colors.grey[200],
-            child: const Center(
+            color: AdaptiveColors.surface(context, Colors.grey[200]),
+            child: Center(
               child: Icon(
                 Icons.image_not_supported,
-                color: Colors.grey,
+                color: AdaptiveColors.foreground(context, Colors.grey),
                 size: 48,
               ),
             ),
@@ -68,11 +69,11 @@ class _ImageCarouselState extends State<ImageCarousel> {
         height: double.infinity,
         errorBuilder: (context, error, stackTrace) {
           return Container(
-            color: Colors.grey[200],
-            child: const Center(
+            color: AdaptiveColors.surface(context, Colors.grey[200]),
+            child: Center(
               child: Icon(
                 Icons.image_not_supported,
-                color: Colors.grey,
+                color: AdaptiveColors.foreground(context, Colors.grey),
                 size: 48,
               ),
             ),

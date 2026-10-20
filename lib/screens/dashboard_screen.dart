@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/avatars_story.dart';
 import 'package:myreklam/widgets/categories_icon.dart';
@@ -72,16 +73,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.red, // Added light green background
+                              color: AdaptiveColors.surface(
+                                context,
+                                Colors.red,
+                              ), // Added light green background
                               border: Border.all(
-                                color: Colors.white,
+                                color: AdaptiveColors.border(
+                                  context,
+                                  Colors.white,
+                                ),
                                 width: 1.5,
                               ),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.favorite_border,
                               size: 18,
-                              color: Colors.white,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -93,17 +103,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color:
-                                    Colors.red, // Added light green background
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  Colors.red,
+                                ), // Added light green background
                                 border: Border.all(
-                                  color: Colors.white,
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   width: 1.5,
                                 ),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.notifications_none,
                                 size: 18,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                               ),
                             ),
 
@@ -116,17 +134,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   vertical: 1,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.red,
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    Colors.red,
+                                  ),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.border(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     width: 1,
                                   ),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   '3',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -159,11 +186,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           padding: EdgeInsets.all(10),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFFE6F7EF),
-                            border: Border.all(color: Color(0xFF3AAE5E)),
+                            color: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFE6F7EF),
+                            ),
+                            border: Border.all(
+                              color: AdaptiveColors.border(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
+                            ),
                           ),
                           child: Center(
-                            child: Icon(Icons.add, color: Color(0xFF3AAE5E)),
+                            child: Icon(
+                              Icons.add,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
+                            ),
                           ),
                         ),
                         const Text(
@@ -206,7 +247,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ), // space on sides
               child: Container(
                 height: 1, // thin line
-                color: Colors.grey[300], // light gray
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.grey[300],
+                ), // light gray
               ),
             ),
 
@@ -227,26 +271,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   CategoriesIcon(
                     title: "Bons plans",
-                    iconColor: Colors.deepOrange,
-                    bgColor: Color(0xFFFFE0B2),
+                    iconColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.deepOrange,
+                    ),
+                    bgColor: AdaptiveColors.surface(context, Color(0xFFFFE0B2)),
                     icon: Icons.card_giftcard_outlined,
                   ),
                   CategoriesIcon(
                     title: "Offre d’emploi",
-                    iconColor: Colors.lightBlueAccent,
-                    bgColor: Color(0xFFB3E5FC),
+                    iconColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.lightBlueAccent,
+                    ),
+                    bgColor: AdaptiveColors.surface(context, Color(0xFFB3E5FC)),
                     icon: Icons.card_giftcard_outlined,
                   ),
                   CategoriesIcon(
                     title: "Formations",
-                    iconColor: Colors.green,
-                    bgColor: Color(0xFFE6F7EF),
+                    iconColor: AdaptiveColors.foreground(context, Colors.green),
+                    bgColor: AdaptiveColors.surface(context, Color(0xFFE6F7EF)),
                     icon: Icons.calendar_month_outlined,
                   ),
                   CategoriesIcon(
                     title: "Demandes",
-                    iconColor: Colors.deepOrange,
-                    bgColor: Color(0xFFFFE0B2),
+                    iconColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.deepOrange,
+                    ),
+                    bgColor: AdaptiveColors.surface(context, Color(0xFFFFE0B2)),
                     icon: Icons.chat_outlined,
                   ),
                 ],
@@ -311,19 +364,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     "Fil d’actualités",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF616161),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF616161),
+                      ),
                     ),
                   ),
                   TextButton(
                     onPressed: () {},
-                    child: const Text(
+                    child: Text(
                       "voir tout",
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(context, Colors.grey),
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ],

@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class MyPostItem extends StatelessWidget {
@@ -27,9 +28,11 @@ class MyPostItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: AdaptiveColors.border(context, Colors.grey[200]!),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,7 +42,10 @@ class MyPostItem extends StatelessWidget {
             children: [
               Text(
                 'Publier il y a 2h',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
               Row(
                 children: [
@@ -48,12 +54,15 @@ class MyPostItem extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3AAE5E),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.edit_outlined,
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                         size: 18,
                       ),
                     ),
@@ -64,12 +73,12 @@ class MyPostItem extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.red,
+                        color: AdaptiveColors.surface(context, Colors.red),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.delete_outline,
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                         size: 18,
                       ),
                     ),
@@ -97,7 +106,7 @@ class MyPostItem extends StatelessWidget {
                   content,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey[700],
+                    color: AdaptiveColors.foreground(context, Colors.grey[700]),
                     height: 1.4,
                   ),
                   maxLines: 5,
@@ -109,11 +118,16 @@ class MyPostItem extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _buildStat(Icons.thumb_up_alt_outlined, likeCount.toString()),
+              _buildStat(
+                context,
+                Icons.thumb_up_alt_outlined,
+                likeCount.toString(),
+              ),
               const SizedBox(width: 20),
               GestureDetector(
                 onTap: onCommentsTap,
                 child: _buildStat(
+                  context,
                   Icons.chat_bubble_outline,
                   commentCount.toString(),
                 ),
@@ -126,16 +140,20 @@ class MyPostItem extends StatelessWidget {
     );
   }
 
-  Widget _buildStat(IconData icon, String count) {
+  Widget _buildStat(BuildContext context, IconData icon, String count) {
     return Row(
       children: [
-        Icon(icon, color: Colors.grey[600], size: 18),
+        Icon(
+          icon,
+          color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          size: 18,
+        ),
         const SizedBox(width: 6),
         Text(
           count,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: AdaptiveColors.foreground(context, Colors.grey[600]),
             fontWeight: FontWeight.w500,
           ),
         ),

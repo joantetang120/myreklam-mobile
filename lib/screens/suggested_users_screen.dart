@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
@@ -67,7 +68,10 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
             content: Text(
               'Vous suivez maintenant ${user['particulier_profile']?['pseudo'] ?? user['pro_profile']?['company_name'] ?? 'cet utilisateur'}',
             ),
-            backgroundColor: const Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(
+              context,
+              const Color(0xFF3AAE5E),
+            ),
           ),
         );
       }
@@ -99,15 +103,20 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Profils suggérés',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Colors.black),
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(
+          color: AdaptiveColors.foreground(context, Colors.black),
+        ),
       ),
       body: Column(
         children: [
@@ -118,9 +127,15 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
               onChanged: _onSearch,
               decoration: InputDecoration(
                 hintText: 'Rechercher un utilisateur...',
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
                 filled: true,
-                fillColor: const Color(0xFFF5F5F5),
+                fillColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF5F5F5),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -162,10 +177,16 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
                       return Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFAFAFA),
+                          color: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFAFAFA),
+                          ),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: Colors.grey.withValues(alpha: 0.1),
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey,
+                            ).withValues(alpha: 0.1),
                           ),
                         ),
                         child: Column(
@@ -207,8 +228,11 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
                                   const SizedBox(height: 4),
                                   Text(
                                     isPro ? 'Pro' : 'Particulier',
-                                    style: const TextStyle(
-                                      color: Colors.grey,
+                                    style: TextStyle(
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey,
+                                      ),
                                       fontSize: 12,
                                     ),
                                   ),
@@ -221,17 +245,23 @@ class _SuggestedUsersScreenState extends State<SuggestedUsersScreen> {
                               child: OutlinedButton(
                                 onPressed: () => _toggleFollow(index),
                                 style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(
-                                    color: Color(0xFF3AAE5E),
+                                  side: BorderSide(
+                                    color: AdaptiveColors.border(
+                                      context,
+                                      Color(0xFF3AAE5E),
+                                    ),
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Suivre',
                                   style: TextStyle(
-                                    color: Color(0xFF3AAE5E),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF3AAE5E),
+                                    ),
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),

@@ -8,7 +8,7 @@ import 'package:myreklam/config/api_config.dart';
 /// Centralised share service for all entity types.
 /// Uses the configured backend deep links so mobile users can open the app.
 class ShareService {
-  static String get _baseUrl => ApiConfig.backendOrigin;
+  static String get _baseUrl => ApiConfig.publicWebsiteOrigin;
 
   /// Maps the internal API slug to the public URL path segment used on the website.
   static String _urlPath(String apiSlug) {
@@ -27,16 +27,17 @@ class ShareService {
         return 'posts';
       case 'reels':
         return 'reels';
+      case 'profiles':
+        return 'profil';
       default:
         return apiSlug;
     }
   }
 
   /// Builds the public share URL for an entity.
-  /// The backend at /s/{type}/{id} redirects mobile users to the deep link
-  /// and falls back to the app store if not installed.
+  /// Public preview page with explicit website and app links.
   static String buildUrl(String apiSlug, String entityId) =>
-      '$_baseUrl/s/${_urlPath(apiSlug)}/$entityId';
+      '$_baseUrl/s/${_urlPath(apiSlug)}/${Uri.encodeComponent(entityId)}';
 
   /// Shares an entity using the native OS share sheet.
   /// [title] is used as the share subject and prepended to the link.

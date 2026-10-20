@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
@@ -52,7 +53,7 @@ class DemandeCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -60,7 +61,12 @@ class DemandeCard extends StatelessWidget {
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.1),
+        ),
       ),
       child: Stack(
         children: [
@@ -86,10 +92,13 @@ class DemandeCard extends StatelessWidget {
                       children: [
                         Text(
                           username,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF616161),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF616161),
+                            ),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -100,19 +109,30 @@ class DemandeCard extends StatelessWidget {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
+                            color: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFF5F5F5),
+                            ),
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: const Color(0xFFE0E0E0)),
+                            border: Border.all(
+                              color: AdaptiveColors.border(
+                                context,
+                                const Color(0xFFE0E0E0),
+                              ),
+                            ),
                           ),
                           child: Text(
                             accountType?.toLowerCase() == 'professionnel' ||
                                     accountType?.toLowerCase() == 'pro'
                                 ? 'Professionnel'
                                 : 'Particulier',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF616161),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF616161),
+                              ),
                             ),
                           ),
                         ),
@@ -127,9 +147,12 @@ class DemandeCard extends StatelessWidget {
                           visualDensity: VisualDensity.compact,
                           tooltip: 'Signaler',
                           onPressed: onReport,
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.report_outlined,
-                            color: Colors.redAccent,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.redAccent,
+                            ),
                             size: 20,
                           ),
                         ),
@@ -152,7 +175,15 @@ class DemandeCard extends StatelessWidget {
                                   isFavorited
                                       ? Icons.favorite
                                       : Icons.favorite_border,
-                                  color: isFavorited ? Colors.red : Colors.grey,
+                                  color: isFavorited
+                                      ? AdaptiveColors.foreground(
+                                          context,
+                                          Colors.red,
+                                        )
+                                      : AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey,
+                                        ),
                                   size: 21,
                                 ),
                         ),
@@ -196,10 +227,10 @@ class DemandeCard extends StatelessWidget {
               // Title
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF757575),
+                  color: AdaptiveColors.foreground(context, Color(0xFF757575)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -229,9 +260,9 @@ class DemandeCard extends StatelessWidget {
               // Description
               Text(
                 description,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF616161),
+                  color: AdaptiveColors.foreground(context, Color(0xFF616161)),
                   height: 1.5,
                 ),
               ),
@@ -243,22 +274,33 @@ class DemandeCard extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFF5F5F5),
+                  ),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                  border: Border.all(
+                    color: AdaptiveColors.border(
+                      context,
+                      Colors.grey,
+                    ).withValues(alpha: 0.2),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.location_on_outlined,
                       size: 16,
-                      color: Colors.grey,
+                      color: AdaptiveColors.foreground(context, Colors.grey),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       location,
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AdaptiveColors.foreground(context, Colors.grey),
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -273,8 +315,14 @@ class DemandeCard extends StatelessWidget {
                   icon: const Icon(Icons.description_outlined, size: 18),
                   label: const Text('Voir la demande'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9800),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFF9800),
+                    ),
+                    foregroundColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -298,13 +346,19 @@ class DemandeCard extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.access_time,
-                    color: Colors.grey.withValues(alpha: 0.7),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Colors.grey,
+                    ).withValues(alpha: 0.7),
                     size: 14,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     timeAgo,
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AdaptiveColors.foreground(context, Colors.grey),
+                    ),
                   ),
                 ],
               ),

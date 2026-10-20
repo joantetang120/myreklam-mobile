@@ -1,5 +1,7 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'otp_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:myreklam/services/auth_service.dart';
 import 'package:myreklam/services/api_client.dart';
 
@@ -12,6 +14,8 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureText = true;
+  String? _ageBand;
+  bool _termsAccepted = false;
   bool _obscureConfirmText = true;
   bool _isLoading = false;
   bool _isValidatingParrainage = false;
@@ -134,24 +138,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Color _getParrainageBorderColor() {
     if (_isParrainageValid == null) {
-      return const Color(0xFF1B8D4B).withValues(alpha: 0.4);
+      return AdaptiveColors.foreground(
+        context,
+        const Color(0xFF1B8D4B),
+      ).withValues(alpha: 0.4);
     }
     if (_isParrainageValid!) {
-      return Colors.green;
+      return AdaptiveColors.foreground(context, Colors.green);
     }
-    return Colors.red;
+    return AdaptiveColors.foreground(context, Colors.red);
   }
 
   Widget? _buildParrainageSuffixIcon() {
     if (_isValidatingParrainage) {
-      return const SizedBox(
+      return SizedBox(
         width: 20,
         height: 20,
         child: Padding(
           padding: EdgeInsets.all(12),
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            color: Color(0xFF1B8D4B),
+            color: AdaptiveColors.foreground(context, Color(0xFF1B8D4B)),
           ),
         ),
       );
@@ -160,14 +167,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return null;
     }
     if (_isParrainageValid!) {
-      return const Icon(Icons.check_circle, color: Colors.green);
+      return Icon(
+        Icons.check_circle,
+        color: AdaptiveColors.foreground(context, Colors.green),
+      );
     }
-    return const Icon(Icons.error, color: Colors.red);
+    return Icon(
+      Icons.error,
+      color: AdaptiveColors.foreground(context, Colors.red),
+    );
   }
 
   Future<void> _handleRegister() async {
     // Validate form first
     if (!_formKey.currentState!.validate()) return;
+    if (!_termsAccepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Veuillez accepter les conditions générales pour créer votre compte.',
+          ),
+        ),
+      );
+      return;
+    }
 
     // Check password criteria
     final password = _passwordController.text;
@@ -177,9 +200,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         !RegExp(r'[a-zA-Z]').hasMatch(password) ||
         !RegExp(r'[!@#$%^&*(),.?":{}|<>_\-]').hasMatch(password)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Veuillez respecter tous les critères du mot de passe'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
       return;
@@ -188,9 +211,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // Check password match
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Les mots de passe ne correspondent pas'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
       return;
@@ -203,6 +226,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       await _authService.register(
         email: _emailController.text.trim(),
+        ageBand: _ageBand!,
+        termsAccepted: _termsAccepted,
         password: _passwordController.text,
         parrainageCode: _couponController.text.trim().isEmpty
             ? null
@@ -223,14 +248,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.firstError),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Une erreur est survenue. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     } finally {
@@ -250,11 +278,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             right: 0,
             height: MediaQuery.of(context).size.height * 0.3,
             child: Container(
-              color: const Color(0xFF1B8D4B),
+              color: AdaptiveColors.surface(context, const Color(0xFF1B8D4B)),
               child: Image.asset(
                 'assets/images/auth/Rectangle 4.png',
                 fit: BoxFit.cover,
-                color: Colors.white.withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.white,
+                ).withValues(alpha: 0.1),
                 colorBlendMode: BlendMode.dstIn,
               ),
             ),
@@ -279,8 +310,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             alignment: Alignment.bottomCenter,
             child: Container(
               height: MediaQuery.of(context).size.height * 0.82,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(40),
                   topRight: Radius.circular(40),
@@ -303,18 +334,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   child: Column(
                     children: [
-                      const Text(
+                      Text(
                         'Inscription',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF616161),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF616161),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 10),
-                      const Text(
+                      Text(
                         'Créez votre compte Myreklam gratuitement',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 30),
                       // Email Field
@@ -402,13 +442,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         decoration: InputDecoration(
                           hintText: 'Entrer le Code de parrainage (Facultatif)',
                           hintStyle: TextStyle(
-                            color: const Color(
-                              0xFF1B8D4B,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFF1B8D4B),
                             ).withValues(alpha: 0.6),
                             fontSize: 14,
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFE8F5E9),
+                          fillColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFE8F5E9),
+                          ),
                           contentPadding: const EdgeInsets.symmetric(
                             vertical: 18,
                             horizontal: 16,
@@ -447,20 +491,86 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               color: _isParrainageValid!
-                                  ? Colors.green
-                                  : Colors.red,
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      Colors.green,
+                                    )
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      Colors.red,
+                                    ),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
                       const SizedBox(height: 25),
                       // Register Button
+                      CheckboxListTile(
+                        value: _termsAccepted,
+                        onChanged: _isLoading
+                            ? null
+                            : (value) => setState(
+                                () => _termsAccepted = value == true,
+                              ),
+                        title: const Text(
+                          'J’accepte les conditions générales d’utilisation',
+                        ),
+                        subtitle: Wrap(
+                          children: [
+                            TextButton(
+                              onPressed: () => launchUrl(
+                                Uri.parse('https://www.myreklam.fr/conditions'),
+                                mode: LaunchMode.externalApplication,
+                              ),
+                              child: const Text('Conditions'),
+                            ),
+                            TextButton(
+                              onPressed: () => launchUrl(
+                                Uri.parse(
+                                  'https://www.myreklam.fr/confidentialite',
+                                ),
+                                mode: LaunchMode.externalApplication,
+                              ),
+                              child: const Text('Confidentialité'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'Votre tranche d’âge',
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'under_15',
+                            child: Text('Moins de 15 ans'),
+                          ),
+                          DropdownMenuItem(
+                            value: '15_17',
+                            child: Text('15 à 17 ans'),
+                          ),
+                          DropdownMenuItem(
+                            value: '18_plus',
+                            child: Text('18 ans et plus'),
+                          ),
+                        ],
+                        onChanged: (value) => setState(() => _ageBand = value),
+                        validator: (value) => value == null
+                            ? 'Veuillez confirmer votre âge'
+                            : value == 'under_15'
+                            ? 'Inscription réservée aux personnes de 15 ans et plus'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
                       SizedBox(
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1B8D4B),
+                            backgroundColor: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFF1B8D4B),
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -470,18 +580,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ? null
                               : () => _handleRegister(),
                           child: _isLoading
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 24,
                                   height: 24,
                                   child: CircularProgressIndicator(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     strokeWidth: 2.5,
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   'Créer mon compte',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -498,10 +614,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             onTap: () {
                               Navigator.pop(context);
                             },
-                            child: const Text(
+                            child: Text(
                               'Se Connecter',
                               style: TextStyle(
-                                color: Colors.orangeAccent,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.orangeAccent,
+                                ),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -528,14 +647,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Icon(
               isValid ? Icons.check : Icons.close,
               size: 14,
-              color: isValid ? Colors.green : Colors.red,
+              color: isValid
+                  ? AdaptiveColors.foreground(context, Colors.green)
+                  : AdaptiveColors.foreground(context, Colors.red),
             ),
             const SizedBox(width: 6),
             Text(
               text,
               style: TextStyle(
                 fontSize: 12,
-                color: isValid ? Colors.green : Colors.grey[600],
+                color: isValid
+                    ? AdaptiveColors.foreground(context, Colors.green)
+                    : AdaptiveColors.foreground(context, Colors.grey[600]),
               ),
             ),
           ],
@@ -568,7 +691,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           Icon(
             _passwordsMatch ? Icons.check : Icons.close,
             size: 14,
-            color: _passwordsMatch ? Colors.green : Colors.red,
+            color: _passwordsMatch
+                ? AdaptiveColors.foreground(context, Colors.green)
+                : AdaptiveColors.foreground(context, Colors.red),
           ),
           const SizedBox(width: 6),
           Text(
@@ -577,7 +702,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 : 'Les mots de passe ne correspondent pas',
             style: TextStyle(
               fontSize: 12,
-              color: _passwordsMatch ? Colors.green : Colors.red,
+              color: _passwordsMatch
+                  ? AdaptiveColors.foreground(context, Colors.green)
+                  : AdaptiveColors.foreground(context, Colors.red),
             ),
           ),
         ],
@@ -603,22 +730,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Colors.grey),
+        prefixIcon: Icon(
+          icon,
+          color: AdaptiveColors.foreground(context, Colors.grey),
+        ),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
                   obscureText
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: Colors.grey,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
                 ),
                 onPressed: onToggleVisibility,
               )
             : null,
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey),
+        hintStyle: TextStyle(
+          color: AdaptiveColors.foreground(context, Colors.grey),
+        ),
         filled: true,
-        fillColor: const Color(0xFFF5F5F5),
+        fillColor: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 18,
           horizontal: 16,
@@ -633,20 +765,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF1B8D4B), width: 2),
+          borderSide: BorderSide(
+            color: AdaptiveColors.border(context, Color(0xFF1B8D4B)),
+            width: 2,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
+          borderSide: BorderSide(
+            color: AdaptiveColors.border(context, Color(0xFFD32F2F)),
+            width: 2,
+          ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
+          borderSide: BorderSide(
+            color: AdaptiveColors.border(context, Color(0xFFD32F2F)),
+            width: 2,
+          ),
         ),
-        errorStyle: const TextStyle(
+        errorStyle: TextStyle(
           fontSize: 12,
           height: 1.2,
-          color: Color(0xFFD32F2F),
+          color: AdaptiveColors.foreground(context, Color(0xFFD32F2F)),
         ),
         errorMaxLines: 2,
       ),

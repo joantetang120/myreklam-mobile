@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/models/delegation.dart';
 import 'package:myreklam/services/delegation_manager.dart';
@@ -49,12 +50,15 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
         height: 32,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: const Color(0xFFE6F7EF),
-          border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
+          color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
+          border: Border.all(
+            color: AdaptiveColors.border(context, const Color(0xFF2A8143)),
+            width: 1.5,
+          ),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.notifications,
-          color: Color(0xFF2A8143),
+          color: AdaptiveColors.foreground(context, Color(0xFF2A8143)),
           size: 18,
         ),
       ),
@@ -64,14 +68,17 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF9F9FB)),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             floating: false,
             pinned: true,
             snap: false,
-            backgroundColor: const Color(0xFF2A8143),
+            backgroundColor: AdaptiveColors.surface(
+              context,
+              const Color(0xFF2A8143),
+            ),
             automaticallyImplyLeading: false,
             elevation: 0,
             shape: const RoundedRectangleBorder(
@@ -90,11 +97,14 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
 
                 return FlexibleSpaceBar(
                   background: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Color(0xFF2A8143), Color(0xFF3AAE5E)],
+                        colors: [
+                          AdaptiveColors.surface(context, Color(0xFF2A8143)),
+                          AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
+                        ],
                       ),
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(30),
@@ -139,9 +149,12 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                                       ),
                                     );
                                   },
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.arrow_back,
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     size: 22,
                                   ),
                                 ),
@@ -177,9 +190,17 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF9E6),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFFF9E6),
+                    ),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFFFD700)),
+                    border: Border.all(
+                      color: AdaptiveColors.border(
+                        context,
+                        const Color(0xFFFFD700),
+                      ),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -192,7 +213,10 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                       Text(
                         UserSession().mys.toString(),
                         style: TextStyle(
-                          color: Color(0xFFFFD700),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFFFFD700),
+                          ),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -222,10 +246,13 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                 const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: const Text(
+                  child: Text(
                     'Que Souhaitez vous publier ?',
                     style: TextStyle(
-                      color: Color(0xFF616161),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF616161),
+                      ),
                       fontSize: 20,
                       fontFamily: 'Manjari',
                       fontWeight: FontWeight.bold,
@@ -236,26 +263,41 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                 if (!DelegationManager.instance.can(
                   DelegationPermission.announcements,
                 ))
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 24),
                     child: Text(
                       "Vous n'avez pas l'autorisation de publier des annonces sur ce compte.",
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(context, Colors.grey),
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 if (DelegationManager.instance.can(
                   DelegationPermission.announcements,
                 ))
                   PublishOptionCard(
-                    backgroundColor: const Color(0xFFFFF3E0),
-                    borderColor: const Color(0xFFFF9800),
-                    titleColor: const Color(0xFFFF9800),
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFFF3E0),
+                    ),
+                    borderColor: AdaptiveColors.border(
+                      context,
+                      const Color(0xFFFF9800),
+                    ),
+                    titleColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFF9800),
+                    ),
                     title: 'Publier un bon plan',
                     description:
                         'Partagez les meilleures offres, promotions et bons plans avec la communauté.',
                     icon: Icons.card_giftcard_outlined,
-                    iconColor: const Color(0xFFFF9800),
+                    iconColor: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFFFF9800),
+                    ),
                     onTap: () =>
                         _navigateIfAllowed(context, const CreerBonPlanScreen()),
                   ),
@@ -265,28 +307,52 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                       DelegationPermission.announcements,
                     )) ...[
                   PublishOptionCard(
-                    backgroundColor: const Color(0xFFE0F7FA),
-                    borderColor: Colors.lightBlueAccent,
-                    titleColor: Colors.lightBlueAccent,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFE0F7FA),
+                    ),
+                    borderColor: AdaptiveColors.border(
+                      context,
+                      Colors.lightBlueAccent,
+                    ),
+                    titleColor: AdaptiveColors.surface(
+                      context,
+                      Colors.lightBlueAccent,
+                    ),
                     title: "Publier une offre d'emploi",
                     description:
                         'Déposez vos offres de recrutement ou trouvez des opportunités professionnelles.',
                     icon: Icons.work_outline,
-                    iconColor: Colors.lightBlueAccent,
+                    iconColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.lightBlueAccent,
+                    ),
                     onTap: () => _navigateIfAllowed(
                       context,
                       const CreerOffreEmploiScreen(),
                     ),
                   ),
                   PublishOptionCard(
-                    backgroundColor: const Color(0xFFE6F7EF),
-                    borderColor: const Color(0xFF3AAE5E),
-                    titleColor: const Color(0xFF3AAE5E),
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFE6F7EF),
+                    ),
+                    borderColor: AdaptiveColors.border(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ),
+                    titleColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ),
                     title: 'Publier une Formation',
                     description:
                         'Proposez vos formations et partagez vos connaissances avec les membres.',
                     icon: Icons.school_outlined,
-                    iconColor: const Color(0xFF3AAE5E),
+                    iconColor: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ),
                     onTap: () => _navigateIfAllowed(
                       context,
                       const CreerFormationScreen(),
@@ -297,14 +363,26 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                   DelegationPermission.announcements,
                 ))
                   PublishOptionCard(
-                    backgroundColor: const Color(0xFFE0F2F1),
-                    borderColor: const Color(0xFF00897B),
-                    titleColor: const Color(0xFF00897B),
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFE0F2F1),
+                    ),
+                    borderColor: AdaptiveColors.border(
+                      context,
+                      const Color(0xFF00897B),
+                    ),
+                    titleColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF00897B),
+                    ),
                     title: 'Publier un Evènement',
                     description:
                         'Organisez et annoncez vos événements, rencontres et activités.',
                     icon: Icons.event_outlined,
-                    iconColor: const Color(0xFF00897B),
+                    iconColor: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF00897B),
+                    ),
                     onTap: () => _navigateIfAllowed(
                       context,
                       const CreerEvenementScreen(),
@@ -314,14 +392,26 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                   DelegationPermission.announcements,
                 ))
                   PublishOptionCard(
-                    backgroundColor: const Color(0xFFFFF9C4),
-                    borderColor: const Color(0xFFFFA000),
-                    titleColor: const Color(0xFFFFA000),
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFFF9C4),
+                    ),
+                    borderColor: AdaptiveColors.border(
+                      context,
+                      const Color(0xFFFFA000),
+                    ),
+                    titleColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFFA000),
+                    ),
                     title: 'Publier une Demande',
                     description:
                         'Exprimez vos besoins et recevez des réponses de la communauté.',
                     icon: Icons.chat_bubble_outline,
-                    iconColor: const Color(0xFFFFA000),
+                    iconColor: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFFFFA000),
+                    ),
                     onTap: () =>
                         _navigateIfAllowed(context, CreerDemandeScreen()),
                   ),

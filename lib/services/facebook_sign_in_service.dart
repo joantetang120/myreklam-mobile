@@ -1,5 +1,4 @@
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
-import 'package:myreklam/services/auth_service.dart';
+import 'package:myreklam/services/api_client.dart';
 
 class FacebookSignInService {
   static final FacebookSignInService _instance =
@@ -7,42 +6,18 @@ class FacebookSignInService {
   factory FacebookSignInService() => _instance;
   FacebookSignInService._internal();
 
-  final _authService = AuthService();
-
-  Future<Map<String, dynamic>> signIn() async {
-    // Trigger Facebook login dialog
-    final LoginResult result = await FacebookAuth.instance.login(
-      permissions: ['email', 'public_profile'],
+  Future<Map<String, dynamic>> signIn({
+    String? ageBand,
+    Future<String?> Function()? confirmNewAccountAge,
+  }) async {
+    // No native SDK is loaded while verified Facebook authentication is disabled.
+    throw ApiException(
+      statusCode: 503,
+      code: 'SOCIAL_PROVIDER_UNAVAILABLE',
+      message:
+          'Connexion Facebook indisponible. Utilisez votre adresse e-mail.',
     );
-
-    if (result.status == LoginStatus.cancelled) {
-      throw Exception('Connexion Facebook annulée.');
-    }
-
-    if (result.status == LoginStatus.failed) {
-      throw Exception(result.message ?? 'Erreur de connexion Facebook.');
-    }
-
-    final AccessToken? accessToken = result.accessToken;
-    if (accessToken == null) {
-      throw Exception('Impossible de récupérer le token Facebook.');
-    }
-
-    // Get user email from Facebook
-    final userData = await FacebookAuth.instance.getUserData(fields: 'email');
-    final String? email = userData['email'];
-
-    // Send token to backend
-    final response = await _authService.socialLogin(
-      provider: 'facebook',
-      token: accessToken.tokenString,
-      email: email,
-    );
-
-    return response;
   }
 
-  Future<void> signOut() async {
-    await FacebookAuth.instance.logOut();
-  }
+  Future<void> signOut() async {}
 }

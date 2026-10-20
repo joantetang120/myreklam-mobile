@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/delegation_manager.dart';
@@ -10,13 +11,18 @@ class PublierScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black.withValues(alpha: 0.5),
+      backgroundColor: AdaptiveColors.surface(
+        context,
+        Colors.black,
+      ).withValues(alpha: 0.5),
       body: Stack(
         children: [
           Positioned.fill(
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
-              child: Container(color: Colors.transparent),
+              child: Container(
+                color: AdaptiveColors.surface(context, Colors.transparent),
+              ),
             ),
           ),
           SafeArea(
@@ -77,12 +83,15 @@ class PublierScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AdaptiveColors.surface(context, Colors.white),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.close,
-                          color: Colors.black,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.black,
+                          ),
                           size: 24,
                         ),
                       ),
@@ -136,7 +145,7 @@ class PublierScreen extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -156,18 +165,24 @@ class PublierScreen extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF212121),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF212121),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     description,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF757575),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF757575),
+                      ),
                       height: 1.4,
                     ),
                   ),

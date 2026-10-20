@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class PublishOptionCard extends StatelessWidget {
@@ -29,9 +30,14 @@ class PublishOptionCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+          border: Border.all(
+            color: AdaptiveColors.border(
+              context,
+              Colors.grey,
+            ).withValues(alpha: 0.15),
+          ),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
@@ -64,7 +70,10 @@ class PublishOptionCard extends StatelessWidget {
                         description,
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.grey[500],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[500],
+                          ),
                           height: 1.4,
                         ),
                       ),

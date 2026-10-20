@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
@@ -594,7 +595,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
             ),
             child: const Text('Continuer'),
           ),
@@ -825,8 +829,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(context, Colors.red),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
               ),
               child: const Text('Quitter'),
             ),
@@ -854,7 +861,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, 'save'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
             ),
             child: const Text('Sauvegarder'),
           ),
@@ -1789,19 +1799,23 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       );
     } else if (isVideo) {
       return Container(
-        color: Colors.black87,
-        child: const Center(
-          child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white),
+        color: AdaptiveColors.surface(context, Colors.black87),
+        child: Center(
+          child: Icon(
+            Icons.play_circle_outline,
+            size: 40,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
         ),
       );
     }
     return Container(
-      color: const Color(0xFFF9FAFB),
-      child: const Center(
+      color: AdaptiveColors.surface(context, const Color(0xFFF9FAFB)),
+      child: Center(
         child: Icon(
           Icons.insert_drive_file,
           size: 40,
-          color: Color(0xFF3AAE5E),
+          color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
         ),
       ),
     );
@@ -1884,8 +1898,8 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: isError
-            ? Colors.red.shade700
-            : const Color(0xFF3AAE5E),
+            ? AdaptiveColors.surface(context, Colors.red.shade700)
+            : AdaptiveColors.surface(context, const Color(0xFF3AAE5E)),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 4),
       ),
@@ -2100,7 +2114,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -2119,7 +2133,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       ); // pop detail screen back to listing
                     }
                   },
-                  child: const Icon(Icons.close, color: Colors.grey, size: 22),
+                  child: Icon(
+                    Icons.close,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                    size: 22,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2150,10 +2168,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               const SizedBox(height: 20),
               Text(
                 _isEditMode ? 'Demande modifiée' : 'Demande publiée',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                 ),
               ),
               const SizedBox(height: 10),
@@ -2164,7 +2182,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: mediaSuccess ? Colors.grey[600] : Colors.red[700],
+                  color: mediaSuccess
+                      ? AdaptiveColors.foreground(context, Colors.grey[600])
+                      : AdaptiveColors.foreground(context, Colors.red[700]),
                   height: 1.4,
                 ),
               ),
@@ -2186,7 +2206,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       },
       child: AppLayout(
         currentIndex: 2,
-        backgroundColor: const Color(0xFFF9F9FB),
+        backgroundColor: AdaptiveColors.surface(
+          context,
+          const Color(0xFFF9F9FB),
+        ),
         onTabTapped: (index) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
@@ -2213,20 +2236,26 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       alignment: Alignment.centerLeft,
                       child: GestureDetector(
                         onTap: _handleBackButton,
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back,
-                          color: Color(0xFF616161),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF616161),
+                          ),
                           size: 24,
                         ),
                       ),
                     ),
                     Text(
                       _isEditMode ? 'Modifier la demande' : 'Créer une demande',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontFamily: 'Manjari',
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF424242),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF424242),
+                        ),
                       ),
                     ),
                   ],
@@ -2239,7 +2268,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   _isEditMode
                       ? 'Modifiez les informations de votre demande'
                       : 'Décrivez ce que vous recherchez et recevez des propositions',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -2266,12 +2298,21 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: Colors.grey.withValues(alpha: 0.3),
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey,
+                            ).withValues(alpha: 0.3),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Précédent',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -2297,8 +2338,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       borderRadius: BorderRadius.circular(6),
       child: LinearProgressIndicator(
         value: (_currentStep + 1) / (_totalSteps),
-        backgroundColor: Colors.grey[200],
-        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF9800)),
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[200]),
+        valueColor: AlwaysStoppedAnimation<Color>(
+          AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+        ),
         minHeight: 6,
       ),
     );
@@ -2331,10 +2374,15 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           title: 'Nature de la demande',
           children: [
             if (_isCategoryLoading)
-              const Center(
+              Center(
                 child: Padding(
                   padding: EdgeInsets.all(20),
-                  child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+                  child: CircularProgressIndicator(
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFFF9800),
+                    ),
+                  ),
                 ),
               )
             else if (_categoryLoadError != null)
@@ -2349,7 +2397,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 items: _natureOptions,
                 onChanged: _onNatureChanged,
                 hint: _buildRequiredHint('Nature de la demande'),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
               ),
           ],
         ),
@@ -2392,7 +2443,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               items: _typeOptions,
               onChanged: (val) => setState(() => _selectedType = val),
               hint: _buildRequiredHint('Type de la demande'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
             ),
             const SizedBox(height: 12),
             _buildTextField(
@@ -2415,7 +2469,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               "Quel serait le délai idéal pour répondre à votre demande ?",
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.black.withValues(alpha: 0.8),
+                color: AdaptiveColors.foreground(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 8),
@@ -2466,10 +2523,16 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                               vertical: 14,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AdaptiveColors.surface(
+                                context,
+                                Colors.white,
+                              ),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: const Color(0xFFE0E0E0),
+                                color: AdaptiveColors.border(
+                                  context,
+                                  const Color(0xFFE0E0E0),
+                                ),
                               ),
                             ),
                             child: Row(
@@ -2482,15 +2545,24 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: _startDate != null
-                                          ? Colors.black87
-                                          : Colors.grey[400],
+                                          ? AdaptiveColors.foreground(
+                                              context,
+                                              Colors.black87,
+                                            )
+                                          : AdaptiveColors.foreground(
+                                              context,
+                                              Colors.grey[400],
+                                            ),
                                     ),
                                   ),
                                 ),
                                 Icon(
                                   Icons.calendar_today,
                                   size: 18,
-                                  color: Colors.grey[500],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[500],
+                                  ),
                                 ),
                               ],
                             ),
@@ -2537,10 +2609,16 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                               vertical: 14,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AdaptiveColors.surface(
+                                context,
+                                Colors.white,
+                              ),
                               borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: const Color(0xFFE0E0E0),
+                                color: AdaptiveColors.border(
+                                  context,
+                                  const Color(0xFFE0E0E0),
+                                ),
                               ),
                             ),
                             child: Row(
@@ -2553,15 +2631,24 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: _endDate != null
-                                          ? Colors.black87
-                                          : Colors.grey[400],
+                                          ? AdaptiveColors.foreground(
+                                              context,
+                                              Colors.black87,
+                                            )
+                                          : AdaptiveColors.foreground(
+                                              context,
+                                              Colors.grey[400],
+                                            ),
                                     ),
                                   ),
                                 ),
                                 Icon(
                                   Icons.calendar_today,
                                   size: 18,
-                                  color: Colors.grey[500],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[500],
+                                  ),
                                 ),
                               ],
                             ),
@@ -2578,13 +2665,19 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               "Quel est votre budget ?",
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.black.withValues(alpha: 0.8),
+                color: AdaptiveColors.foreground(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Ces champs sont optionnels. Laissez vides si vous n\'avez pas encore de budget défini.',
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              style: TextStyle(
+                fontSize: 11,
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              ),
             ),
             const SizedBox(height: 12),
             _buildTextField(
@@ -2643,7 +2736,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   children: [
                     Icon(
                       Icons.error_outline,
-                      color: Colors.red.shade400,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.red.shade400,
+                      ),
                       size: 18,
                     ),
                     const SizedBox(width: 8),
@@ -2651,7 +2747,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       child: Text(
                         _trainingCategoriesLoadError!,
                         style: TextStyle(
-                          color: Colors.red.shade600,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.red.shade600,
+                          ),
                           fontSize: 13,
                         ),
                       ),
@@ -2670,14 +2769,23 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   children: [
                     Icon(
                       Icons.info_outline,
-                      color: Colors.orange.shade400,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.orange.shade400,
+                      ),
                       size: 18,
                     ),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Catégories de formation non disponibles. Veuillez réessayer.',
-                        style: TextStyle(color: Colors.orange, fontSize: 13),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.orange,
+                          ),
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                     TextButton(
@@ -2699,7 +2807,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 hint: _buildRequiredHint(
                   'Sélectionner une catégorie de formation',
                 ),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
                 useLabelAsValue: true,
               ),
             const SizedBox(height: 12),
@@ -2718,7 +2829,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 onChanged: (val) =>
                     setState(() => _selectedFormationSector = val),
                 hint: _buildRequiredHint('Sélectionner un secteur'),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
               ),
               const SizedBox(height: 12),
             ],
@@ -2730,16 +2844,19 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   : _formationTypes, // Fallback to hardcoded if API empty
               onChanged: (val) => setState(() => _selectedFormationType = val),
               hint: _buildRequiredHint('Sélectionner un type'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
             ),
             const SizedBox(height: 12),
 
             Text(
               'Intitulé de la formation recherchée *',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -2807,19 +2924,24 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Disponibilités
             Text(
               "Quelles sont vos disponibilités ?",
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
             const SizedBox(height: 8),
             Theme(
-              data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
+              data: Theme.of(
+                context,
+              ).copyWith(visualDensity: const VisualDensity(vertical: -4)),
               child: CheckboxListTile(
                 dense: true,
-                activeColor: const Color(0xFF3AAE5E),
+                activeColor: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
                 title: const Text(
@@ -2875,10 +2997,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Ajouter des documents
             Text(
               "Ajouter des documents",
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -2887,7 +3009,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               "(Portfolio etc...)",
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -2903,24 +3025,27 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 ),
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Colors.grey[300]!,
+                    color: AdaptiveColors.border(context, Colors.grey[300]!),
                     width: 2,
                     style: BorderStyle.solid,
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey[50],
+                  color: AdaptiveColors.surface(context, Colors.grey[50]),
                 ),
                 child: Column(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF3AAE5E),
+                      decoration: BoxDecoration(
+                        color: AdaptiveColors.surface(
+                          context,
+                          Color(0xFF3AAE5E),
+                        ),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.add,
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                         size: 32,
                       ),
                     ),
@@ -2929,7 +3054,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       'Ajouter des fichiers',
                       style: TextStyle(
                         fontSize: 15,
-                        color: Colors.grey[700],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[700],
+                        ),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -2943,10 +3071,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             if (userRole == 'pro') ...[
               Text(
                 "Nombre de personnes ou de groupes à former*",
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                   fontFamily: 'Manjari',
                 ),
               ),
@@ -2985,12 +3113,15 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 ],
               ),
               Theme(
-                data: ThemeData(
-                  visualDensity: const VisualDensity(vertical: -4),
-                ),
+                data: Theme.of(
+                  context,
+                ).copyWith(visualDensity: const VisualDensity(vertical: -4)),
                 child: CheckboxListTile(
                   dense: true,
-                  activeColor: const Color(0xFF3AAE5E),
+                  activeColor: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
                   contentPadding: EdgeInsets.zero,
                   controlAffinity: ListTileControlAffinity.leading,
                   title: const Text(
@@ -3014,14 +3145,17 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               // Partager vos réseaux sociaux professionnels
               Text(
                 'Partager vos réseaux sociaux professionnels (Cela augmente vos chances de vous faire remarquer)',
-                style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AdaptiveColors.foreground(context, Colors.grey[700]),
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Vous n\'avez renseigné aucun réseau social. Veuillez mettre à jour votre profil pour que le réseau social s\'affiche ici',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -3065,7 +3199,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 _selectedTypeBien.clear();
               }),
               hint: _buildRequiredHint('Sélectionner un type de demande'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
             ),
           ],
         ),
@@ -3133,17 +3270,20 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Quel est votre budget ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Vous pouvez n\'indiquer qu\'un seul des deux, les deux ou aucun',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 12,
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
             ),
             const SizedBox(height: 8),
             Row(
@@ -3171,10 +3311,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Pour quelle surface habitable ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3204,10 +3344,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Pour quelle surface de terrain ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3237,10 +3377,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Combien de pièces souhaitez-vous ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3285,10 +3425,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Combien de chambres souhaitez-vous ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3398,17 +3538,20 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Quel est votre budget ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Vous pouvez n\'indiquer qu\'un seul des deux, les deux ou aucun',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 12,
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
             ),
             const SizedBox(height: 8),
             Row(
@@ -3436,10 +3579,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Pour quelle surface habitable ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3469,10 +3612,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Pour quelle surface de terrain ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3502,10 +3645,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Combien de pièces souhaitez-vous ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3550,10 +3693,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Combien de chambres souhaitez-vous ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3599,10 +3742,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Meublé / Non-Meublé
             Text(
               'Meublé / Non-Meublé',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3689,17 +3832,20 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Quel est votre budget ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Vous pouvez n\'indiquer qu\'un seul des deux, les deux ou aucun',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 12,
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
             ),
             const SizedBox(height: 8),
             Row(
@@ -3727,10 +3873,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Pour quelle surface habitable ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3760,10 +3906,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
 
             Text(
               'Pour quelle surface de terrain ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3794,10 +3940,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Meublé / Non-Meublé
             Text(
               'Meublé / Non-Meublé',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3861,7 +4007,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 });
               },
               hint: _buildRequiredHint('Sélectionner un secteur d\'activité'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -3873,7 +4022,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 items: _getJobFonctionsForSecteur(_selectedSecteurActivite),
                 onChanged: (val) => setState(() => _selectedFunction = val),
                 hint: _buildRequiredHint('Sélectionner une fonction'),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
               ),
               const SizedBox(height: 16),
             ],
@@ -3915,10 +4067,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Temps plein ou temps partiel
             Text(
               'Temps plein ou temps partiel ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -3967,7 +4119,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ],
               onChanged: (val) => setState(() => _niveauEtudes = val),
               hint: const Text('Sélectionner'),
-              backgroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(context, Colors.white),
             ),
             const SizedBox(height: 16),
 
@@ -3986,26 +4138,31 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ],
               onChanged: (val) => setState(() => _niveauExperience = val),
               hint: const Text('Sélectionner'),
-              backgroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(context, Colors.white),
             ),
             const SizedBox(height: 16),
 
             // Quelles sont vos disponibilités
             Text(
               'Quelles sont vos disponibilités ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
             const SizedBox(height: 8),
             Theme(
-              data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
+              data: Theme.of(
+                context,
+              ).copyWith(visualDensity: const VisualDensity(vertical: -4)),
               child: CheckboxListTile(
                 dense: true,
-                activeColor: const Color(0xFF3AAE5E),
+                activeColor: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
                 title: const Text(
@@ -4052,10 +4209,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Quel est votre prétention salariale
             Text(
               'Quel est votre prétention salariale ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -4087,10 +4244,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               const SizedBox(height: 16),
               Text(
                 'Tranche salariale',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -4109,7 +4266,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     '-',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey[600],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -4138,7 +4298,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       onChanged: (val) =>
                           setState(() => _salaryNetOrBrut = val),
                       hint: const Text('Sélectionner'),
-                      backgroundColor: Colors.white,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.white,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -4156,7 +4319,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       onChanged: (val) =>
                           setState(() => _salaryIndiceTemporel = val),
                       hint: const Text('Sélectionner'),
-                      backgroundColor: Colors.white,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -4167,10 +4333,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Acceptez-vous une offre en télétravail
             Text(
               'Acceptez-vous une offre en télétravail ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -4204,15 +4370,18 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Utiliser les documents de l'espace candidat
             CheckboxListTile(
               dense: true,
-              activeColor: const Color(0xFF3AAE5E),
+              activeColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
-              title: const Text(
+              title: Text(
                 "Utiliser les documents de l'espace candidat",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                   fontFamily: 'Manjari',
                 ),
               ),
@@ -4248,7 +4417,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     children: [
                       Icon(
                         Icons.error_outline,
-                        color: Colors.red.shade400,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.red.shade400,
+                        ),
                         size: 18,
                       ),
                       const SizedBox(width: 8),
@@ -4256,7 +4428,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                         child: Text(
                           _candidateDocsError!,
                           style: TextStyle(
-                            color: Colors.red.shade600,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red.shade600,
+                            ),
                             fontSize: 13,
                           ),
                         ),
@@ -4277,7 +4452,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Colors.grey[700],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[700],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -4307,7 +4485,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 'Aucun document dans l\'espace candidat',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -4329,10 +4507,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Ajouter des documents
             Text(
               'Ajouter des documents',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -4361,14 +4539,17 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Partager vos réseaux sociaux professionnels
             Text(
               'Partager vos réseaux sociaux professionnels (Cela augmente vos chances de vous faire remarquer)',
-              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[700]),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Vous n\'avez renseigné aucun réseau social. Veuillez mettre à jour votre profil pour que le réseau social s\'affiche ici',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -4402,7 +4583,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 });
               },
               hint: _buildRequiredHint('Sélectionner un secteur d\'activité'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -4414,7 +4598,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 items: _getJobFonctionsForSecteur(_selectedSecteurActivite),
                 onChanged: (val) => setState(() => _selectedFunction = val),
                 hint: _buildRequiredHint('Sélectionner une fonction'),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
                 useLabelAsValue: true,
               ),
               const SizedBox(height: 16),
@@ -4451,10 +4638,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Temps plein ou temps partiel
             Text(
               'Temps plein ou temps partiel ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -4503,7 +4690,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ],
               onChanged: (val) => setState(() => _niveauEtudes = val),
               hint: const Text('Sélectionner'),
-              backgroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(context, Colors.white),
               useLabelAsValue: true,
             ),
             const SizedBox(height: 16),
@@ -4523,24 +4710,27 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               ],
               onChanged: (val) => setState(() => _niveauExperience = val),
               hint: const Text('Sélectionner'),
-              backgroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(context, Colors.white),
             ),
             const SizedBox(height: 16),
 
             // Quelles sont vos disponibilités
             Text(
               'Quelles sont vos disponibilités ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
             const SizedBox(height: 8),
             CheckboxListTile(
               dense: true,
-              activeColor: const Color(0xFF3AAE5E),
+              activeColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
               title: const Text(
@@ -4586,10 +4776,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Quel est votre prétention salariale
             Text(
               'Quel est votre prétention salariale ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -4621,10 +4811,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               const SizedBox(height: 16),
               Text(
                 'Tranche salariale',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -4643,7 +4833,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     '-',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey[600],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -4672,7 +4865,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       onChanged: (val) =>
                           setState(() => _salaryNetOrBrut = val),
                       hint: const Text('Sélectionner'),
-                      backgroundColor: Colors.white,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.white,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -4690,7 +4886,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       onChanged: (val) =>
                           setState(() => _salaryIndiceTemporel = val),
                       hint: const Text('Sélectionner'),
-                      backgroundColor: Colors.white,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -4701,10 +4900,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Acceptez-vous une offre en télétravail
             Text(
               'Acceptez-vous une offre en télétravail ?',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -4738,15 +4937,18 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Utiliser les documents de l'espace candidat
             CheckboxListTile(
               dense: true,
-              activeColor: const Color(0xFF3AAE5E),
+              activeColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
               contentPadding: EdgeInsets.zero,
               controlAffinity: ListTileControlAffinity.leading,
-              title: const Text(
+              title: Text(
                 "Utiliser les documents de l'espace candidat",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                   fontFamily: 'Manjari',
                 ),
               ),
@@ -4782,7 +4984,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     children: [
                       Icon(
                         Icons.error_outline,
-                        color: Colors.red.shade400,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.red.shade400,
+                        ),
                         size: 18,
                       ),
                       const SizedBox(width: 8),
@@ -4790,7 +4995,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                         child: Text(
                           _candidateDocsError!,
                           style: TextStyle(
-                            color: Colors.red.shade600,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red.shade600,
+                            ),
                             fontSize: 13,
                           ),
                         ),
@@ -4811,7 +5019,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Colors.grey[700],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[700],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -4841,7 +5052,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 'Aucun document dans l\'espace candidat',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -4863,10 +5074,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Ajouter des documents
             Text(
               'Ajouter des documents',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontFamily: 'Manjari',
               ),
             ),
@@ -4894,14 +5105,17 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             // Partager vos réseaux sociaux professionnels
             Text(
               'Partager vos réseaux sociaux professionnels (Cela augmente vos chances de vous faire remarquer)',
-              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[700]),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Vous n\'avez renseigné aucun réseau social. Veuillez mettre à jour votre profil pour que le réseau social s\'affiche ici',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -4948,29 +5162,41 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 () => _handleUseCurrentLocationToggle(!_useCurrentLocation),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Rayon de recherche',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               Text(
                 '${_rayonRecherche.toInt()} km',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 4),
               SliderTheme(
                 data: SliderThemeData(
-                  activeTrackColor: const Color(0xFFEF8A40),
-                  inactiveTrackColor: Colors.grey[300],
-                  thumbColor: const Color(0xFFEF8A40),
-                  overlayColor: const Color(0xFFEF8A40).withValues(alpha: 0.2),
+                  activeTrackColor: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFFEF8A40),
+                  ),
+                  inactiveTrackColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.grey[300],
+                  ),
+                  thumbColor: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFFEF8A40),
+                  ),
+                  overlayColor: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFFEF8A40),
+                  ).withValues(alpha: 0.2),
                   trackHeight: 2,
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: 8,
@@ -4994,7 +5220,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                           t,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                         ),
                       )
@@ -5022,7 +5251,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -5032,7 +5261,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               SizedBox(height: 8),
@@ -5040,7 +5269,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 'Illustrez votre demande avec des photos pour attirer plus de réponses pertinentes.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                   height: 1.4,
                 ),
               ),
@@ -5050,7 +5279,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
             ],
@@ -5095,9 +5324,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       onTap: _pickDocumentMedia,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF0F9F4),
+          color: AdaptiveColors.surface(context, const Color(0xFFF0F9F4)),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF3AAE5E), width: 2),
+          border: Border.all(
+            color: AdaptiveColors.border(context, const Color(0xFF3AAE5E)),
+            width: 2,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -5105,20 +5337,27 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.add, size: 40, color: Color(0xFF3AAE5E)),
+              child: Icon(
+                Icons.add,
+                size: 40,
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+              ),
             ),
             const SizedBox(height: 12),
             Text(
               _selectedDocumentFiles.isEmpty
                   ? 'Ajouter des documents'
                   : 'Ajouter plus',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF3AAE5E),
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
               ),
               textAlign: TextAlign.center,
             ),
@@ -5133,9 +5372,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       onTap: _pickMedia,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF0F9F4),
+          color: AdaptiveColors.surface(context, const Color(0xFFF0F9F4)),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF3AAE5E), width: 2),
+          border: Border.all(
+            color: AdaptiveColors.border(context, const Color(0xFF3AAE5E)),
+            width: 2,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -5143,13 +5385,16 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.camera_alt,
                 size: 40,
-                color: Color(0xFF3AAE5E),
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
               ),
             ),
             const SizedBox(height: 12),
@@ -5157,10 +5402,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               _selectedMediaFiles.isEmpty
                   ? 'Ajouter des photos'
                   : 'Ajouter plus',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF3AAE5E),
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
               ),
             ),
           ],
@@ -5189,19 +5434,26 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             child: Container(
               width: double.infinity,
               height: double.infinity,
-              color: const Color(0xFFF5F5F5),
+              color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
               child: Image.network(
                 url,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Center(
-                  child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                errorBuilder: (_, __, ___) => Center(
+                  child: Icon(
+                    Icons.broken_image,
+                    size: 40,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
                 loadingBuilder: (_, child, loadingProgress) {
                   if (loadingProgress == null) return child;
-                  return const Center(
+                  return Center(
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFFFF9800),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFFFF9800),
+                      ),
                     ),
                   );
                 },
@@ -5215,18 +5467,18 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3AAE5E),
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Photo de couverture',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -5241,7 +5493,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -5251,10 +5503,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
                   size: 18,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                 ),
               ),
             ),
@@ -5287,16 +5539,16 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       Color iconColor;
       if (isPdf) {
         iconData = Icons.picture_as_pdf;
-        iconColor = Colors.red;
+        iconColor = AdaptiveColors.foreground(context, Colors.red);
       } else if (isDoc) {
         iconData = Icons.description;
-        iconColor = Colors.blue;
+        iconColor = AdaptiveColors.foreground(context, Colors.blue);
       } else if (isImage) {
         iconData = Icons.image;
-        iconColor = Colors.green;
+        iconColor = AdaptiveColors.foreground(context, Colors.green);
       } else {
         iconData = Icons.insert_drive_file;
-        iconColor = Colors.grey;
+        iconColor = AdaptiveColors.foreground(context, Colors.grey);
       }
 
       contentWidget = Center(
@@ -5309,7 +5561,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 file.name,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF666666)),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
@@ -5323,8 +5578,13 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-        color: Colors.grey[50],
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.3),
+        ),
+        color: AdaptiveColors.surface(context, Colors.grey[50]),
       ),
       child: Stack(
         children: [
@@ -5337,7 +5597,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -5347,10 +5607,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
                   size: 18,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                 ),
               ),
             ),
@@ -5375,31 +5635,34 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     Color iconColor;
     if (isPdf) {
       iconData = Icons.picture_as_pdf;
-      iconColor = Colors.red;
+      iconColor = AdaptiveColors.foreground(context, Colors.red);
     } else if (isDoc) {
       iconData = Icons.description;
-      iconColor = Colors.blue;
+      iconColor = AdaptiveColors.foreground(context, Colors.blue);
     } else if (fileType == 'cv') {
       iconData = Icons.badge;
-      iconColor = const Color(0xFF3AAE5E);
+      iconColor = AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
     } else if (fileType == 'lettre' || fileType == 'lettre_motivation') {
       iconData = Icons.mail;
-      iconColor = Colors.blue;
+      iconColor = AdaptiveColors.foreground(context, Colors.blue);
     } else if (fileType == 'portfolio') {
       iconData = Icons.folder;
-      iconColor = Colors.orange;
+      iconColor = AdaptiveColors.foreground(context, Colors.orange);
     } else {
       iconData = Icons.insert_drive_file;
-      iconColor = Colors.grey;
+      iconColor = AdaptiveColors.foreground(context, Colors.grey);
     }
 
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF3AAE5E).withValues(alpha: 0.3),
+          color: AdaptiveColors.border(
+            context,
+            const Color(0xFF3AAE5E),
+          ).withValues(alpha: 0.3),
         ),
-        color: const Color(0xFFF0F9F2),
+        color: AdaptiveColors.surface(context, const Color(0xFFF0F9F2)),
       ),
       child: Stack(
         children: [
@@ -5413,9 +5676,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Text(
                     fileName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF666666),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF666666),
+                      ),
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -5433,7 +5699,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               child: Container(
                 padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -5443,10 +5709,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
                   size: 16,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                 ),
               ),
             ),
@@ -5476,7 +5742,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             child: Container(
               width: double.infinity,
               height: double.infinity,
-              color: const Color(0xFFF5F5F5),
+              color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
               child: _buildMediaPreview(file),
             ),
           ),
@@ -5487,18 +5753,18 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3AAE5E),
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Photo de couverture',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -5513,7 +5779,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -5523,10 +5789,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
                   size: 18,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                 ),
               ),
             ),
@@ -5832,11 +6098,15 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           child: Container(
             width: 50,
             height: 50,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFFE6F7EF),
+              color: AdaptiveColors.surface(context, Color(0xFFE6F7EF)),
             ),
-            child: const Icon(Icons.check, color: Color(0xFF3AAE5E), size: 30),
+            child: Icon(
+              Icons.check,
+              color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+              size: 30,
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -5848,7 +6118,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF424242),
+              color: AdaptiveColors.foreground(context, Color(0xFF424242)),
             ),
           ),
         ),
@@ -5857,7 +6127,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             _isEditMode
                 ? 'Relisez les informations avant de sauvegarder'
                 : 'Relisez les informations avant de publier votre demande',
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 11,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -5942,25 +6215,28 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFE6F7EF),
+            color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
             children: [
-              const Text(
+              Text(
                 'Accepter de recevoir des messages à propos de cette demande',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Les utilisateurs intéressés pourront vous écrire pour clarifier un besoin ou proposer une solution adaptée.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -5986,8 +6262,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           child: ElevatedButton(
             onPressed: _isSubmitting ? null : _submitDemande,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF9800),
-              foregroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFFF9800),
+              ),
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -5995,11 +6274,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               elevation: 0,
             ),
             child: _isSubmitting
-                ? const SizedBox(
+                ? SizedBox(
                     height: 20,
                     width: 20,
                     child: CircularProgressIndicator(
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       strokeWidth: 2,
                     ),
                   )
@@ -6025,18 +6304,27 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.red.shade50,
+        color: AdaptiveColors.surface(context, Colors.red.shade50),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.shade200),
+        border: Border.all(
+          color: AdaptiveColors.border(context, Colors.red.shade200),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: Colors.red.shade700, size: 24),
+          Icon(
+            Icons.error_outline,
+            color: AdaptiveColors.foreground(context, Colors.red.shade700),
+            size: 24,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
-              style: TextStyle(color: Colors.red.shade900, fontSize: 13),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.red.shade900),
+                fontSize: 13,
+              ),
             ),
           ),
           if (onRetry != null)
@@ -6045,7 +6333,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               child: Text(
                 'Réessayer',
                 style: TextStyle(
-                  color: Colors.red.shade700,
+                  color: AdaptiveColors.foreground(
+                    context,
+                    Colors.red.shade700,
+                  ),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -6066,9 +6357,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.1),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -6085,18 +6381,28 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE6F7EF),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFE6F7EF),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: const Color(0xFF3AAE5E), size: 20),
+                child: Icon(
+                  icon,
+                  color: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                   fontFamily: 'Manjari',
                 ),
               ),
@@ -6108,7 +6414,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               subtitle,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
                 height: 1.5,
               ),
             ),
@@ -6137,19 +6443,26 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF424242),
+            color: AdaptiveColors.foreground(context, Color(0xFF424242)),
           ),
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: backgroundColor ?? Colors.white,
+            color:
+                backgroundColor ??
+                AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+            border: Border.all(
+              color: AdaptiveColors.border(
+                context,
+                Colors.grey,
+              ).withValues(alpha: 0.3),
+            ),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -6178,14 +6491,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         text: text,
         style: TextStyle(
           fontSize: 13,
-          color: Colors.grey[500],
+          color: AdaptiveColors.foreground(context, Colors.grey[500]),
           fontFamily: 'Manjari',
         ),
-        children: const [
+        children: [
           TextSpan(
             text: ' *',
             style: TextStyle(
-              color: Color(0xFFFF6B6B),
+              color: AdaptiveColors.foreground(context, Color(0xFFFF6B6B)),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -6200,23 +6513,30 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       margin: const EdgeInsets.only(top: 8, bottom: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E9),
+        color: AdaptiveColors.surface(context, const Color(0xFFE8F5E9)),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+          color: AdaptiveColors.border(
+            context,
+            const Color(0xFF4CAF50),
+          ).withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, color: Color(0xFF4CAF50), size: 18),
+          Icon(
+            Icons.info_outline,
+            color: AdaptiveColors.foreground(context, Color(0xFF4CAF50)),
+            size: 18,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               helperText,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF2E7D32),
+                color: AdaptiveColors.foreground(context, Color(0xFF2E7D32)),
                 height: 1.4,
               ),
             ),
@@ -6241,9 +6561,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AdaptiveColors.surface(context, Colors.white),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: AdaptiveColors.border(
+                  context,
+                  Colors.grey,
+                ).withValues(alpha: 0.2),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -6252,12 +6577,21 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   padding: const EdgeInsets.only(left: 14, top: 10),
                   child: Text(
                     label,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                    ),
                   ),
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFF5F5F5),
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   margin: const EdgeInsets.symmetric(
@@ -6336,9 +6670,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: AdaptiveColors.border(
+                context,
+                Colors.grey,
+              ).withValues(alpha: 0.2),
+            ),
           ),
           child: TextField(
             controller: controller,
@@ -6355,14 +6694,17 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
             },
             decoration: InputDecoration(
               hintText: label,
-              hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[400]),
+              ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
               suffixText: suffix,
-              suffixStyle: const TextStyle(
+              suffixStyle: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
               ),
             ),
           ),
@@ -6385,19 +6727,24 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF424242),
+            color: AdaptiveColors.foreground(context, Color(0xFF424242)),
             fontFamily: 'Manjari',
           ),
         ),
         ...values.map(
           (value) => Theme(
-            data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
+            data: Theme.of(
+              context,
+            ).copyWith(visualDensity: const VisualDensity(vertical: -4)),
             child: RadioListTile<T>(
               dense: true,
-              activeColor: const Color(0xFF3AAE5E),
+              activeColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
               contentPadding: EdgeInsets.zero,
               title: Text(
                 labelBuilder(value),
@@ -6425,10 +6772,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF424242),
+            color: AdaptiveColors.foreground(context, Color(0xFF424242)),
             fontFamily: 'Manjari',
           ),
         ),
@@ -6437,7 +6784,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           Container(
             height: 300, // Shows ~5 items, scrollable for more
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: AdaptiveColors.border(
+                  context,
+                  Colors.grey,
+                ).withValues(alpha: 0.2),
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: SingleChildScrollView(
@@ -6445,12 +6797,15 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 children: options
                     .map(
                       (option) => Theme(
-                        data: ThemeData(
+                        data: Theme.of(context).copyWith(
                           visualDensity: const VisualDensity(vertical: -4),
                         ),
                         child: CheckboxListTile(
                           dense: true,
-                          activeColor: const Color(0xFF3AAE5E),
+                          activeColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 4,
@@ -6474,10 +6829,15 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         else
           ...options.map(
             (option) => Theme(
-              data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
+              data: Theme.of(
+                context,
+              ).copyWith(visualDensity: const VisualDensity(vertical: -4)),
               child: CheckboxListTile(
                 dense: true,
-                activeColor: const Color(0xFF3AAE5E),
+                activeColor: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
                 title: Text(
@@ -6510,8 +6870,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(
-                colorScheme: const ColorScheme.light(
-                  primary: Color(0xFFFF9800),
+                colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: AdaptiveColors.foreground(
+                    context,
+                    Color(0xFFFF9800),
+                  ),
                 ),
               ),
               child: child!,
@@ -6525,9 +6888,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+          border: Border.all(
+            color: AdaptiveColors.border(
+              context,
+              Colors.grey,
+            ).withValues(alpha: 0.2),
+          ),
         ),
         child: Row(
           children: [
@@ -6539,12 +6907,16 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 style: TextStyle(
                   fontSize: 13,
                   color: selectedDate != null
-                      ? Colors.black87
-                      : Colors.grey[400],
+                      ? AdaptiveColors.foreground(context, Colors.black87)
+                      : AdaptiveColors.foreground(context, Colors.grey[400]),
                 ),
               ),
             ),
-            Icon(Icons.calendar_today, size: 18, color: Colors.grey[600]),
+            Icon(
+              Icons.calendar_today,
+              size: 18,
+              color: AdaptiveColors.foreground(context, Colors.grey[600]),
+            ),
           ],
         ),
       ),
@@ -6563,15 +6935,25 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       onSelected: (selected) {
         onSelected(selected ? label : '');
       },
-      selectedColor: const Color(0xFFFF9800).withValues(alpha: 0.2),
-      checkmarkColor: const Color(0xFFFF9800),
-      backgroundColor: Colors.white,
+      selectedColor: AdaptiveColors.foreground(
+        context,
+        const Color(0xFFFF9800),
+      ).withValues(alpha: 0.2),
+      checkmarkColor: AdaptiveColors.foreground(
+        context,
+        const Color(0xFFFF9800),
+      ),
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       side: BorderSide(
-        color: isSelected ? const Color(0xFFFF9800) : Colors.grey[300]!,
+        color: isSelected
+            ? AdaptiveColors.border(context, const Color(0xFFFF9800))
+            : AdaptiveColors.border(context, Colors.grey[300]!),
         width: isSelected ? 2 : 1,
       ),
       labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFFFF9800) : Colors.grey[700],
+        color: isSelected
+            ? AdaptiveColors.foreground(context, const Color(0xFFFF9800))
+            : AdaptiveColors.foreground(context, Colors.grey[700]),
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
     );
@@ -6584,7 +6966,9 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       avatar: Icon(
         isSelected ? Icons.check_circle : Icons.add_circle_outline,
         size: 20,
-        color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[600],
+        color: isSelected
+            ? AdaptiveColors.foreground(context, const Color(0xFF3AAE5E))
+            : AdaptiveColors.foreground(context, Colors.grey[600]),
       ),
       onPressed: () async {
         if (isSelected) {
@@ -6596,14 +6980,21 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         }
       },
       backgroundColor: isSelected
-          ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
-          : Colors.white,
+          ? AdaptiveColors.surface(
+              context,
+              const Color(0xFF3AAE5E),
+            ).withValues(alpha: 0.1)
+          : AdaptiveColors.surface(context, Colors.white),
       side: BorderSide(
-        color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[300]!,
+        color: isSelected
+            ? AdaptiveColors.border(context, const Color(0xFF3AAE5E))
+            : AdaptiveColors.border(context, Colors.grey[300]!),
         width: isSelected ? 2 : 1,
       ),
       labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[700],
+        color: isSelected
+            ? AdaptiveColors.foreground(context, const Color(0xFF3AAE5E))
+            : AdaptiveColors.foreground(context, Colors.grey[700]),
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
     );
@@ -6658,8 +7049,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       child: ElevatedButton(
         onPressed: _nextStep,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFF9800),
-          foregroundColor: Colors.white,
+          backgroundColor: AdaptiveColors.surface(
+            context,
+            const Color(0xFFFF9800),
+          ),
+          foregroundColor: AdaptiveColors.foreground(context, Colors.white),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -6689,9 +7083,14 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.15),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -6703,15 +7102,15 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 title,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   fontWeight: FontWeight.w500,
                 ),
               ),
               GestureDetector(
                 onTap: onEdit,
-                child: const Icon(
+                child: Icon(
                   Icons.edit_outlined,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                   size: 18,
                 ),
               ),
@@ -6730,13 +7129,19 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
+          ),
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.right,
@@ -6758,7 +7163,13 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        Text('Photos', style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+        Text(
+          'Photos',
+          style: TextStyle(
+            fontSize: 12,
+            color: AdaptiveColors.foreground(context, Colors.grey[500]),
+          ),
+        ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -6771,7 +7182,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                 height: 80,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AdaptiveColors.border(
+                      context,
+                      Colors.grey,
+                    ).withValues(alpha: 0.3),
+                  ),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
@@ -6779,8 +7195,11 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     url,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                      color: AdaptiveColors.surface(context, Colors.grey[200]),
+                      child: Icon(
+                        Icons.broken_image,
+                        color: AdaptiveColors.foreground(context, Colors.grey),
+                      ),
                     ),
                   ),
                 ),
@@ -6795,7 +7214,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Colors.grey.withValues(alpha: 0.3),
+                      color: AdaptiveColors.border(
+                        context,
+                        Colors.grey,
+                      ).withValues(alpha: 0.3),
                     ),
                   ),
                   child: ClipRRect(
@@ -6821,7 +7243,10 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
         const SizedBox(height: 8),
         Text(
           'Documents ajoutés',
-          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+          style: TextStyle(
+            fontSize: 12,
+            color: AdaptiveColors.foreground(context, Colors.grey[500]),
+          ),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -6852,16 +7277,16 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               Color iconColor;
               if (isPdf) {
                 iconData = Icons.picture_as_pdf;
-                iconColor = Colors.red;
+                iconColor = AdaptiveColors.foreground(context, Colors.red);
               } else if (isDoc) {
                 iconData = Icons.description;
-                iconColor = Colors.blue;
+                iconColor = AdaptiveColors.foreground(context, Colors.blue);
               } else if (isImage) {
                 iconData = Icons.image;
-                iconColor = Colors.green;
+                iconColor = AdaptiveColors.foreground(context, Colors.green);
               } else {
                 iconData = Icons.insert_drive_file;
-                iconColor = Colors.grey;
+                iconColor = AdaptiveColors.foreground(context, Colors.grey);
               }
 
               content = Column(
@@ -6873,9 +7298,12 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Text(
                       file.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 9,
-                        color: Color(0xFF666666),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF666666),
+                        ),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -6891,8 +7319,13 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               height: 80,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                color: Colors.grey[50],
+                border: Border.all(
+                  color: AdaptiveColors.border(
+                    context,
+                    Colors.grey,
+                  ).withValues(alpha: 0.3),
+                ),
+                color: AdaptiveColors.surface(context, Colors.grey[50]),
               ),
               child: content,
             );
@@ -6914,20 +7347,39 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
                 color: isSelected
-                    ? const Color(0xFF3AAE5E)
-                    : Colors.grey.withValues(alpha: 0.4),
+                    ? AdaptiveColors.border(context, const Color(0xFF3AAE5E))
+                    : AdaptiveColors.border(
+                        context,
+                        Colors.grey,
+                      ).withValues(alpha: 0.4),
                 width: 1.5,
               ),
               color: isSelected
-                  ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
-                  : Colors.transparent,
+                  ? AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ).withValues(alpha: 0.1)
+                  : AdaptiveColors.surface(context, Colors.transparent),
             ),
             child: isSelected
-                ? const Icon(Icons.check, color: Color(0xFF3AAE5E), size: 16)
+                ? Icon(
+                    Icons.check,
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
+                    size: 16,
+                  )
                 : null,
           ),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: AdaptiveColors.foreground(context, Colors.grey[700]),
+            ),
+          ),
         ],
       ),
     );

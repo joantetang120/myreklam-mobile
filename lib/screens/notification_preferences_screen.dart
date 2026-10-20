@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'match_alerts_screen.dart';
@@ -181,11 +182,14 @@ class _NotificationPreferencesScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F6),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF5F7F6)),
       appBar: AppBar(
         title: const Text('Notifications'),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF222222),
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
+        foregroundColor: AdaptiveColors.foreground(
+          context,
+          const Color(0xFF222222),
+        ),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -194,9 +198,14 @@ class _NotificationPreferencesScreenState
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  const Text(
+                  Text(
                     'Choisissez comment MyReklam vous prévient. Ces réglages sont synchronisés avec le site Web.',
-                    style: TextStyle(color: Color(0xFF6B7280)),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF6B7280),
+                      ),
+                    ),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
@@ -271,7 +280,9 @@ class _NotificationPreferencesScreenState
             title: const Text('Alertes métier et zone'),
             subtitle: const Text('Offres d’emploi et demandes près de vous'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const MatchAlertsScreen())),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const MatchAlertsScreen()),
+            ),
           ),
         ],
       ),
@@ -282,7 +293,10 @@ class _NotificationPreferencesScreenState
     return SwitchListTile(
       title: Text(title),
       subtitle: Text(subtitle),
-      activeThumbColor: const Color(0xFF12A05C),
+      activeThumbColor: AdaptiveColors.foreground(
+        context,
+        const Color(0xFF12A05C),
+      ),
       value: _settings[key] == true,
       onChanged: _saving == null ? (value) => _updateSetting(key, value) : null,
     );
@@ -326,9 +340,15 @@ class _NotificationPreferencesScreenState
               children: [
                 Text(event['label']?.toString() ?? key),
                 if (requiredPush || requiredEmail)
-                  const Text(
+                  Text(
                     'Alerte obligatoire',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF0D8A4F)),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF0D8A4F),
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -365,7 +385,10 @@ class _NotificationPreferencesScreenState
             scale: 0.8,
             child: Switch(
               value: value,
-              activeThumbColor: const Color(0xFF12A05C),
+              activeThumbColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF12A05C),
+              ),
               onChanged: _saving == null && !required ? onChanged : null,
             ),
           ),

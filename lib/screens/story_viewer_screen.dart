@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myreklam/services/share_service.dart';
 import 'package:video_player/video_player.dart';
 import 'package:myreklam/models/story_model.dart';
 import 'package:myreklam/models/story_overlay.dart';
@@ -298,7 +299,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -887,6 +888,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
               ),
               if (widget.isOwnStory)
                 _OwnStoryOverlay(
+                  storyId: story['id'].toString(),
                   viewsCount: viewsCount,
                   onShowViewers: _showViewersModal,
                 )
@@ -1150,10 +1152,12 @@ class _ReplyOverlayState extends State<_ReplyOverlay> {
 }
 
 class _OwnStoryOverlay extends StatelessWidget {
+  final String storyId;
   final int viewsCount;
   final VoidCallback onShowViewers;
 
   const _OwnStoryOverlay({
+    required this.storyId,
     required this.viewsCount,
     required this.onShowViewers,
   });
@@ -1200,7 +1204,11 @@ class _OwnStoryOverlay extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              // Bouton partager masqué
+              IconButton(
+                tooltip: 'Partager cette story',
+                icon: const Icon(Icons.share_outlined, color: Colors.white),
+                onPressed: () => ShareService.shareEntity('stories', storyId),
+              ),
               // GestureDetector(
               //   onTap: () {},
               //   child: const Icon(

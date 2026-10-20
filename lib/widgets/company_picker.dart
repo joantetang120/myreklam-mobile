@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:myreklam/services/company_service.dart';
@@ -25,7 +26,7 @@ class CompanyPickerField extends StatelessWidget {
     final result = await showModalBottomSheet<_CompanyPick>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -44,16 +45,18 @@ class CompanyPickerField extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
+          color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+            color: AdaptiveColors.border(context, Colors.grey[300]!),
+          ),
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.business_outlined,
               size: 20,
-              color: Color(0xFF9E9E9E),
+              color: AdaptiveColors.foreground(context, Color(0xFF9E9E9E)),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -61,17 +64,29 @@ class CompanyPickerField extends StatelessWidget {
                 hasValue ? companyName! : 'Sélectionner une entreprise',
                 style: TextStyle(
                   fontSize: 14,
-                  color: hasValue ? const Color(0xFF333333) : Colors.grey[500],
+                  color: hasValue
+                      ? AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFF333333),
+                        )
+                      : AdaptiveColors.foreground(context, Colors.grey[500]),
                 ),
               ),
             ),
             if (hasValue)
               GestureDetector(
                 onTap: () => onChanged(null, null),
-                child: const Icon(Icons.close, size: 18, color: Colors.grey),
+                child: Icon(
+                  Icons.close,
+                  size: 18,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
               )
             else
-              const Icon(Icons.chevron_right, color: Colors.grey),
+              Icon(
+                Icons.chevron_right,
+                color: AdaptiveColors.foreground(context, Colors.grey),
+              ),
           ],
         ),
       ),
@@ -164,7 +179,7 @@ class _CompanyPickerSheetState extends State<_CompanyPickerSheet> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: _kGreen,
-              foregroundColor: Colors.white,
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
             ),
             onPressed: () =>
                 Navigator.pop(context, emailController.text.trim()),
@@ -249,7 +264,10 @@ class _CompanyPickerSheetState extends State<_CompanyPickerSheet> {
         padding: const EdgeInsets.all(20),
         child: Text(
           'Saisissez au moins 2 caractères.',
-          style: TextStyle(color: Colors.grey[500], fontSize: 13),
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            fontSize: 13,
+          ),
         ),
       );
     }
@@ -273,8 +291,11 @@ class _CompanyPickerSheetState extends State<_CompanyPickerSheet> {
         if (_results.every((c) => c.name.toLowerCase() != _query.toLowerCase()))
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const CircleAvatar(
-              backgroundColor: Color(0xFFE6F4EC),
+            leading: CircleAvatar(
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                Color(0xFFE6F4EC),
+              ),
               child: Icon(Icons.add_business_outlined, color: _kGreen),
             ),
             title: Text(

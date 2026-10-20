@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
@@ -26,11 +27,13 @@ class AvatarsStory extends StatelessWidget {
             padding: EdgeInsets.all(0.5),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isViewed ? Colors.grey.shade200 : const Color(0xFFE6F7EF),
+              color: isViewed
+                  ? AdaptiveColors.surface(context, Colors.grey.shade200)
+                  : AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
               border: Border.all(
                 color: isViewed
-                    ? Colors.grey.shade400
-                    : const Color(0xFF3AAE5E),
+                    ? AdaptiveColors.border(context, Colors.grey.shade400)
+                    : AdaptiveColors.border(context, const Color(0xFF3AAE5E)),
                 width: isViewed ? 1.5 : 2,
               ),
             ),

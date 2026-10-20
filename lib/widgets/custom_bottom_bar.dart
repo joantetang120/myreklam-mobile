@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/utils/user_session.dart';
 import 'package:myreklam/services/profile_service.dart';
@@ -196,7 +197,7 @@ class _CustomBottomBarState extends State<CustomBottomBar>
           ? 0
           : (85 + (bottomPadding > 0 ? bottomPadding - 8 : 0)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
@@ -254,8 +255,8 @@ class _CustomBottomBarState extends State<CustomBottomBar>
   }) {
     final isSelected = widget.currentIndex == index;
     final color = isSelected
-        ? const Color(0xFF2E9B5B)
-        : const Color(0xFF9E9E9E);
+        ? AdaptiveColors.foreground(context, const Color(0xFF2E9B5B))
+        : AdaptiveColors.foreground(context, const Color(0xFF9E9E9E));
     final icon = isSelected ? selectedIcon : unselectedIcon;
 
     return GestureDetector(
@@ -273,7 +274,10 @@ class _CustomBottomBarState extends State<CustomBottomBar>
                 height: 3,
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E9B5B),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF2E9B5B),
+                  ),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -281,7 +285,10 @@ class _CustomBottomBarState extends State<CustomBottomBar>
               padding: const EdgeInsets.all(8),
               decoration: isSelected
                   ? BoxDecoration(
-                      color: const Color(0xFF2E9B5B).withValues(alpha: 0.15),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF2E9B5B),
+                      ).withValues(alpha: 0.15),
                       shape: BoxShape.rectangle,
                       borderRadius: BorderRadius.circular(10),
                     )
@@ -297,9 +304,12 @@ class _CustomBottomBarState extends State<CustomBottomBar>
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.red,
+                          color: AdaptiveColors.surface(context, Colors.red),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1.5),
+                          border: Border.all(
+                            color: AdaptiveColors.border(context, Colors.white),
+                            width: 1.5,
+                          ),
                         ),
                         constraints: const BoxConstraints(
                           minWidth: 16,
@@ -308,8 +318,11 @@ class _CustomBottomBarState extends State<CustomBottomBar>
                         child: Center(
                           child: Text(
                             badgeCount > 99 ? '99+' : '$badgeCount',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
                             ),
@@ -337,8 +350,8 @@ class _CustomBottomBarState extends State<CustomBottomBar>
   Widget _buildProfileItem(int index) {
     final isSelected = widget.currentIndex == index;
     final color = isSelected
-        ? const Color(0xFF2E9B5B)
-        : const Color(0xFF9E9E9E);
+        ? AdaptiveColors.foreground(context, const Color(0xFF2E9B5B))
+        : AdaptiveColors.foreground(context, const Color(0xFF9E9E9E));
 
     return GestureDetector(
       onTap: () => widget.onTap(index),
@@ -355,7 +368,10 @@ class _CustomBottomBarState extends State<CustomBottomBar>
                 height: 3,
                 margin: const EdgeInsets.only(bottom: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E9B5B),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF2E9B5B),
+                  ),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -371,8 +387,11 @@ class _CustomBottomBarState extends State<CustomBottomBar>
                     accountType: UserSession().isPro ? 'pro' : 'particulier',
                     border: Border.all(
                       color: isSelected
-                          ? const Color(0xFF2E9B5B)
-                          : Colors.transparent,
+                          ? AdaptiveColors.border(
+                              context,
+                              const Color(0xFF2E9B5B),
+                            )
+                          : AdaptiveColors.border(context, Colors.transparent),
                       width: 2,
                     ),
                   ),
@@ -383,11 +402,14 @@ class _CustomBottomBarState extends State<CustomBottomBar>
                     right: -2,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
+                      decoration: BoxDecoration(
+                        color: AdaptiveColors.surface(context, Colors.red),
                         shape: BoxShape.circle,
                         border: Border.fromBorderSide(
-                          BorderSide(color: Colors.white, width: 1.5),
+                          BorderSide(
+                            color: AdaptiveColors.border(context, Colors.white),
+                            width: 1.5,
+                          ),
                         ),
                       ),
                       constraints: const BoxConstraints(
@@ -397,8 +419,11 @@ class _CustomBottomBarState extends State<CustomBottomBar>
                       child: Center(
                         child: Text(
                           _unreadNotifCount > 99 ? '99+' : '$_unreadNotifCount',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
                           ),

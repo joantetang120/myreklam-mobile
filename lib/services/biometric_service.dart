@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -95,7 +96,11 @@ class BiometricService {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        icon: Icon(desc.icon, size: 40, color: const Color(0xFFE7412A)),
+        icon: Icon(
+          desc.icon,
+          size: 40,
+          color: AdaptiveColors.foreground(context, const Color(0xFFE7412A)),
+        ),
         title: const Text(
           'Connexion rapide',
           textAlign: TextAlign.center,
@@ -111,15 +116,20 @@ class BiometricService {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text(
+            child: Text(
               'Plus tard',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.grey),
+              ),
             ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE7412A),
-              foregroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFE7412A),
+              ),
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),

@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
@@ -59,7 +60,7 @@ class EvenementCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -67,7 +68,12 @@ class EvenementCard extends StatelessWidget {
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.1),
+        ),
       ),
       child: Stack(
         children: [
@@ -97,10 +103,13 @@ class EvenementCard extends StatelessWidget {
                           onTap: onAvatarTap,
                           child: Text(
                             username,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF616161),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF616161),
+                              ),
                             ),
                           ),
                         ),
@@ -111,19 +120,26 @@ class EvenementCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE6F7EF),
+                            color: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFE6F7EF),
+                            ),
                             borderRadius: BorderRadius.circular(5),
                             border: Border.all(
-                              color: const Color(
-                                0xFF3AAE5E,
+                              color: AdaptiveColors.border(
+                                context,
+                                const Color(0xFF3AAE5E),
                               ).withValues(alpha: 0.2),
                             ),
                           ),
                           child: Text(
                             userType,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
-                              color: Color(0xFF3AAE5E),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -155,7 +171,10 @@ class EvenementCard extends StatelessWidget {
                             return Container(
                               width: double.infinity,
                               height: 200,
-                              color: Colors.grey[200],
+                              color: AdaptiveColors.surface(
+                                context,
+                                Colors.grey[200],
+                              ),
                               child: Center(
                                 child: CircularProgressIndicator(
                                   value:
@@ -207,19 +226,26 @@ class EvenementCard extends StatelessWidget {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE3F2FD),
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFFE3F2FD),
+                                  ),
                                   borderRadius: BorderRadius.circular(6),
                                   border: Border.all(
-                                    color: const Color(
-                                      0xFF2196F3,
+                                    color: AdaptiveColors.border(
+                                      context,
+                                      const Color(0xFF2196F3),
                                     ).withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: Text(
                                   tag,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
-                                    color: Color(0xFF1976D2),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF1976D2),
+                                    ),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -235,9 +261,9 @@ class EvenementCard extends StatelessWidget {
               // Event Title (moved below image)
               RichText(
                 text: TextSpan(
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    color: Colors.black,
+                    color: AdaptiveColors.foreground(context, Colors.black),
                     fontWeight: FontWeight.bold,
                     height: 1.5,
                   ),
@@ -262,23 +288,34 @@ class EvenementCard extends StatelessWidget {
                                 Icon(
                                   Icons.local_offer_outlined,
                                   size: 14,
-                                  color: Colors.grey,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey,
+                                  ),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   cat,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.grey,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    ),
                                   ),
                                 ),
                                 if (categories.indexOf(cat) <
                                     categories.length - 1)
-                                  const Padding(
+                                  Padding(
                                     padding: EdgeInsets.only(left: 8),
                                     child: Text(
                                       '|',
-                                      style: TextStyle(color: Colors.grey),
+                                      style: TextStyle(
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey,
+                                        ),
+                                      ),
                                     ),
                                   ),
                               ],
@@ -300,26 +337,38 @@ class EvenementCard extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE6F7EF),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFE6F7EF),
+                  ),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: const Color(0xFF3AAE5E).withValues(alpha: 0.5),
+                    color: AdaptiveColors.border(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ).withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.calendar_month,
                       size: 16,
-                      color: Color(0xFF3AAE5E),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF3AAE5E),
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       eventDate,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF3AAE5E),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF3AAE5E),
+                        ),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -330,15 +379,18 @@ class EvenementCard extends StatelessWidget {
               // Location only (removed timeAgo)
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.location_on_outlined,
                     size: 16,
-                    color: Colors.grey,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     location,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AdaptiveColors.foreground(context, Colors.grey),
+                    ),
                   ),
                 ],
               ),
@@ -346,10 +398,10 @@ class EvenementCard extends StatelessWidget {
               // Price (moved up to date/location section)
               Text(
                 price,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 ),
               ),
               const SizedBox(height: 12),
@@ -370,8 +422,14 @@ class EvenementCard extends StatelessWidget {
                   icon: const Icon(Icons.event_outlined, size: 18),
                   label: const Text("Voir l'évènement"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9800),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFF9800),
+                    ),
+                    foregroundColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
@@ -388,11 +446,18 @@ class EvenementCard extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 16, left: 4, right: 4),
                 child: Row(
                   children: [
-                    const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                    Icon(
+                      Icons.access_time,
+                      size: 14,
+                      color: AdaptiveColors.foreground(context, Colors.grey),
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       timeAgo,
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AdaptiveColors.foreground(context, Colors.grey),
+                      ),
                     ),
                   ],
                 ),
@@ -412,7 +477,10 @@ class EvenementCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AdaptiveColors.surface(
+                        context,
+                        Colors.white,
+                      ).withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -429,14 +497,27 @@ class EvenementCard extends StatelessWidget {
                               return Icon(
                                 isFav ? Icons.favorite : Icons.favorite_border,
                                 size: 18,
-                                color: isFav ? Colors.red : Colors.grey[600],
+                                color: isFav
+                                    ? AdaptiveColors.foreground(
+                                        context,
+                                        Colors.red,
+                                      )
+                                    : AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[600],
+                                      ),
                               );
                             },
                           )
                         : Icon(
                             isFavorite ? Icons.favorite : Icons.favorite_border,
                             size: 18,
-                            color: isFavorite ? Colors.red : Colors.grey[600],
+                            color: isFavorite
+                                ? AdaptiveColors.foreground(context, Colors.red)
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                           ),
                   ),
                 ),
@@ -447,7 +528,10 @@ class EvenementCard extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.white,
+                        ).withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
@@ -457,10 +541,13 @@ class EvenementCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.report_outlined,
                         size: 18,
-                        color: Colors.redAccent,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.redAccent,
+                        ),
                       ),
                     ),
                   ),
@@ -475,8 +562,14 @@ class EvenementCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF2196F3),
-                        const Color(0xFF2196F3).withValues(alpha: 0.8),
+                        AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF2196F3),
+                        ),
+                        AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF2196F3),
+                        ).withValues(alpha: 0.8),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -493,15 +586,22 @@ class EvenementCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.event_outlined, size: 14, color: Colors.white),
+                      Icon(
+                        Icons.event_outlined,
+                        size: 14,
+                        color: AdaptiveColors.foreground(context, Colors.white),
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'Événement',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.3,
@@ -517,7 +617,12 @@ class EvenementCard extends StatelessWidget {
             // Grey veil (taps pass through) + "Expirée" badge.
             Positioned.fill(
               child: IgnorePointer(
-                child: Container(color: Colors.white.withValues(alpha: 0.55)),
+                child: Container(
+                  color: AdaptiveColors.surface(
+                    context,
+                    Colors.white,
+                  ).withValues(alpha: 0.55),
+                ),
               ),
             ),
             Positioned(
@@ -529,18 +634,25 @@ class EvenementCard extends StatelessWidget {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF757575),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF757575),
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.event_busy, size: 13, color: Colors.white),
+                    Icon(
+                      Icons.event_busy,
+                      size: 13,
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                     SizedBox(width: 4),
                     Text(
                       'Expirée',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),

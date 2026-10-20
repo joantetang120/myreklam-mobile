@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/screens/pro_subscription_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
@@ -107,12 +108,15 @@ class SubscriptionHelper {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF9800).withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFFF9800),
+                ).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.lock_outline,
-                color: Color(0xFFFF9800),
+                color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 size: 24,
               ),
             ),
@@ -129,7 +133,10 @@ class SubscriptionHelper {
           featureName != null
               ? 'La fonctionnalité "$featureName" est réservée aux comptes Premium. Passez à la version Premium pour y accéder.'
               : 'Cette fonctionnalité est réservée aux comptes Premium. Passez à la version Premium pour y accéder.',
-          style: const TextStyle(fontSize: 14, color: Color(0xFF616161)),
+          style: TextStyle(
+            fontSize: 14,
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
+          ),
         ),
         actions: [
           TextButton(
@@ -147,8 +154,11 @@ class SubscriptionHelper {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E9B5B),
-              foregroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF2E9B5B),
+              ),
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

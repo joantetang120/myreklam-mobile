@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
 import 'package:myreklam/widgets/announcement_ai_panel.dart';
 import 'package:myreklam/utils/announcement_ai_values.dart';
@@ -130,14 +131,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E9),
+        color: AdaptiveColors.surface(context, const Color(0xFFE8F5E9)),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         message,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
-          color: Color(0xFF1B5E20),
+          color: AdaptiveColors.foreground(context, Color(0xFF1B5E20)),
           height: 1.4,
         ),
       ),
@@ -368,7 +369,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
             ),
             child: const Text('Continuer'),
           ),
@@ -515,8 +519,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(context, Colors.red),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
               ),
               child: const Text('Quitter'),
             ),
@@ -544,7 +551,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, 'save'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
             ),
             child: const Text('Sauvegarder'),
           ),
@@ -565,12 +575,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Prix :',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF424242),
+            color: AdaptiveColors.foreground(context, Color(0xFF424242)),
           ),
         ),
         const SizedBox(height: 8),
@@ -589,19 +599,27 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               height: 48,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: AdaptiveColors.border(
+                    context,
+                    Colors.grey,
+                  ).withValues(alpha: 0.2),
+                ),
               ),
               child: Center(
                 child: Text(
                   _discountMode == 'percent'
                       ? '${_calculatedDiscount?.toStringAsFixed(2) ?? '--'} %'
                       : '${_calculatedDiscount?.toStringAsFixed(2) ?? '--'} €',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF424242),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF424242),
+                    ),
                   ),
                 ),
               ),
@@ -629,7 +647,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   });
                 },
                 contentPadding: EdgeInsets.zero,
-                activeColor: const Color(0xFF3AAE5E),
+                activeColor: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ),
                 title: const Text('%'),
               ),
             ),
@@ -645,19 +666,22 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   });
                 },
                 contentPadding: EdgeInsets.zero,
-                activeColor: const Color(0xFF3AAE5E),
+                activeColor: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ),
                 title: const Text('€'),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        const Text(
+        Text(
           'Prix final',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF424242),
+            color: AdaptiveColors.foreground(context, Color(0xFF424242)),
           ),
         ),
         const SizedBox(height: 6),
@@ -686,9 +710,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
       ),
       child: TextField(
         controller: controller,
@@ -697,14 +726,17 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         onChanged: onChanged,
         decoration: InputDecoration(
           hintText: label,
-          hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+          hintStyle: TextStyle(
+            fontSize: 13,
+            color: AdaptiveColors.foreground(context, Colors.grey[400]),
+          ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
           suffixText: '€',
-          suffixStyle: const TextStyle(
+          suffixStyle: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF424242),
+            color: AdaptiveColors.foreground(context, Color(0xFF424242)),
           ),
         ),
       ),
@@ -1064,7 +1096,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFFFF9800)),
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+            ),
           ),
           child: child!,
         );
@@ -1424,7 +1458,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -1437,7 +1471,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   onTap: () {
                     Navigator.pop(context); // close dialog
                   },
-                  child: const Icon(Icons.close, color: Colors.grey, size: 22),
+                  child: Icon(
+                    Icons.close,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                    size: 22,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1445,10 +1483,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               const SizedBox(height: 20),
               Text(
                 _isEditMode ? 'Bon plan modifié' : 'Bon plan publié',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                 ),
               ),
               const SizedBox(height: 10),
@@ -1461,7 +1499,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: mediaSuccess ? Colors.grey[600] : Colors.red[700],
+                  color: mediaSuccess
+                      ? AdaptiveColors.foreground(context, Colors.grey[600])
+                      : AdaptiveColors.foreground(context, Colors.red[700]),
                   height: 1.4,
                 ),
               ),
@@ -1521,9 +1561,13 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             _existingMediaUrls[index],
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => Container(
-              color: const Color(0xFFF5F5F5),
-              child: const Center(
-                child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+              color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
+              child: Center(
+                child: Icon(
+                  Icons.broken_image,
+                  size: 40,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
               ),
             ),
           ),
@@ -1546,19 +1590,23 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       );
     } else if (isVideo) {
       return Container(
-        color: Colors.black87,
-        child: const Center(
-          child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white),
+        color: AdaptiveColors.surface(context, Colors.black87),
+        child: Center(
+          child: Icon(
+            Icons.play_circle_outline,
+            size: 40,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
         ),
       );
     } else {
       return Container(
-        color: const Color(0xFFF9FAFB),
-        child: const Center(
+        color: AdaptiveColors.surface(context, const Color(0xFFF9FAFB)),
+        child: Center(
           child: Icon(
             Icons.insert_drive_file,
             size: 40,
-            color: Color(0xFF3AAE5E),
+            color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
           ),
         ),
       );
@@ -1605,13 +1653,22 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+          border: Border.all(
+            color: AdaptiveColors.border(
+              context,
+              Colors.grey,
+            ).withValues(alpha: 0.2),
+          ),
         ),
         child: Row(
           children: [
-            const Icon(Icons.date_range, color: Color(0xFFFF9800), size: 18),
+            Icon(
+              Icons.date_range,
+              color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+              size: 18,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -1619,13 +1676,20 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 style: TextStyle(
                   fontSize: 13,
                   color: value != null
-                      ? const Color(0xFF424242)
-                      : Colors.grey[500],
+                      ? AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFF424242),
+                        )
+                      : AdaptiveColors.foreground(context, Colors.grey[500]),
                   fontWeight: value != null ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ),
-            const Icon(Icons.keyboard_arrow_down, color: Colors.grey, size: 18),
+            Icon(
+              Icons.keyboard_arrow_down,
+              color: AdaptiveColors.foreground(context, Colors.grey),
+              size: 18,
+            ),
           ],
         ),
       ),
@@ -1664,7 +1728,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       },
       child: AppLayout(
         currentIndex: 2,
-        backgroundColor: const Color(0xFFF9F9FB),
+        backgroundColor: AdaptiveColors.surface(
+          context,
+          const Color(0xFFF9F9FB),
+        ),
         onTabTapped: (index) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
@@ -1691,9 +1758,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                       alignment: Alignment.centerLeft,
                       child: GestureDetector(
                         onTap: _handleBackButton,
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back,
-                          color: Color(0xFF616161),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF616161),
+                          ),
                           size: 24,
                         ),
                       ),
@@ -1702,11 +1772,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                       _isEditMode
                           ? 'Modifier le bon plan'
                           : 'Créer un bon plan',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontFamily: 'Manjari',
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF424242),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF424242),
+                        ),
                       ),
                     ),
                   ],
@@ -1719,7 +1792,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   _isEditMode
                       ? 'Modifiez les informations de votre bon plan'
                       : 'Partagez vos meilleures trouvailles avec la communauté',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1745,12 +1821,21 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: Colors.grey.withValues(alpha: 0.3),
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey,
+                            ).withValues(alpha: 0.3),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Précédent',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -1776,8 +1861,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       borderRadius: BorderRadius.circular(6),
       child: LinearProgressIndicator(
         value: (_currentStep + 1) / (_totalSteps + 1),
-        backgroundColor: Colors.grey[200],
-        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF9800)),
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[200]),
+        valueColor: AlwaysStoppedAnimation<Color>(
+          AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+        ),
         minHeight: 6,
       ),
     );
@@ -1785,10 +1872,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
   Widget _buildCurrentStep() {
     if (_isMetaLoading) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.only(top: 60),
         child: Center(
-          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+          ),
         ),
       );
     }
@@ -1798,12 +1887,19 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
         child: Column(
           children: [
-            Icon(Icons.error_outline, color: Colors.red[400], size: 40),
+            Icon(
+              Icons.error_outline,
+              color: AdaptiveColors.foreground(context, Colors.red[400]),
+              size: 40,
+            ),
             const SizedBox(height: 12),
             Text(
               _metaError!,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
+              style: TextStyle(
+                fontSize: 14,
+                color: AdaptiveColors.foreground(context, Colors.black87),
+              ),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
@@ -1811,8 +1907,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               icon: const Icon(Icons.refresh),
               label: const Text('Réessayer'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF9800),
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFFF9800),
+                ),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
               ),
             ),
           ],
@@ -1842,7 +1944,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1852,7 +1954,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               SizedBox(height: 8),
@@ -1860,7 +1962,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 'Ajoutez des photos de votre bon plan pour le rendre plus attractif et inspirer confiance.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                   height: 1.4,
                 ),
               ),
@@ -1870,7 +1972,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
             ],
@@ -1924,10 +2026,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       onTap: _pickMedia,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF0F9F4),
+          color: AdaptiveColors.surface(context, const Color(0xFFF0F9F4)),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFF3AAE5E),
+            color: AdaptiveColors.border(context, const Color(0xFF3AAE5E)),
             width: 2,
             style: BorderStyle.solid,
           ),
@@ -1938,22 +2040,25 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.camera_alt,
                 size: 40,
-                color: Color(0xFF3AAE5E),
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
               ),
             ),
             const SizedBox(height: 12),
             Text(
               'Ajouter ${_selectedMediaFiles.isEmpty ? "17" : "des"} photos',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF3AAE5E),
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
               ),
             ),
           ],
@@ -1983,7 +2088,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             child: Container(
               width: double.infinity,
               height: double.infinity,
-              color: const Color(0xFFF5F5F5),
+              color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
               child: _buildMediaPreview(file),
             ),
           ),
@@ -1994,18 +2099,18 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3AAE5E),
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Photo de couverture',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -2020,7 +2125,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -2030,10 +2135,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
                   size: 18,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                 ),
               ),
             ),
@@ -2064,19 +2169,26 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             child: Container(
               width: double.infinity,
               height: double.infinity,
-              color: const Color(0xFFF5F5F5),
+              color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
               child: Image.network(
                 url,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Center(
-                  child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                errorBuilder: (_, __, ___) => Center(
+                  child: Icon(
+                    Icons.broken_image,
+                    size: 40,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
                 loadingBuilder: (_, child, loadingProgress) {
                   if (loadingProgress == null) return child;
-                  return const Center(
+                  return Center(
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFFFF9800),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFFFF9800),
+                      ),
                     ),
                   );
                 },
@@ -2090,18 +2202,18 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3AAE5E),
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Photo de couverture',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -2116,7 +2228,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -2126,10 +2238,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
                   size: 18,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                 ),
               ),
             ),
@@ -2255,7 +2367,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               items: _categories,
               onChanged: _updateSubCategories,
               hint: _buildRequiredHint('Choisissez la catégorie'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
             ),
             const SizedBox(height: 12),
             _buildDropdownField(
@@ -2266,7 +2381,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   ? (val) => setState(() => _selectedSubCategory = val)
                   : null,
               hint: _buildRequiredHint('Choisissez la sous-catégorie'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
             ),
             const SizedBox(height: 12),
             _buildDropdownField(
@@ -2275,7 +2393,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               items: _types,
               onChanged: _handleTypeChanged,
               hint: _buildRequiredHint("De quel type de bon plan s'agit-il?"),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
             ),
           ],
         ),
@@ -2314,8 +2435,13 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           child: OutlinedButton(
             onPressed: _nextStep,
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFFF9800),
-              side: const BorderSide(color: Color(0xFFFF9800)),
+              foregroundColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFFFF9800),
+              ),
+              side: BorderSide(
+                color: AdaptiveColors.border(context, Color(0xFFFF9800)),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -2372,7 +2498,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               onChanged: (val) =>
                   setState(() => _selectedDisponibleLocation = val),
               hint: _buildRequiredHint('Ou est disponible cette offre'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
             ),
           ],
         ),
@@ -2400,13 +2529,19 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFE8F5E9),
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Cette offre est gratuite, aucune information tarifaire n\'est requise.',
                     style: TextStyle(
-                      color: Color(0xFF1B5E20),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1B5E20),
+                      ),
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -2417,12 +2552,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             ],
             if (!_isOnlineOnly) ...[
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Site web de l\'enseigne ?',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2438,12 +2573,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               const SizedBox(height: 16),
             ],
             if (!_isOnlineOnly) ...[
-              const Text(
+              Text(
                 'Quand cette offre est-elle valide ?',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2452,30 +2587,42 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   'Offre permanente',
                   style: TextStyle(fontSize: 13),
                 ),
-                subtitle: const Text(
+                subtitle: Text(
                   'Aucune date, toute l\'année',
-                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
                 value: 'permanent',
                 groupValue: _validityType,
                 onChanged: (val) => _setValidityType(val!),
                 contentPadding: EdgeInsets.zero,
-                activeColor: const Color(0xFF3AAE5E),
+                activeColor: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ),
               ),
               RadioListTile<String>(
                 title: const Text(
                   'Offre avec dates',
                   style: TextStyle(fontSize: 13),
                 ),
-                subtitle: const Text(
+                subtitle: Text(
                   'Définir une période de validité (optionnel)',
-                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
                 value: 'dates',
                 groupValue: _validityType,
                 onChanged: (val) => _setValidityType(val!),
                 contentPadding: EdgeInsets.zero,
-                activeColor: const Color(0xFF3AAE5E),
+                activeColor: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ),
               ),
               if (_validityType == 'dates') ...[
                 const SizedBox(height: 12),
@@ -2503,12 +2650,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             ],
             // Location section (hidden when 'En ligne' is selected)
             if (!_isOnlineOnly) ...[
-              const Text(
+              Text(
                 'Lieu :',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2533,15 +2680,24 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF9FAFB),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFF9FAFB),
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Toute la France',
-                      style: TextStyle(fontSize: 13, color: Color(0xFF424242)),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF424242),
+                        ),
+                      ),
                     ),
                     Switch(
                       value: _touteFrance,
@@ -2555,7 +2711,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                               });
                             }
                           : null,
-                      activeThumbColor: const Color(0xFF3AAE5E),
+                      activeThumbColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
                     ),
                   ],
                 ),
@@ -2569,18 +2728,24 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF9FAFB),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFF9FAFB),
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Afficher la localisation Google sur l\'annonce.',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF424242),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF424242),
+                          ),
                         ),
                       ),
                     ),
@@ -2588,7 +2753,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                       value: _afficherGoogleLocation,
                       onChanged: (val) =>
                           setState(() => _afficherGoogleLocation = val),
-                      activeThumbColor: const Color(0xFF3AAE5E),
+                      activeThumbColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
                     ),
                   ],
                 ),
@@ -2596,12 +2764,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               const SizedBox(height: 16),
 
               // Moyen de retrait checkboxes (hidden when 'En ligne')
-              const Text(
+              Text(
                 'Moyen de retrait :',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2621,7 +2789,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                           ),
                           contentPadding: EdgeInsets.zero,
                           controlAffinity: ListTileControlAffinity.leading,
-                          activeColor: const Color(0xFF3AAE5E),
+                          activeColor: AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ),
                         ),
                       ),
                       Expanded(
@@ -2636,7 +2807,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                           ),
                           contentPadding: EdgeInsets.zero,
                           controlAffinity: ListTileControlAffinity.leading,
-                          activeColor: const Color(0xFF3AAE5E),
+                          activeColor: AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ),
                         ),
                       ),
                     ],
@@ -2648,19 +2822,22 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                         setState(() => _moyenRetraitDrive = val ?? false),
                     contentPadding: EdgeInsets.zero,
                     controlAffinity: ListTileControlAffinity.leading,
-                    activeColor: const Color(0xFF3AAE5E),
+                    activeColor: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
             ] else ...[
               // Livraison section (shown when 'En ligne' is selected)
-              const Text(
+              Text(
                 'Livraison :',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2680,7 +2857,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   });
                 },
                 contentPadding: EdgeInsets.zero,
-                activeColor: const Color(0xFF3AAE5E),
+                activeColor: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ),
               ),
               RadioListTile<String>(
                 title: const Text(
@@ -2691,16 +2871,25 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 groupValue: _shippingOption,
                 onChanged: (val) => setState(() => _shippingOption = val!),
                 contentPadding: EdgeInsets.zero,
-                activeColor: const Color(0xFF3AAE5E),
+                activeColor: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ),
               ),
               if (_shippingOption == 'paid') ...[
                 const SizedBox(height: 12),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF9FAFB),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFF9FAFB),
+                    ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.grey.withValues(alpha: 0.2),
+                      color: AdaptiveColors.border(
+                        context,
+                        Colors.grey,
+                      ).withValues(alpha: 0.2),
                     ),
                   ),
                   child: TextField(
@@ -2710,15 +2899,21 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                     ),
                     decoration: InputDecoration(
                       labelText: 'Montant des frais de port',
-                      labelStyle: const TextStyle(
+                      labelStyle: TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF757575),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF757575),
+                        ),
                       ),
                       suffixText: '€',
-                      suffixStyle: const TextStyle(
+                      suffixStyle: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF424242),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF424242),
+                        ),
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
@@ -2726,9 +2921,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                         vertical: 14,
                       ),
                     ),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Color(0xFF424242),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF424242),
+                      ),
                     ),
                   ),
                 ),
@@ -2737,12 +2935,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             ],
             // Champ code promo visible uniquement pour le type "Codes promo"
             if (_isPromoCodeType) ...[
-              const Text(
+              Text(
                 'Quel est le code promo ?',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2756,12 +2954,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             ],
             if (_isOnlineOnly) ...[
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Ou trouver le bon plan ?',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2779,12 +2977,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
 
             // Validity type radio buttons
             if (_isOnlineOnly) ...[
-              const Text(
+              Text(
                 'Quand cette offre est-elle valide ?',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2793,30 +2991,42 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   'Offre permanente',
                   style: TextStyle(fontSize: 13),
                 ),
-                subtitle: const Text(
+                subtitle: Text(
                   'Aucune date, toute l\'année',
-                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
                 value: 'permanent',
                 groupValue: _validityType,
                 onChanged: (val) => _setValidityType(val!),
                 contentPadding: EdgeInsets.zero,
-                activeColor: const Color(0xFF3AAE5E),
+                activeColor: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ),
               ),
               RadioListTile<String>(
                 title: const Text(
                   'Offre avec dates',
                   style: TextStyle(fontSize: 13),
                 ),
-                subtitle: const Text(
+                subtitle: Text(
                   'Définir une période de validité (optionnel)',
-                  style: TextStyle(fontSize: 11, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
                 value: 'dates',
                 groupValue: _validityType,
                 onChanged: (val) => _setValidityType(val!),
                 contentPadding: EdgeInsets.zero,
-                activeColor: const Color(0xFF3AAE5E),
+                activeColor: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ),
               ),
               if (_validityType == 'dates') ...[
                 const SizedBox(height: 12),
@@ -2845,12 +3055,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             const SizedBox(height: 16),
 
             // Conditions field
-            const Text(
+            Text(
               'Conditions pour profiter de cette offre :',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
               ),
             ),
             const SizedBox(height: 8),
@@ -2865,7 +3075,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             const SizedBox(height: 8),
             Text(
               'Facultatif',
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              style: TextStyle(
+                fontSize: 11,
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              ),
             ),
           ],
         ),
@@ -2886,11 +3099,15 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           child: Container(
             width: 50,
             height: 50,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFFE6F7EF),
+              color: AdaptiveColors.surface(context, Color(0xFFE6F7EF)),
             ),
-            child: const Icon(Icons.check, color: Color(0xFF3AAE5E), size: 30),
+            child: Icon(
+              Icons.check,
+              color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+              size: 30,
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -2899,10 +3116,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             _isEditMode
                 ? 'Vérifiez vos modifications'
                 : 'Vérifiez votre annonce',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF424242),
+              color: AdaptiveColors.foreground(context, Color(0xFF424242)),
             ),
           ),
         ),
@@ -2911,7 +3128,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             _isEditMode
                 ? 'Relisez les informations avant de mettre à jour votre bon plan'
                 : 'Relisez les informations avant de publier votre bon plan',
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 11,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -3062,25 +3282,28 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFE6F7EF),
+            color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
             children: [
-              const Text(
+              Text(
                 'Accepter de recevoir des messages à propos de ce bon plan',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Les intéressés pourront vous écrire pour en savoir plus sur les conditions ou la disponibilité de votre bon plan.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -3108,8 +3331,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 ? null
                 : _submitBonPlan,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF9800),
-              foregroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFFF9800),
+              ),
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -3120,13 +3346,13 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(
+                      SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                            AdaptiveColors.foreground(context, Colors.white),
                           ),
                         ),
                       ),
@@ -3162,7 +3388,9 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red : const Color(0xFF3AAE5E),
+        backgroundColor: isError
+            ? AdaptiveColors.surface(context, Colors.red)
+            : AdaptiveColors.surface(context, const Color(0xFF3AAE5E)),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -3179,10 +3407,13 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.grey.withValues(alpha: 0.3),
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.3),
           style: BorderStyle.solid,
           width: 1.5,
         ),
@@ -3201,16 +3432,22 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           ),
           const SizedBox(height: 16),
           // Texte principal
-          const Text(
+          Text(
             'Glissez-déposez vos fichiers ici',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF424242),
+              color: AdaptiveColors.foreground(context, Color(0xFF424242)),
             ),
           ),
           const SizedBox(height: 6),
-          Text('ou', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+          Text(
+            'ou',
+            style: TextStyle(
+              fontSize: 13,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
+          ),
           const SizedBox(height: 12),
           // Bouton parcourir
           InkWell(
@@ -3223,10 +3460,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               ),
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: AdaptiveColors.foreground(context, Colors.white),
                 ),
               ),
             ),
@@ -3235,7 +3472,10 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           // Formats acceptés
           Text(
             'Images (JPG, PNG, GIF) et vidéos (MP4, MOV) acceptées',
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 11,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
           ),
         ],
       ),
@@ -3253,9 +3493,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.1),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -3272,18 +3517,28 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE6F7EF),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFE6F7EF),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: const Color(0xFF3AAE5E), size: 20),
+                child: Icon(
+                  icon,
+                  color: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                   fontFamily: 'Manjari',
                 ),
               ),
@@ -3295,7 +3550,7 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               subtitle,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
                 height: 1.5,
               ),
             ),
@@ -3321,9 +3576,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
+        color: backgroundColor ?? AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
       ),
       child: DropdownButtonFormField<String>(
         initialValue: value,
@@ -3331,13 +3591,19 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             hint ??
             Text(
               label,
-              style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+              style: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[400]),
+              ),
             ),
         decoration: const InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 12),
         ),
-        icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
+        icon: Icon(
+          Icons.keyboard_arrow_down,
+          color: AdaptiveColors.foreground(context, Colors.grey[400]),
+        ),
         isExpanded: true,
         items: items
             .map(
@@ -3358,14 +3624,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         text: text,
         style: TextStyle(
           fontSize: 13,
-          color: Colors.grey[500],
+          color: AdaptiveColors.foreground(context, Colors.grey[500]),
           fontFamily: 'Manjari',
         ),
-        children: const [
+        children: [
           TextSpan(
             text: ' *',
             style: TextStyle(
-              color: Color(0xFFFF6B6B),
+              color: AdaptiveColors.foreground(context, Color(0xFFFF6B6B)),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -3381,23 +3647,30 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       margin: const EdgeInsets.only(top: 8, bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E9),
+        color: AdaptiveColors.surface(context, const Color(0xFFE8F5E9)),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+          color: AdaptiveColors.border(
+            context,
+            const Color(0xFF4CAF50),
+          ).withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, color: Color(0xFF4CAF50), size: 18),
+          Icon(
+            Icons.info_outline,
+            color: AdaptiveColors.foreground(context, Color(0xFF4CAF50)),
+            size: 18,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               helperText,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF2E7D32),
+                color: AdaptiveColors.foreground(context, Color(0xFF2E7D32)),
                 height: 1.4,
               ),
             ),
@@ -3427,9 +3700,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: AdaptiveColors.border(
+                context,
+                Colors.grey,
+              ).withValues(alpha: 0.2),
+            ),
           ),
           child: TextField(
             controller: controller,
@@ -3451,19 +3729,30 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             },
             decoration: InputDecoration(
               hintText: label,
-              hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[400]),
+              ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
               prefixIcon: prefixIcon != null
-                  ? Icon(prefixIcon, color: Colors.grey[400])
+                  ? Icon(
+                      prefixIcon,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                    )
                   : null,
               suffixText: suffix,
-              suffixStyle: const TextStyle(
+              suffixStyle: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
               ),
-              counterStyle: const TextStyle(color: Colors.transparent),
+              counterStyle: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.transparent),
+              ),
             ),
           ),
         ),
@@ -3490,9 +3779,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AdaptiveColors.surface(context, Colors.white),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: AdaptiveColors.border(
+                  context,
+                  Colors.grey,
+                ).withValues(alpha: 0.2),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3501,12 +3795,21 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                   padding: const EdgeInsets.only(left: 14, top: 10),
                   child: Text(
                     label,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                    ),
                   ),
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFF5F5F5),
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   margin: const EdgeInsets.symmetric(
@@ -3575,8 +3878,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       child: ElevatedButton(
         onPressed: _nextStep,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFF9800),
-          foregroundColor: Colors.white,
+          backgroundColor: AdaptiveColors.surface(
+            context,
+            const Color(0xFFFF9800),
+          ),
+          foregroundColor: AdaptiveColors.foreground(context, Colors.white),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -3606,9 +3912,14 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.15),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3620,15 +3931,15 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
                 title,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   fontWeight: FontWeight.w500,
                 ),
               ),
               GestureDetector(
                 onTap: onEdit,
-                child: const Icon(
+                child: Icon(
                   Icons.edit_outlined,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                   size: 18,
                 ),
               ),
@@ -3647,13 +3958,19 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
+          ),
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.right,
@@ -3678,20 +3995,39 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
                 color: isSelected
-                    ? const Color(0xFF3AAE5E)
-                    : Colors.grey.withValues(alpha: 0.4),
+                    ? AdaptiveColors.border(context, const Color(0xFF3AAE5E))
+                    : AdaptiveColors.border(
+                        context,
+                        Colors.grey,
+                      ).withValues(alpha: 0.4),
                 width: 1.5,
               ),
               color: isSelected
-                  ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
-                  : Colors.transparent,
+                  ? AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ).withValues(alpha: 0.1)
+                  : AdaptiveColors.surface(context, Colors.transparent),
             ),
             child: isSelected
-                ? const Icon(Icons.check, color: Color(0xFF3AAE5E), size: 16)
+                ? Icon(
+                    Icons.check,
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
+                    size: 16,
+                  )
                 : null,
           ),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: AdaptiveColors.foreground(context, Colors.grey[700]),
+            ),
+          ),
         ],
       ),
     );

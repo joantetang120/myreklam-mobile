@@ -14,6 +14,7 @@ import 'package:myreklam/screens/reels_screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
 import 'package:myreklam/services/api_client.dart';
+import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/services/deep_link_service.dart';
 import 'package:myreklam/services/profile_service.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
@@ -23,7 +24,7 @@ import 'dart:async';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  debugPrint('🔔 Background message received: ${message.notification?.title}');
+  debugPrint('🔔 Background message received');
 }
 
 class PushNotificationService {
@@ -51,45 +52,10 @@ class PushNotificationService {
     // Set background message handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // Request permission (iOS)
-    await _requestPermission();
-
     // Initialize local notifications for foreground messages
     await _initLocalNotifications();
 
-    // Get FCM token (with error handling for simulator or unconfigured devices)
-    try {
-      // On iOS, wait for APNS token first — getToken() throws if APNS isn't ready
-      if (Platform.isIOS) {
-        String? apnsToken;
-        for (int i = 0; i < 5; i++) {
-          try {
-            apnsToken = await _messaging.getAPNSToken();
-          } catch (_) {}
-          if (apnsToken != null) break;
-          await Future.delayed(const Duration(seconds: 1));
-        }
-        if (apnsToken == null) {
-          debugPrint(
-            '🔔 APNS not available (simulator or APNS not configured) — skipping FCM token',
-          );
-          _setupMessageHandlers();
-          debugPrint('✅ PushNotificationService initialized (no FCM token)');
-          return;
-        }
-      }
-
-      _fcmToken = await _messaging.getToken();
-      if (_fcmToken != null) {
-        debugPrint('🔔 FCM Token: ${_fcmToken!.substring(0, 30)}...');
-        await _registerTokenWithBackend(_fcmToken!);
-      }
-    } catch (e) {
-      debugPrint('🔔 Push notifications not available: $e');
-      debugPrint(
-        '   (This is normal on simulator or if APNS is not configured)',
-      );
-    }
+    // Tokens and OS permissions are requested only after authentication.
 
     _setupMessageHandlers();
 
@@ -113,7 +79,7 @@ class PushNotificationService {
   }
 
   /// Request notification permission
-  Future<void> _requestPermission() async {
+  Future<bool> _requestPermission() async {
     {
       final settings = await _messaging.requestPermission(
         alert: true,
@@ -122,6 +88,8 @@ class PushNotificationService {
         provisional: false,
       );
       debugPrint('🔔 iOS permission status: ${settings.authorizationStatus}');
+      return settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional;
     }
   }
 
@@ -159,6 +127,7 @@ class PushNotificationService {
 
   /// Register FCM token with backend
   Future<void> _registerTokenWithBackend(String token) async {
+    if (await TokenStorage.getAccessToken() == null) return;
     try {
       await ApiClient().authenticatedPost(
         '/push-tokens',
@@ -177,6 +146,20 @@ class PushNotificationService {
   /// it at cold start before login silently fails.
   Future<void> registerToken() async {
     try {
+      if (await TokenStorage.getAccessToken() == null ||
+          !await _requestPermission())
+        return;
+      await _messaging.setAutoInitEnabled(true);
+      if (Platform.isIOS) {
+        for (
+          var attempt = 0;
+          attempt < 5 && await _messaging.getAPNSToken() == null;
+          attempt++
+        ) {
+          await Future<void>.delayed(const Duration(milliseconds: 200));
+        }
+        if (await _messaging.getAPNSToken() == null) return;
+      }
       _fcmToken ??= await _messaging.getToken();
       if (_fcmToken != null) {
         await _registerTokenWithBackend(_fcmToken!);
@@ -230,12 +213,29 @@ class PushNotificationService {
       debugPrint('🔔 FCM token unregistered from backend');
     } catch (e) {
       debugPrint('❌ Failed to unregister FCM token: $e');
+    } finally {
+      await clearLocalNotifications();
     }
+  }
+
+  Future<void> clearLocalNotifications() async {
+    _pendingNavigationData = null;
+    _navigationRetry?.cancel();
+    try {
+      await _localPlugin.cancelAll();
+    } catch (_) {}
+    try {
+      await _messaging.setAutoInitEnabled(false);
+      await _messaging.deleteToken();
+    } catch (_) {}
+    _fcmToken = null;
+    CustomBottomBar.notificationCountNotifier.value = 0;
+    CustomBottomBar.chatCountNotifier.value = 0;
   }
 
   /// Handle foreground message (show local notification)
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    debugPrint('🔔 Foreground message: ${message.notification?.title}');
+    debugPrint('🔔 Foreground message received');
 
     final notification = message.notification;
     if (_isChatNotification(message.data)) {
@@ -276,7 +276,7 @@ class PushNotificationService {
     if (_isChatNotification(message.data)) {
       refreshChatCount();
     }
-    debugPrint('🔔 Message opened app: ${message.notification?.title}');
+    debugPrint('🔔 Notification opened app');
     _navigateFromData(message.data);
   }
 

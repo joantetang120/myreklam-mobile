@@ -1,12 +1,9 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:myreklam/models/delegation.dart';
-import 'package:myreklam/services/delegation_manager.dart';
+import 'package:myreklam/widgets/my_space_menu.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
-import 'package:myreklam/screens/profile_pro/pro_annonces_screen.dart';
-import 'package:myreklam/screens/profile_pro/pro_favoris_screen.dart';
-import 'package:myreklam/screens/profile_pro/pro_post_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -15,12 +12,6 @@ import 'package:myreklam/screens/my_posts_screen.dart';
 import 'package:myreklam/screens/followers_screen.dart';
 import 'package:myreklam/screens/publier_screen.dart';
 import 'package:myreklam/screens/login_screen.dart';
-import 'package:myreklam/screens/saved_searches_screen.dart';
-import 'package:myreklam/screens/settings_screen.dart';
-import 'package:myreklam/screens/espace_candidat_screen.dart';
-import 'package:myreklam/screens/recompenses_screen.dart';
-import 'package:myreklam/screens/parrainage_screen.dart';
-import 'package:myreklam/screens/mon_profil_particulier_screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/auth_service.dart';
@@ -123,8 +114,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           uiSettings: [
             AndroidUiSettings(
               toolbarTitle: 'Ajuster l\'Avatar',
-              toolbarColor: const Color(0xFF3AAE5E),
-              toolbarWidgetColor: Colors.white,
+              toolbarColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
+              toolbarWidgetColor: AdaptiveColors.foreground(
+                context,
+                Colors.white,
+              ),
               initAspectRatio: CropAspectRatioPreset.square,
               lockAspectRatio: true,
             ),
@@ -157,9 +154,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _loadProfile();
             } else if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('Avatar mis à jour avec succès!'),
-                  backgroundColor: Color(0xFF3AAE5E),
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Color(0xFF3AAE5E),
+                  ),
                 ),
               );
             }
@@ -169,7 +169,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
+          ),
         );
       }
     } finally {
@@ -192,12 +195,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3AAE5E).withValues(alpha: 0.15),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ).withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.star_rounded,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                   size: 50,
                 ),
               ),
@@ -210,15 +216,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(
                 'Vous avez gagné $mysAwarded My\'s en ajoutant votre photo de profil !',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 15, color: Colors.black87),
+                style: TextStyle(
+                  fontSize: 15,
+                  color: AdaptiveColors.foreground(context, Colors.black87),
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Nouveau solde : $newBalance My\'s',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                 ),
               ),
               const SizedBox(height: 20),
@@ -227,8 +236,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: ElevatedButton(
                   onPressed: () => Navigator.of(ctx).pop(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3AAE5E),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ),
+                    foregroundColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -265,7 +280,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur de déconnexion: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     }
@@ -274,16 +289,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
           padding: const EdgeInsets.only(left: 10),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
             size: 18,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
           ),
           onPressed: () {
             Navigator.pushReplacement(
@@ -314,13 +329,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Color(0xFF3AAE5E),
-                      border: Border.all(color: Color(0xFF3AAE5E), width: 1.5),
+                      color: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
+                      border: Border.all(
+                        color: AdaptiveColors.border(
+                          context,
+                          Color(0xFF3AAE5E),
+                        ),
+                        width: 1.5,
+                      ),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.notifications_none,
                       size: 18,
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                     ),
                   ),
                   if (_unreadNotifCount > 0)
@@ -333,14 +354,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           vertical: 1,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.red,
+                          color: AdaptiveColors.surface(context, Colors.red),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white, width: 1),
+                          border: Border.all(
+                            color: AdaptiveColors.border(context, Colors.white),
+                            width: 1,
+                          ),
                         ),
                         child: Text(
                           '$_unreadNotifCount',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -355,7 +382,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _loadProfile,
-        color: const Color(0xFF3AAE5E),
+        color: AdaptiveColors.surface(context, const Color(0xFF3AAE5E)),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
@@ -373,7 +400,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           radius: 45,
                           avatarUrl: _avatarUrl,
                           displayName: _pseudo,
-                          backgroundColor: Colors.grey[300],
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            Colors.grey[300],
+                          ),
                         ),
                         Positioned(
                           bottom: 0,
@@ -383,16 +413,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF3AAE5E),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFF3AAE5E),
+                                ),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.white,
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   width: 2,
                                 ),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.edit,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 size: 14,
                               ),
                             ),
@@ -410,10 +449,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: [
                               Text(
                                 _pseudo ?? 'Utilisateur',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF616161),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF616161),
+                                  ),
                                 ),
                               ),
                               Container(
@@ -422,14 +464,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF3E0),
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFFFFF3E0),
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.star,
-                                      color: Color(0xFFFF9800),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFFFF9800),
+                                      ),
                                       size: 14,
                                     ),
                                     const SizedBox(width: 4),
@@ -438,7 +486,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xFFFF9800),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Color(0xFFFF9800),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 2),
@@ -446,7 +497,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       'My/s',
                                       style: TextStyle(
                                         fontSize: 10,
-                                        color: Colors.grey[600],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[600],
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -459,7 +513,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             UserSession().email ?? '',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -469,14 +526,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF3AAE5E),
+                              color: AdaptiveColors.surface(
+                                context,
+                                const Color(0xFF3AAE5E),
+                              ),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Particulier',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -507,7 +570,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         'Post(s)',
                       ),
                     ),
-                    Container(width: 1, height: 40, color: Colors.grey[300]),
+                    Container(
+                      width: 1,
+                      height: 40,
+                      color: AdaptiveColors.surface(context, Colors.grey[300]),
+                    ),
                     GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -523,7 +590,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         'Follower(s)',
                       ),
                     ),
-                    Container(width: 1, height: 40, color: Colors.grey[300]),
+                    Container(
+                      width: 1,
+                      height: 40,
+                      color: AdaptiveColors.surface(context, Colors.grey[300]),
+                    ),
                     GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -561,8 +632,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ).then((_) => _loadProfile());
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF8A40),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFEF8A40),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -575,7 +652,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               'assets/images/profil_pro/post.png',
                               width: 20,
                               height: 20,
-                              color: Colors.white,
+                              color: AdaptiveColors.surface(
+                                context,
+                                Colors.white,
+                              ),
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -607,13 +687,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFFF9800),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFFFF9800),
+                          ),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 10,
                             vertical: 10,
                           ),
-                          side: const BorderSide(
-                            color: Color(0xFFFF9800),
+                          side: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Color(0xFFFF9800),
+                            ),
                             width: 1.5,
                           ),
                           shape: RoundedRectangleBorder(
@@ -628,157 +714,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 24),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 0.85,
-                  children: [
-                    _buildMenuCard(
-                      icon: 'assets/images/profil_pro/opt-1.png',
-                      backgroundColor: const Color(0xFFFFE0B2),
-                      title: 'Mes annonces',
-                      description:
-                          'Gérez vos annonces actives, modifiez ou supprimez vos publications',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProAnnoncesScreen(),
-                          ),
-                        ).then((_) => _loadProfile());
-                      },
-                    ),
-                    _buildMenuCard(
-                      icon: 'assets/images/profil_pro/opt-2.png',
-                      backgroundColor: const Color(0xFFE6F7EF),
-                      title: 'Mes posts',
-                      description:
-                          'Consultez et gérez vos publications sur le réseau social',
-                      color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProPostScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildMenuCard(
-                      icon: 'assets/images/profil_pro/opt-3.png',
-                      backgroundColor: const Color(0xFFE6F7EF),
-                      title: 'Mes recherches sauvegardées',
-                      description: 'Retrouvez vos critères de recherche',
-                      color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SavedSearchesScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildMenuCard(
-                      icon: 'assets/images/profil_pro/opt-4.png',
-                      backgroundColor: const Color(0xFFFFE0B2),
-                      title: 'Favoris',
-                      description:
-                          'Vos contenus préférés et éléments sauvegardés',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProFavorisScreen(),
-                          ),
-                        ).then((_) => _loadProfile());
-                      },
-                    ),
-                    if (DelegationManager.instance.can(
-                      DelegationPermission.editAccount,
-                    ))
-                      _buildMenuCard(
-                        icon: 'assets/images/profil_pro/opt-6.png',
-                        backgroundColor: const Color(0xFFFFE0B2),
-                        title: 'Paramètres du compte',
-                        description: 'Configurez vos préférences et sécurité',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SettingsScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                    _buildMenuCard(
-                      icon: 'assets/images/profil_pro/carbon_user.png',
-                      backgroundColor: const Color(0xFFE6F7EF),
-                      title: 'Espace candidat',
-                      description:
-                          'Suivez vos candidatures et documents professionnels',
-                      color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const EspaceCandidatScreen(),
-                          ),
-                        ).then((_) => _loadProfile());
-                      },
-                    ),
-                    _buildMenuCard(
-                      icon: 'assets/images/profil_pro/opt-7.png',
-                      backgroundColor: const Color(0xFFE6F7EF),
-                      title: 'Récompenses',
-                      description: 'Consultez vos points et avantages fidélité',
-                      color: const Color(0xFF04BC7B).withValues(alpha: 0.15),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RecompensesScreen(),
-                          ),
-                        ).then((_) => _loadProfile());
-                      },
-                    ),
-                    _buildMenuCard(
-                      icon: 'assets/images/profil_pro/opt-8.png',
-                      backgroundColor: const Color(0xFFFFE0B2),
-                      title: 'Parrainage',
-                      description: 'Invitez vos amis et gagnez des récompenses',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ParrainageScreen(),
-                          ),
-                        ).then((_) => _loadProfile());
-                      },
-                    ),
-                    if (DelegationManager.instance.can(
-                      DelegationPermission.editAccount,
-                    ))
-                      _buildMenuCard(
-                        icon: 'assets/images/profil_pro/opt-1.png',
-                        backgroundColor: const Color(0xFFE6F7EF),
-                        title: 'Mon profil',
-                        description:
-                            'Gérez vos informations personnelles, votre présentation et vos réseaux sociaux',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const MonProfilParticulierScreen(),
-                            ),
-                          ).then((_) => _loadProfile());
-                        },
-                      ),
-                  ],
+                child: MySpaceMenu(
+                  isPro: false,
+                  onReturn: () {
+                    if (mounted) _loadProfile();
+                  },
                 ),
               ),
               const SizedBox(height: 24),
@@ -788,7 +728,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     _buildMenuOption(
                       icon: Icons.help_outline,
-                      iconColor: const Color(0xFF2E9B5B),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF2E9B5B),
+                      ),
                       title: 'Aide',
                       onTap: () {},
                       useProStyle: true,
@@ -796,7 +739,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 12),
                     _buildMenuOption(
                       icon: Icons.logout,
-                      iconColor: const Color(0xFF2E9B5B),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF2E9B5B),
+                      ),
                       title: _isLoggingOut ? 'Déconnexion...' : 'Deconnexion',
                       onTap: _isLoggingOut ? () {} : _handleLogout,
                       useProStyle: true,
@@ -845,7 +791,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.black.withValues(alpha: 0.5),
+                color: AdaptiveColors.foreground(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.5),
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -856,7 +805,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 description,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   height: 1.4,
                 ),
                 maxLines: 3,
@@ -874,14 +823,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
           ),
         ),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          ),
+        ),
       ],
     );
   }
@@ -894,13 +849,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     bool useProStyle = false,
   }) {
     final bool showShadow = useProStyle;
-    final Color containerColor = useProStyle ? Colors.white : Colors.grey[50]!;
+    final Color containerColor = useProStyle
+        ? AdaptiveColors.foreground(context, Colors.white)
+        : AdaptiveColors.foreground(context, Colors.grey[50]!);
     final Color effectiveIconColor = useProStyle
-        ? const Color(0xFF2E9B5B)
+        ? AdaptiveColors.foreground(context, const Color(0xFF2E9B5B))
         : iconColor;
     final Border? border = useProStyle
         ? null
-        : Border.all(color: Colors.grey[200]!);
+        : Border.all(color: AdaptiveColors.border(context, Colors.grey[200]!));
 
     return GestureDetector(
       onTap: onTap,
@@ -928,7 +885,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               padding: EdgeInsets.all(useProStyle ? 12 : 8),
               decoration: BoxDecoration(
                 color: useProStyle
-                    ? const Color(0xFF2E9B5B).withValues(alpha: 0.1)
+                    ? AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF2E9B5B),
+                      ).withValues(alpha: 0.1)
                     : iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -948,15 +908,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontWeight: FontWeight.w500,
                     ).copyWith(
                       color: useProStyle
-                          ? Colors.black.withValues(alpha: 0.5)
-                          : const Color(0xFF616161),
+                          ? AdaptiveColors.surface(
+                              context,
+                              Colors.black,
+                            ).withValues(alpha: 0.5)
+                          : AdaptiveColors.surface(
+                              context,
+                              const Color(0xFF616161),
+                            ),
                     ),
               ),
             ),
             Icon(
               Icons.arrow_forward_ios,
               size: useProStyle ? 18 : 16,
-              color: useProStyle ? const Color(0xFF2E9B5B) : Colors.grey[400],
+              color: useProStyle
+                  ? AdaptiveColors.foreground(context, const Color(0xFF2E9B5B))
+                  : AdaptiveColors.foreground(context, Colors.grey[400]),
             ),
           ],
         ),

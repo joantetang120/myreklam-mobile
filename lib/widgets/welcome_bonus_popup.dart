@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class WelcomeBonusPopup extends StatefulWidget {
@@ -113,11 +114,11 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
       scale: _scaleAnimation,
       child: Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.transparent,
+        backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
@@ -156,12 +157,15 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                 opacity: _fadeAnimation,
                 child: SlideTransition(
                   position: _slideAnimation,
-                  child: const Text(
+                  child: Text(
                     'Félicitations !',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1B8D4B),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1B8D4B),
+                      ),
                     ),
                   ),
                 ),
@@ -176,9 +180,12 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                   child: RichText(
                     textAlign: TextAlign.center,
                     text: TextSpan(
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
-                        color: Color(0xFF616161),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF616161),
+                        ),
                         height: 1.5,
                       ),
                       children: [
@@ -194,16 +201,20 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                                     horizontal: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(
-                                      0xFF1B8D4B,
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      const Color(0xFF1B8D4B),
                                     ).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text(
                                     '${widget.mysAmount} My\'s',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1B8D4B),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF1B8D4B),
+                                      ),
                                       fontSize: 20,
                                     ),
                                   ),
@@ -225,10 +236,13 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                 opacity: _fadeAnimation,
                 child: SlideTransition(
                   position: _slideAnimation,
-                  child: const Text(
+                  child: Text(
                     'Utilisez-les pour profiter de nos services.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AdaptiveColors.foreground(context, Colors.grey),
+                    ),
                   ),
                 ),
               ),
@@ -244,26 +258,33 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1B8D4B),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF1B8D4B),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                         elevation: 4,
-                        shadowColor: const Color(
-                          0xFF1B8D4B,
+                        shadowColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF1B8D4B),
                         ).withValues(alpha: 0.4),
                       ),
                       onPressed: () {
                         _pulseController.stop();
                         widget.onClose();
                       },
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
                             'Continuer',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -271,7 +292,10 @@ class _WelcomeBonusPopupState extends State<WelcomeBonusPopup>
                           SizedBox(width: 8),
                           Icon(
                             Icons.arrow_forward,
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             size: 20,
                           ),
                         ],

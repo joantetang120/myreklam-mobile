@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/services/token_storage.dart';
@@ -94,11 +95,23 @@ class MessageBubble extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: deletedForEveryone
                       ? (isSent
-                            ? const Color(0xFFFFB74D).withValues(alpha: 0.4)
-                            : const Color(0xFFF5F5F5).withValues(alpha: 0.6))
+                            ? AdaptiveColors.surface(
+                                context,
+                                const Color(0xFFFFB74D),
+                              ).withValues(alpha: 0.4)
+                            : AdaptiveColors.surface(
+                                context,
+                                const Color(0xFFF5F5F5),
+                              ).withValues(alpha: 0.6))
                       : (isSent
-                            ? const Color(0xFFFFB74D)
-                            : const Color(0xFFF5F5F5)),
+                            ? AdaptiveColors.surface(
+                                context,
+                                const Color(0xFFFFB74D),
+                              )
+                            : AdaptiveColors.surface(
+                                context,
+                                const Color(0xFFF5F5F5),
+                              )),
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(16),
                     topRight: const Radius.circular(16),
@@ -123,8 +136,14 @@ class MessageBubble extends StatelessWidget {
                             Icons.block,
                             size: 14,
                             color: isSent
-                                ? Colors.white.withValues(alpha: 0.7)
-                                : Colors.grey[500],
+                                ? AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ).withValues(alpha: 0.7)
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[500],
+                                  ),
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -133,8 +152,14 @@ class MessageBubble extends StatelessWidget {
                               fontSize: 13,
                               fontStyle: FontStyle.italic,
                               color: isSent
-                                  ? Colors.white.withValues(alpha: 0.7)
-                                  : Colors.grey[500],
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ).withValues(alpha: 0.7)
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[500],
+                                    ),
                             ),
                           ),
                         ],
@@ -172,8 +197,11 @@ class MessageBubble extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           color: isSent
-                              ? Colors.white
-                              : const Color(0xFF616161),
+                              ? AdaptiveColors.foreground(context, Colors.white)
+                              : AdaptiveColors.foreground(
+                                  context,
+                                  const Color(0xFF616161),
+                                ),
                           height: 1.4,
                         ),
                       ),
@@ -186,8 +214,14 @@ class MessageBubble extends StatelessWidget {
                               fontSize: 10,
                               fontStyle: FontStyle.italic,
                               color: isSent
-                                  ? Colors.white.withValues(alpha: 0.6)
-                                  : Colors.grey[500],
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ).withValues(alpha: 0.6)
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[500],
+                                    ),
                             ),
                           ),
                         ),
@@ -201,8 +235,14 @@ class MessageBubble extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11,
                             color: isSent
-                                ? Colors.white.withValues(alpha: 0.8)
-                                : Colors.grey[600],
+                                ? AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ).withValues(alpha: 0.8)
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                           ),
                         ),
                         if (isSent && !deletedForEveryone) ...[
@@ -211,8 +251,14 @@ class MessageBubble extends StatelessWidget {
                             Icons.done_all,
                             size: 14,
                             color: isRead
-                                ? const Color(0xFF2196F3)
-                                : Colors.white.withValues(alpha: 0.6),
+                                ? AdaptiveColors.foreground(
+                                    context,
+                                    const Color(0xFF2196F3),
+                                  )
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ).withValues(alpha: 0.6),
                           ),
                         ],
                       ],
@@ -249,14 +295,26 @@ class _AnnoncePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = isSent
-        ? Colors.white.withValues(alpha: 0.4)
-        : const Color(0xFF3AAE5E).withValues(alpha: 0.4);
+        ? AdaptiveColors.foreground(
+            context,
+            Colors.white,
+          ).withValues(alpha: 0.4)
+        : AdaptiveColors.foreground(
+            context,
+            const Color(0xFF3AAE5E),
+          ).withValues(alpha: 0.4);
     final labelColor = isSent
-        ? Colors.white.withValues(alpha: 0.85)
-        : const Color(0xFF3AAE5E);
+        ? AdaptiveColors.foreground(
+            context,
+            Colors.white,
+          ).withValues(alpha: 0.85)
+        : AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
     final subtitleColor = isSent
-        ? Colors.white.withValues(alpha: 0.7)
-        : Colors.grey[600];
+        ? AdaptiveColors.foreground(
+            context,
+            Colors.white,
+          ).withValues(alpha: 0.7)
+        : AdaptiveColors.foreground(context, Colors.grey[600]);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -313,7 +371,9 @@ class _AnnoncePreview extends StatelessWidget {
                   child: Icon(
                     Icons.image_outlined,
                     size: 20,
-                    color: isSent ? Colors.white54 : Colors.grey,
+                    color: isSent
+                        ? AdaptiveColors.foreground(context, Colors.white54)
+                        : AdaptiveColors.foreground(context, Colors.grey),
                   ),
                 ),
               ),
@@ -339,11 +399,20 @@ class _StoryReplyPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final borderColor = isSent
-        ? Colors.white.withValues(alpha: 0.4)
-        : Colors.grey.withValues(alpha: 0.4);
+        ? AdaptiveColors.foreground(
+            context,
+            Colors.white,
+          ).withValues(alpha: 0.4)
+        : AdaptiveColors.foreground(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.4);
     final labelColor = isSent
-        ? Colors.white.withValues(alpha: 0.85)
-        : const Color(0xFF3AAE5E);
+        ? AdaptiveColors.foreground(
+            context,
+            Colors.white,
+          ).withValues(alpha: 0.85)
+        : AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -383,8 +452,11 @@ class _StoryReplyPreview extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     color: isSent
-                        ? Colors.white.withValues(alpha: 0.7)
-                        : Colors.grey[600],
+                        ? AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ).withValues(alpha: 0.7)
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                   ),
                 ),
               ],
@@ -406,7 +478,9 @@ class _StoryReplyPreview extends StatelessWidget {
                   child: Icon(
                     Icons.image_outlined,
                     size: 20,
-                    color: isSent ? Colors.white54 : Colors.grey,
+                    color: isSent
+                        ? AdaptiveColors.foreground(context, Colors.white54)
+                        : AdaptiveColors.foreground(context, Colors.grey),
                   ),
                 ),
               ),

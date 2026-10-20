@@ -1,4 +1,7 @@
+import 'package:myreklam/theme/app_theme.dart';
+import 'package:myreklam/utils/profile_occupation.dart';
 import 'dart:async';
+import 'package:myreklam/widgets/additional_social_links.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -156,10 +159,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                 },
                 child: Text(
                   authorInfo.displayName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: Color(0xFF333333),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF333333),
+                    ),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -167,7 +173,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               ),
               Text(
                 '${authorInfo.accountType} • ${widget.timeAgo}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -222,10 +231,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           border: Border(
             bottom: BorderSide(
-              color: Colors.grey.withValues(alpha: 0.2),
+              color: AdaptiveColors.border(
+                context,
+                Colors.grey,
+              ).withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -251,7 +263,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                     Container(
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.grey[200]!),
+                          bottom: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey[200]!,
+                            ),
+                          ),
                         ),
                       ),
                       padding: EdgeInsets.only(bottom: 4),
@@ -279,7 +296,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                     text: widget.reposter.displayName,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[800],
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[800],
+                                      ),
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -287,7 +307,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                     text: ' a republié ce contenu',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[600],
+                                      ),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -315,9 +338,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   children: [
                     Text(
                       displayContent,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                         height: 1.4,
                       ),
                     ),
@@ -330,7 +356,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             _isExpanded ? '...moins' : '...plus',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -348,9 +377,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
                     displayContent,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Color(0xFF333333),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF333333),
+                      ),
                       height: 1.4,
                     ),
                   ),
@@ -360,7 +392,9 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(
+                    color: AdaptiveColors.border(context, Colors.grey[300]!),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -383,7 +417,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                               '${widget.author.displayName} • ${widget.timeAgo}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[700],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[700],
+                                ),
                                 fontWeight: FontWeight.w600,
                               ),
                               maxLines: 1,
@@ -401,9 +438,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                           widget.content.length > 200
                               ? '${widget.content.substring(0, 200)}...'
                               : widget.content,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF555555),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF555555),
+                            ),
                             height: 1.4,
                           ),
                         ),
@@ -585,12 +625,18 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             ),
                       if (remaining > 0)
                         Container(
-                          color: Colors.black54,
+                          color: AdaptiveColors.surface(
+                            context,
+                            Colors.black54,
+                          ),
                           alignment: Alignment.center,
                           child: Text(
                             '+$remaining',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                             ),
@@ -864,13 +910,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.45),
+                  color: AdaptiveColors.surface(
+                    context,
+                    Colors.black,
+                  ).withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   _formatDuration(remaining),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -888,13 +937,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.45),
+                    color: AdaptiveColors.surface(
+                      context,
+                      Colors.black,
+                    ).withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     _isMuted ? Icons.volume_off : Icons.volume_up,
                     size: 16,
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                   ),
                 ),
               ),
@@ -907,7 +959,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
     if (_isLoading) {
       return _wrapWithConstraints(
         Container(
-          color: Colors.grey[300],
+          color: AdaptiveColors.surface(context, Colors.grey[300]),
           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
       );
@@ -927,13 +979,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
           Center(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.play_circle_outline,
                 size: 40,
-                color: Colors.white,
+                color: AdaptiveColors.foreground(context, Colors.white),
               ),
             ),
           ),
@@ -945,7 +1000,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
   Widget _buildFallback() {
     return _wrapWithConstraints(
       Container(
-        color: Colors.grey[300],
+        color: AdaptiveColors.surface(context, Colors.grey[300]),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -953,7 +1008,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
               Icon(
                 Icons.play_circle_outline,
                 size: 40,
-                color: Colors.grey[700],
+                color: AdaptiveColors.foreground(context, Colors.grey[700]),
               ),
             ],
           ),
@@ -982,13 +1037,16 @@ class _CarouselMediaItemWidget extends StatelessWidget {
           // Smaller play icon overlay for carousel
           Container(
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: AdaptiveColors.surface(
+                context,
+                Colors.black,
+              ).withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.play_circle_outline,
               size: 24,
-              color: Colors.white,
+              color: AdaptiveColors.foreground(context, Colors.white),
             ),
           ),
         ],
@@ -1036,18 +1094,21 @@ class _ExpandableDescriptionStatefulState
                 text: text.length > 100
                     ? '${text.substring(0, 100)}... '
                     : text,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                   height: 1.4,
                 ),
               ),
               if (text.length > 100)
-                const TextSpan(
+                TextSpan(
                   text: 'voir plus',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1056,9 +1117,9 @@ class _ExpandableDescriptionStatefulState
         ),
         secondChild: Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Color(0xFF666666),
+            color: AdaptiveColors.foreground(context, Color(0xFF666666)),
             height: 1.4,
           ),
         ),
@@ -1443,7 +1504,10 @@ class _ParticulierPublicViewScreenState
                   ? 'Vous suivez maintenant cet utilisateur'
                   : 'Vous ne suivez plus cet utilisateur',
             ),
-            backgroundColor: const Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(
+              context,
+              const Color(0xFF3AAE5E),
+            ),
           ),
         );
       }
@@ -1451,7 +1515,10 @@ class _ParticulierPublicViewScreenState
       if (mounted) {
         setState(() => _isLoadingFollow = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
+          ),
         );
       }
     }
@@ -1573,12 +1640,24 @@ class _ParticulierPublicViewScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+            child: Text(
+              'Annuler',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-            child: const Text('Bloquer', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AdaptiveColors.surface(context, Colors.orange),
+            ),
+            child: Text(
+              'Bloquer',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.white),
+              ),
+            ),
           ),
         ],
       ),
@@ -1590,7 +1669,7 @@ class _ParticulierPublicViewScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$displayName a été bloqué'),
-        backgroundColor: Colors.orange,
+        backgroundColor: AdaptiveColors.surface(context, Colors.orange),
       ),
     );
     Navigator.pop(context);
@@ -1653,7 +1732,9 @@ class _ParticulierPublicViewScreenState
                     : () => Navigator.pop(dialogContext),
                 child: Text(
                   'Annuler',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ),
               ElevatedButton(
@@ -1679,9 +1760,12 @@ class _ParticulierPublicViewScreenState
                           if (!mounted || !dialogContext.mounted) return;
                           Navigator.pop(dialogContext);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            SnackBar(
                               content: Text('Signalement envoye'),
-                              backgroundColor: Color(0xFF3AAE5E),
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
                             ),
                           );
                         } catch (e) {
@@ -1695,23 +1779,34 @@ class _ParticulierPublicViewScreenState
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.redAccent,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: isSubmitting
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'Signaler',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
               ),
             ],
@@ -1755,18 +1850,21 @@ class _ParticulierPublicViewScreenState
     final postsCount = userData is Map ? (userData['posts_count'] ?? 0) : 0;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
       appBar: AppBar(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF3AAE5E)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Profil',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -1776,7 +1874,10 @@ class _ParticulierPublicViewScreenState
             ? null
             : [
                 PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, color: Colors.black),
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: AdaptiveColors.foreground(context, Colors.black),
+                  ),
                   onSelected: (value) {
                     if (value == 'report') {
                       _showReportReasonDialog();
@@ -1785,32 +1886,52 @@ class _ParticulierPublicViewScreenState
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'block',
                       child: Row(
                         children: [
-                          Icon(Icons.block, color: Colors.orange, size: 20),
+                          Icon(
+                            Icons.block,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.orange,
+                            ),
+                            size: 20,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             'Bloquer cet utilisateur',
-                            style: TextStyle(color: Colors.orange),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.orange,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'report',
                       child: Row(
                         children: [
                           Icon(
                             Icons.report_outlined,
-                            color: Colors.red,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red,
+                            ),
                             size: 20,
                           ),
                           SizedBox(width: 8),
                           Text(
                             'Signaler le compte',
-                            style: TextStyle(color: Colors.red),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.red,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -1842,10 +1963,13 @@ class _ParticulierPublicViewScreenState
                           bottom: 20,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AdaptiveColors.surface(context, Colors.white),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(0xFF3AAE5E),
+                            color: AdaptiveColors.border(
+                              context,
+                              const Color(0xFF3AAE5E),
+                            ),
                             width: 2,
                           ),
                         ),
@@ -1853,10 +1977,13 @@ class _ParticulierPublicViewScreenState
                           children: [
                             Text(
                               displayName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF333333),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF333333),
+                                ),
                               ),
                             ),
                             if (_employmentLine(profile) != null) ...[
@@ -1864,19 +1991,31 @@ class _ParticulierPublicViewScreenState
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(
-                                    Icons.work_outline,
+                                  Icon(
+                                    (profile is Map &&
+                                            (profile['career_statuses']
+                                                        as List? ??
+                                                    [])
+                                                .contains('student'))
+                                        ? Icons.school_outlined
+                                        : Icons.work_outline,
                                     size: 14,
-                                    color: Color(0xFF666666),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF666666),
+                                    ),
                                   ),
                                   const SizedBox(width: 4),
                                   Flexible(
                                     child: Text(
                                       _employmentLine(profile)!,
                                       textAlign: TextAlign.center,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 13,
-                                        color: Color(0xFF666666),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Color(0xFF666666),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1892,7 +2031,10 @@ class _ParticulierPublicViewScreenState
                                 Container(
                                   width: 1,
                                   height: 30,
-                                  color: Colors.grey[300],
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    Colors.grey[300],
+                                  ),
                                   margin: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                   ),
@@ -1901,7 +2043,10 @@ class _ParticulierPublicViewScreenState
                                 Container(
                                   width: 1,
                                   height: 30,
-                                  color: Colors.grey[300],
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    Colors.grey[300],
+                                  ),
                                   margin: const EdgeInsets.symmetric(
                                     horizontal: 16,
                                   ),
@@ -1916,13 +2061,19 @@ class _ParticulierPublicViewScreenState
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF3AAE5E),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFF3AAE5E),
+                                ),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Particulier',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -1941,7 +2092,10 @@ class _ParticulierPublicViewScreenState
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: const Color(0xFF3AAE5E),
+                                color: AdaptiveColors.border(
+                                  context,
+                                  const Color(0xFF3AAE5E),
+                                ),
                                 width: 2,
                               ),
                             ),
@@ -1962,37 +2116,60 @@ class _ParticulierPublicViewScreenState
                             if (facebookUrl != null && facebookUrl.isNotEmpty)
                               _buildSocialIcon(
                                 FontAwesomeIcons.facebook,
-                                const Color(0xFF1877F2),
+                                AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFF1877F2),
+                                ),
                                 facebookUrl,
                               ),
                             if (instagramUrl != null && instagramUrl.isNotEmpty)
                               _buildSocialIcon(
                                 FontAwesomeIcons.instagram,
-                                const Color(0xFFE1306C),
+                                AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFE1306C),
+                                ),
                                 instagramUrl,
                               ),
                             if (youtubeUrl != null && youtubeUrl.isNotEmpty)
                               _buildSocialIcon(
                                 FontAwesomeIcons.youtube,
-                                const Color(0xFFFF0000),
+                                AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFFF0000),
+                                ),
                                 youtubeUrl,
                               ),
                             if (linkedinUrl != null && linkedinUrl.isNotEmpty)
                               _buildSocialIcon(
                                 FontAwesomeIcons.linkedin,
-                                const Color(0xFF0A66C2),
+                                AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFF0A66C2),
+                                ),
                                 linkedinUrl,
                               ),
                             if (snapchatUrl != null && snapchatUrl.isNotEmpty)
                               _buildSocialIcon(
                                 FontAwesomeIcons.snapchat,
-                                const Color(0xFFFEE101),
+                                AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFFEE101),
+                                ),
                                 snapchatUrl,
                               ),
                           ],
                         ),
                       ),
                     ],
+                  ),
+                  AdditionalSocialLinks(
+                    links: socialLinks,
+                    profileId:
+                        widget.userId ??
+                        (profile is Map
+                            ? profile['user_id']?.toString()
+                            : null),
                   ),
                   // Message and Suivre buttons - only show when viewing other users' profiles
                   if (!_isViewingOwnProfile)
@@ -2010,8 +2187,14 @@ class _ParticulierPublicViewScreenState
                               ),
                               label: const Text('Message'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF3AAE5E),
-                                foregroundColor: Colors.white,
+                                backgroundColor: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFF3AAE5E),
+                                ),
+                                foregroundColor: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 12,
                                 ),
@@ -2035,7 +2218,10 @@ class _ParticulierPublicViewScreenState
                                         strokeWidth: 2,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
-                                              Color(0xFF3AAE5E),
+                                              AdaptiveColors.foreground(
+                                                context,
+                                                Color(0xFF3AAE5E),
+                                              ),
                                             ),
                                       ),
                                     )
@@ -2047,9 +2233,15 @@ class _ParticulierPublicViewScreenState
                                     ),
                               label: Text(_isFollowing ? 'Suivi' : 'Suivre'),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF3AAE5E),
-                                side: const BorderSide(
-                                  color: Color(0xFF3AAE5E),
+                                foregroundColor: AdaptiveColors.foreground(
+                                  context,
+                                  const Color(0xFF3AAE5E),
+                                ),
+                                side: BorderSide(
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    Color(0xFF3AAE5E),
+                                  ),
                                 ),
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 12,
@@ -2073,15 +2265,27 @@ class _ParticulierPublicViewScreenState
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF8A40).withValues(alpha: 0.15),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFEF8A40),
+                      ).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: TabBar(
                       controller: _tabController,
                       indicatorSize: TabBarIndicatorSize.tab,
-                      dividerColor: Colors.transparent,
-                      labelColor: Colors.white,
-                      unselectedLabelColor: const Color(0xFF666666),
+                      dividerColor: AdaptiveColors.border(
+                        context,
+                        Colors.transparent,
+                      ),
+                      labelColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.white,
+                      ),
+                      unselectedLabelColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF666666),
+                      ),
                       labelStyle: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -2092,7 +2296,10 @@ class _ParticulierPublicViewScreenState
                       ),
                       labelPadding: EdgeInsets.zero,
                       indicator: BoxDecoration(
-                        color: const Color(0xFFEF8A40),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFEF8A40),
+                        ),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       tabs: [
@@ -2147,13 +2354,19 @@ class _ParticulierPublicViewScreenState
       children: [
         Text(
           value.toString(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF333333),
+            color: AdaptiveColors.foreground(context, Color(0xFF333333)),
           ),
         ),
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          ),
+        ),
       ],
     );
   }
@@ -2183,14 +2396,7 @@ class _ParticulierPublicViewScreenState
   }
 
   /// "Emploi chez Entreprise" line (LinkedIn-style), or null if neither set.
-  String? _employmentLine(dynamic profile) {
-    if (profile is! Map) return null;
-    final job = profile['job_title']?.toString().trim() ?? '';
-    final company = profile['company_name']?.toString().trim() ?? '';
-    if (job.isEmpty && company.isEmpty) return null;
-    if (job.isNotEmpty && company.isNotEmpty) return '$job chez $company';
-    return job.isNotEmpty ? job : company;
-  }
+  String? _employmentLine(dynamic profile) => profileOccupationLine(profile);
 
   Widget _buildPresentationTab() {
     final profile = _profileResponse?['profile'];
@@ -2205,7 +2411,7 @@ class _ParticulierPublicViewScreenState
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AdaptiveColors.surface(context, Colors.white),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -2223,15 +2429,21 @@ class _ParticulierPublicViewScreenState
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Colors.black,
+                    ).withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   bio?.trim().isNotEmpty == true ? bio! : 'Aucune présentation',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF666666),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF666666),
+                    ),
                     height: 1.6,
                   ),
                 ),
@@ -2259,7 +2471,10 @@ class _ParticulierPublicViewScreenState
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Colors.black,
+                    ).withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -2289,7 +2504,12 @@ class _ParticulierPublicViewScreenState
           if (_isLoadingAnnonces)
             const Center(child: CircularProgressIndicator())
           else if (_annoncesError != null)
-            Text(_annoncesError!, style: const TextStyle(color: Colors.red))
+            Text(
+              _annoncesError!,
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.red),
+              ),
+            )
           else if (_selectedAnnonceFilter == 'Tout')
             Column(
               children: [
@@ -2302,9 +2522,14 @@ class _ParticulierPublicViewScreenState
                       Padding(
                         padding: EdgeInsets.symmetric(vertical: 60),
                         child: Center(
-                          child: const Text(
+                          child: Text(
                             'Aucune annonce',
-                            style: TextStyle(color: Color(0xFF666666)),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF666666),
+                              ),
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -2346,7 +2571,12 @@ class _ParticulierPublicViewScreenState
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Column(
                 children: [
-                  Text(_postsError!, style: const TextStyle(color: Colors.red)),
+                  Text(
+                    _postsError!,
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.red),
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => _loadPosts(),
@@ -2363,7 +2593,9 @@ class _ParticulierPublicViewScreenState
                   _isViewingOwnProfile
                       ? "Vous n'avez pas encore publié de post."
                       : "Aucun post disponible pour l'instant.",
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
               ),
             )
@@ -2389,7 +2621,10 @@ class _ParticulierPublicViewScreenState
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.black.withValues(alpha: 0.5),
+              color: AdaptiveColors.foreground(
+                context,
+                Colors.black,
+              ).withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 12),
@@ -2407,7 +2642,9 @@ class _ParticulierPublicViewScreenState
                 children: [
                   Text(
                     _documentsError!,
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.red),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextButton(
@@ -2418,11 +2655,13 @@ class _ParticulierPublicViewScreenState
               ),
             )
           else if (_documents.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 40),
               child: Text(
                 "Aucun document visible.",
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
                 textAlign: TextAlign.center,
               ),
             )
@@ -2447,26 +2686,26 @@ class _ParticulierPublicViewScreenState
     switch (type) {
       case 'cv':
         iconData = Icons.description;
-        iconColor = const Color(0xFF3AAE5E);
+        iconColor = AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
         break;
       case 'lettre':
         iconData = Icons.mail;
-        iconColor = const Color(0xFFEF8A40);
+        iconColor = AdaptiveColors.foreground(context, const Color(0xFFEF8A40));
         break;
       case 'portfolio':
         iconData = Icons.folder;
-        iconColor = const Color(0xFF2196F3);
+        iconColor = AdaptiveColors.foreground(context, const Color(0xFF2196F3));
         break;
       default:
         iconData = Icons.insert_drive_file;
-        iconColor = Colors.grey;
+        iconColor = AdaptiveColors.foreground(context, Colors.grey);
     }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -2494,10 +2733,13 @@ class _ParticulierPublicViewScreenState
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF333333),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF333333),
+                    ),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -2505,7 +2747,10 @@ class _ParticulierPublicViewScreenState
                 const SizedBox(height: 4),
                 Text(
                   type.toUpperCase(),
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ],
             ),
@@ -2513,7 +2758,9 @@ class _ParticulierPublicViewScreenState
           if (_isViewingOwnProfile)
             Icon(
               isVisible ? Icons.visibility : Icons.visibility_off,
-              color: isVisible ? const Color(0xFF3AAE5E) : Colors.grey,
+              color: isVisible
+                  ? AdaptiveColors.foreground(context, const Color(0xFF3AAE5E))
+                  : AdaptiveColors.foreground(context, Colors.grey),
               size: 20,
             ),
         ],
@@ -2524,14 +2771,16 @@ class _ParticulierPublicViewScreenState
   Widget _buildBonPlansList() {
     final items = _bonPlans;
     if (items.isEmpty) {
-      return const Column(
+      return Column(
         children: [
           Padding(
             padding: EdgeInsets.symmetric(vertical: 60),
             child: Center(
               child: Text(
                 'Aucune annonce',
-                style: TextStyle(color: Color(0xFF666666)),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -2545,14 +2794,16 @@ class _ParticulierPublicViewScreenState
   Widget _buildEventsList() {
     final items = _events;
     if (items.isEmpty) {
-      return const Column(
+      return Column(
         children: [
           Padding(
             padding: EdgeInsets.symmetric(vertical: 60),
             child: Center(
               child: Text(
                 'Aucune annonce',
-                style: TextStyle(color: Color(0xFF666666)),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -2566,14 +2817,16 @@ class _ParticulierPublicViewScreenState
   Widget _buildDemandesList() {
     final items = _demandes;
     if (items.isEmpty) {
-      return const Column(
+      return Column(
         children: [
           Padding(
             padding: EdgeInsets.symmetric(vertical: 60),
             child: Center(
               child: Text(
                 'Aucune annonce',
-                style: TextStyle(color: Color(0xFF666666)),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -2594,7 +2847,7 @@ class _ParticulierPublicViewScreenState
         if (loadingProgress == null) return child;
         return Container(
           height: 220,
-          color: Colors.grey[100],
+          color: AdaptiveColors.surface(context, Colors.grey[100]),
           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         );
       },
@@ -2602,11 +2855,11 @@ class _ParticulierPublicViewScreenState
         debugPrint('Image load error: $error');
         return Container(
           height: 220,
-          color: Colors.grey[200],
-          child: const Center(
+          color: AdaptiveColors.surface(context, Colors.grey[200]),
+          child: Center(
             child: Icon(
               Icons.image_not_supported,
-              color: Colors.grey,
+              color: AdaptiveColors.foreground(context, Colors.grey),
               size: 40,
             ),
           ),
@@ -2704,7 +2957,7 @@ class _ParticulierPublicViewScreenState
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.grey[300],
+            color: AdaptiveColors.surface(context, Colors.grey[300]),
             image:
                 avatarUrl != null &&
                     avatarUrl.isNotEmpty &&
@@ -2724,7 +2977,11 @@ class _ParticulierPublicViewScreenState
                       : null),
           ),
           child: avatarUrl == null || avatarUrl.isEmpty
-              ? Icon(Icons.person, size: 16, color: Colors.grey[600])
+              ? Icon(
+                  Icons.person,
+                  size: 16,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                )
               : null,
         ),
         const SizedBox(width: 8),
@@ -2737,7 +2994,7 @@ class _ParticulierPublicViewScreenState
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
+                color: AdaptiveColors.foreground(context, Colors.grey[800]),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -2747,15 +3004,18 @@ class _ParticulierPublicViewScreenState
                 margin: const EdgeInsets.only(top: 2),
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3AAE5E),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
+                child: Text(
                   'PRO',
                   style: TextStyle(
                     fontSize: 7,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                   ),
                 ),
               ),
@@ -2815,14 +3075,14 @@ class _ParticulierPublicViewScreenState
     final result = await showModalBottomSheet<String?>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, modalSetState) {
             return Container(
               height: MediaQuery.of(ctx).size.height * 0.85,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
@@ -2833,7 +3093,7 @@ class _ParticulierPublicViewScreenState
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: AdaptiveColors.surface(context, Colors.grey[300]),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -2842,13 +3102,16 @@ class _ParticulierPublicViewScreenState
                     padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
                     child: Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             'Republier cette publication',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF333333),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF333333),
+                              ),
                             ),
                           ),
                         ),
@@ -2887,17 +3150,23 @@ class _ParticulierPublicViewScreenState
                                     children: [
                                       Text(
                                         userName,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 15,
-                                          color: Color(0xFF333333),
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Color(0xFF333333),
+                                          ),
                                         ),
                                       ),
                                       Text(
                                         'Public',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[500],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[500],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -2918,18 +3187,27 @@ class _ParticulierPublicViewScreenState
                                 hintText:
                                     'Ajoutez un commentaire à votre republication...',
                                 hintStyle: TextStyle(
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                   fontSize: 14,
                                 ),
                                 border: InputBorder.none,
                                 counterStyle: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                 ),
                               ),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF333333),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF333333),
+                                ),
                                 height: 1.5,
                               ),
                               onChanged: (_) => modalSetState(() {}),
@@ -2940,7 +3218,12 @@ class _ParticulierPublicViewScreenState
                             Container(
                               margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey[300]!),
+                                border: Border.all(
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    Colors.grey[300]!,
+                                  ),
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -2966,7 +3249,10 @@ class _ParticulierPublicViewScreenState
                                             '$originalAuthorName • $originalTimeAgo',
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.grey[600],
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Colors.grey[600],
+                                              ),
                                               fontWeight: FontWeight.w500,
                                             ),
                                             maxLines: 1,
@@ -2988,9 +3274,12 @@ class _ParticulierPublicViewScreenState
                                         originalContent.length > 200
                                             ? '${originalContent.substring(0, 200)}...'
                                             : originalContent,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 13,
-                                          color: Color(0xFF555555),
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Color(0xFF555555),
+                                          ),
                                           height: 1.4,
                                         ),
                                       ),
@@ -3011,10 +3300,17 @@ class _ParticulierPublicViewScreenState
                                             fit: BoxFit.cover,
                                             errorBuilder: (_, __, ___) =>
                                                 Container(
-                                                  color: Colors.grey[200],
+                                                  color: AdaptiveColors.surface(
+                                                    context,
+                                                    Colors.grey[200],
+                                                  ),
                                                   child: Icon(
                                                     Icons.image,
-                                                    color: Colors.grey[400],
+                                                    color:
+                                                        AdaptiveColors.foreground(
+                                                          context,
+                                                          Colors.grey[400],
+                                                        ),
                                                   ),
                                                 ),
                                           ),
@@ -3039,8 +3335,15 @@ class _ParticulierPublicViewScreenState
                       MediaQuery.of(ctx).padding.bottom + 10,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(top: BorderSide(color: Colors.grey[200]!)),
+                      color: AdaptiveColors.surface(context, Colors.white),
+                      border: Border(
+                        top: BorderSide(
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey[200]!,
+                          ),
+                        ),
+                      ),
                     ),
                     child: SizedBox(
                       width: double.infinity,
@@ -3069,35 +3372,50 @@ class _ParticulierPublicViewScreenState
                                     ScaffoldMessenger.of(ctx).showSnackBar(
                                       SnackBar(
                                         content: Text(e.toString()),
-                                        backgroundColor: Colors.redAccent,
+                                        backgroundColor: AdaptiveColors.surface(
+                                          context,
+                                          Colors.redAccent,
+                                        ),
                                       ),
                                     );
                                   }
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3AAE5E),
-                          disabledBackgroundColor: Colors.grey[300],
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ),
+                          disabledBackgroundColor: AdaptiveColors.surface(
+                            context,
+                            Colors.grey[300],
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
                           elevation: 0,
                         ),
                         child: isSubmitting
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 'Republier',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               ),
                       ),
@@ -3114,9 +3432,9 @@ class _ParticulierPublicViewScreenState
     if (result == 'success') {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Publication republiée avec succès'),
-            backgroundColor: Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
             duration: Duration(seconds: 2),
           ),
         );
@@ -3189,7 +3507,7 @@ class _ParticulierPublicViewScreenState
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (ctx, modalSetState) {
@@ -3348,21 +3666,34 @@ class _ParticulierPublicViewScreenState
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () =>
                           Navigator.pop(context, editController.text),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enregistrer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -3398,7 +3729,10 @@ class _ParticulierPublicViewScreenState
                       content: Text(
                         'Erreur lors de la modification: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -3425,20 +3759,33 @@ class _ParticulierPublicViewScreenState
                       onPressed: () => Navigator.pop(context, false),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          Colors.redAccent,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Supprimer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -3491,7 +3838,10 @@ class _ParticulierPublicViewScreenState
                       content: Text(
                         'Erreur lors de la suppression: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -3566,7 +3916,10 @@ class _ParticulierPublicViewScreenState
                                       style: TextStyle(
                                         fontSize: isReply ? 12 : 13,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF333333),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          const Color(0xFF333333),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -3574,7 +3927,10 @@ class _ParticulierPublicViewScreenState
                                       _buildTimeAgo(createdAt),
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey[400],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[400],
+                                        ),
                                       ),
                                     ),
                                     if (isOwner) ...[
@@ -3600,20 +3956,28 @@ class _ParticulierPublicViewScreenState
                                                   ],
                                                 ),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'delete',
                                                 child: Row(
                                                   children: [
                                                     Icon(
                                                       Icons.delete,
                                                       size: 18,
-                                                      color: Colors.redAccent,
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Colors.redAccent,
+                                                          ),
                                                     ),
                                                     SizedBox(width: 8),
                                                     Text(
                                                       'Supprimer',
                                                       style: TextStyle(
-                                                        color: Colors.redAccent,
+                                                        color:
+                                                            AdaptiveColors.foreground(
+                                                              context,
+                                                              Colors.redAccent,
+                                                            ),
                                                       ),
                                                     ),
                                                   ],
@@ -3631,7 +3995,10 @@ class _ParticulierPublicViewScreenState
                                         child: Icon(
                                           Icons.more_horiz,
                                           size: 18,
-                                          color: Colors.grey[400],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[400],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -3640,9 +4007,12 @@ class _ParticulierPublicViewScreenState
                                 const SizedBox(height: 4),
                                 Text(
                                   body,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF4F4F4F),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF4F4F4F),
+                                    ),
                                     height: 1.4,
                                   ),
                                 ),
@@ -3662,8 +4032,14 @@ class _ParticulierPublicViewScreenState
                                                 : Icons.thumb_up_alt_outlined,
                                             size: 14,
                                             color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[400],
+                                                ? AdaptiveColors.foreground(
+                                                    context,
+                                                    const Color(0xFF3AAE5E),
+                                                  )
+                                                : AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.grey[400],
+                                                  ),
                                           ),
                                           const SizedBox(width: 3),
                                           Text(
@@ -3671,8 +4047,14 @@ class _ParticulierPublicViewScreenState
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: userReaction == 'like'
-                                                  ? const Color(0xFF3AAE5E)
-                                                  : Colors.grey[500],
+                                                  ? AdaptiveColors.foreground(
+                                                      context,
+                                                      const Color(0xFF3AAE5E),
+                                                    )
+                                                  : AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.grey[500],
+                                                    ),
                                             ),
                                           ),
                                         ],
@@ -3696,7 +4078,10 @@ class _ParticulierPublicViewScreenState
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2E9B5B),
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              const Color(0xFF2E9B5B),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -3732,8 +4117,8 @@ class _ParticulierPublicViewScreenState
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(ctx).size.height * 0.75,
                 ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Colors.white),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(24),
                     topRight: Radius.circular(24),
@@ -3746,7 +4131,10 @@ class _ParticulierPublicViewScreenState
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[300],
+                        ),
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
@@ -3757,29 +4145,38 @@ class _ParticulierPublicViewScreenState
                       ),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Commentaires',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2A2A2A),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF2A2A2A),
+                                ),
                               ),
                             ),
                           ),
                           GestureDetector(
                             onTap: () => Navigator.pop(ctx),
-                            child: const Icon(
+                            child: Icon(
                               Icons.close,
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                               size: 22,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Comment list
                     Expanded(
                       child: isLoading
@@ -3788,15 +4185,25 @@ class _ParticulierPublicViewScreenState
                           ? Center(
                               child: Text(
                                 'Erreur: $error',
-                                style: const TextStyle(color: Colors.red),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.red,
+                                  ),
+                                ),
                               ),
                             )
                           : comments.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
                                 'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey,
+                                  ),
+                                ),
                               ),
                             )
                           : ListView.separated(
@@ -3811,7 +4218,10 @@ class _ParticulierPublicViewScreenState
                                   buildCommentItem(comments[i]),
                             ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Reply indicator
                     if (replyingToId != null)
                       Container(
@@ -3819,14 +4229,20 @@ class _ParticulierPublicViewScreenState
                           horizontal: 16,
                           vertical: 6,
                         ),
-                        color: const Color(0xFFF5F5F5),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFF5F5F5),
+                        ),
                         child: Row(
                           children: [
                             Text(
                               'Répondre à $replyingToName',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                             const Spacer(),
@@ -3835,10 +4251,13 @@ class _ParticulierPublicViewScreenState
                                 replyingToId = null;
                                 replyingToName = null;
                               }),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close,
                                 size: 16,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                           ],
@@ -3855,12 +4274,15 @@ class _ParticulierPublicViewScreenState
                                 horizontal: 14,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F5),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFF5F5F5),
+                                ),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: TextField(
                                 controller: commentCtrl,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   isCollapsed: true,
                                   contentPadding: EdgeInsets.symmetric(
                                     vertical: 10,
@@ -3868,7 +4290,10 @@ class _ParticulierPublicViewScreenState
                                   border: InputBorder.none,
                                   hintText: 'Écrire un commentaire...',
                                   hintStyle: TextStyle(
-                                    color: Color(0xFF9E9E9E),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF9E9E9E),
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -3882,14 +4307,20 @@ class _ParticulierPublicViewScreenState
                             onTap: submitComment,
                             child: Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF3AAE5E),
+                              decoration: BoxDecoration(
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  Color(0xFF3AAE5E),
+                                ),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.send,
                                 size: 18,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -3989,7 +4420,12 @@ class _ParticulierPublicViewScreenState
               Icon(
                 isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                 size: 18,
-                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                color: isLiked
+                    ? AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      )
+                    : AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               GestureDetector(
@@ -3998,7 +4434,12 @@ class _ParticulierPublicViewScreenState
                   data.likesCount.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    color: isLiked
+                        ? AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -4015,12 +4456,15 @@ class _ParticulierPublicViewScreenState
               Icon(
                 Icons.chat_bubble_outline,
                 size: 17,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               Text(
                 data.commentsCount.toString(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -4032,13 +4476,23 @@ class _ParticulierPublicViewScreenState
               onTap: () => _repostPost(entityId, originalPostData: postData),
               child: Row(
                 children: [
-                  Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
+                  Icon(
+                    Icons.repeat_rounded,
+                    size: 18,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     data.repostsCount > 0
                         ? data.repostsCount.toString()
                         : 'Republier',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -4095,12 +4549,16 @@ class _ParticulierPublicViewScreenState
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.white),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -4222,19 +4680,19 @@ class _ParticulierPublicViewScreenState
           PostTag(
             title: category,
             icon: Icons.local_offer_outlined,
-            color: Colors.orange,
+            color: AdaptiveColors.foreground(context, Colors.orange),
           ),
         if (subCategory.isNotEmpty)
           PostTag(
             title: subCategory,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (type.isNotEmpty)
           PostTag(
             title: type,
             icon: Icons.check_circle_outline,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
       ];
 
@@ -4354,10 +4812,15 @@ class _ParticulierPublicViewScreenState
                 SnackBar(
                   content: Text(
                     favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -4372,9 +4835,9 @@ class _ParticulierPublicViewScreenState
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('Erreur lors de la mise à jour des favoris'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -4384,7 +4847,7 @@ class _ParticulierPublicViewScreenState
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -4412,10 +4875,13 @@ class _ParticulierPublicViewScreenState
                     ),
                     child: Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -4439,10 +4905,13 @@ class _ParticulierPublicViewScreenState
                                 bp['prix_final'] == null
                             ? Text(
                                 '${bp['prix_avant_reduction']}€',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2E9B5B),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF2E9B5B),
+                                  ),
                                 ),
                               )
                             : (type == 'Infos pouvoir d\'achat'
@@ -4454,10 +4923,13 @@ class _ParticulierPublicViewScreenState
                                                   .isNotEmpty
                                           ? '${bp['prix_final']}€'
                                           : 'Gratuit',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2E9B5B),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Color(0xFF2E9B5B),
+                                        ),
                                       ),
                                     )),
                         if (bp['prix_final'] != null &&
@@ -4470,7 +4942,10 @@ class _ParticulierPublicViewScreenState
                             '${bp['prix_avant_reduction']}€',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                               decoration: TextDecoration.lineThrough,
                             ),
                           ),
@@ -4484,15 +4959,21 @@ class _ParticulierPublicViewScreenState
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF5722),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFFF5722),
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 '-${_calculateDiscount(bp['prix_avant_reduction'], bp['prix_final'])}%',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
@@ -4510,30 +4991,40 @@ class _ParticulierPublicViewScreenState
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2E9B5B,
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFF2E9B5B),
                                 ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: const Color(0xFF2E9B5B),
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    const Color(0xFF2E9B5B),
+                                  ),
                                   width: 1,
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.local_offer_outlined,
                                     size: 14,
-                                    color: Color(0xFF2E9B5B),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF2E9B5B),
+                                    ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Code promo: ${bp['promo_code']}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF2E9B5B),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF2E9B5B),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -4555,7 +5046,10 @@ class _ParticulierPublicViewScreenState
                           Icon(
                             Icons.store_outlined,
                             size: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -4563,7 +5057,10 @@ class _ParticulierPublicViewScreenState
                               '$locationType chez $merchantName',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -4574,14 +5071,20 @@ class _ParticulierPublicViewScreenState
                           Icon(
                             Icons.access_time,
                             size: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             _buildTimeAgo(createdAt),
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                         ],
@@ -4620,8 +5123,14 @@ class _ParticulierPublicViewScreenState
                         icon: const Icon(Icons.visibility_outlined, size: 18),
                         label: const Text('VOIR LE BON PLAN'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF9800),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFF9800),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -4642,7 +5151,10 @@ class _ParticulierPublicViewScreenState
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AdaptiveColors.surface(
+                        context,
+                        Colors.white,
+                      ).withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -4658,12 +5170,20 @@ class _ParticulierPublicViewScreenState
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           )
                         : Icon(
                             favoris ? Icons.favorite : Icons.favorite_border,
-                            color: favoris ? Colors.red : Colors.grey[600],
+                            color: favoris
+                                ? AdaptiveColors.foreground(context, Colors.red)
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                             size: 20,
                           ),
                   ),
@@ -4675,7 +5195,7 @@ class _ParticulierPublicViewScreenState
                 right: 12,
                 child: _buildTypeTag(
                   'Bon Plan',
-                  const Color(0xFFFF9800),
+                  AdaptiveColors.surface(context, const Color(0xFFFF9800)),
                   Icons.local_offer,
                 ),
               ),
@@ -4929,19 +5449,19 @@ class _ParticulierPublicViewScreenState
           PostTag(
             title: categoryCode,
             icon: Icons.local_offer_outlined,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
         if (subCategoryCode != null && subCategoryCode.isNotEmpty)
           PostTag(
             title: subCategoryCode,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (formatType != null && formatType.isNotEmpty)
           PostTag(
             title: formatType,
             icon: Icons.videocam_outlined,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -5124,10 +5644,15 @@ class _ParticulierPublicViewScreenState
                 SnackBar(
                   content: Text(
                     favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -5166,7 +5691,7 @@ class _ParticulierPublicViewScreenState
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Erreur: $e'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -5212,13 +5737,19 @@ class _ParticulierPublicViewScreenState
 
   Color _categoryColor(String label) {
     final lower = label.toLowerCase();
-    if (lower.contains('urgent')) return Colors.redAccent;
-    if (lower.contains('emploi')) return const Color(0xFF3AAE5E);
-    if (lower.contains('stage')) return const Color(0xFF2196F3);
-    if (lower.contains('formation')) return const Color(0xFF9C27B0);
-    if (lower.contains('immobilier')) return const Color(0xFFFF5722);
-    if (lower.contains('service')) return const Color(0xFFFF9800);
-    return const Color(0xFF3AAE5E);
+    if (lower.contains('urgent'))
+      return AdaptiveColors.foreground(context, Colors.redAccent);
+    if (lower.contains('emploi'))
+      return AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
+    if (lower.contains('stage'))
+      return AdaptiveColors.foreground(context, const Color(0xFF2196F3));
+    if (lower.contains('formation'))
+      return AdaptiveColors.foreground(context, const Color(0xFF9C27B0));
+    if (lower.contains('immobilier'))
+      return AdaptiveColors.foreground(context, const Color(0xFFFF5722));
+    if (lower.contains('service'))
+      return AdaptiveColors.foreground(context, const Color(0xFFFF9800));
+    return AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
   }
 
   Future<void> _navigateToDemandeDetail(Map<String, dynamic> d) async {
@@ -5290,19 +5821,19 @@ class _ParticulierPublicViewScreenState
         PostTag(
           title: categoryLabel,
           icon: Icons.label_outline,
-          color: Colors.grey,
+          color: AdaptiveColors.foreground(context, Colors.grey),
         ),
         if (urgent)
           PostTag(
             title: 'Urgent',
             icon: Icons.warning_amber_rounded,
-            color: Colors.red,
+            color: AdaptiveColors.foreground(context, Colors.red),
           ),
         if (nationwide)
           PostTag(
             title: 'Toute la France',
             icon: Icons.public,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -5311,7 +5842,7 @@ class _ParticulierPublicViewScreenState
       final subTag = PostTag(
         title: subTagsCat,
         icon: Icons.label_outline,
-        color: Colors.orange,
+        color: AdaptiveColors.foreground(context, Colors.orange),
       );
 
       final currentUserId = _currentUserId;
@@ -5467,10 +5998,15 @@ class _ParticulierPublicViewScreenState
                 SnackBar(
                   content: Text(
                     favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -5484,7 +6020,7 @@ class _ParticulierPublicViewScreenState
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Erreur: ${e.toString()}'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -5766,16 +6302,31 @@ class _ParticulierPublicViewScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.grey[600]),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          ),
           const SizedBox(width: 4),
-          Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[700]),
+            ),
+          ),
         ],
       ),
     );
@@ -5789,10 +6340,14 @@ class _ParticulierPublicViewScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF2A8143) : Colors.white,
+          color: isSelected
+              ? AdaptiveColors.surface(context, const Color(0xFF2A8143))
+              : AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF2A8143) : Colors.grey[300]!,
+            color: isSelected
+                ? AdaptiveColors.border(context, const Color(0xFF2A8143))
+                : AdaptiveColors.border(context, Colors.grey[300]!),
           ),
         ),
         child: Text(
@@ -5800,8 +6355,11 @@ class _ParticulierPublicViewScreenState
           style: TextStyle(
             fontSize: 12,
             color: isSelected
-                ? Colors.white
-                : Colors.black.withValues(alpha: 0.5),
+                ? AdaptiveColors.foreground(context, Colors.white)
+                : AdaptiveColors.foreground(
+                    context,
+                    Colors.black,
+                  ).withValues(alpha: 0.5),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),

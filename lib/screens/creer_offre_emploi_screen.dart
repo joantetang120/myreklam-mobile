@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
 import 'package:myreklam/widgets/announcement_ai_panel.dart';
 import 'package:myreklam/utils/announcement_ai_values.dart';
@@ -472,7 +473,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
             ),
             child: const Text('Continuer'),
           ),
@@ -618,8 +622,11 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(context, Colors.red),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
               ),
               child: const Text('Quitter'),
             ),
@@ -647,7 +654,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, 'save'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
             ),
             child: const Text('Sauvegarder'),
           ),
@@ -1432,7 +1442,9 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red : const Color(0xFF3AAE5E),
+        backgroundColor: isError
+            ? AdaptiveColors.surface(context, Colors.red)
+            : AdaptiveColors.surface(context, const Color(0xFF3AAE5E)),
       ),
     );
   }
@@ -1448,7 +1460,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -1467,7 +1479,11 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                       ); // pop detail screen back to listing
                     }
                   },
-                  child: const Icon(Icons.close, color: Colors.grey, size: 22),
+                  child: Icon(
+                    Icons.close,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                    size: 22,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1500,10 +1516,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                 _isEditMode
                     ? 'Offre d\'emploi modifiée'
                     : 'Offre d\'emploi publiée',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                 ),
               ),
               const SizedBox(height: 10),
@@ -1514,7 +1530,9 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: mediaSuccess ? Colors.grey[600] : Colors.red[700],
+                  color: mediaSuccess
+                      ? AdaptiveColors.foreground(context, Colors.grey[600])
+                      : AdaptiveColors.foreground(context, Colors.red[700]),
                   height: 1.4,
                 ),
               ),
@@ -1536,7 +1554,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       },
       child: AppLayout(
         currentIndex: 2,
-        backgroundColor: const Color(0xFFF9F9FB),
+        backgroundColor: AdaptiveColors.surface(
+          context,
+          const Color(0xFFF9F9FB),
+        ),
         onTabTapped: (index) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
@@ -1563,9 +1584,12 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                       alignment: Alignment.centerLeft,
                       child: GestureDetector(
                         onTap: _handleBackButton,
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back,
-                          color: Color(0xFF616161),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF616161),
+                          ),
                           size: 24,
                         ),
                       ),
@@ -1574,11 +1598,14 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                       _isEditMode
                           ? 'Modifier l\'offre d\'emploi'
                           : 'Créer une offre d\'emploi',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontFamily: 'Manjari',
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF424242),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF424242),
+                        ),
                       ),
                     ),
                   ],
@@ -1591,7 +1618,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                   _isEditMode
                       ? 'Modifiez votre offre d\'emploi'
                       : 'Publiez votre offre et trouvez les meilleurs talents',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1617,12 +1647,21 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: Colors.grey.withValues(alpha: 0.3),
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey,
+                            ).withValues(alpha: 0.3),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Précédent',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -1648,8 +1687,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       borderRadius: BorderRadius.circular(6),
       child: LinearProgressIndicator(
         value: (_currentStep + 1) / (_totalSteps + 1),
-        backgroundColor: Colors.grey[200],
-        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF9800)),
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[200]),
+        valueColor: AlwaysStoppedAnimation<Color>(
+          AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+        ),
         minHeight: 6,
       ),
     );
@@ -1658,10 +1699,12 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
   Widget _buildCurrentStep() {
     // Show loading state
     if (_isMetaLoading) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+          ),
         ),
       );
     }
@@ -1674,7 +1717,11 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              Icon(
+                Icons.error_outline,
+                color: AdaptiveColors.foreground(context, Colors.red),
+                size: 48,
+              ),
               const SizedBox(height: 16),
               Text(_metaError!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
@@ -1710,7 +1757,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1720,7 +1767,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               SizedBox(height: 8),
@@ -1728,7 +1775,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                 'Ajoutez des photos de votre entreprise ou de l’équipe pour donner un aperçu concret aux candidats.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                   height: 1.4,
                 ),
               ),
@@ -1738,7 +1785,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
             ],
@@ -1792,10 +1839,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       onTap: _pickMedia,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF0F9F4),
+          color: AdaptiveColors.surface(context, const Color(0xFFF0F9F4)),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFF3AAE5E),
+            color: AdaptiveColors.border(context, const Color(0xFF3AAE5E)),
             width: 2,
             style: BorderStyle.solid,
           ),
@@ -1806,22 +1853,25 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.camera_alt,
                 size: 40,
-                color: Color(0xFF3AAE5E),
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
               ),
             ),
             const SizedBox(height: 12),
             Text(
               'Ajouter ${_selectedMediaFiles.isEmpty ? "17" : "des"} photos',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF3AAE5E),
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
               ),
             ),
           ],
@@ -1851,7 +1901,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             child: Container(
               width: double.infinity,
               height: double.infinity,
-              color: const Color(0xFFF5F5F5),
+              color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
               child: _buildMediaPreview(file),
             ),
           ),
@@ -1862,18 +1912,18 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3AAE5E),
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Photo de couverture',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1888,7 +1938,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -1898,10 +1948,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
                   size: 18,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                 ),
               ),
             ),
@@ -1933,15 +1983,18 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             child: Container(
               width: double.infinity,
               height: double.infinity,
-              color: const Color(0xFFF5F5F5),
+              color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
               child: isVideo
                   ? Container(
-                      color: Colors.black87,
-                      child: const Center(
+                      color: AdaptiveColors.surface(context, Colors.black87),
+                      child: Center(
                         child: Icon(
                           Icons.play_circle_outline,
                           size: 40,
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                         ),
                       ),
                     )
@@ -1950,11 +2003,14 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
-                      errorBuilder: (_, __, ___) => const Center(
+                      errorBuilder: (_, __, ___) => Center(
                         child: Icon(
                           Icons.broken_image,
                           size: 40,
-                          color: Colors.grey,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey,
+                          ),
                         ),
                       ),
                     ),
@@ -1967,18 +2023,18 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3AAE5E),
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Photo de couverture',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1993,7 +2049,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -2003,10 +2059,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
                   size: 18,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                 ),
               ),
             ),
@@ -2030,19 +2086,23 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       );
     } else if (isVideo) {
       return Container(
-        color: Colors.black87,
-        child: const Center(
-          child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white),
+        color: AdaptiveColors.surface(context, Colors.black87),
+        child: Center(
+          child: Icon(
+            Icons.play_circle_outline,
+            size: 40,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
         ),
       );
     } else {
       return Container(
-        color: const Color(0xFFF9FAFB),
-        child: const Center(
+        color: AdaptiveColors.surface(context, const Color(0xFFF9FAFB)),
+        child: Center(
           child: Icon(
             Icons.insert_drive_file,
             size: 40,
-            color: Color(0xFF3AAE5E),
+            color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
           ),
         ),
       );
@@ -2205,7 +2265,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
                   'Chargement des catégories...',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                    fontSize: 13,
+                  ),
                 ),
               )
             else
@@ -2224,7 +2287,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                   }
                 },
                 hint: _buildRequiredHint('Choisissez une catégorie'),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
               ),
             const SizedBox(height: 16),
             if (_selectedCategoryId != null && functionNames.isNotEmpty)
@@ -2246,7 +2312,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                   }
                 },
                 hint: _buildRequiredHint('Choisissez une fonction'),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
               ),
           ],
         ),
@@ -2285,8 +2354,13 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           child: OutlinedButton(
             onPressed: _nextStep,
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFFF9800),
-              side: const BorderSide(color: Color(0xFFFF9800)),
+              foregroundColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFFFF9800),
+              ),
+              side: BorderSide(
+                color: AdaptiveColors.border(context, Color(0xFFFF9800)),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -2333,14 +2407,21 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       'Décrivez le poste, les missions et l\'environnement de travail.',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
                         fontStyle: FontStyle.italic,
                         height: 1.3,
                       ),
@@ -2366,7 +2447,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                     ],
               onChanged: (val) => setState(() => _selectedContractType = val),
               hint: _buildRequiredHint('Type de contrat'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
               labelType: 'contract_types',
             ),
             const SizedBox(height: 12),
@@ -2378,7 +2462,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                   : ['FULL_TIME', 'PART_TIME'],
               onChanged: (val) => setState(() => _selectedWorkTime = val),
               hint: _buildRequiredHint('Temps de travail'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
               labelType: 'work_times',
             ),
             const SizedBox(height: 12),
@@ -2434,11 +2521,17 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                 items: const ['Brut', 'Net'],
                 onChanged: (val) =>
                     setState(() => _isSalaryGross = val == 'Brut'),
-                hint: const Text(
+                hint: Text(
                   'Type de salaire',
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
               ),
               const SizedBox(height: 12),
               _buildDropdownField(
@@ -2448,11 +2541,17 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                     ? _salaryPeriods
                     : ['YEAR', 'MONTH', 'DAY', 'HOUR'],
                 onChanged: (val) => setState(() => _selectedSalaryPeriod = val),
-                hint: const Text(
+                hint: Text(
                   'Indice temporel',
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
                 labelType: 'salary_periods',
               ),
               const SizedBox(height: 12),
@@ -2562,9 +2661,14 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFE8F4FD),
+                color: AdaptiveColors.surface(context, const Color(0xFFE8F4FD)),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFB3D9F2)),
+                border: Border.all(
+                  color: AdaptiveColors.border(
+                    context,
+                    const Color(0xFFB3D9F2),
+                  ),
+                ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2573,19 +2677,25 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                     value: _showCompanyProfile,
                     onChanged: (val) =>
                         setState(() => _showCompanyProfile = val ?? false),
-                    activeColor: const Color(0xFF3AAE5E),
+                    activeColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Afficher la présentation de mon entreprise (Qui sommes-nous ?) sur mon annonce depuis mon profil entreprise',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF424242),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF424242),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -2593,7 +2703,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                           'Cette option affichera automatiquement la description de votre entreprise configurée dans votre tableau de bord',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[700],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[700],
+                            ),
                           ),
                         ),
                       ],
@@ -2643,7 +2756,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                     ],
               onChanged: (val) => setState(() => _selectedEducationLevel = val),
               hint: _buildRequiredHint('Niveau d\'études requis'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
               labelType: 'education_levels',
             ),
             const SizedBox(height: 12),
@@ -2662,7 +2778,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               onChanged: (val) =>
                   setState(() => _selectedExperienceLevel = val),
               hint: _buildRequiredHint('Niveau d\'expérience requis'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
               labelType: 'experience_levels',
             ),
             const SizedBox(height: 12),
@@ -2679,14 +2798,21 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       'Décrivez le profil idéal pour ce poste: compétences techniques, qualités humaines, expériences spécifiques',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
                         fontStyle: FontStyle.italic,
                         height: 1.3,
                       ),
@@ -2726,21 +2852,25 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           child: Container(
             width: 50,
             height: 50,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFFE6F7EF),
+              color: AdaptiveColors.surface(context, Color(0xFFE6F7EF)),
             ),
-            child: const Icon(Icons.check, color: Color(0xFF3AAE5E), size: 30),
+            child: Icon(
+              Icons.check,
+              color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+              size: 30,
+            ),
           ),
         ),
         const SizedBox(height: 12),
         Center(
           child: Text(
             _isEditMode ? 'Vérifiez vos modifications' : 'Vérifiez votre offre',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF424242),
+              color: AdaptiveColors.foreground(context, Color(0xFF424242)),
             ),
           ),
         ),
@@ -2749,7 +2879,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             _isEditMode
                 ? 'Relisez les informations avant de sauvegarder'
                 : 'Relisez les informations avant de publier votre offre d\'emploi',
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 11,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -2896,25 +3029,28 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFE6F7EF),
+            color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
             children: [
-              const Text(
+              Text(
                 'Accepter de recevoir des messages à propos de cette offre',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Les candidats pourront vous contacter pour en savoir plus sur le poste, le processus de recrutement ou les conditions proposées.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -2940,8 +3076,11 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           child: ElevatedButton(
             onPressed: _isSubmitting ? null : _submitJobOffer,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF9800),
-              foregroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFFF9800),
+              ),
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -2949,11 +3088,11 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               elevation: 0,
             ),
             child: _isSubmitting
-                ? const SizedBox(
+                ? SizedBox(
                     height: 20,
                     width: 20,
                     child: CircularProgressIndicator(
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       strokeWidth: 2,
                     ),
                   )
@@ -2984,10 +3123,13 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.grey.withValues(alpha: 0.3),
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.3),
           style: BorderStyle.solid,
           width: 1.5,
         ),
@@ -3006,16 +3148,22 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           ),
           const SizedBox(height: 16),
           // Texte principal
-          const Text(
+          Text(
             'Glissez-déposez vos fichiers ici',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF424242),
+              color: AdaptiveColors.foreground(context, Color(0xFF424242)),
             ),
           ),
           const SizedBox(height: 6),
-          Text('ou', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+          Text(
+            'ou',
+            style: TextStyle(
+              fontSize: 13,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
+          ),
           const SizedBox(height: 12),
           // Bouton parcourir
           InkWell(
@@ -3039,10 +3187,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               ),
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: AdaptiveColors.foreground(context, Colors.white),
                 ),
               ),
             ),
@@ -3051,7 +3199,10 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           // Formats acceptés
           Text(
             'Images (JPG, PNG, GIF) et vidéos (MP4, MOV) acceptées',
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 11,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
           ),
         ],
       ),
@@ -3079,7 +3230,9 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: AdaptiveColors.border(context, Colors.grey.shade300),
+            ),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -3087,11 +3240,14 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               final isSelected = selectedValues.contains(option);
 
               return Theme(
-                data: ThemeData(
-                  visualDensity: const VisualDensity(vertical: -4),
-                ),
+                data: Theme.of(
+                  context,
+                ).copyWith(visualDensity: const VisualDensity(vertical: -4)),
                 child: CheckboxListTile(
-                  side: const BorderSide(color: Colors.grey, width: 1),
+                  side: BorderSide(
+                    color: AdaptiveColors.border(context, Colors.grey),
+                    width: 1,
+                  ),
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   title: Text(
@@ -3135,13 +3291,21 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               title,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.black.withValues(alpha: 0.8),
+                color: AdaptiveColors.foreground(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.8),
                 fontFamily: 'Manjari',
                 fontWeight: FontWeight.bold,
               ),
             ),
             if (isRequired)
-              const Text(" *", style: TextStyle(color: Colors.red)),
+              Text(
+                " *",
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.red),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 2),
@@ -3162,7 +3326,9 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
+              border: Border.all(
+                color: AdaptiveColors.border(context, Colors.grey),
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -3170,7 +3336,9 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                   ? "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}"
                   : "Sélectionner une date",
               style: TextStyle(
-                color: selectedDate != null ? Colors.black : Colors.grey,
+                color: selectedDate != null
+                    ? AdaptiveColors.foreground(context, Colors.black)
+                    : AdaptiveColors.foreground(context, Colors.grey),
               ),
             ),
           ),
@@ -3190,9 +3358,14 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.1),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -3209,18 +3382,28 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.lightBlueAccent.withValues(alpha: 0.2),
+                  color: AdaptiveColors.surface(
+                    context,
+                    Colors.lightBlueAccent,
+                  ).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: Colors.lightBlueAccent, size: 20),
+                child: Icon(
+                  icon,
+                  color: AdaptiveColors.foreground(
+                    context,
+                    Colors.lightBlueAccent,
+                  ),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                   fontFamily: 'Manjari',
                 ),
               ),
@@ -3232,7 +3415,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               subtitle,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
                 height: 1.5,
               ),
             ),
@@ -3262,9 +3445,14 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
+        color: backgroundColor ?? AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
       ),
       child: DropdownButtonFormField<String>(
         initialValue: validValue,
@@ -3272,13 +3460,19 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             hint ??
             Text(
               label,
-              style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+              style: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[400]),
+              ),
             ),
         decoration: const InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 12),
         ),
-        icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
+        icon: Icon(
+          Icons.keyboard_arrow_down,
+          color: AdaptiveColors.foreground(context, Colors.grey[400]),
+        ),
         isExpanded: true,
         items: items
             .map(
@@ -3308,19 +3502,24 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF424242),
+            color: AdaptiveColors.foreground(context, Color(0xFF424242)),
             fontFamily: 'Manjari',
           ),
         ),
         ...values.map(
           (value) => Theme(
-            data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
+            data: Theme.of(
+              context,
+            ).copyWith(visualDensity: const VisualDensity(vertical: -4)),
             child: RadioListTile<T>(
               dense: true,
-              activeColor: const Color(0xFF3AAE5E),
+              activeColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
               contentPadding: EdgeInsets.zero,
               title: Text(
                 labelBuilder(value),
@@ -3342,14 +3541,14 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         text: text,
         style: TextStyle(
           fontSize: 13,
-          color: Colors.grey[500],
+          color: AdaptiveColors.foreground(context, Colors.grey[500]),
           fontFamily: 'Manjari',
         ),
-        children: const [
+        children: [
           TextSpan(
             text: ' *',
             style: TextStyle(
-              color: Color(0xFFFF6B6B),
+              color: AdaptiveColors.foreground(context, Color(0xFFFF6B6B)),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -3365,23 +3564,30 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       margin: const EdgeInsets.only(top: 8, bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E9),
+        color: AdaptiveColors.surface(context, const Color(0xFFE8F5E9)),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+          color: AdaptiveColors.border(
+            context,
+            const Color(0xFF4CAF50),
+          ).withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, color: Color(0xFF4CAF50), size: 18),
+          Icon(
+            Icons.info_outline,
+            color: AdaptiveColors.foreground(context, Color(0xFF4CAF50)),
+            size: 18,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               helperText,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF2E7D32),
+                color: AdaptiveColors.foreground(context, Color(0xFF2E7D32)),
                 height: 1.4,
               ),
             ),
@@ -3408,9 +3614,14 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: AdaptiveColors.border(
+                context,
+                Colors.grey,
+              ).withValues(alpha: 0.2),
+            ),
           ),
           child: TextField(
             controller: controller,
@@ -3430,14 +3641,17 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
             },
             decoration: InputDecoration(
               hintText: label,
-              hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[400]),
+              ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
               suffixText: suffix,
-              suffixStyle: const TextStyle(
+              suffixStyle: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
               ),
             ),
           ),
@@ -3465,9 +3679,14 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AdaptiveColors.surface(context, Colors.white),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: AdaptiveColors.border(
+                  context,
+                  Colors.grey,
+                ).withValues(alpha: 0.2),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3476,12 +3695,21 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                   padding: const EdgeInsets.only(left: 14, top: 10),
                   child: Text(
                     label,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                    ),
                   ),
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFF5F5F5),
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   margin: const EdgeInsets.symmetric(
@@ -3550,8 +3778,11 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       child: ElevatedButton(
         onPressed: _nextStep,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFF9800),
-          foregroundColor: Colors.white,
+          backgroundColor: AdaptiveColors.surface(
+            context,
+            const Color(0xFFFF9800),
+          ),
+          foregroundColor: AdaptiveColors.foreground(context, Colors.white),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -3581,9 +3812,14 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.15),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3595,15 +3831,15 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
                 title,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   fontWeight: FontWeight.w500,
                 ),
               ),
               GestureDetector(
                 onTap: onEdit,
-                child: const Icon(
+                child: Icon(
                   Icons.edit_outlined,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                   size: 18,
                 ),
               ),
@@ -3622,13 +3858,19 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
+          ),
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.right,
@@ -3653,20 +3895,39 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
                 color: isSelected
-                    ? const Color(0xFF3AAE5E)
-                    : Colors.grey.withValues(alpha: 0.4),
+                    ? AdaptiveColors.border(context, const Color(0xFF3AAE5E))
+                    : AdaptiveColors.border(
+                        context,
+                        Colors.grey,
+                      ).withValues(alpha: 0.4),
                 width: 1.5,
               ),
               color: isSelected
-                  ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
-                  : Colors.transparent,
+                  ? AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ).withValues(alpha: 0.1)
+                  : AdaptiveColors.surface(context, Colors.transparent),
             ),
             child: isSelected
-                ? const Icon(Icons.check, color: Color(0xFF3AAE5E), size: 16)
+                ? Icon(
+                    Icons.check,
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
+                    size: 16,
+                  )
                 : null,
           ),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: AdaptiveColors.foreground(context, Colors.grey[700]),
+            ),
+          ),
         ],
       ),
     );

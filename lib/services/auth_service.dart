@@ -3,6 +3,10 @@ import 'package:myreklam/services/push_notification_service.dart';
 import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/services/message_database.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -16,8 +20,16 @@ class AuthService {
     required String email,
     required String password,
     String? parrainageCode,
+    required String ageBand,
+    required bool termsAccepted,
   }) async {
-    final body = <String, dynamic>{'email': email, 'password': password};
+    final body = <String, dynamic>{
+      'email': email,
+      'password': password,
+      'age_band': ageBand,
+      'terms_accepted': termsAccepted,
+      'terms_version': '2026-10-10',
+    };
     if (parrainageCode != null && parrainageCode.isNotEmpty) {
       body['parrainage_code'] = parrainageCode;
     }
@@ -66,16 +78,55 @@ class AuthService {
   Future<Map<String, dynamic>> logout() async {
     // Unregister the device's FCM token first, while the auth token is still
     // valid, so this device stops receiving this user's push notifications.
-    await PushNotificationService.instance.unregisterToken();
     try {
+      await PushNotificationService.instance.unregisterToken();
       final response = await _api.authenticatedPost('/auth/logout');
       return response;
     } finally {
-      await TokenStorage.clearTokens();
-      await ReactionCacheService.clearCurrentUserCache();
+      await clearLocalAccountData();
+    }
+  }
+
+  static Future<void> clearLocalAccountData() async {
+    bool failed = false;
+    Future<void> attempt(Future<void> Function() cleanup) async {
+      try {
+        await cleanup();
+      } catch (_) {
+        failed = true;
+      }
+    }
+
+    try {
+      await attempt(TokenStorage.clearTokens);
+      await attempt(PushNotificationService.instance.clearLocalNotifications);
+      await attempt(ReactionCacheService.clearCurrentUserCache);
+      await attempt(MessageDatabase.instance.clearAllMessages);
+      await attempt(() async {
+        final temporaryDirectory = await getTemporaryDirectory();
+        for (final name in [
+          'myreklam_private_documents',
+          'myreklam_ai_imports',
+        ]) {
+          final directory = Directory('${temporaryDirectory.path}/$name');
+          if (await directory.exists()) {
+            await for (final file in directory.list(followLinks: false)) {
+              if (file is File) await attempt(file.delete);
+            }
+          }
+        }
+      });
+      await attempt(() async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
+      });
+    } finally {
       UserSession().clear();
-      // Note: We do NOT clear onboarding flags here
-      // Onboarding modal should only show once for new users
+    }
+    if (failed) {
+      throw StateError(
+        'Certaines données locales n’ont pas pu être effacées. Fermez puis relancez l’application avant d’utiliser un autre compte.',
+      );
     }
   }
 
@@ -149,11 +200,36 @@ class AuthService {
     required String provider,
     required String token,
     String? email,
+    String? ageBand,
+    Future<String?> Function()? confirmNewAccountAge,
+    Future<bool> Function()? confirmNewAccountTerms,
   }) async {
     final body = <String, dynamic>{'provider': provider, 'token': token};
     if (email != null) body['email'] = email;
+    if (ageBand != null) body['age_band'] = ageBand;
 
-    final response = await _api.post('/auth/social/$provider', body: body);
+    late Map<String, dynamic> response;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      try {
+        response = await _api.post('/auth/social/$provider', body: body);
+        break;
+      } on ApiException catch (error) {
+        if (attempt == 2) rethrow;
+        if (error.code == 'AGE_CONFIRMATION_REQUIRED' &&
+            confirmNewAccountAge != null) {
+          final age = await confirmNewAccountAge();
+          if (age == null) rethrow;
+          body['age_band'] = age;
+        } else if (error.code == 'TERMS_ACCEPTANCE_REQUIRED' &&
+            confirmNewAccountTerms != null) {
+          if (!await confirmNewAccountTerms()) rethrow;
+          body['terms_accepted'] = true;
+          body['terms_version'] = '2026-10-10';
+        } else {
+          rethrow;
+        }
+      }
+    }
 
     if (response['token'] != null) {
       await TokenStorage.saveTokens(

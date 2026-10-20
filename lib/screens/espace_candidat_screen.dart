@@ -1,4 +1,7 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:io';
+import 'package:myreklam/services/candidate_activity_service.dart';
+import 'package:myreklam/services/deep_link_service.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -37,6 +40,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
   // Candidatures data
   List<dynamic> _candidatures = [];
   bool _isLoadingCandidatures = true;
+  String? _candidaturesError;
 
   @override
   void initState() {
@@ -46,55 +50,27 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
   }
 
   Future<void> _loadCandidatures() async {
-    setState(() => _isLoadingCandidatures = true);
-
-    List<dynamic> allCandidatures = [];
-
-    // Fetch training subscriptions independently
-    try {
-      debugPrint('Fetching training subscriptions...');
-      final trainingResponse = await ApiClient().authenticatedGet(
-        '/trainings/my-subscriptions',
-      );
-      debugPrint('Training response: $trainingResponse');
-      if (trainingResponse['success'] == true) {
-        final trainings = trainingResponse['data'] as List<dynamic>? ?? [];
-        debugPrint('Found ${trainings.length} training subscriptions');
-        allCandidatures.addAll(trainings);
-      }
-    } catch (e, stackTrace) {
-      debugPrint('Error loading training subscriptions: $e');
-      debugPrint('Stack trace: $stackTrace');
-    }
-
-    // Fetch event participations independently
-    try {
-      debugPrint('Fetching event participations...');
-      final eventResponse = await ApiClient().authenticatedGet(
-        '/events/my-participations',
-      );
-      debugPrint('Event response: $eventResponse');
-      if (eventResponse['success'] == true) {
-        final events = eventResponse['data'] as List<dynamic>? ?? [];
-        debugPrint('Found ${events.length} event participations');
-        allCandidatures.addAll(events);
-      }
-    } catch (e, stackTrace) {
-      debugPrint('Error loading event participations: $e');
-      debugPrint('Stack trace: $stackTrace');
-    }
-
-    // Sort by date
-    allCandidatures.sort((a, b) {
-      final dateA = a['subscribed_at'] ?? a['participated_at'] ?? '';
-      final dateB = b['subscribed_at'] ?? b['participated_at'] ?? '';
-      return dateB.toString().compareTo(dateA.toString());
-    });
-
-    debugPrint('Total candidatures: ${allCandidatures.length}');
     setState(() {
-      _candidatures = allCandidatures;
+      _isLoadingCandidatures = true;
+      _candidaturesError = null;
+    });
+    final result = await CandidateActivityService().load();
+    if (!mounted) return;
+    const labels = {
+      'emploi': 'emplois',
+      'formation': 'formations',
+      'evenement': 'événements',
+    };
+    setState(() {
+      _candidatures = result.items;
       _isLoadingCandidatures = false;
+      if (result.failedTypes.isNotEmpty) {
+        final failed = result.failedTypes
+            .map((type) => labels[type] ?? type)
+            .join(', ');
+        _candidaturesError =
+            'Chargement incomplet : $failed. Veuillez réessayer.';
+      }
     });
   }
 
@@ -106,6 +82,10 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
       return;
     }
 
+    if (type == 'emploi') {
+      await DeepLinkService.instance.openEntity('job_offer', entityId);
+      return;
+    }
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -388,8 +368,8 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(context, Colors.red),
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
             ),
             child: const Text('Supprimer'),
           ),
@@ -405,6 +385,8 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         endpoint = '/trainings/subscriptions/$id';
       } else if (type == 'evenement') {
         endpoint = '/events/participations/$id';
+      } else if (type == 'emploi') {
+        endpoint = '/job-offers/applications/$id';
       } else {
         return;
       }
@@ -413,9 +395,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Candidature supprimée'),
-            backgroundColor: Color(0xFF2E9B5B),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF2E9B5B)),
           ),
         );
         _loadCandidatures();
@@ -425,7 +407,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de la suppression: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -573,8 +555,11 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
               _requestStoragePermission();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
-              foregroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
             ),
             child: const Text('Accorder la permission'),
           ),
@@ -602,8 +587,11 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
               openAppSettings();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
-              foregroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
             ),
             child: const Text('Ouvrir les paramètres'),
           ),
@@ -620,11 +608,11 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         // User denied permission - show explanation
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text(
                 'Permission de stockage nécessaire pour sélectionner des fichiers',
               ),
-              backgroundColor: Colors.orange,
+              backgroundColor: AdaptiveColors.surface(context, Colors.orange),
               duration: Duration(seconds: 3),
             ),
           );
@@ -686,7 +674,10 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                     ? 'Lettre'
                     : 'Portfolio'} ajouté avec succès',
               ),
-              backgroundColor: const Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
             ),
           );
         }
@@ -697,7 +688,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de l\'upload: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -734,9 +725,12 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('Document supprimé avec succès'),
-              backgroundColor: Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                Color(0xFF3AAE5E),
+              ),
             ),
           );
         }
@@ -747,7 +741,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de la suppression: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -831,22 +825,22 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         }
       },
       body: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AdaptiveColors.surface(context, Colors.white),
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
-              color: Color(0xFF616161),
+              color: AdaptiveColors.foreground(context, Color(0xFF616161)),
               size: 18,
             ),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
+          title: Text(
             'Espace Candidat',
             style: TextStyle(
-              color: Color(0xFF2D2D2D),
+              color: AdaptiveColors.foreground(context, Color(0xFF2D2D2D)),
               fontFamily: 'Manjari',
               fontWeight: FontWeight.bold,
               fontSize: 18,
@@ -856,10 +850,15 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         ),
         body: RefreshIndicator(
           onRefresh: _refreshData,
-          color: const Color(0xFFFF9800),
+          color: AdaptiveColors.surface(context, const Color(0xFFFF9800)),
           child: _isLoadingDocuments
-              ? const Center(
-                  child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+              ? Center(
+                  child: CircularProgressIndicator(
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFFF9800),
+                    ),
+                  ),
                 )
               : SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -877,14 +876,20 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
+                            color: AdaptiveColors.surface(
+                              context,
+                              Colors.grey[100],
+                            ),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             children: [
                               Icon(
                                 Icons.search,
-                                color: Colors.grey[400],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[400],
+                                ),
                                 size: 20,
                               ),
                               const SizedBox(width: 10),
@@ -892,7 +897,10 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                                 'Faire une recherche',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                 ),
                               ),
                             ],
@@ -908,7 +916,10 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
+                            color: AdaptiveColors.surface(
+                              context,
+                              Colors.grey[100],
+                            ),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -923,8 +934,14 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: _showDocuments
-                                          ? const Color(0xFFFF9800)
-                                          : Colors.transparent,
+                                          ? AdaptiveColors.surface(
+                                              context,
+                                              const Color(0xFFFF9800),
+                                            )
+                                          : AdaptiveColors.surface(
+                                              context,
+                                              Colors.transparent,
+                                            ),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Row(
@@ -935,8 +952,14 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                                           Icons.description_outlined,
                                           size: 16,
                                           color: _showDocuments
-                                              ? Colors.white
-                                              : Colors.grey[600],
+                                              ? AdaptiveColors.foreground(
+                                                  context,
+                                                  Colors.white,
+                                                )
+                                              : AdaptiveColors.foreground(
+                                                  context,
+                                                  Colors.grey[600],
+                                                ),
                                         ),
                                         const SizedBox(width: 6),
                                         Text(
@@ -945,8 +968,14 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                                             fontSize: 13,
                                             fontWeight: FontWeight.w600,
                                             color: _showDocuments
-                                                ? Colors.white
-                                                : Colors.grey[600],
+                                                ? AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.white,
+                                                  )
+                                                : AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.grey[600],
+                                                  ),
                                           ),
                                         ),
                                       ],
@@ -964,8 +993,14 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: !_showDocuments
-                                          ? const Color(0xFFFF9800)
-                                          : Colors.transparent,
+                                          ? AdaptiveColors.surface(
+                                              context,
+                                              const Color(0xFFFF9800),
+                                            )
+                                          : AdaptiveColors.surface(
+                                              context,
+                                              Colors.transparent,
+                                            ),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Row(
@@ -976,8 +1011,14 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                                           Icons.volume_up_outlined,
                                           size: 16,
                                           color: !_showDocuments
-                                              ? Colors.white
-                                              : Colors.grey[600],
+                                              ? AdaptiveColors.foreground(
+                                                  context,
+                                                  Colors.white,
+                                                )
+                                              : AdaptiveColors.foreground(
+                                                  context,
+                                                  Colors.grey[600],
+                                                ),
                                         ),
                                         const SizedBox(width: 6),
                                         Text(
@@ -986,8 +1027,14 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                                             fontSize: 13,
                                             fontWeight: FontWeight.w600,
                                             color: !_showDocuments
-                                                ? Colors.white
-                                                : Colors.grey[600],
+                                                ? AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.white,
+                                                  )
+                                                : AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.grey[600],
+                                                  ),
                                           ),
                                         ),
                                       ],
@@ -1021,15 +1068,21 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Show on profile toggle
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Text(
+              'Les documents rendus visibles peuvent être consultés par les membres connectés disposant d’un accès Premium. Vous pouvez retirer leur visibilité à tout moment. Les copies déjà téléchargées ne peuvent pas être effacées à distance.',
+            ),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Tout afficher sur le profil',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF2D2D2D),
+                  color: AdaptiveColors.foreground(context, Color(0xFF2D2D2D)),
                 ),
               ),
               Row(
@@ -1041,13 +1094,28 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                       child: Switch(
                         value: _showOnProfile,
                         onChanged: (val) => _updateGlobalVisibility(val),
-                        activeThumbColor: Colors.white,
-                        activeTrackColor: const Color(0xFFFF9800),
-                        trackOutlineColor: WidgetStateProperty.all(
-                          Colors.transparent,
+                        activeThumbColor: AdaptiveColors.foreground(
+                          context,
+                          Colors.white,
                         ),
-                        inactiveThumbColor: Colors.white,
-                        inactiveTrackColor: Colors.grey[300],
+                        activeTrackColor: AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFFFF9800),
+                        ),
+                        trackOutlineColor: WidgetStateProperty.all(
+                          AdaptiveColors.foreground(
+                            context,
+                            Colors.transparent,
+                          ),
+                        ),
+                        inactiveThumbColor: AdaptiveColors.foreground(
+                          context,
+                          Colors.white,
+                        ),
+                        inactiveTrackColor: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[300],
+                        ),
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
@@ -1058,7 +1126,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
                     size: 18,
-                    color: Colors.grey[500],
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
                   ),
                 ],
               ),
@@ -1068,7 +1136,10 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
           const SizedBox(height: 8),
           Text(
             'Activer ou désactiver la visibilité de ce document',
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 11,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
           ),
 
           const SizedBox(height: 20),
@@ -1140,14 +1211,21 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
 
           if (_isUploading) ...[
             const SizedBox(height: 20),
-            const Center(
+            Center(
               child: Column(
                 children: [
-                  CircularProgressIndicator(color: Color(0xFFFF9800)),
+                  CircularProgressIndicator(
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFFF9800),
+                    ),
+                  ),
                   SizedBox(height: 8),
                   Text(
                     'Upload en cours...',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.grey),
+                    ),
                   ),
                 ],
               ),
@@ -1179,7 +1257,10 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
           children: [
             Text(
               'Activer ou désactiver la visibilité de ce document',
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              style: TextStyle(
+                fontSize: 11,
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              ),
             ),
             Transform.scale(
               scale: 0.7,
@@ -1188,13 +1269,25 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                 child: Switch(
                   value: visibilityValue,
                   onChanged: onVisibilityChanged,
-                  activeThumbColor: Colors.white,
-                  activeTrackColor: const Color(0xFFFF9800),
-                  trackOutlineColor: WidgetStateProperty.all(
-                    Colors.transparent,
+                  activeThumbColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
                   ),
-                  inactiveThumbColor: Colors.white,
-                  inactiveTrackColor: Colors.grey[300],
+                  activeTrackColor: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFFFF9800),
+                  ),
+                  trackOutlineColor: WidgetStateProperty.all(
+                    AdaptiveColors.foreground(context, Colors.transparent),
+                  ),
+                  inactiveThumbColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
+                  inactiveTrackColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.grey[300],
+                  ),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
@@ -1205,7 +1298,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(
+              color: AdaptiveColors.border(context, Colors.grey[300]!),
+            ),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -1217,10 +1312,13 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF2D2D2D),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF2D2D2D),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1229,8 +1327,14 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         color: hasDocument
-                            ? const Color(0xFF3AAE5E)
-                            : Colors.grey[400],
+                            ? AdaptiveColors.foreground(
+                                context,
+                                const Color(0xFF3AAE5E),
+                              )
+                            : AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[400],
+                              ),
                         fontWeight: hasDocument
                             ? FontWeight.w500
                             : FontWeight.normal,
@@ -1247,13 +1351,19 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFEBEE),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFFFEBEE),
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.close,
                       size: 16,
-                      color: Color(0xFFE53935),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFFE53935),
+                      ),
                     ),
                   ),
                 ),
@@ -1270,8 +1380,14 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF3AAE5E),
-              side: const BorderSide(color: Color(0xFF3AAE5E), width: 1.5),
+              foregroundColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
+              side: BorderSide(
+                color: AdaptiveColors.border(context, Color(0xFF3AAE5E)),
+                width: 1.5,
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -1285,10 +1401,12 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
 
   Widget _buildCandidaturesTab() {
     if (_isLoadingCandidatures) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.all(16),
         child: Center(
-          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+          ),
         ),
       );
     }
@@ -1310,16 +1428,27 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Total count
+          if (_candidaturesError != null) ...[
+            Text(_candidaturesError!),
+            TextButton(
+              onPressed: _loadCandidatures,
+              child: const Text('Réessayer'),
+            ),
+          ],
           Row(
             children: [
-              Icon(Icons.list_alt, size: 16, color: Colors.grey[600]),
+              Icon(
+                Icons.list_alt,
+                size: 16,
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
               const SizedBox(width: 6),
               Text(
                 'Total : ${filteredCandidatures.length} Candidature(s) envoyée(s)',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey[700],
+                  color: AdaptiveColors.foreground(context, Colors.grey[700]),
                 ),
               ),
             ],
@@ -1329,17 +1458,21 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
           // Category label
           Text(
             'Sélectionner la catégorie',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
           ),
           const SizedBox(height: 10),
 
           // Filter chips
-          Row(
+          Wrap(
+            spacing: 6,
+            runSpacing: 8,
             children: [
               _buildFilterChip('Tout'),
-              const SizedBox(width: 6),
+              _buildFilterChip('Emploi'),
               _buildFilterChip('Formations'),
-              const SizedBox(width: 6),
               _buildFilterChip('Événements'),
             ],
           ),
@@ -1352,7 +1485,10 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                 padding: const EdgeInsets.all(32),
                 child: Text(
                   'Aucune candidature',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                 ),
               ),
             )
@@ -1366,6 +1502,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
               final date =
                   candidature['subscribed_at'] ??
                   candidature['participated_at'] ??
+                  candidature['created_at'] ??
                   '';
 
               String displayType;
@@ -1386,24 +1523,39 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
               switch (status) {
                 case 'confirmed':
                 case 'active':
+                case 'accepted':
                   statusText = 'Candidature acceptée';
-                  statusColor = const Color(0xFF4CAF50);
+                  statusColor = AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFF4CAF50),
+                  );
                   break;
                 case 'rejected':
                   statusText = 'Candidature refusée';
-                  statusColor = const Color(0xFFE53935);
+                  statusColor = AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFFE53935),
+                  );
                   break;
                 case 'pending':
                 default:
                   statusText = 'Candidature envoyée';
-                  statusColor = const Color(0xFFFF9800);
+                  statusColor = AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFFFF9800),
+                  );
               }
 
               final candidatureId = candidature['id'];
               final trainingId = candidature['training_id'];
               final eventId = candidature['event_id'];
-              final entityId = (type == 'formation' ? trainingId : eventId)
-                  ?.toString();
+              final entityId =
+                  (type == 'formation'
+                          ? trainingId
+                          : type == 'emploi'
+                          ? candidature['job_offer_id']
+                          : eventId)
+                      ?.toString();
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
@@ -1444,10 +1596,14 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFF9800) : Colors.white,
+          color: isSelected
+              ? AdaptiveColors.surface(context, const Color(0xFFFF9800))
+              : AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFFFF9800) : Colors.grey[300]!,
+            color: isSelected
+                ? AdaptiveColors.border(context, const Color(0xFFFF9800))
+                : AdaptiveColors.border(context, Colors.grey[300]!),
           ),
         ),
         child: Text(
@@ -1455,7 +1611,9 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : Colors.grey[600],
+            color: isSelected
+                ? AdaptiveColors.foreground(context, Colors.white)
+                : AdaptiveColors.foreground(context, Colors.grey[600]),
           ),
         ),
       ),
@@ -1478,9 +1636,11 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: AdaptiveColors.border(context, Colors.grey[200]!),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -1500,7 +1660,7 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: AdaptiveColors.surface(context, Colors.grey[200]),
                   shape: BoxShape.circle,
                   image: ownerAvatarUrl != null
                       ? DecorationImage(
@@ -1512,7 +1672,14 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                       : null,
                 ),
                 child: ownerAvatarUrl == null
-                    ? Icon(Icons.person, color: Colors.grey[400], size: 22)
+                    ? Icon(
+                        Icons.person,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[400],
+                        ),
+                        size: 22,
+                      )
                     : null,
               ),
               const SizedBox(width: 10),
@@ -1522,16 +1689,25 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2D2D2D),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF2D2D2D),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       ownerName,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[500],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -1551,13 +1727,19 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3E0),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFFF3E0),
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.chat_bubble_outline,
                     size: 16,
-                    color: Color(0xFFFF9800),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFFF9800),
+                    ),
                   ),
                 ),
               ),
@@ -1567,20 +1749,29 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFEBEE),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFFEBEE),
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.delete_outline,
                     size: 16,
-                    color: Color(0xFFE53935),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFE53935),
+                    ),
                   ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Divider(height: 1, color: Colors.grey[200]),
+          Divider(
+            height: 1,
+            color: AdaptiveColors.border(context, Colors.grey[200]),
+          ),
           const SizedBox(height: 12),
 
           // Footer
@@ -1593,33 +1784,52 @@ class _EspaceCandidatScreenState extends State<EspaceCandidatScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(typeIcon, size: 14, color: Colors.grey[400]),
+                  Icon(
+                    typeIcon,
+                    size: 14,
+                    color: AdaptiveColors.foreground(context, Colors.grey[400]),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     type,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[500],
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Icon(
                     Icons.calendar_today_outlined,
                     size: 14,
-                    color: Colors.grey[400],
+                    color: AdaptiveColors.foreground(context, Colors.grey[400]),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     date,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[500],
+                      ),
+                    ),
                   ),
                 ],
               ),
               GestureDetector(
                 onTap: onViewDetails,
-                child: const Text(
+                child: Text(
                   'Voir les détails',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFFF9800),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFFF9800),
+                    ),
                   ),
                 ),
               ),

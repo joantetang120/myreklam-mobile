@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class FullScreenImageViewer extends StatefulWidget {
@@ -46,7 +47,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
           return Container(
-            color: Colors.black,
+            color: AdaptiveColors.surface(context, Colors.black),
             child: Center(
               child: CircularProgressIndicator(
                 value: loadingProgress.expectedTotalBytes != null
@@ -54,18 +55,18 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                           loadingProgress.expectedTotalBytes!
                     : null,
                 strokeWidth: 2,
-                color: Colors.white,
+                color: AdaptiveColors.foreground(context, Colors.white),
               ),
             ),
           );
         },
         errorBuilder: (context, error, stackTrace) {
           return Container(
-            color: Colors.black,
-            child: const Center(
+            color: AdaptiveColors.surface(context, Colors.black),
+            child: Center(
               child: Icon(
                 Icons.image_not_supported,
-                color: Colors.white54,
+                color: AdaptiveColors.foreground(context, Colors.white54),
                 size: 48,
               ),
             ),
@@ -80,11 +81,11 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
         height: double.infinity,
         errorBuilder: (context, error, stackTrace) {
           return Container(
-            color: Colors.black,
-            child: const Center(
+            color: AdaptiveColors.surface(context, Colors.black),
+            child: Center(
               child: Icon(
                 Icons.image_not_supported,
-                color: Colors.white54,
+                color: AdaptiveColors.foreground(context, Colors.white54),
                 size: 48,
               ),
             ),
@@ -113,7 +114,12 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
         margin: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          border: isSelected ? Border.all(color: Colors.white, width: 2) : null,
+          border: isSelected
+              ? Border.all(
+                  color: AdaptiveColors.border(context, Colors.white),
+                  width: 2,
+                )
+              : null,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
@@ -122,10 +128,10 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                   imagePath,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
-                    color: Colors.grey[800],
-                    child: const Icon(
+                    color: AdaptiveColors.surface(context, Colors.grey[800]),
+                    child: Icon(
                       Icons.broken_image,
-                      color: Colors.white54,
+                      color: AdaptiveColors.foreground(context, Colors.white54),
                     ),
                   ),
                 )
@@ -133,10 +139,10 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                   imagePath,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
-                    color: Colors.grey[800],
-                    child: const Icon(
+                    color: AdaptiveColors.surface(context, Colors.grey[800]),
+                    child: Icon(
                       Icons.broken_image,
-                      color: Colors.white54,
+                      color: AdaptiveColors.foreground(context, Colors.white54),
                     ),
                   ),
                 ),
@@ -148,7 +154,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AdaptiveColors.surface(context, Colors.black),
       body: SafeArea(
         child: Stack(
           children: [
@@ -195,12 +201,15 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: AdaptiveColors.surface(
+                      context,
+                      Colors.black,
+                    ).withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_back,
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     size: 24,
                   ),
                 ),
@@ -217,13 +226,16 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF9800),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFF9800),
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     widget.discount!,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),

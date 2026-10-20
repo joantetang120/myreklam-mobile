@@ -8,11 +8,17 @@ import 'package:myreklam/services/auth_state_manager.dart';
 import 'package:myreklam/services/delegation_manager.dart';
 
 class ApiException implements Exception {
+  final String? code;
   final int statusCode;
   final String message;
   final Map<String, dynamic>? errors;
 
-  ApiException({required this.statusCode, required this.message, this.errors});
+  ApiException({
+    required this.statusCode,
+    required this.message,
+    this.errors,
+    this.code,
+  });
 
   @override
   String toString() => message;
@@ -248,7 +254,9 @@ class ApiClient {
       final streamedResponse = await request.send().timeout(
         timeout ?? ApiConfig.connectTimeout,
       );
-      final response = await http.Response.fromStream(streamedResponse).timeout(timeout ?? ApiConfig.receiveTimeout);
+      final response = await http.Response.fromStream(
+        streamedResponse,
+      ).timeout(timeout ?? ApiConfig.receiveTimeout);
 
       return _handleResponse(response);
     } on ApiException catch (e) {
@@ -270,7 +278,9 @@ class ApiClient {
           final streamedResponse = await request.send().timeout(
             timeout ?? ApiConfig.connectTimeout,
           );
-          final response = await http.Response.fromStream(streamedResponse).timeout(timeout ?? ApiConfig.receiveTimeout);
+          final response = await http.Response.fromStream(
+            streamedResponse,
+          ).timeout(timeout ?? ApiConfig.receiveTimeout);
           return _handleResponse(response);
         }
       }
@@ -527,6 +537,7 @@ Map<String, dynamic> parseApiResponse(http.Response response) {
   throw ApiException(
     statusCode: response.statusCode,
     message: body['message']?.toString() ?? 'Une erreur est survenue.',
+    code: body['code']?.toString(),
     errors: rawErrors is Map ? Map<String, dynamic>.from(rawErrors) : null,
   );
 }

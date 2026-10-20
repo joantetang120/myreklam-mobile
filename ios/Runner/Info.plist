@@ -71,19 +71,21 @@
 	</array>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<true/>
+	<key>FIREBASE_ANALYTICS_COLLECTION_DEACTIVATED</key>
+	<true/>
+	<key>GOOGLE_ANALYTICS_IDFV_COLLECTION_ENABLED</key>
+	<false/>
+	<key>FirebaseMessagingAutoInitEnabled</key>
+	<false/>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Myreklam utilise Face ID pour vous connecter rapidement et securiser votre compte.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Myreklam utilise votre position pour ajouter un lieu à votre story.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Myreklam a besoin d'accéder à votre galerie pour que vous puissiez ajouter une storie.</string>
+	<string>Myreklam utilise les photos que vous choisissez pour publier vos annonces, publications et stories.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Myreklam a besoin d'autorisation pour enregistrer vos stories dans votre galerie.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Myreklam a besoin d'accéder à votre caméra pour prendre des photos et vidéos pour vos stories.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Myreklam utilise votre localisation pour afficher des annonces et services proches de chez vous.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Myreklam utilise votre localisation pour afficher des annonces et services proches de chez vous, même en arrière-plan.</string>
 </dict>
 </plist>

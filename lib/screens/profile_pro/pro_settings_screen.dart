@@ -1,5 +1,9 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
+import 'package:myreklam/widgets/appearance_settings.dart';
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/follow_approval_settings.dart';
+import 'package:myreklam/screens/match_alerts_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/screens/login_screen.dart';
@@ -11,6 +15,8 @@ import 'package:myreklam/screens/manage_users_screen.dart';
 import 'package:myreklam/screens/managed_accounts_screen.dart';
 import 'package:myreklam/screens/notification_preferences_screen.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/screens/privacy_screen.dart';
+import 'package:myreklam/services/auth_service.dart';
 
 class ProSettingsScreen extends StatefulWidget {
   const ProSettingsScreen({super.key});
@@ -97,18 +103,21 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
       appBar: AppBar(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2E9B5B)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Paramètre du compte',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -122,18 +131,30 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
             // Sous-titre
             Text(
               'Gérez vos préférences et paramètres de sécurité',
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
             ),
             const SizedBox(height: 20),
 
             // Gestion multi-utilisateurs (pro)
             _buildSectionCard(
               icon: Icons.group_add_outlined,
-              iconColor: const Color(0xFF1B8D4B),
-              iconBgColor: const Color(0xFF1B8D4B).withValues(alpha: 0.1),
+              iconColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF1B8D4B),
+              ),
+              iconBgColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF1B8D4B),
+              ).withValues(alpha: 0.1),
               title: 'Ajouter utilisateurs',
               subtitle: 'Autorisez des personnes à gérer votre compte',
-              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+              trailing: Icon(
+                Icons.chevron_right,
+                color: AdaptiveColors.foreground(context, Colors.grey),
+              ),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const ManageUsersScreen()),
@@ -144,11 +165,20 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
             // Comptes gérés (tous les utilisateurs)
             _buildSectionCard(
               icon: Icons.supervisor_account_outlined,
-              iconColor: const Color(0xFF2196F3),
-              iconBgColor: const Color(0xFF2196F3).withValues(alpha: 0.1),
+              iconColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF2196F3),
+              ),
+              iconBgColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF2196F3),
+              ).withValues(alpha: 0.1),
               title: 'Gérer compte',
               subtitle: 'Comptes auxquels vous avez accès',
-              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+              trailing: Icon(
+                Icons.chevron_right,
+                color: AdaptiveColors.foreground(context, Colors.grey),
+              ),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -159,13 +189,43 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
             const SizedBox(height: 12),
 
             // Section Réseaux sociaux
+            const FollowApprovalSettings(),
+            const AppearanceSettings(),
+            ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: const Text('Confidentialité et mes données'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PrivacyScreen()),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_active_outlined),
+              title: const Text('Alertes de correspondance'),
+              subtitle: const Text('Emploi, demandes et zone géographique'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MatchAlertsScreen()),
+              ),
+            ),
             _buildSectionCard(
               icon: Icons.notifications_outlined,
-              iconColor: const Color(0xFFEF8A40),
-              iconBgColor: const Color(0xFFEF8A40).withValues(alpha: 0.1),
-              title: 'Réseaux sociaux',
+              iconColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFFEF8A40),
+              ),
+              iconBgColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFEF8A40),
+              ).withValues(alpha: 0.1),
+              title: 'Notifications',
               subtitle: 'Gérez vos préférences de notifications',
-              trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+              trailing: Icon(
+                Icons.chevron_right,
+                color: AdaptiveColors.foreground(context, Colors.grey),
+              ),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -182,14 +242,17 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           flex: 2,
                           child: Text(
                             'Type',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF333333),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF333333),
+                              ),
                             ),
                           ),
                         ),
@@ -200,7 +263,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                               ),
                             ),
                           ),
@@ -212,7 +278,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                               ),
                             ),
                           ),
@@ -220,7 +289,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                       ],
                     ),
                   ),
-                  Divider(height: 1, color: Colors.grey[200]),
+                  Divider(
+                    height: 1,
+                    color: AdaptiveColors.border(context, Colors.grey[200]),
+                  ),
                   _buildNotificationRow(
                     'Nouveaux messages',
                     nouveauxMessagesEmail,
@@ -266,7 +338,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: AdaptiveColors.surface(context, Colors.grey[100]),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -290,12 +362,18 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.1),
+                            color: AdaptiveColors.surface(
+                              context,
+                              Colors.red,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.security_outlined,
-                            color: Colors.red,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red,
+                            ),
                             size: 20,
                           ),
                         ),
@@ -309,7 +387,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.black.withValues(alpha: 0.5),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.black,
+                                  ).withValues(alpha: 0.5),
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -317,7 +398,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 'Gérez votre mot de passe et la sécurité de votre compte',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey[500],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[500],
+                                  ),
                                 ),
                               ),
                             ],
@@ -329,7 +413,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                           child: Icon(
                             Icons.keyboard_arrow_down,
                             size: 20,
-                            color: Colors.grey[400],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[400],
+                            ),
                           ),
                         ),
                       ],
@@ -348,8 +435,14 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF8A40),
-                        foregroundColor: Colors.white,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFEF8A40),
+                        ),
+                        foregroundColor: AdaptiveColors.foreground(
+                          context,
+                          Colors.white,
+                        ),
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -362,7 +455,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                     ),
                   ],
                   const SizedBox(height: 16),
-                  Divider(height: 1, color: Colors.grey[300]),
+                  Divider(
+                    height: 1,
+                    color: AdaptiveColors.border(context, Colors.grey[300]),
+                  ),
                   const SizedBox(height: 16),
 
                   // Informations du compte
@@ -371,15 +467,21 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                       Icon(
                         Icons.person_outline,
                         size: 20,
-                        color: Colors.grey[600],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         'Informations du compte',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF333333),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF333333),
+                          ),
                         ),
                       ),
                     ],
@@ -398,7 +500,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 'Email',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.black.withValues(alpha: 0.5),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.black,
+                                  ).withValues(alpha: 0.5),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -407,7 +512,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black.withValues(alpha: 0.5),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.black,
+                                  ).withValues(alpha: 0.5),
                                 ),
                               ),
                             ],
@@ -421,7 +529,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 'Type de compte',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.black.withValues(alpha: 0.5),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.black,
+                                  ).withValues(alpha: 0.5),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -432,7 +543,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.black.withValues(alpha: 0.5),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.black,
+                                  ).withValues(alpha: 0.5),
                                 ),
                               ),
                             ],
@@ -442,7 +556,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Divider(height: 1, color: Colors.grey[300]),
+                  Divider(
+                    height: 1,
+                    color: AdaptiveColors.border(context, Colors.grey[300]),
+                  ),
                   const SizedBox(height: 16),
 
                   // Action du compte
@@ -456,15 +573,21 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                         Icon(
                           Icons.settings_outlined,
                           size: 20,
-                          color: Colors.grey[600],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
+                        Text(
                           'Action du compte',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF333333),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF333333),
+                            ),
                           ),
                         ),
                         const Spacer(),
@@ -474,7 +597,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                           child: Icon(
                             Icons.keyboard_arrow_down,
                             size: 20,
-                            color: Colors.grey[400],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[400],
+                            ),
                           ),
                         ),
                       ],
@@ -485,25 +611,38 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(_bioIcon, size: 20, color: Colors.grey[700]),
+                          Icon(
+                            _bioIcon,
+                            size: 20,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[700],
+                            ),
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Connexion biométrique',
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF2D2D2D),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF2D2D2D),
+                                    ),
                                   ),
                                 ),
                                 Text(
                                   'Déverrouiller avec $_bioLabel',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey[500],
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[500],
+                                    ),
                                   ),
                                 ),
                               ],
@@ -511,7 +650,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                           ),
                           Switch(
                             value: _bioEnabled,
-                            activeThumbColor: const Color(0xFF2E9B5B),
+                            activeThumbColor: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFF2E9B5B),
+                            ),
                             onChanged: _bioBusy ? null : _toggleBiometric,
                           ),
                         ],
@@ -521,12 +663,15 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                     ElevatedButton.icon(
                       onPressed: _isDeleting ? null : _showDeleteAccountDialog,
                       icon: _isDeleting
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Icon(Icons.delete_outline, size: 18),
@@ -538,8 +683,14 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          Colors.red,
+                        ),
+                        foregroundColor: AdaptiveColors.foreground(
+                          context,
+                          Colors.white,
+                        ),
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -576,7 +727,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
             flex: 2,
             child: Text(
               label,
-              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[700]),
+              ),
             ),
           ),
           Expanded(
@@ -586,8 +740,14 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                 child: Switch(
                   value: emailValue,
                   onChanged: onEmailChanged,
-                  activeThumbColor: Colors.white,
-                  activeTrackColor: const Color(0xFFEF8A40),
+                  activeThumbColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
+                  activeTrackColor: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFFEF8A40),
+                  ),
                 ),
               ),
             ),
@@ -599,8 +759,14 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                 child: Switch(
                   value: mobileValue,
                   onChanged: onMobileChanged,
-                  activeThumbColor: Colors.white,
-                  activeTrackColor: const Color(0xFFEF8A40),
+                  activeThumbColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
+                  activeTrackColor: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFFEF8A40),
+                  ),
                 ),
               ),
             ),
@@ -623,9 +789,11 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: AdaptiveColors.surface(context, Colors.grey[100]),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: AdaptiveColors.border(context, Colors.grey[200]!),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withValues(alpha: 0.2),
@@ -662,7 +830,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: Colors.black.withValues(alpha: 0.5),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.black,
+                            ).withValues(alpha: 0.5),
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -670,7 +841,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                           subtitle,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                         ),
                       ],
@@ -682,7 +856,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
             ),
           ),
           if (child != null && onTap == null) ...[
-            Divider(height: 1, color: Colors.grey[300]),
+            Divider(
+              height: 1,
+              color: AdaptiveColors.border(context, Colors.grey[300]),
+            ),
             child,
           ],
         ],
@@ -695,17 +872,20 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text(
+          title: Text(
             'Supprimer le compte',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF333333),
+              color: AdaptiveColors.foreground(context, Color(0xFF333333)),
             ),
           ),
-          content: const Text(
+          content: Text(
             'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront perdues.',
-            style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
+            style: TextStyle(
+              fontSize: 14,
+              color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+            ),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -713,10 +893,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: Text(
                 'Annuler',
                 style: TextStyle(
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -728,8 +908,14 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                 _deleteAccount();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF44336),
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF44336),
+                ),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -764,7 +950,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 202) {
         // Clear onboarding flags before deleting
         final userId = UserSession().id;
         if (userId != null) {
@@ -772,14 +958,18 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
           await prefs.remove('onboarding_completed_$userId');
           await prefs.remove('welcome_bonus_shown_$userId');
         }
-        await TokenStorage.clearTokens();
-        UserSession().clear();
+        await AuthService.clearLocalAccountData();
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Compte supprimé avec succès'),
-              backgroundColor: Color(0xFF3AAE5E),
+            SnackBar(
+              content: Text(
+                'Demande de suppression enregistrée. Votre accès est fermé ; les opérations complémentaires sont suivies par notre équipe.',
+              ),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                Color(0xFF3AAE5E),
+              ),
             ),
           );
           Navigator.of(context).pushAndRemoveUntil(
@@ -796,7 +986,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -836,7 +1026,7 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: AdaptiveColors.surface(context, Colors.grey[300]),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -887,15 +1077,20 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red[50],
+                      color: AdaptiveColors.surface(context, Colors.red[50]),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red[200]!),
+                      border: Border.all(
+                        color: AdaptiveColors.border(context, Colors.red[200]!),
+                      ),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.error_outline,
-                          color: Colors.red[700],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.red[700],
+                          ),
                           size: 20,
                         ),
                         const SizedBox(width: 8),
@@ -903,7 +1098,10 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                           child: Text(
                             errorMessage!,
                             style: TextStyle(
-                              color: Colors.red[700],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.red[700],
+                              ),
                               fontSize: 13,
                             ),
                           ),
@@ -988,11 +1186,14 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                   if (response['success'] == true) {
                                     Navigator.pop(sheetContext);
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text(
                                           'Mot de passe modifié avec succès',
                                         ),
-                                        backgroundColor: Color(0xFF2E9B5B),
+                                        backgroundColor: AdaptiveColors.surface(
+                                          context,
+                                          Color(0xFF2E9B5B),
+                                        ),
                                       ),
                                     );
                                   } else {
@@ -1009,21 +1210,30 @@ class _ProSettingsScreenState extends State<ProSettingsScreen> {
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E9B5B),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF2E9B5B),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         child: isLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation(
-                                    Colors.white,
+                                    AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                   ),
                                 ),
                               )

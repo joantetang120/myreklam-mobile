@@ -1,10 +1,10 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/utils/user_session.dart';
-import 'package:myreklam/config/api_config.dart';
 
 class ProAffiliateScreen extends StatefulWidget {
   const ProAffiliateScreen({super.key});
@@ -57,18 +57,16 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
     }
   }
 
-  String get _referralLink {
-    final baseUrl = ApiConfig.baseUrl.replaceAll('/api', '');
-    return '$baseUrl?ref-parrain=$_parrainageCode';
-  }
-
   Future<void> _copyToClipboard(String text, String message) async {
     await Clipboard.setData(ClipboardData(text: text));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: const Color(0xFF3AAE5E),
+          backgroundColor: AdaptiveColors.surface(
+            context,
+            const Color(0xFF3AAE5E),
+          ),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -90,22 +88,22 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
         }
       },
       body: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AdaptiveColors.surface(context, Colors.white),
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
-              color: Color(0xFF616161),
+              color: AdaptiveColors.foreground(context, Color(0xFF616161)),
               size: 18,
             ),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
+          title: Text(
             'Parrainage',
             style: TextStyle(
-              color: Color(0xFF2D2D2D),
+              color: AdaptiveColors.foreground(context, Color(0xFF2D2D2D)),
               fontFamily: 'Manjari',
               fontWeight: FontWeight.bold,
               fontSize: 18,
@@ -117,14 +115,14 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
           child: Column(
             children: [
               const SizedBox(height: 16),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
                   'Invitez vos amis à rejoindre Myreklam et gagnez des My\'s à chaque inscription réussie',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
                     height: 1.4,
                   ),
                 ),
@@ -133,10 +131,15 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
 
               // Summary stats row
               if (_isLoading)
-                const Center(
+                Center(
                   child: Padding(
                     padding: EdgeInsets.all(16),
-                    child: CircularProgressIndicator(color: Color(0xFF3AAE5E)),
+                    child: CircularProgressIndicator(
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF3AAE5E),
+                      ),
+                    ),
                   ),
                 )
               else if (_error != null)
@@ -164,27 +167,54 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
                         icon: Icons.group,
                         label: 'Parrainés',
                         value: '${_stats['total_referred'] ?? 0}',
-                        color: const Color(0xFF2196F3),
-                        bgColor: const Color(0xFFE3F2FD),
-                        borderColor: const Color(0xFFBBDEFB),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF2196F3),
+                        ),
+                        bgColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFE3F2FD),
+                        ),
+                        borderColor: AdaptiveColors.border(
+                          context,
+                          const Color(0xFFBBDEFB),
+                        ),
                       ),
                       const SizedBox(width: 10),
                       _buildSummaryCard(
                         icon: Icons.check_circle,
                         label: 'Complétés',
                         value: '${_stats['completed'] ?? 0}',
-                        color: const Color(0xFF4CAF50),
-                        bgColor: const Color(0xFFE8F5E9),
-                        borderColor: const Color(0xFFC8E6C9),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF4CAF50),
+                        ),
+                        bgColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFE8F5E9),
+                        ),
+                        borderColor: AdaptiveColors.border(
+                          context,
+                          const Color(0xFFC8E6C9),
+                        ),
                       ),
                       const SizedBox(width: 10),
                       _buildSummaryCard(
                         icon: Icons.stars,
                         label: 'My\'s gagnés',
                         value: '${_stats['rewards_points'] ?? 0}',
-                        color: const Color(0xFFFF9800),
-                        bgColor: const Color(0xFFFFF3E0),
-                        borderColor: const Color(0xFFFFE0B2),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFFF9800),
+                        ),
+                        bgColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFFFF3E0),
+                        ),
+                        borderColor: AdaptiveColors.border(
+                          context,
+                          const Color(0xFFFFE0B2),
+                        ),
                       ),
                     ],
                   ),
@@ -241,7 +271,10 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.5),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.white,
+                ).withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 24),
@@ -252,7 +285,7 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.grey[600],
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -283,9 +316,11 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(
+            color: AdaptiveColors.border(context, Colors.grey[200]!),
+          ),
         ),
         child: Column(
           children: [
@@ -293,20 +328,30 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
               padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
-                  Icon(icon, color: Colors.grey[600], size: 20),
+                  Icon(
+                    icon,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Text(
                     title,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[700],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            Divider(height: 1, color: Colors.grey[100]),
+            Divider(
+              height: 1,
+              color: AdaptiveColors.border(context, Colors.grey[100]),
+            ),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -318,15 +363,21 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
                         horizontal: 16,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[100],
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         content,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFFF9800),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFFFF9800),
+                          ),
                         ),
                       ),
                     ),
@@ -339,12 +390,18 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFF3E0),
+                            color: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFFFF3E0),
+                            ),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.copy,
-                            color: Color(0xFFFF9800),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFFFF9800),
+                            ),
                             size: 20,
                           ),
                         ),
@@ -353,7 +410,10 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
                           buttonLabel,
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                         ),
                       ],
@@ -368,7 +428,7 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
                 description,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.grey[400],
+                  color: AdaptiveColors.foreground(context, Colors.grey[400]),
                   height: 1.4,
                 ),
               ),
@@ -385,9 +445,11 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(
+            color: AdaptiveColors.border(context, Colors.grey[200]!),
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -403,7 +465,13 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Text(
                       'Aucun parrainage pour le moment',
-                      style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[500],
+                        ),
+                      ),
                     ),
                   ),
                 ]
@@ -437,7 +505,7 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2),
+        color: AdaptiveColors.surface(context, const Color(0xFFF2F2F2)),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -445,10 +513,17 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.grey[350]?.withValues(alpha: 0.5),
+              color: AdaptiveColors.surface(
+                context,
+                Colors.grey[350],
+              )?.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.person, color: Colors.grey[500], size: 22),
+            child: Icon(
+              Icons.person,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              size: 22,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -457,16 +532,22 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF555555),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF555555),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   date,
-                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                 ),
               ],
             ),
@@ -476,16 +557,19 @@ class _ProAffiliateScreenState extends State<ProAffiliateScreen> {
             children: [
               Text(
                 amount,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 type,
-                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                ),
               ),
             ],
           ),

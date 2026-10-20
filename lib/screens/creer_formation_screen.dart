@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
 import 'package:myreklam/widgets/announcement_ai_panel.dart';
 import 'package:myreklam/utils/announcement_ai_values.dart';
@@ -510,7 +511,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
             ),
             child: const Text('Continuer'),
           ),
@@ -542,8 +546,11 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(context, Colors.red),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
               ),
               child: const Text('Quitter'),
             ),
@@ -571,7 +578,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, 'save'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
             ),
             child: const Text('Sauvegarder'),
           ),
@@ -770,8 +780,8 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: isError
-            ? Colors.red.shade700
-            : const Color(0xFF3AAE5E),
+            ? AdaptiveColors.surface(context, Colors.red.shade700)
+            : AdaptiveColors.surface(context, const Color(0xFF3AAE5E)),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 4),
       ),
@@ -822,7 +832,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     final validationError = _validateStep3();
     if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(validationError), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(validationError),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
       return;
     }
@@ -1012,7 +1025,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Erreur: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     }
@@ -1023,7 +1036,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -1040,7 +1053,11 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                       Navigator.pop(context);
                     }
                   },
-                  child: const Icon(Icons.close, color: Colors.grey, size: 22),
+                  child: Icon(
+                    Icons.close,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                    size: 22,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1071,10 +1088,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               const SizedBox(height: 20),
               Text(
                 _isEditMode ? 'Formation mise à jour' : 'Formation publié',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                 ),
               ),
               const SizedBox(height: 10),
@@ -1087,7 +1104,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   height: 1.4,
                 ),
               ),
@@ -1133,9 +1150,13 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       );
     } else if (isVideo) {
       content = Container(
-        color: Colors.black87,
-        child: const Center(
-          child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white),
+        color: AdaptiveColors.surface(context, Colors.black87),
+        child: Center(
+          child: Icon(
+            Icons.play_circle_outline,
+            size: 40,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
         ),
       );
     } else {
@@ -1167,7 +1188,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -1182,13 +1203,19 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                         height: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.red[300],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.red[300],
+                          ),
                         ),
                       )
-                    : const Icon(
+                    : Icon(
                         Icons.close,
                         size: 16,
-                        color: Color(0xFF666666),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF666666),
+                        ),
                       ),
               ),
             ),
@@ -1214,9 +1241,13 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
 
   Widget _buildBrokenMediaPlaceholder() {
     return Container(
-      color: const Color(0xFFF5F5F5),
-      child: const Center(
-        child: Icon(Icons.broken_image_outlined, size: 32, color: Colors.grey),
+      color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
+      child: Center(
+        child: Icon(
+          Icons.broken_image_outlined,
+          size: 32,
+          color: AdaptiveColors.foreground(context, Colors.grey),
+        ),
       ),
     );
   }
@@ -1270,16 +1301,21 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AdaptiveColors.surface(context, Colors.white),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: AdaptiveColors.border(
+                  context,
+                  Colors.grey,
+                ).withValues(alpha: 0.2),
+              ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
+                Icon(
                   Icons.insert_drive_file_outlined,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1299,7 +1335,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                           doc.fileType!,
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                         ),
                     ],
@@ -1319,15 +1358,21 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.red[300],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.red[300],
+                          ),
                         ),
                       )
                     else
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.close,
                           size: 18,
-                          color: Colors.redAccent,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.redAccent,
+                          ),
                         ),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -1400,13 +1445,24 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: AdaptiveColors.border(
+                    context,
+                    Colors.grey,
+                  ).withValues(alpha: 0.2),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.insert_drive_file, color: Color(0xFF3AAE5E)),
+                  Icon(
+                    Icons.insert_drive_file,
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -1478,7 +1534,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       },
       child: AppLayout(
         currentIndex: 2,
-        backgroundColor: const Color(0xFFF9F9FB),
+        backgroundColor: AdaptiveColors.surface(
+          context,
+          const Color(0xFFF9F9FB),
+        ),
         onTabTapped: (index) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
@@ -1505,9 +1564,12 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                       alignment: Alignment.centerLeft,
                       child: GestureDetector(
                         onTap: _handleBackButton,
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back,
-                          color: Color(0xFF616161),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF616161),
+                          ),
                           size: 24,
                         ),
                       ),
@@ -1516,11 +1578,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                       _isEditMode
                           ? 'Modifier la formation'
                           : 'Créer une formation',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontFamily: 'Manjari',
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF424242),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF424242),
+                        ),
                       ),
                     ),
                   ],
@@ -1533,7 +1598,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                   _isEditMode
                       ? 'Modifiez les informations de votre formation'
                       : 'Partagez une opportunité de formation avec la communauté',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -1560,12 +1628,21 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: Colors.grey.withValues(alpha: 0.3),
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey,
+                            ).withValues(alpha: 0.3),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Précédent',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -1591,8 +1668,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       borderRadius: BorderRadius.circular(6),
       child: LinearProgressIndicator(
         value: (_currentStep + 1) / (_totalSteps),
-        backgroundColor: Colors.grey[200],
-        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF9800)),
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[200]),
+        valueColor: AlwaysStoppedAnimation<Color>(
+          AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+        ),
         minHeight: 6,
       ),
     );
@@ -1630,22 +1709,31 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE6F7EF),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFE6F7EF),
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.perm_media_outlined,
-                      color: Color(0xFF3AAE5E),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF3AAE5E),
+                      ),
                       size: 20,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     'Photos et vidéos (non-obligatoires)',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF424242),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF424242),
+                      ),
                     ),
                   ),
                 ],
@@ -1653,7 +1741,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               const SizedBox(height: 6),
               Text(
                 'Ajoutez des visuels de votre formation (salles, intervenants, participants) pour projeter les apprenants dans l’expérience.',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -1695,22 +1786,25 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE6F7EF),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFE6F7EF),
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.description_outlined,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                   size: 20,
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Documents',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
             ],
@@ -1721,7 +1815,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Programme de formation, règlement intérieur, etc.',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -1733,30 +1830,48 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0F9F4),
+                color: AdaptiveColors.surface(context, const Color(0xFFF0F9F4)),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF3AAE5E), width: 2),
+                border: Border.all(
+                  color: AdaptiveColors.border(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
+                  width: 2,
+                ),
               ),
               child: Column(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.upload_file,
                     size: 32,
-                    color: Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Ajouter des documents',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF3AAE5E),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF3AAE5E),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'PDF, Word, Excel, PowerPoint',
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[500],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1789,9 +1904,12 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       onTap: _pickMedia,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF0F9F4),
+          color: AdaptiveColors.surface(context, const Color(0xFFF0F9F4)),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF3AAE5E), width: 2),
+          border: Border.all(
+            color: AdaptiveColors.border(context, const Color(0xFF3AAE5E)),
+            width: 2,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1799,22 +1917,25 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.camera_alt,
                 size: 32,
-                color: Color(0xFF3AAE5E),
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Ajouter ${_selectedMediaFiles.isEmpty ? "des" : "plus de"} photos',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF3AAE5E),
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
               ),
               textAlign: TextAlign.center,
             ),
@@ -1845,7 +1966,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             child: Container(
               width: double.infinity,
               height: double.infinity,
-              color: const Color(0xFFF5F5F5),
+              color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
               child: _buildMediaPreview(file),
             ),
           ),
@@ -1856,18 +1977,18 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3AAE5E),
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Photo de couverture',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1882,7 +2003,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -1891,10 +2012,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
                   size: 16,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                 ),
               ),
             ),
@@ -1918,19 +2039,23 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       );
     } else if (isVideo) {
       return Container(
-        color: Colors.black87,
-        child: const Center(
-          child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white),
+        color: AdaptiveColors.surface(context, Colors.black87),
+        child: Center(
+          child: Icon(
+            Icons.play_circle_outline,
+            size: 40,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
         ),
       );
     } else {
       return Container(
-        color: const Color(0xFFF9FAFB),
-        child: const Center(
+        color: AdaptiveColors.surface(context, const Color(0xFFF9FAFB)),
+        child: Center(
           child: Icon(
             Icons.insert_drive_file,
             size: 40,
-            color: Color(0xFF3AAE5E),
+            color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
           ),
         ),
       );
@@ -2094,7 +2219,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
                   'Chargement des catégories...',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                    fontSize: 13,
+                  ),
                 ),
               )
             else
@@ -2113,7 +2241,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                   }
                 },
                 hint: _buildRequiredHint('Choisissez une catégorie'),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
               ),
             if (_selectedCategoryId != null && subCategoryNames.isNotEmpty) ...[
               const SizedBox(height: 12),
@@ -2133,7 +2264,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                   });
                 },
                 hint: _buildRequiredHint('Choisissez un secteur'),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
               ),
             ],
             if (_trainingTypes.isNotEmpty) ...[
@@ -2144,7 +2278,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                 items: _trainingTypes,
                 onChanged: (val) => setState(() => _selectedTrainingType = val),
                 hint: _buildRequiredHint('Choisissez le type de formation'),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
                 labelBuilder: (value) => _trainingTypesMap[value] ?? value,
               ),
             ],
@@ -2186,8 +2323,13 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           child: OutlinedButton(
             onPressed: _nextStep,
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFFF9800),
-              side: const BorderSide(color: Color(0xFFFF9800)),
+              foregroundColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFFFF9800),
+              ),
+              side: BorderSide(
+                color: AdaptiveColors.border(context, Color(0xFFFF9800)),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -2357,13 +2499,22 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
-                        : Colors.white,
+                        ? AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ).withValues(alpha: 0.1)
+                        : AdaptiveColors.surface(context, Colors.white),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
-                          ? const Color(0xFF3AAE5E)
-                          : Colors.grey.withValues(alpha: 0.3),
+                          ? AdaptiveColors.border(
+                              context,
+                              const Color(0xFF3AAE5E),
+                            )
+                          : AdaptiveColors.border(
+                              context,
+                              Colors.grey,
+                            ).withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -2375,8 +2526,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                             : Icons.radio_button_unchecked,
                         size: 16,
                         color: isSelected
-                            ? const Color(0xFF3AAE5E)
-                            : Colors.grey[400],
+                            ? AdaptiveColors.foreground(
+                                context,
+                                const Color(0xFF3AAE5E),
+                              )
+                            : AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[400],
+                              ),
                       ),
                       const SizedBox(width: 6),
                       Text(
@@ -2384,8 +2541,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           color: isSelected
-                              ? const Color(0xFF3AAE5E)
-                              : Colors.grey[700],
+                              ? AdaptiveColors.foreground(
+                                  context,
+                                  const Color(0xFF3AAE5E),
+                                )
+                              : AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[700],
+                                ),
                           fontWeight: isSelected
                               ? FontWeight.w600
                               : FontWeight.normal,
@@ -2413,7 +2576,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                     onChanged: (val) =>
                         setState(() => _selectedPublicType = val),
                     labelBuilder: (key) => _publicTypes[key] ?? key,
-                    backgroundColor: const Color(0xFFF9FAFB),
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFF9FAFB),
+                    ),
                   ),
                 ),
               if (_publicTypes.isNotEmpty && _tempoTypes.isNotEmpty)
@@ -2426,7 +2592,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                     items: _tempoTypes.keys.toList(),
                     onChanged: (val) => setState(() => _selectedTempo = val),
                     labelBuilder: (key) => _tempoTypes[key] ?? key,
-                    backgroundColor: const Color(0xFFF9FAFB),
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFF9FAFB),
+                    ),
                   ),
                 ),
             ],
@@ -2484,7 +2653,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                     );
                   }),
                   labelBuilder: (key) => _durationUnits[key] ?? key,
-                  backgroundColor: const Color(0xFFF9FAFB),
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFF9FAFB),
+                  ),
                 ),
               ),
           ],
@@ -2550,12 +2722,15 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         _buildSectionLabel('Ajouter un document', isRequired: false),
         Text(
           '(programme de la formation, le règlement intérieur, etc.)',
-          style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+          style: TextStyle(
+            fontSize: 11,
+            color: AdaptiveColors.foreground(context, Colors.grey[500]),
+          ),
         ),
         const SizedBox(height: 8),
         _buildUploadButton2(
           label: 'Ajouter un fichier',
-          color: const Color(0xFFFF9800),
+          color: AdaptiveColors.foreground(context, const Color(0xFFFF9800)),
           onTap: _pickDocuments,
         ),
         if (_existingDocuments.isNotEmpty) ...[
@@ -2602,7 +2777,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         _buildSectionLabel('Lieu', isRequired: true),
         Text(
           'Indiquez le lieu/adresse de cette offre est valide.',
-          style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+          style: TextStyle(
+            fontSize: 11,
+            color: AdaptiveColors.foreground(context, Colors.grey[500]),
+          ),
         ),
         const SizedBox(height: 8),
         LocationPickerField(
@@ -2627,8 +2805,8 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           child: RichText(
             text: TextSpan(
               text: '* ',
-              style: const TextStyle(
-                color: Color(0xFFFF6B6B),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Color(0xFFFF6B6B)),
                 fontWeight: FontWeight.w600,
                 fontSize: 12,
               ),
@@ -2636,7 +2814,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                 TextSpan(
                   text: 'Champ Obligatoire',
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
                     fontWeight: FontWeight.normal,
                     fontSize: 12,
                   ),
@@ -2659,16 +2837,22 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         text: text,
         style: TextStyle(
           fontSize: 15,
-          color: Colors.black.withValues(alpha: 0.8),
+          color: AdaptiveColors.foreground(
+            context,
+            Colors.black,
+          ).withValues(alpha: 0.8),
           fontFamily: 'Manjari',
           fontWeight: FontWeight.bold,
         ),
         children: isRequired
-            ? const [
+            ? [
                 TextSpan(
                   text: ' *',
                   style: TextStyle(
-                    color: Color(0xFFFF6B6B),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFFF6B6B),
+                    ),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -2688,28 +2872,35 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           child: Container(
             width: 50,
             height: 50,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFFE6F7EF),
+              color: AdaptiveColors.surface(context, Color(0xFFE6F7EF)),
             ),
-            child: const Icon(Icons.check, color: Color(0xFF3AAE5E), size: 30),
+            child: Icon(
+              Icons.check,
+              color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+              size: 30,
+            ),
           ),
         ),
         const SizedBox(height: 12),
-        const Center(
+        Center(
           child: Text(
             'Vérifiez votre annonce',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF424242),
+              color: AdaptiveColors.foreground(context, Color(0xFF424242)),
             ),
           ),
         ),
         Center(
           child: Text(
             'Relisez les informations avant de publier formation',
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 11,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -2898,25 +3089,28 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFE6F7EF),
+            color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
             children: [
-              const Text(
+              Text(
                 'Accepter de recevoir des messages à propos de cette formation',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Les candidats pourront vous écrire pour obtenir des précisions sur le programme, les financements ou les modalités d’inscription.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -2942,8 +3136,11 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           child: ElevatedButton(
             onPressed: _isSubmitting ? null : _submitTraining,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF9800),
-              foregroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFFF9800),
+              ),
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -2982,9 +3179,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: AdaptiveColors.border(
+                context,
+                Colors.grey,
+              ).withValues(alpha: 0.2),
+            ),
           ),
           child: TextField(
             controller: controller,
@@ -3003,17 +3205,27 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             },
             decoration: InputDecoration(
               hintText: label,
-              hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[400]),
+              ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
               prefixIcon: prefixIcon != null
-                  ? Icon(prefixIcon, size: 20, color: Colors.grey[400])
+                  ? Icon(
+                      prefixIcon,
+                      size: 20,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                    )
                   : null,
               suffixText: suffix,
-              suffixStyle: const TextStyle(
+              suffixStyle: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
               ),
             ),
           ),
@@ -3041,9 +3253,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AdaptiveColors.surface(context, Colors.white),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: AdaptiveColors.border(
+                  context,
+                  Colors.grey,
+                ).withValues(alpha: 0.2),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3052,12 +3269,21 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                   padding: const EdgeInsets.only(left: 14, top: 10),
                   child: Text(
                     label,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                    ),
                   ),
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFF5F5F5),
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   margin: const EdgeInsets.symmetric(
@@ -3129,10 +3355,13 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.grey.withValues(alpha: 0.3),
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.3),
           style: BorderStyle.solid,
           width: 1.5,
         ),
@@ -3173,10 +3402,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               ),
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: AdaptiveColors.foreground(context, Colors.white),
                 ),
               ),
             ),
@@ -3185,7 +3414,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
           // Formats acceptés
           Text(
             'Images (JPG, PNG, GIF) et vidéos (MP4, MOV) acceptées',
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 11,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
           ),
         ],
       ),
@@ -3207,13 +3439,21 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               title,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.black.withValues(alpha: 0.8),
+                color: AdaptiveColors.foreground(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.8),
                 fontFamily: 'Manjari',
                 fontWeight: FontWeight.bold,
               ),
             ),
             if (isRequired)
-              const Text(" *", style: TextStyle(color: Colors.red)),
+              Text(
+                " *",
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.red),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 2),
@@ -3234,7 +3474,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
+              border: Border.all(
+                color: AdaptiveColors.border(context, Colors.grey),
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -3242,7 +3484,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                   ? "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}"
                   : "Sélectionner une date",
               style: TextStyle(
-                color: selectedDate != null ? Colors.black : Colors.grey,
+                color: selectedDate != null
+                    ? AdaptiveColors.foreground(context, Colors.black)
+                    : AdaptiveColors.foreground(context, Colors.grey),
               ),
             ),
           ),
@@ -3272,7 +3516,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: AdaptiveColors.border(context, Colors.grey.shade300),
+            ),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -3280,11 +3526,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               final isSelected = selectedValues.contains(option);
 
               return Theme(
-                data: ThemeData(
+                data: Theme.of(context).copyWith(
                   visualDensity: const VisualDensity(vertical: -4),
                 ),
                 child: CheckboxListTile(
-                  side: const BorderSide(color: Colors.grey, width: 1),
+                  side: BorderSide(
+                    color: AdaptiveColors.border(context, Colors.grey),
+                    width: 1,
+                  ),
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   title: Text(option, style: const TextStyle(fontSize: 14)),
@@ -3336,7 +3585,9 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(
+              color: AdaptiveColors.border(context, Colors.grey.shade300),
+            ),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -3345,11 +3596,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               ...options.map((option) {
                 final isSelected = selectedValues.contains(option);
                 return Theme(
-                  data: ThemeData(
+                  data: Theme.of(context).copyWith(
                     visualDensity: const VisualDensity(vertical: -4),
                   ),
                   child: CheckboxListTile(
-                    side: const BorderSide(color: Colors.grey, width: 1),
+                    side: BorderSide(
+                      color: AdaptiveColors.border(context, Colors.grey),
+                      width: 1,
+                    ),
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                     title: Text(option, style: const TextStyle(fontSize: 14)),
@@ -3380,8 +3634,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                         height: 40,
                         child: Checkbox(
                           value: isSelected,
-                          side: const BorderSide(color: Colors.grey, width: 1),
-                          activeColor: const Color(0xFF3AAE5E),
+                          side: BorderSide(
+                            color: AdaptiveColors.border(context, Colors.grey),
+                            width: 1,
+                          ),
+                          activeColor: AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ),
                           onChanged: (bool? value) {
                             final updatedList = List<String>.from(
                               selectedValues,
@@ -3417,7 +3677,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                           child: Icon(
                             Icons.close,
                             size: 16,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                         ),
                       ),
@@ -3438,9 +3701,17 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                         height: 38,
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF9FAFB),
+                          color: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFF9FAFB),
+                          ),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300),
+                          border: Border.all(
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey.shade300,
+                            ),
+                          ),
                         ),
                         child: TextField(
                           controller: customController,
@@ -3449,7 +3720,10 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                             hintText: 'Ajouter une valeur personnalisée...',
                             hintStyle: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[400],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[400],
+                              ),
                             ),
                             border: InputBorder.none,
                             isCollapsed: true,
@@ -3494,15 +3768,21 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                         height: 38,
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF3AAE5E),
+                          color: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
                             'Ajouter',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.white,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -3529,9 +3809,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.1),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -3548,18 +3833,28 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE6F7EF),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFE6F7EF),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: const Color(0xFF3AAE5E), size: 20),
+                child: Icon(
+                  icon,
+                  color: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                   fontFamily: 'Manjari',
                 ),
               ),
@@ -3571,7 +3866,7 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               subtitle,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
                 height: 1.5,
               ),
             ),
@@ -3598,9 +3893,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
+        color: backgroundColor ?? AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
       ),
       child: DropdownButtonFormField<String>(
         initialValue: value,
@@ -3608,13 +3908,19 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
             hint ??
             Text(
               label,
-              style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+              style: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[400]),
+              ),
             ),
         decoration: const InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 12),
         ),
-        icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
+        icon: Icon(
+          Icons.keyboard_arrow_down,
+          color: AdaptiveColors.foreground(context, Colors.grey[400]),
+        ),
         isExpanded: true,
         items: items
             .map(
@@ -3638,14 +3944,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
         text: text,
         style: TextStyle(
           fontSize: 13,
-          color: Colors.grey[500],
+          color: AdaptiveColors.foreground(context, Colors.grey[500]),
           fontFamily: 'Manjari',
         ),
-        children: const [
+        children: [
           TextSpan(
             text: ' *',
             style: TextStyle(
-              color: Color(0xFFFF6B6B),
+              color: AdaptiveColors.foreground(context, Color(0xFFFF6B6B)),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -3660,8 +3966,11 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       child: ElevatedButton(
         onPressed: _nextStep,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFF9800),
-          foregroundColor: Colors.white,
+          backgroundColor: AdaptiveColors.surface(
+            context,
+            const Color(0xFFFF9800),
+          ),
+          foregroundColor: AdaptiveColors.foreground(context, Colors.white),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -3691,9 +4000,14 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.15),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3705,15 +4019,15 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
                 title,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   fontWeight: FontWeight.w500,
                 ),
               ),
               GestureDetector(
                 onTap: onEdit,
-                child: const Icon(
+                child: Icon(
                   Icons.edit_outlined,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                   size: 18,
                 ),
               ),
@@ -3732,13 +4046,19 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
+          ),
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.right,
@@ -3758,23 +4078,30 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
       margin: const EdgeInsets.only(top: 8, bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E9),
+        color: AdaptiveColors.surface(context, const Color(0xFFE8F5E9)),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+          color: AdaptiveColors.border(
+            context,
+            const Color(0xFF4CAF50),
+          ).withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, color: Color(0xFF4CAF50), size: 18),
+          Icon(
+            Icons.info_outline,
+            color: AdaptiveColors.foreground(context, Color(0xFF4CAF50)),
+            size: 18,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               helperText,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF2E7D32),
+                color: AdaptiveColors.foreground(context, Color(0xFF2E7D32)),
                 height: 1.4,
               ),
             ),
@@ -3796,20 +4123,39 @@ class _CreerFormationScreenState extends State<CreerFormationScreen> {
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
                 color: isSelected
-                    ? const Color(0xFF3AAE5E)
-                    : Colors.grey.withValues(alpha: 0.4),
+                    ? AdaptiveColors.border(context, const Color(0xFF3AAE5E))
+                    : AdaptiveColors.border(
+                        context,
+                        Colors.grey,
+                      ).withValues(alpha: 0.4),
                 width: 1.5,
               ),
               color: isSelected
-                  ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
-                  : Colors.transparent,
+                  ? AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ).withValues(alpha: 0.1)
+                  : AdaptiveColors.surface(context, Colors.transparent),
             ),
             child: isSelected
-                ? const Icon(Icons.check, color: Color(0xFF3AAE5E), size: 16)
+                ? Icon(
+                    Icons.check,
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
+                    size: 16,
+                  )
                 : null,
           ),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: AdaptiveColors.foreground(context, Colors.grey[700]),
+            ),
+          ),
         ],
       ),
     );

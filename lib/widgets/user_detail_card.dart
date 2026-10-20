@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
@@ -30,9 +31,14 @@ class UserDetailCard extends StatelessWidget {
     Widget cardContent = Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.15),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -58,10 +64,13 @@ class UserDetailCard extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF616161),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF616161),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -84,9 +93,12 @@ class UserDetailCard extends StatelessWidget {
                   ),
                   child: Text(
                     userType,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: Color(0XFF04BC7B),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0XFF04BC7B),
+                      ),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -96,12 +108,15 @@ class UserDetailCard extends StatelessWidget {
           ),
           if (showSubscribeButton && !isOwner)
             isLoading
-                ? const SizedBox(
+                ? SizedBox(
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Color(0xFFFF9800),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFFFF9800),
+                      ),
                     ),
                   )
                 : OutlinedButton.icon(
@@ -119,12 +134,24 @@ class UserDetailCard extends StatelessWidget {
                     ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: isFollowing
-                          ? const Color(0xFF3AAE5E)
-                          : const Color(0xFFFF9800),
+                          ? AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFF3AAE5E),
+                            )
+                          : AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFFFF9800),
+                            ),
                       side: BorderSide(
                         color: isFollowing
-                            ? const Color(0xFF3AAE5E)
-                            : const Color(0xFFFFCCBC),
+                            ? AdaptiveColors.border(
+                                context,
+                                const Color(0xFF3AAE5E),
+                              )
+                            : AdaptiveColors.border(
+                                context,
+                                const Color(0xFFFFCCBC),
+                              ),
                       ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -132,8 +159,14 @@ class UserDetailCard extends StatelessWidget {
                       ),
                       minimumSize: const Size(0, 0),
                       backgroundColor: isFollowing
-                          ? const Color(0xFFE6F7EF)
-                          : const Color(0xFFFFF3E0),
+                          ? AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFE6F7EF),
+                            )
+                          : AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFFFF3E0),
+                            ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

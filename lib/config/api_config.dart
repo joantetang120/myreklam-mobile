@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 class ApiConfig {
   // ============================================================
   // 🔧 CHANGE THIS URL TO POINT TO YOUR BACKEND SERVER
@@ -10,6 +8,11 @@ class ApiConfig {
   );
 
   static String get backendOrigin => Uri.parse(baseUrl).origin;
+  static const String publicWebsiteOrigin = 'https://www.myreklam.fr';
+
+  static String referralUrl(String code) => Uri.parse(publicWebsiteOrigin)
+      .replace(path: '/', queryParameters: {'ref-parrain': code.trim()})
+      .toString();
   // static const String baseUrl = 'http://192.168.1.237:8000/api';
   // Examples:
   //   Local Android emulator:  'http://10.0.2.2:8000/api'
@@ -42,7 +45,6 @@ class ApiConfig {
   /// Resolves backend media/storage URLs (which may be relative) into
   /// fully-qualified URLs reachable by the client.
   static String? resolveMediaUrl(String? path) {
-    debugPrint('resolveMediaUrl input: $path');
     if (path == null) return null;
     final trimmed = path.trim();
     if (trimmed.isEmpty) return null;
@@ -57,7 +59,6 @@ class ApiConfig {
     }
 
     final host = _apiHost();
-    debugPrint('host: $host, trimmed: $trimmed');
     if (trimmed.startsWith('/')) {
       return '$host$trimmed';
     }
@@ -70,13 +71,11 @@ class ApiConfig {
     // Handle candidate-documents paths
     if (trimmed.startsWith('candidate-documents/')) {
       final result = '$host/storage/$trimmed';
-      debugPrint('candidate-documents result: $result');
       return result;
     }
     // Handle avatar paths and other storage paths without storage/ prefix
     if (trimmed.startsWith('avatars/')) {
       final result = '$host/storage/$trimmed';
-      debugPrint('avatars result: $result');
       return result;
     }
     // Remaining backend media paths (img/, uploads/, profile/, etc.) are
@@ -84,7 +83,6 @@ class ApiConfig {
     // them as invalid URLs on some screens.
     final normalized = trimmed.replaceFirst(RegExp(r'^/+'), '');
     final result = '$host/storage/$normalized';
-    debugPrint('generic media result: $result');
     return result;
   }
 }

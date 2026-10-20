@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -331,17 +332,17 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   Color _statusColor(String? status) {
     switch (status?.toUpperCase()) {
       case 'PUBLISHED':
-        return const Color(0xFF4CAF50);
+        return AdaptiveColors.foreground(context, const Color(0xFF4CAF50));
       case 'PENDING_REVIEW':
-        return const Color(0xFFFF9800);
+        return AdaptiveColors.foreground(context, const Color(0xFFFF9800));
       case 'DRAFT':
-        return Colors.grey;
+        return AdaptiveColors.foreground(context, Colors.grey);
       case 'REJECTED':
-        return const Color(0xFFF44336);
+        return AdaptiveColors.foreground(context, const Color(0xFFF44336));
       case 'ARCHIVED':
-        return Colors.blueGrey;
+        return AdaptiveColors.foreground(context, Colors.blueGrey);
       default:
-        return Colors.grey;
+        return AdaptiveColors.foreground(context, Colors.grey);
     }
   }
 
@@ -399,18 +400,21 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2E9B5B)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Mes Favoris',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 18,
             fontWeight: FontWeight.w600,
             fontFamily: 'Manjari',
@@ -436,13 +440,18 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                 child: Container(
                   height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5), // light gray bg
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFF5F5F5),
+                    ), // light gray bg
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const TextField(
+                  child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Faites une recherche...',
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(
+                        color: AdaptiveColors.foreground(context, Colors.grey),
+                      ),
                       prefixIcon: Icon(Icons.search),
                       border: InputBorder.none, // removes default border
                     ),
@@ -521,7 +530,10 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                         CategoriesIcon(
                           title: "Bons plans",
                           iconColor: const Color.fromARGB(255, 252, 116, 37),
-                          bgColor: Color(0xFFFFE0B2).withValues(alpha: 0.2),
+                          bgColor: AdaptiveColors.surface(
+                            context,
+                            Color(0xFFFFE0B2),
+                          ).withValues(alpha: 0.2),
                           icon: Icons.card_giftcard_outlined,
                           onTap: () =>
                               setState(() => selectedCategory = "Bons plans"),
@@ -529,8 +541,14 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                         const SizedBox(width: 15),
                         CategoriesIcon(
                           title: "Offre d'emploi",
-                          iconColor: Colors.lightBlueAccent,
-                          bgColor: Color(0xFFB3E5FC).withValues(alpha: 0.2),
+                          iconColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.lightBlueAccent,
+                          ),
+                          bgColor: AdaptiveColors.surface(
+                            context,
+                            Color(0xFFB3E5FC),
+                          ).withValues(alpha: 0.2),
                           iconAsset: 'assets/images/offres.png',
                           onTap: () => setState(
                             () => selectedCategory = "Offre d'emploi",
@@ -539,8 +557,14 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                         const SizedBox(width: 15),
                         CategoriesIcon(
                           title: "Formations",
-                          iconColor: Colors.purple,
-                          bgColor: Color(0xFFE1BEE7).withValues(alpha: 0.1),
+                          iconColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.purple,
+                          ),
+                          bgColor: AdaptiveColors.surface(
+                            context,
+                            Color(0xFFE1BEE7),
+                          ).withValues(alpha: 0.1),
                           iconAsset: 'assets/images/Formation.png',
                           onTap: () =>
                               setState(() => selectedCategory = "Formations"),
@@ -548,8 +572,14 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                         const SizedBox(width: 15),
                         CategoriesIcon(
                           title: "Evenements",
-                          iconColor: Colors.green,
-                          bgColor: Color(0xFFE6F7EF).withValues(alpha: 0.5),
+                          iconColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.green,
+                          ),
+                          bgColor: AdaptiveColors.surface(
+                            context,
+                            Color(0xFFE6F7EF),
+                          ).withValues(alpha: 0.5),
                           icon: Icons.event_outlined,
                           onTap: () =>
                               setState(() => selectedCategory = "Evenements"),
@@ -597,10 +627,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
   Widget _buildFavorisDemandesList() {
     if (_isLoadingDemandes) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFEF8A40)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+          ),
         ),
       );
     }
@@ -679,7 +711,10 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       profileImage: profileImage,
       username: username,
       categoryLabel: nature.isNotEmpty ? _getNatureLabel(nature) : 'Demande',
-      categoryColor: const Color(0xFFEF8A40),
+      categoryColor: AdaptiveColors.foreground(
+        context,
+        const Color(0xFFEF8A40),
+      ),
       title: title,
       description: description.length > 200
           ? '${description.substring(0, 200)}...'
@@ -770,19 +805,19 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
         PostTag(
           title: categoryLabel,
           icon: Icons.label_outline,
-          color: Colors.grey,
+          color: AdaptiveColors.foreground(context, Colors.grey),
         ),
         if (urgent)
           PostTag(
             title: 'Urgent',
             icon: Icons.warning_amber_rounded,
-            color: Colors.red,
+            color: AdaptiveColors.foreground(context, Colors.red),
           ),
         if (nationwide)
           PostTag(
             title: 'Toute la France',
             icon: Icons.public,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -791,7 +826,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       final subTag = PostTag(
         title: subTagsCat,
         icon: Icons.label_outline,
-        color: Colors.orange,
+        color: AdaptiveColors.foreground(context, Colors.orange),
       );
 
       final currentUserId = _currentUserId;
@@ -846,10 +881,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
   Widget _buildFavorisTrainingsList() {
     if (_isLoadingTrainings) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFEF8A40)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+          ),
         ),
       );
     }
@@ -946,10 +983,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             SnackBar(
               content: Text(
                 isFavorited0 ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.white),
+                ),
               ),
               duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
+              backgroundColor: AdaptiveColors.surface(context, Colors.green),
             ),
           );
         }
@@ -959,9 +998,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('Erreur lors de la mise à jour des favoris'),
-              backgroundColor: Colors.red,
+              backgroundColor: AdaptiveColors.surface(context, Colors.red),
             ),
           );
         }
@@ -1149,10 +1188,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
   Widget _buildFavorisBonPlansList() {
     if (_isLoadingBonPlans) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFEF8A40)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+          ),
         ),
       );
     }
@@ -1172,10 +1213,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
   Widget _buildFavorisJobOffersList() {
     if (_isLoadingJobOffers) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFEF8A40)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+          ),
         ),
       );
     }
@@ -1195,10 +1238,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
   Widget _buildFavorisEventsList() {
     if (_isLoadingEvents) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFEF8A40)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+          ),
         ),
       );
     }
@@ -1323,10 +1368,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             SnackBar(
               content: Text(
                 isFavorited0 ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.white),
+                ),
               ),
               duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
+              backgroundColor: AdaptiveColors.surface(context, Colors.green),
             ),
           );
         }
@@ -1336,9 +1383,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('Erreur lors de la mise à jour des favoris'),
-              backgroundColor: Colors.red,
+              backgroundColor: AdaptiveColors.surface(context, Colors.red),
             ),
           );
         }
@@ -1444,19 +1491,19 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           PostTag(
             title: categoryCode,
             icon: Icons.local_offer_outlined,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
         if (subCategoryCode != null && subCategoryCode.isNotEmpty)
           PostTag(
             title: subCategoryCode,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (formatType != null && formatType.isNotEmpty)
           PostTag(
             title: formatType,
             icon: Icons.videocam_outlined,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -1536,7 +1583,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -1555,10 +1602,13 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF333333),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF333333),
+                    ),
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -1601,7 +1651,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                   if (loadingProgress == null) return child;
                   return Container(
                     height: 180,
-                    color: Colors.grey[100],
+                    color: AdaptiveColors.surface(context, Colors.grey[100]),
                     child: const Center(
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
@@ -1611,11 +1661,11 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                   debugPrint('Image load error: $error');
                   return Container(
                     height: 100,
-                    color: Colors.grey[200],
-                    child: const Center(
+                    color: AdaptiveColors.surface(context, Colors.grey[200]),
+                    child: Center(
                       child: Icon(
                         Icons.image_not_supported,
-                        color: Colors.grey,
+                        color: AdaptiveColors.foreground(context, Colors.grey),
                       ),
                     ),
                   );
@@ -1641,23 +1691,40 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           Row(
             children: [
               if (merchantName.isNotEmpty) ...[
-                Icon(Icons.store_outlined, size: 14, color: Colors.grey[500]),
+                Icon(
+                  Icons.store_outlined,
+                  size: 14,
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     '$locationType chez $merchantName',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ] else
                 const Spacer(),
               if (createdAt != null) ...[
-                Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                Icon(
+                  Icons.access_time,
+                  size: 14,
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                ),
                 const SizedBox(width: 4),
                 Text(
                   _timeAgo(createdAt),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ],
             ],
@@ -1673,8 +1740,14 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
               icon: const Icon(Icons.visibility_outlined, size: 18),
               label: const Text('VOIR LE BON PLAN'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEF8A40),
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFEF8A40),
+                ),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -1833,10 +1906,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
             SnackBar(
               content: Text(
                 isFavorited0 ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.white),
+                ),
               ),
               duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
+              backgroundColor: AdaptiveColors.surface(context, Colors.green),
             ),
           );
         }
@@ -1846,9 +1921,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('Erreur lors de la mise à jour des favoris'),
-              backgroundColor: Colors.red,
+              backgroundColor: AdaptiveColors.surface(context, Colors.red),
             ),
           );
         }
@@ -2029,14 +2104,17 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                 PostTag(
                   title: workTime,
                   icon: Icons.access_time,
-                  color: Colors.grey,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
                 ),
             ],
             subtags: contractType.isNotEmpty
                 ? PostTag(
                     title: contractType,
                     icon: Icons.description_outlined,
-                    color: const Color(0xFF27A5FF),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF27A5FF),
+                    ),
                   )
                 : null,
             advantages: advantagesList,
@@ -2133,19 +2211,19 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
           PostTag(
             title: category,
             icon: Icons.local_offer_outlined,
-            color: Colors.orange,
+            color: AdaptiveColors.foreground(context, Colors.orange),
           ),
         if (subCategory.isNotEmpty)
           PostTag(
             title: subCategory,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (type.isNotEmpty)
           PostTag(
             title: type,
             icon: Icons.check_circle_outline,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
       ];
 
@@ -2209,16 +2287,31 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.grey[600]),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          ),
           const SizedBox(width: 4),
-          Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[700]),
+            ),
+          ),
         ],
       ),
     );
@@ -2230,11 +2323,18 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[400]),
+            Icon(
+              Icons.inbox_outlined,
+              size: 48,
+              color: AdaptiveColors.foreground(context, Colors.grey[400]),
+            ),
             const SizedBox(height: 12),
             Text(
               message,
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              style: TextStyle(
+                fontSize: 14,
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -2249,11 +2349,18 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: AdaptiveColors.foreground(context, Colors.red[300]),
+            ),
             const SizedBox(height: 12),
             Text(
               message,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 14,
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[
@@ -2347,9 +2454,9 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
     return Text(
       descriptionPlain,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
-        color: Color(0xFF666666),
+        color: AdaptiveColors.foreground(context, Color(0xFF666666)),
         height: 1.5,
       ),
       maxLines: 3,

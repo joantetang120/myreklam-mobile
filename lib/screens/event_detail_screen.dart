@@ -1,10 +1,11 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:myreklam/models/delegation.dart';
 import 'package:myreklam/services/delegation_manager.dart';
 import 'package:myreklam/utils/address_formatter.dart';
 import 'package:myreklam/widgets/location_map.dart';
-// Bouton partager masqué — import 'package:myreklam/services/share_service.dart';
+import 'package:myreklam/services/share_service.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:myreklam/services/reaction_cache_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -604,7 +605,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               Icon(
                 isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                 size: 18,
-                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                color: isLiked
+                    ? AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      )
+                    : AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               GestureDetector(
@@ -613,7 +619,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   data.likesCount.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    color: isLiked
+                        ? AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -630,12 +641,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               Icon(
                 Icons.chat_bubble_outline,
                 size: 17,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               Text(
                 data.commentsCount.toString(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -776,19 +790,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           PostTag(
             title: categoryCode,
             icon: Icons.local_offer_outlined,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
         if (subCategoryCode != null && subCategoryCode.isNotEmpty)
           PostTag(
             title: _translateSubCategory(subCategoryCode),
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (formatType != null && formatType.isNotEmpty)
           PostTag(
             title: formatType,
             icon: Icons.videocam_outlined,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -981,10 +995,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             SnackBar(
               content: Text(
                 newValue ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.white),
+                ),
               ),
               duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
+              backgroundColor: AdaptiveColors.surface(context, Colors.green),
             ),
           );
         }
@@ -1018,7 +1034,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Erreur: $e'),
+              backgroundColor: AdaptiveColors.surface(context, Colors.red),
+            ),
           );
         }
       }
@@ -1237,9 +1256,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       if (response.statusCode == 201) {
         setState(() => _isParticipating = true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Participation enregistrée avec succès'),
-            backgroundColor: Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
           ),
         );
 
@@ -1274,7 +1293,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Vous avez gagné $amount My\'s !'),
-                    backgroundColor: const Color(0xFF3AAE5E),
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ),
                   ),
                 );
               }
@@ -1342,8 +1364,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Voulez-vous vraiment participer à cet événement ?',
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                'Votre participation et les informations de profil accessibles dans ce parcours seront transmises à l’organisateur. Il peut les traiter pour gérer votre demande ; contactez-le pour ses usages et vos droits sur ses propres copies. Confirmer la participation ?',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AdaptiveColors.foreground(context, Colors.grey[700]),
+                ),
               ),
               const SizedBox(height: 12),
               Text(
@@ -1357,38 +1382,50 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               const SizedBox(height: 12),
               Text(
                 'Organisateur: ${_resolveOwnerName()}',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
               const SizedBox(height: 16),
               const Divider(),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Ajouter à mon calendrier',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF333333),
+                  color: AdaptiveColors.foreground(context, Color(0xFF333333)),
                 ),
               ),
               const SizedBox(height: 12),
               _buildCalendarOption(
                 icon: Icons.calendar_today,
                 label: 'Google Calendar',
-                color: const Color(0xFF4285F4),
+                color: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF4285F4),
+                ),
                 onTap: _addToGoogleCalendar,
               ),
               const SizedBox(height: 8),
               _buildCalendarOption(
                 icon: Icons.calendar_month,
                 label: 'Outlook Calendar',
-                color: const Color(0xFF0078D4),
+                color: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF0078D4),
+                ),
                 onTap: _addToOutlookCalendar,
               ),
               const SizedBox(height: 8),
               _buildCalendarOption(
                 icon: Icons.calendar_today,
                 label: 'Yahoo Calendar',
-                color: const Color(0xFF6001D2),
+                color: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFF6001D2),
+                ),
                 onTap: _addToYahooCalendar,
               ),
               // Bouton partager masqué
@@ -1407,15 +1444,21 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       await _participate();
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF9800),
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFFF9800),
+                ),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
               ),
               child: _isLoadingParticipation
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 18,
                       width: 18,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                         strokeWidth: 2,
                       ),
                     )
@@ -1824,20 +1867,27 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: Colors.grey[600]),
+        Icon(
+          icon,
+          size: 18,
+          color: AdaptiveColors.foreground(context, Colors.grey[600]),
+        ),
         const SizedBox(width: 8),
         Text(
           '$label: ',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
+            color: AdaptiveColors.foreground(context, Colors.grey[700]),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 13,
+              color: AdaptiveColors.foreground(context, Colors.grey[600]),
+            ),
           ),
         ),
       ],
@@ -1847,7 +1897,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return AppLayout(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF9F9FB)),
       onTabTapped: (index) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
@@ -1857,21 +1907,21 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         );
       },
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
           padding: const EdgeInsets.only(left: 10),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
             size: 18,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Détails Évènement',
           style: TextStyle(
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             fontFamily: 'Manjari',
             fontWeight: FontWeight.bold,
           ),
@@ -1880,9 +1930,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         actions: [
           if (widget.isOwner)
             PopupMenuButton<String>(
-              icon: const Icon(
+              icon: Icon(
                 Icons.more_vert,
-                color: Color(0xFF616161),
+                color: AdaptiveColors.foreground(context, Color(0xFF616161)),
                 size: 24,
               ),
               offset: const Offset(0, 45),
@@ -1911,14 +1961,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     DelegationManager.instance.can(
                       DelegationPermission.announcements,
                     ))
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'edit',
                     child: Row(
                       children: [
                         Icon(
                           Icons.edit_outlined,
                           size: 20,
-                          color: Color(0xFF616161),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF616161),
+                          ),
                         ),
                         SizedBox(width: 12),
                         Text('Modifier'),
@@ -1928,13 +1981,25 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 if (DelegationManager.instance.can(
                   DelegationPermission.announcements,
                 ))
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                        Icon(
+                          Icons.delete_outline,
+                          size: 20,
+                          color: AdaptiveColors.foreground(context, Colors.red),
+                        ),
                         SizedBox(width: 12),
-                        Text('Supprimer', style: TextStyle(color: Colors.red)),
+                        Text(
+                          'Supprimer',
+                          style: TextStyle(
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1952,24 +2017,30 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             if (widget.eventData?['is_expired'] == true)
               Container(
                 width: double.infinity,
-                color: const Color(0xFFFFF3E0),
+                color: AdaptiveColors.surface(context, const Color(0xFFFFF3E0)),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 10,
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.event_busy,
                       size: 18,
-                      color: Color(0xFFE65100),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFFE65100),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Cet événement est terminé. Les informations sont indiquées à titre indicatif.',
                         style: TextStyle(
-                          color: Colors.orange.shade900,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.orange.shade900,
+                          ),
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1998,13 +2069,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           _buildTag(
                             _translateCategory(widget.categoryCode!),
                             Icons.category_outlined,
-                            const Color(0xFF9C27B0),
+                            AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFF9C27B0),
+                            ),
                           ),
                         if (widget.formatType != null)
                           _buildTag(
                             widget.formatType!,
                             Icons.event_available_outlined,
-                            Colors.blue,
+                            AdaptiveColors.foreground(context, Colors.blue),
                           ),
                       ],
                     ),
@@ -2014,10 +2088,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   // Title - big and bold
                   Text(
                     widget.eventTitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1A1A1A),
+                      ),
                       height: 1.3,
                     ),
                   ),
@@ -2032,12 +2109,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Description',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1A1A1A),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -2053,12 +2133,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Informations',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1A1A1A),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -2067,8 +2150,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       widget.subCategoryCode!.isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.subdirectory_arrow_right,
-                      iconColor: Colors.orange,
-                      bgColor: Colors.orange.withValues(alpha: 0.1),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.orange,
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        Colors.orange,
+                      ).withValues(alpha: 0.1),
                       label: "Type d'evenements",
                       value: _translateSubCategory(widget.subCategoryCode!),
                     ),
@@ -2079,8 +2168,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   if (_hasDateInfo())
                     _buildDetailItem(
                       icon: Icons.event_outlined,
-                      iconColor: const Color(0xFF3AAE5E),
-                      bgColor: const Color(0xFFE6F7EF),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFE6F7EF),
+                      ),
                       label: 'Date',
                       value: _buildDateDisplay(),
                     ),
@@ -2089,8 +2184,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   if (_hasTimeInfo())
                     _buildDetailItem(
                       icon: Icons.access_time,
-                      iconColor: Colors.teal,
-                      bgColor: Colors.teal.withValues(alpha: 0.1),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.teal,
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        Colors.teal,
+                      ).withValues(alpha: 0.1),
                       label: 'Horaires',
                       value: _buildTimeDisplay(),
                     ),
@@ -2101,8 +2202,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       widget.organizerName!.isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.person_outline,
-                      iconColor: const Color(0xFF1976D2),
-                      bgColor: const Color(0xFF1976D2).withValues(alpha: 0.1),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF1976D2),
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF1976D2),
+                      ).withValues(alpha: 0.1),
                       label: 'Organisateur',
                       value: widget.organizerName!,
                     ),
@@ -2114,8 +2221,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   if (_buildLocationDisplay().isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.location_on_outlined,
-                      iconColor: const Color(0xFF3AAE5E),
-                      bgColor: const Color(0xFFE6F7EF),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFE6F7EF),
+                      ),
                       label: 'Lieu',
                       value: _buildLocationDisplay(),
                     ),
@@ -2126,8 +2239,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       widget.reservationMode!.isNotEmpty)
                     _buildDetailItem(
                       icon: Icons.confirmation_num_outlined,
-                      iconColor: Colors.purple,
-                      bgColor: Colors.purple.withValues(alpha: 0.1),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.purple,
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        Colors.purple,
+                      ).withValues(alpha: 0.1),
                       label: 'Réservation',
                       value: widget.reservationMode == 'achat_billet'
                           ? 'Achat de billet obligatoire'
@@ -2166,8 +2285,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     icon: const Icon(Icons.open_in_new, size: 18),
                     label: const Text('Visiter le site web'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.blue,
+                      ),
+                      foregroundColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.white,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -2192,9 +2317,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         : () => _showParticipationDialog(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _isParticipating
-                          ? Colors.grey
-                          : const Color(0xFF3AAE5E),
-                      foregroundColor: Colors.white,
+                          ? AdaptiveColors.surface(context, Colors.grey)
+                          : AdaptiveColors.surface(
+                              context,
+                              const Color(0xFF3AAE5E),
+                            ),
+                      foregroundColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.white,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -2202,12 +2333,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       elevation: 0,
                     ),
                     child: _isParticipating
-                        ? const Row(
+                        ? Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
                                 Icons.check_circle,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 size: 18,
                               ),
                               SizedBox(width: 6),
@@ -2247,8 +2381,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                   ? Icons.favorite
                                   : Icons.favorite_outline,
                               color: _isFavorite
-                                  ? Colors.red
-                                  : Colors.grey[600],
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      Colors.red,
+                                    )
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[600],
+                                    ),
                               size: 24,
                             ),
                     ),
@@ -2256,12 +2396,26 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       'Favoris',
                       style: TextStyle(
                         fontSize: 12,
-                        color: _isFavorite ? Colors.red : Colors.grey[600],
+                        color: _isFavorite
+                            ? AdaptiveColors.foreground(context, Colors.red)
+                            : AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                       ),
                     ),
                   ],
                 ),
-                // Bouton partager masqué
+                if (widget.eventId?.isNotEmpty == true)
+                  IconButton(
+                    tooltip: 'Partager cet événement',
+                    icon: const Icon(Icons.share_outlined),
+                    onPressed: () => ShareService.shareEntity(
+                      'events',
+                      widget.eventId!,
+                      title: widget.eventTitle,
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 16),
@@ -2291,17 +2445,23 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         children: [
                           Text(
                             _resolveOwnerName(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A1A),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF1A1A1A),
+                              ),
                             ),
                           ),
                           Text(
                             _resolveUserType(),
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                         ],
@@ -2319,8 +2479,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             onPressed: _toggleFollow,
                             style: TextButton.styleFrom(
                               foregroundColor: _isFollowing
-                                  ? Colors.grey[600]
-                                  : const Color(0xFF3AAE5E),
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[600],
+                                    )
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      const Color(0xFF3AAE5E),
+                                    ),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 8,
@@ -2329,8 +2495,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                 borderRadius: BorderRadius.circular(20),
                                 side: BorderSide(
                                   color: _isFollowing
-                                      ? Colors.grey[400]!
-                                      : const Color(0xFF3AAE5E),
+                                      ? AdaptiveColors.border(
+                                          context,
+                                          Colors.grey[400]!,
+                                        )
+                                      : AdaptiveColors.border(
+                                          context,
+                                          const Color(0xFF3AAE5E),
+                                        ),
                                 ),
                               ),
                             ),
@@ -2351,7 +2523,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 widget.timeAgo.isNotEmpty ? widget.timeAgo : 'Posté récemment',
-                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -2363,12 +2538,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Localisation',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF1A1A1A),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -2395,9 +2573,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                     city: widget.locationCity,
                                   )
                                 : (widget.coverageArea ?? 'Non spécifié')),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF616161),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF616161),
+                        ),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -2412,9 +2593,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+                border: Border.all(
+                  color: AdaptiveColors.border(
+                    context,
+                    Colors.grey,
+                  ).withValues(alpha: 0.15),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
@@ -2428,9 +2614,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.comment_outlined,
-                        color: Color(0xFF616161),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF616161),
+                        ),
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -2439,13 +2628,22 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[700],
+                          ),
                         ),
                       ),
                       const Spacer(),
                       Text(
                         '${_localCommentsCount ?? _comments.length}',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[500],
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -2466,7 +2664,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           'Aucun commentaire. Soyez le premier !',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -2501,8 +2702,16 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             : 'Voir tous les commentaires',
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF3AAE5E),
-                        side: const BorderSide(color: Color(0xFF3AAE5E)),
+                        foregroundColor: AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
+                        side: BorderSide(
+                          color: AdaptiveColors.border(
+                            context,
+                            Color(0xFF3AAE5E),
+                          ),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -2515,20 +2724,23 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             const SizedBox(height: 32),
 
             // 11. Similar events header - always visible
-            const Center(
+            Center(
               child: Text(
                 'Autres événements similaires qui pourraient vous interesser',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF616161),
+                  color: AdaptiveColors.foreground(context, Color(0xFF616161)),
                 ),
                 textAlign: TextAlign.center,
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Container(height: 1, color: Colors.grey[300]),
+              child: Container(
+                height: 1,
+                color: AdaptiveColors.surface(context, Colors.grey[300]),
+              ),
             ),
             const SizedBox(height: 16),
             if (_isLoadingSimilar)
@@ -2555,7 +2767,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     'Aucun événement similaire trouvé',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[500],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[500],
+                      ),
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -2712,9 +2927,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               response.statusCode < 300) {
                             Navigator.pop(dialogContext);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                 content: Text('Événement supprimé avec succès'),
-                                backgroundColor: Color(0xFF3AAE5E),
+                                backgroundColor: AdaptiveColors.surface(
+                                  context,
+                                  Color(0xFF3AAE5E),
+                                ),
                               ),
                             );
                             Navigator.pop(context, 'deleted');
@@ -2728,21 +2946,30 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               content: Text(
                                 'Erreur: ${e.toString().replaceFirst("Exception: ", "")}',
                               ),
-                              backgroundColor: Colors.red,
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                Colors.red,
+                              ),
                             ),
                           );
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
+                  foregroundColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
                 ),
                 child: isDeleting
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           strokeWidth: 2,
                         ),
                       )
@@ -2760,7 +2987,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (widget.description.isNotEmpty) {
       return Text(
         widget.description,
-        style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
+        style: TextStyle(
+          fontSize: 14,
+          color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          height: 1.5,
+        ),
       );
     }
 
@@ -2838,7 +3069,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
     return Text(
       widget.description,
-      style: TextStyle(fontSize: 14, color: Colors.grey[600], height: 1.5),
+      style: TextStyle(
+        fontSize: 14,
+        color: AdaptiveColors.foreground(context, Colors.grey[600]),
+        height: 1.5,
+      ),
     );
   }
 
@@ -2850,17 +3085,21 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: const Color(0xFFF5F5F5),
+            color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, size: 22, color: const Color(0xFF3AAE5E)),
+          child: Icon(
+            icon,
+            size: 22,
+            color: AdaptiveColors.foreground(context, const Color(0xFF3AAE5E)),
+          ),
         ),
         const SizedBox(height: 6),
         Text(
           label,
           style: TextStyle(
             fontSize: 10,
-            color: Colors.grey[600],
+            color: AdaptiveColors.foreground(context, Colors.grey[600]),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -3011,7 +3250,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (sheetCtx) => StatefulBuilder(
         builder: (ctx, ms) {
           if (isLoading && comments.isEmpty) {
@@ -3130,21 +3369,31 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     onPressed: () => Navigator.pop(context),
                     child: Text(
                       'Annuler',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
+                      ),
                     ),
                   ),
                   ElevatedButton(
                     onPressed: () =>
                         Navigator.pop(context, editController.text),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3AAE5E),
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Enregistrer',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(context, Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -3175,7 +3424,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     content: Text(
                       'Erreur lors de la modification: ${e.toString()}',
                     ),
-                    backgroundColor: Colors.redAccent,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      Colors.redAccent,
+                    ),
                   ),
                 );
               }
@@ -3202,20 +3454,30 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     onPressed: () => Navigator.pop(context, false),
                     child: Text(
                       'Annuler',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
+                      ),
                     ),
                   ),
                   ElevatedButton(
                     onPressed: () => Navigator.pop(context, true),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Supprimer',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(context, Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -3265,7 +3527,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     content: Text(
                       'Erreur lors de la suppression: ${e.toString()}',
                     ),
-                    backgroundColor: Colors.redAccent,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      Colors.redAccent,
+                    ),
                   ),
                 );
               }
@@ -3372,7 +3637,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                     style: TextStyle(
                                       fontSize: isReply ? 12 : 13,
                                       fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF333333),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        const Color(0xFF333333),
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 6),
@@ -3380,7 +3648,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                     timeAgo,
                                     style: TextStyle(
                                       fontSize: isReply ? 10 : 11,
-                                      color: Colors.grey[500],
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[500],
+                                      ),
                                     ),
                                   ),
                                   if (isOwner) ...[
@@ -3406,20 +3677,28 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                 ],
                                               ),
                                             ),
-                                            const PopupMenuItem(
+                                            PopupMenuItem(
                                               value: 'delete',
                                               child: Row(
                                                 children: [
                                                   Icon(
                                                     Icons.delete,
                                                     size: 18,
-                                                    color: Colors.redAccent,
+                                                    color:
+                                                        AdaptiveColors.foreground(
+                                                          context,
+                                                          Colors.redAccent,
+                                                        ),
                                                   ),
                                                   SizedBox(width: 8),
                                                   Text(
                                                     'Supprimer',
                                                     style: TextStyle(
-                                                      color: Colors.redAccent,
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Colors.redAccent,
+                                                          ),
                                                     ),
                                                   ),
                                                 ],
@@ -3436,7 +3715,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                       child: Icon(
                                         Icons.more_horiz,
                                         size: 18,
-                                        color: Colors.grey[400],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[400],
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -3447,7 +3729,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                 body,
                                 style: TextStyle(
                                   fontSize: isReply ? 12 : 13,
-                                  color: Colors.grey[700],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[700],
+                                  ),
                                   height: 1.4,
                                 ),
                               ),
@@ -3497,8 +3782,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                               : Icons.thumb_up_alt_outlined,
                                           size: isReply ? 12 : 14,
                                           color: isLiked
-                                              ? const Color(0xFF3AAE5E)
-                                              : Colors.grey[500],
+                                              ? AdaptiveColors.foreground(
+                                                  context,
+                                                  const Color(0xFF3AAE5E),
+                                                )
+                                              : AdaptiveColors.foreground(
+                                                  context,
+                                                  Colors.grey[500],
+                                                ),
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
@@ -3506,8 +3797,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                           style: TextStyle(
                                             fontSize: isReply ? 11 : 12,
                                             color: isLiked
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[600],
+                                                ? AdaptiveColors.foreground(
+                                                    context,
+                                                    const Color(0xFF3AAE5E),
+                                                  )
+                                                : AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.grey[600],
+                                                  ),
                                             fontWeight: isLiked
                                                 ? FontWeight.w600
                                                 : FontWeight.normal,
@@ -3530,7 +3827,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                         'Répondre',
                                         style: TextStyle(
                                           fontSize: isReply ? 11 : 12,
-                                          color: Colors.grey[600],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[600],
+                                          ),
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -3557,8 +3857,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             maxChildSize: 0.95,
             minChildSize: 0.3,
             builder: (_, sc) => Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
@@ -3568,7 +3868,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: AdaptiveColors.surface(context, Colors.grey[300]),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -3601,7 +3901,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         horizontal: 16,
                         vertical: 8,
                       ),
-                      color: Colors.grey[100],
+                      color: AdaptiveColors.surface(context, Colors.grey[100]),
                       child: Row(
                         children: [
                           Expanded(
@@ -3609,7 +3909,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               'Répondre à $replyingToName',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -3619,10 +3922,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               replyingToId = null;
                               replyingToName = null;
                             }),
-                            child: const Icon(
+                            child: Icon(
                               Icons.close,
                               size: 18,
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                             ),
                           ),
                         ],
@@ -3649,7 +3955,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                   ? 'Écrire une réponse...'
                                   : 'Écrire un commentaire...',
                               filled: true,
-                              fillColor: Colors.grey[100],
+                              fillColor: AdaptiveColors.surface(
+                                context,
+                                Colors.grey[100],
+                              ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(24),
                                 borderSide: BorderSide.none,
@@ -3666,13 +3975,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           onTap: submitComment,
                           child: Container(
                             padding: const EdgeInsets.all(10),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF3AAE5E),
+                            decoration: BoxDecoration(
+                              color: AdaptiveColors.surface(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.send,
-                              color: Colors.white,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               size: 20,
                             ),
                           ),
@@ -3785,7 +4100,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             style: TextStyle(
                               fontSize: isReply ? 12 : 13,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF333333),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                const Color(0xFF333333),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -3793,7 +4111,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             timeAgo,
                             style: TextStyle(
                               fontSize: isReply ? 10 : 11,
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                             ),
                           ),
                         ],
@@ -3803,7 +4124,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         body,
                         style: TextStyle(
                           fontSize: isReply ? 12 : 13,
-                          color: Colors.grey[700],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[700],
+                          ),
                           height: 1.4,
                         ),
                       ),
@@ -3852,8 +4176,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                       : Icons.thumb_up_alt_outlined,
                                   size: isReply ? 12 : 14,
                                   color: isLiked
-                                      ? const Color(0xFF3AAE5E)
-                                      : Colors.grey[500],
+                                      ? AdaptiveColors.foreground(
+                                          context,
+                                          const Color(0xFF3AAE5E),
+                                        )
+                                      : AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[500],
+                                        ),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -3861,8 +4191,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                   style: TextStyle(
                                     fontSize: isReply ? 11 : 12,
                                     color: isLiked
-                                        ? const Color(0xFF3AAE5E)
-                                        : Colors.grey[600],
+                                        ? AdaptiveColors.foreground(
+                                            context,
+                                            const Color(0xFF3AAE5E),
+                                          )
+                                        : AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[600],
+                                          ),
                                     fontWeight: isLiked
                                         ? FontWeight.w600
                                         : FontWeight.normal,
@@ -3880,7 +4216,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                 'Répondre',
                                 style: TextStyle(
                                   fontSize: isReply ? 11 : 12,
-                                  color: Colors.grey[600],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -3931,7 +4270,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
           padding: EdgeInsets.only(
@@ -3940,8 +4279,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 MediaQuery.of(ctx).padding.bottom,
           ),
           child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: AdaptiveColors.surface(context, Colors.white),
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Column(
@@ -3952,7 +4291,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: AdaptiveColors.surface(context, Colors.grey[300]),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -3973,7 +4312,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     decoration: InputDecoration(
                       hintText: 'Écrire une réponse...',
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: AdaptiveColors.surface(
+                        context,
+                        Colors.grey[100],
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide.none,
@@ -3993,9 +4335,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text(
+                        child: Text(
                           'Annuler',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -4047,8 +4394,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3AAE5E),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -4164,17 +4517,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 label,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A1A),
+                  color: AdaptiveColors.foreground(context, Color(0xFF1A1A1A)),
                 ),
               ),
             ],
@@ -4196,8 +4549,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         final amount = widget.priceAmount ?? '';
         return _buildDetailItem(
           icon: Icons.euro,
-          iconColor: const Color(0xFFFF9800),
-          bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
+          iconColor: AdaptiveColors.foreground(
+            context,
+            const Color(0xFFFF9800),
+          ),
+          bgColor: AdaptiveColors.surface(
+            context,
+            const Color(0xFFFF9800),
+          ).withValues(alpha: 0.1),
           label: 'Prix',
           value: amount.isNotEmpty ? '$amount €' : 'Payant',
         );
@@ -4215,8 +4574,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         if (validCategories.isEmpty) {
           return _buildDetailItem(
             icon: Icons.euro,
-            iconColor: const Color(0xFFFF9800),
-            bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
+            iconColor: AdaptiveColors.foreground(
+              context,
+              const Color(0xFFFF9800),
+            ),
+            bgColor: AdaptiveColors.surface(
+              context,
+              const Color(0xFFFF9800),
+            ).withValues(alpha: 0.1),
             label: 'Prix',
             value: 'Payant',
           );
@@ -4227,10 +4592,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF9800).withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFFF9800),
+                ).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.euro, color: Color(0xFFFF9800), size: 20),
+              child: Icon(
+                Icons.euro,
+                color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -4241,7 +4613,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     'Prix',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[600],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -4256,10 +4631,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       padding: const EdgeInsets.only(bottom: 2),
                       child: Text(
                         '$name: $price €',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1A1A1A),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF1A1A1A),
+                          ),
                         ),
                       ),
                     );
@@ -4274,8 +4652,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       // payant but unknown pricingMode → Payant
       return _buildDetailItem(
         icon: Icons.euro,
-        iconColor: const Color(0xFFFF9800),
-        bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFFFF9800)),
+        bgColor: AdaptiveColors.surface(
+          context,
+          const Color(0xFFFF9800),
+        ).withValues(alpha: 0.1),
         label: 'Prix',
         value: 'Payant',
       );
@@ -4284,8 +4665,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     // gratuit or unknown price_type → Gratuit
     return _buildDetailItem(
       icon: Icons.euro,
-      iconColor: const Color(0xFFFF9800),
-      bgColor: const Color(0xFFFF9800).withValues(alpha: 0.1),
+      iconColor: AdaptiveColors.foreground(context, const Color(0xFFFF9800)),
+      bgColor: AdaptiveColors.surface(
+        context,
+        const Color(0xFFFF9800),
+      ).withValues(alpha: 0.1),
       label: 'Prix',
       value: 'Gratuit',
     );

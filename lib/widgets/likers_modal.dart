@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/profile_service.dart';
@@ -105,7 +106,7 @@ class _LikersSheetState extends State<_LikersSheet> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: AdaptiveColors.surface(context, Colors.grey[300]),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -123,7 +124,13 @@ class _LikersSheetState extends State<_LikersSheet> {
                     const Spacer(),
                     Text(
                       '${_likers.length} like${_likers.length > 1 ? 's' : ''}',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -137,7 +144,10 @@ class _LikersSheetState extends State<_LikersSheet> {
                         child: Text(
                           'Aucun like pour le moment',
                           style: TextStyle(
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                             fontSize: 15,
                           ),
                         ),
@@ -178,11 +188,23 @@ class _LikersSheetState extends State<_LikersSheet> {
                                     horizontal: 16,
                                   ),
                                   backgroundColor: isFollowing
-                                      ? Colors.grey[200]
-                                      : const Color(0xFF3AAE5E),
+                                      ? AdaptiveColors.surface(
+                                          context,
+                                          Colors.grey[200],
+                                        )
+                                      : AdaptiveColors.surface(
+                                          context,
+                                          const Color(0xFF3AAE5E),
+                                        ),
                                   foregroundColor: isFollowing
-                                      ? Colors.black87
-                                      : Colors.white,
+                                      ? AdaptiveColors.foreground(
+                                          context,
+                                          Colors.black87,
+                                        )
+                                      : AdaptiveColors.foreground(
+                                          context,
+                                          Colors.white,
+                                        ),
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),

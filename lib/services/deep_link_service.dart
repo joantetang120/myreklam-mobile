@@ -12,6 +12,7 @@ import 'package:myreklam/screens/post_detail_full_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
 import 'package:myreklam/screens/story_viewer_screen.dart';
 import 'package:myreklam/screens/reels_screen.dart';
+import 'package:myreklam/screens/public_profile_screen.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/story_service.dart';
 import 'package:myreklam/utils/user_session.dart';
@@ -52,13 +53,15 @@ class DeepLinkService {
 
   void _handleUri(Uri uri) {
     debugPrint('DeepLinkService: received $uri');
-    final segments = uri.pathSegments;
+    final segments = uri.scheme == 'myreklam' && uri.host == 's'
+        ? ['s', ...uri.pathSegments]
+        : uri.pathSegments;
     // Expected: ['s', '{type}', '{id}']  (scheme or https host stripped)
     final idx = segments.indexOf('s');
     if (idx < 0 || idx + 2 >= segments.length) return;
     final type = segments[idx + 1];
     final id = segments[idx + 2];
-    _navigate(type, id);
+    _navigate(_normalizeType(type), id);
   }
 
   /// Public entry point to open an entity detail screen by type + id.
@@ -106,6 +109,10 @@ class DeepLinkService {
       case 'stories':
       case 'story':
         return 'stories';
+      case 'profil':
+      case 'profiles':
+      case 'profile':
+        return 'profil';
       case 'reels':
       case 'reel':
         return 'reels';
@@ -124,6 +131,12 @@ class DeepLinkService {
     _pendingNavigation = null;
     try {
       switch (type) {
+        case 'profil':
+          Navigator.push(
+            ctx,
+            MaterialPageRoute(builder: (_) => PublicProfileScreen(userId: id)),
+          );
+          break;
         case 'bons-plans':
           await _openBonPlan(ctx, id);
           break;

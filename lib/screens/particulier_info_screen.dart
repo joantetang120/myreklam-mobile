@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -64,14 +65,17 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Une erreur est survenue. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     } finally {
@@ -82,18 +86,21 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.grey),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Colors.grey),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Information particulier',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -103,9 +110,12 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
       body: Column(
         children: [
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Complétez les informations de votre Compte',
-            style: TextStyle(color: Colors.grey, fontSize: 14),
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.grey),
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 30),
           // Progress Bar
@@ -114,7 +124,7 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
             height: 6,
             margin: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: AdaptiveColors.surface(context, Colors.grey[200]),
               borderRadius: BorderRadius.circular(3),
             ),
             child: FractionallySizedBox(
@@ -122,7 +132,10 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
               widthFactor: 1.0, // Fully filled for this step in the image
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF9800),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFFF9800),
+                  ),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -140,7 +153,10 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                     child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFF5F5F5),
+                        ),
                         borderRadius: BorderRadius.circular(15),
                         boxShadow: [
                           BoxShadow(
@@ -160,23 +176,32 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(8),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFFFF3E0),
+                                  decoration: BoxDecoration(
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      Color(0xFFFFF3E0),
+                                    ),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.person_outline_rounded,
-                                    color: Color(0xFFFF9800),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFFFF9800),
+                                    ),
                                     size: 20,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                const Text(
+                                Text(
                                   'Informations',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.grey,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -189,17 +214,23 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Votre Pseudo*',
                                   style: TextStyle(
-                                    color: Colors.grey,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: TextFormField(
@@ -238,46 +269,64 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                                       ),
                                       focusedBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(
-                                          color: Color(0xFFFF9800),
+                                        borderSide: BorderSide(
+                                          color: AdaptiveColors.border(
+                                            context,
+                                            Color(0xFFFF9800),
+                                          ),
                                           width: 2,
                                         ),
                                       ),
                                       errorBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(
-                                          color: Color(0xFFD32F2F),
+                                        borderSide: BorderSide(
+                                          color: AdaptiveColors.border(
+                                            context,
+                                            Color(0xFFD32F2F),
+                                          ),
                                           width: 2,
                                         ),
                                       ),
                                       focusedErrorBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(8),
-                                        borderSide: const BorderSide(
-                                          color: Color(0xFFD32F2F),
+                                        borderSide: BorderSide(
+                                          color: AdaptiveColors.border(
+                                            context,
+                                            Color(0xFFD32F2F),
+                                          ),
                                           width: 2,
                                         ),
                                       ),
-                                      errorStyle: const TextStyle(
+                                      errorStyle: TextStyle(
                                         fontSize: 12,
                                         height: 1.2,
-                                        color: Color(0xFFD32F2F),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Color(0xFFD32F2F),
+                                        ),
                                       ),
                                       errorMaxLines: 2,
                                     ),
                                   ),
                                 ),
                                 const SizedBox(height: 20),
-                                const Text(
+                                Text(
                                   'Téléphone (recommande)',
                                   style: TextStyle(
-                                    color: Colors.grey,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
@@ -296,11 +345,15 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                                               width: 24,
                                             ),
                                             const SizedBox(width: 8),
-                                            const Text(
+                                            Text(
                                               '+33',
                                               style: TextStyle(
                                                 fontSize: 16,
-                                                color: Colors.grey,
+                                                color:
+                                                    AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.grey,
+                                                    ),
                                               ),
                                             ),
                                           ],
@@ -344,16 +397,22 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                                             focusedBorder: OutlineInputBorder(
                                               borderRadius:
                                                   BorderRadius.circular(8),
-                                              borderSide: const BorderSide(
-                                                color: Color(0xFFFF9800),
+                                              borderSide: BorderSide(
+                                                color: AdaptiveColors.border(
+                                                  context,
+                                                  Color(0xFFFF9800),
+                                                ),
                                                 width: 2,
                                               ),
                                             ),
                                             errorBorder: OutlineInputBorder(
                                               borderRadius:
                                                   BorderRadius.circular(8),
-                                              borderSide: const BorderSide(
-                                                color: Color(0xFFD32F2F),
+                                              borderSide: BorderSide(
+                                                color: AdaptiveColors.border(
+                                                  context,
+                                                  Color(0xFFD32F2F),
+                                                ),
                                                 width: 2,
                                               ),
                                             ),
@@ -361,15 +420,22 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                                                 OutlineInputBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(8),
-                                                  borderSide: const BorderSide(
-                                                    color: Color(0xFFD32F2F),
+                                                  borderSide: BorderSide(
+                                                    color:
+                                                        AdaptiveColors.border(
+                                                          context,
+                                                          Color(0xFFD32F2F),
+                                                        ),
                                                     width: 2,
                                                   ),
                                                 ),
-                                            errorStyle: const TextStyle(
+                                            errorStyle: TextStyle(
                                               fontSize: 12,
                                               height: 1.2,
-                                              color: Color(0xFFD32F2F),
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Color(0xFFD32F2F),
+                                              ),
                                             ),
                                             errorMaxLines: 2,
                                           ),
@@ -392,7 +458,10 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                     height: 56,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF9800),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFFF9800),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -400,21 +469,27 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                       ),
                       onPressed: _isLoading ? null : () => _handleSubmit(),
                       child: _isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 strokeWidth: 2.5,
                               ),
                             )
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
+                              children: [
                                 Text(
                                   'Suivant',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -422,7 +497,10 @@ class _ParticulierInfoScreenState extends State<ParticulierInfoScreen> {
                                 SizedBox(width: 8),
                                 Icon(
                                   Icons.arrow_forward_rounded,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               ],
                             ),

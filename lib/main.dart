@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:myreklam/firebase_options.dart';
@@ -16,6 +17,8 @@ import 'package:myreklam/widgets/delegation_banner.dart';
 import 'package:myreklam/services/stripe_payment_service.dart';
 import 'package:myreklam/widgets/force_update_gate.dart';
 import 'package:provider/provider.dart';
+import 'package:myreklam/theme/app_theme.dart';
+import 'package:myreklam/theme/theme_controller.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final RouteObserver<ModalRoute<void>> routeObserver =
@@ -23,6 +26,7 @@ final RouteObserver<ModalRoute<void>> routeObserver =
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await ThemeController.instance.load();
 
   final firebaseReady = await _initializeService(
     'Firebase',
@@ -77,42 +81,63 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => ConversationProvider(),
-      child: MaterialApp(
-        navigatorKey: navigatorKey,
-        navigatorObservers: [routeObserver],
-        debugShowCheckedModeBanner: false,
-        builder: (context, child) {
-          return AnimatedBuilder(
-            animation: DelegationManager.instance,
-            builder: (context, _) {
-              if (!DelegationManager.instance.isActive || child == null) {
-                return child ?? const SizedBox.shrink();
-              }
-              return Column(
-                children: [
-                  const DelegationBanner(),
-                  Expanded(child: child),
-                ],
-              );
-            },
-          );
-        },
-        title: 'Myreklam',
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-          FlutterQuillLocalizations.delegate,
-        ],
-        supportedLocales: const [Locale('fr'), Locale('en')],
-        locale: const Locale('fr'),
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B8D4B)),
-          useMaterial3: true,
+      child: ListenableBuilder(
+        listenable: ThemeController.instance,
+        builder: (context, _) => MaterialApp(
+          navigatorKey: navigatorKey,
+          navigatorObservers: [routeObserver],
+          debugShowCheckedModeBanner: false,
+          builder: (context, child) {
+            final dark = Theme.of(context).brightness == Brightness.dark;
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: SystemUiOverlayStyle(
+                statusBarColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.transparent,
+                ),
+                statusBarIconBrightness: dark
+                    ? Brightness.light
+                    : Brightness.dark,
+                statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+                systemNavigationBarColor: Theme.of(
+                  context,
+                ).scaffoldBackgroundColor,
+                systemNavigationBarIconBrightness: dark
+                    ? Brightness.light
+                    : Brightness.dark,
+              ),
+              child: AnimatedBuilder(
+                animation: DelegationManager.instance,
+                builder: (context, _) {
+                  if (!DelegationManager.instance.isActive || child == null) {
+                    return child ?? const SizedBox.shrink();
+                  }
+                  return Column(
+                    children: [
+                      const DelegationBanner(),
+                      Expanded(child: child),
+                    ],
+                  );
+                },
+              ),
+            );
+          },
+          title: 'Myreklam',
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+            FlutterQuillLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('fr'), Locale('en')],
+          locale: const Locale('fr'),
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: ThemeController.instance.mode,
+          // Define routes for navigation
+          routes: {'/login': (context) => const LoginScreen()},
+          home: const ForceUpdateGate(child: SplashScreen()),
         ),
-        // Define routes for navigation
-        routes: {'/login': (context) => const LoginScreen()},
-        home: const ForceUpdateGate(child: SplashScreen()),
       ),
     );
   }

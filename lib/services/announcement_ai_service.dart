@@ -104,7 +104,12 @@ class AnnouncementAiService {
   }) async {
     final images = <GalleryMedia>[];
     if (media.isEmpty) return images;
-    final directory = destination ?? await getTemporaryDirectory();
+    final directory =
+        destination ??
+        Directory(
+          '${(await getTemporaryDirectory()).path}/myreklam_ai_imports',
+        );
+    await directory.create(recursive: true);
     for (final row in media.take(3)) {
       final ext = {
         'image/jpeg': 'jpg',

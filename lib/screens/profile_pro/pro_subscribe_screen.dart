@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:myreklam/services/subscription_service.dart';
@@ -35,7 +36,10 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
+          ),
         );
       }
     }
@@ -72,9 +76,9 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Abonnement résilié avec succès.'),
-            backgroundColor: Color(0xFFEF8A40),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFFEF8A40)),
           ),
         );
 
@@ -90,7 +94,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de la résiliation: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -104,17 +108,20 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text(
+          title: Text(
             'Résilier l\'abonnement',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF333333),
+              color: AdaptiveColors.foreground(context, Color(0xFF333333)),
             ),
           ),
-          content: const Text(
+          content: Text(
             'Êtes-vous sûr de vouloir résilier votre abonnement ? Vous perdrez l\'accès à toutes les fonctionnalités premium à la fin de la période en cours.',
-            style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
+            style: TextStyle(
+              fontSize: 14,
+              color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+            ),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -122,10 +129,10 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: Text(
                 'Annuler',
                 style: TextStyle(
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -134,19 +141,25 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
             ElevatedButton(
               onPressed: _isCancelling ? null : _cancelSubscription,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF44336),
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF44336),
+                ),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: _isCancelling
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                       ),
                     )
                   : const Text(
@@ -186,18 +199,21 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
       appBar: AppBar(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2E9B5B)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Abonnement',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -217,7 +233,10 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                 child: Text(
                   'Gérez votre abonnement premium et accédez à toutes vos factures en un clic.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -226,7 +245,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: AdaptiveColors.surface(context, Colors.grey[100]),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -254,13 +273,18 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black.withValues(alpha: 0.5),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.black,
+                              ).withValues(alpha: 0.5),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Divider(color: Colors.grey[300]),
+                    Divider(
+                      color: AdaptiveColors.border(context, Colors.grey[300]),
+                    ),
                     const SizedBox(height: 5),
                     // Plan badge
                     Container(
@@ -271,7 +295,10 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                       ),
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: Colors.grey[200],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[200],
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -280,7 +307,10 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.15),
+                              color: AdaptiveColors.surface(
+                                context,
+                                Colors.green,
+                              ).withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Padding(
@@ -293,10 +323,13 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                           const SizedBox(width: 12),
                           Text(
                             _getPlanDisplayName(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF333333),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF333333),
+                              ),
                             ),
                           ),
                         ],
@@ -304,7 +337,9 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                     ),
 
                     const SizedBox(height: 5),
-                    Divider(color: Colors.grey[300]),
+                    Divider(
+                      color: AdaptiveColors.border(context, Colors.grey[300]),
+                    ),
                     const SizedBox(height: 5),
 
                     // Prochain renouvellement
@@ -324,7 +359,10 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                                 'Prochain renouvellement',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey[500],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[500],
+                                  ),
                                 ),
                               ),
                               Text(
@@ -332,7 +370,10 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.grey[500],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[500],
+                                  ),
                                 ),
                               ),
                             ],
@@ -350,7 +391,7 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: AdaptiveColors.surface(context, Colors.grey[100]),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
@@ -375,7 +416,10 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black.withValues(alpha: 0.5),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.black,
+                            ).withValues(alpha: 0.5),
                           ),
                         ),
                       ],
@@ -395,12 +439,15 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                     onPressed: _isCancelling ? null : _showCancelDialog,
                     icon: const Icon(Icons.close, size: 18),
                     label: _isCancelling
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Text(
@@ -411,8 +458,14 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
                             ),
                           ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF8A40),
-                      foregroundColor: Colors.white,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFEF8A40),
+                      ),
+                      foregroundColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.white,
+                      ),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -445,7 +498,10 @@ class _ProSubscribeScreenState extends State<ProSubscribeScreen> {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[700]),
+              ),
             ),
           ),
         ],

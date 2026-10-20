@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/models/story_model.dart';
 import 'package:myreklam/screens/story_viewer_screen.dart';
@@ -71,7 +72,12 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Supprimer',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.red),
+              ),
+            ),
           ),
         ],
       ),
@@ -94,18 +100,21 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Colors.black),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Mon Statut',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -113,10 +122,13 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
         centerTitle: true,
       ),
       body: _stories.isEmpty
-          ? const Center(
+          ? Center(
               child: Text(
                 'Aucune story active',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                  fontSize: 14,
+                ),
               ),
             )
           : ListView.builder(
@@ -172,7 +184,13 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
               height: 48,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF3AAE5E), width: 2),
+                border: Border.all(
+                  color: AdaptiveColors.border(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
+                  width: 2,
+                ),
               ),
               child: ClipOval(
                 child: story.mediaUrl != null
@@ -181,33 +199,59 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
                         children: [
                           // Thumbnail (video or image)
                           story.mediaType == 'video'
-                              ? Container(color: Colors.grey[800])
+                              ? Container(
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    Colors.grey[800],
+                                  ),
+                                )
                               : Image.network(
                                   story.mediaUrl!,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => Container(
-                                    color: Colors.grey[200],
-                                    child: const Icon(
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      Colors.grey[200],
+                                    ),
+                                    child: Icon(
                                       Icons.image,
-                                      color: Colors.grey,
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey,
+                                      ),
                                     ),
                                   ),
                                 ),
                           // Play icon overlay for videos
                           if (story.mediaType == 'video')
                             Container(
-                              color: Colors.black.withValues(alpha: 0.3),
-                              child: const Icon(
+                              color: AdaptiveColors.surface(
+                                context,
+                                Colors.black,
+                              ).withValues(alpha: 0.3),
+                              child: Icon(
                                 Icons.play_circle_outline,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 size: 30,
                               ),
                             ),
                         ],
                       )
                     : Container(
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.image, color: Colors.grey),
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[200],
+                        ),
+                        child: Icon(
+                          Icons.image,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey,
+                          ),
+                        ),
                       ),
               ),
             ),
@@ -218,35 +262,53 @@ class _MyStoriesScreenState extends State<MyStoriesScreen> {
                 children: [
                   Text(
                     '${story.viewsCount} vue${story.viewsCount > 1 ? 's' : ''}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black,
+                      color: AdaptiveColors.foreground(context, Colors.black),
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     _getTimeAgo(story.timestamp),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
             PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert, color: Colors.grey[600]),
+              icon: Icon(
+                Icons.more_vert,
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
               onSelected: (value) {
                 if (value == 'delete') {
                   _deleteStory(story, index);
                 }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      Icon(
+                        Icons.delete_outline,
+                        color: AdaptiveColors.foreground(context, Colors.red),
+                        size: 20,
+                      ),
                       SizedBox(width: 8),
-                      Text('Supprimer', style: TextStyle(color: Colors.red)),
+                      Text(
+                        'Supprimer',
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(context, Colors.red),
+                        ),
+                      ),
                     ],
                   ),
                 ),

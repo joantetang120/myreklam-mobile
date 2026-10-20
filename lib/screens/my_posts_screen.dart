@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/create_post_screen.dart';
@@ -104,16 +105,16 @@ class _MyPostsScreenState extends State<MyPostsScreen>
           (route) => false,
         );
       },
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
           padding: const EdgeInsets.only(left: 10),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
             size: 18,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
           ),
           onPressed: () {
             Navigator.pushReplacement(
@@ -125,10 +126,10 @@ class _MyPostsScreenState extends State<MyPostsScreen>
             );
           },
         ),
-        title: const Text(
+        title: Text(
           'Mes posts',
           style: TextStyle(
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             fontFamily: 'Manjari',
             fontWeight: FontWeight.bold,
           ),
@@ -136,9 +137,15 @@ class _MyPostsScreenState extends State<MyPostsScreen>
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: const Color(0xFF616161),
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: const Color(0xFF3AAE5E),
+          labelColor: AdaptiveColors.foreground(
+            context,
+            const Color(0xFF616161),
+          ),
+          unselectedLabelColor: AdaptiveColors.surface(context, Colors.grey),
+          indicatorColor: AdaptiveColors.surface(
+            context,
+            const Color(0xFF3AAE5E),
+          ),
           tabs: [
             Tab(text: 'Posts (${myPostsOnly.length})'),
             Tab(text: 'Republier (${repostsOnly.length})'),
@@ -176,12 +183,14 @@ class _MyPostsScreenState extends State<MyPostsScreen>
     }
 
     if (postsOverride.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 40),
           child: Text(
             'Aucun post disponible',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.grey),
+            ),
           ),
         ),
       );
@@ -204,7 +213,12 @@ class _MyPostsScreenState extends State<MyPostsScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(message, style: const TextStyle(color: Colors.red)),
+        Text(
+          message,
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Colors.red),
+          ),
+        ),
         const SizedBox(height: 8),
         TextButton(onPressed: _loadMyPosts, child: const Text('Réessayer')),
       ],
@@ -249,15 +263,15 @@ class _MyPostsScreenState extends State<MyPostsScreen>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AdaptiveColors.surface(context, Colors.grey[300]),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             if (!isRepost)
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.edit_outlined,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 ),
                 title: const Text('Modifier'),
                 onTap: () {
@@ -266,13 +280,15 @@ class _MyPostsScreenState extends State<MyPostsScreen>
                 },
               ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.delete_outline,
-                color: Colors.redAccent,
+                color: AdaptiveColors.foreground(context, Colors.redAccent),
               ),
-              title: const Text(
+              title: Text(
                 'Supprimer',
-                style: TextStyle(color: Colors.redAccent),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.redAccent),
+                ),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -318,7 +334,12 @@ class _MyPostsScreenState extends State<MyPostsScreen>
               Navigator.pop(dialogContext);
               await _deletePost(postId);
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            style: TextButton.styleFrom(
+              foregroundColor: AdaptiveColors.foreground(
+                context,
+                Colors.redAccent,
+              ),
+            ),
             child: const Text('Supprimer'),
           ),
         ],
@@ -331,9 +352,9 @@ class _MyPostsScreenState extends State<MyPostsScreen>
       await ApiClient().authenticatedDelete('/posts/$postId');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Post supprimé avec succès'),
-            backgroundColor: Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
           ),
         );
         _loadMyPosts();
@@ -343,7 +364,7 @@ class _MyPostsScreenState extends State<MyPostsScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -364,8 +385,8 @@ class _MyPostsScreenState extends State<MyPostsScreen>
         title: userType,
         icon: userType.toUpperCase() == 'PRO' ? Icons.business : Icons.person,
         color: userType.toUpperCase() == 'PRO'
-            ? const Color(0xFF2E9B5B)
-            : const Color(0xFF3AAE5E),
+            ? AdaptiveColors.foreground(context, const Color(0xFF2E9B5B))
+            : AdaptiveColors.foreground(context, const Color(0xFF3AAE5E)),
       ),
     ];
 

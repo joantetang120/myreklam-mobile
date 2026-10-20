@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class NewsCard extends StatelessWidget {
@@ -20,9 +21,14 @@ class NewsCard extends StatelessWidget {
       width: 250,
       margin: const EdgeInsets.only(right: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -54,10 +60,13 @@ class NewsCard extends StatelessWidget {
                   title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF616161),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF616161),
+                    ),
                     height: 1.3,
                   ),
                 ),
@@ -67,9 +76,9 @@ class NewsCard extends StatelessWidget {
                   summary,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
                     height: 1.4,
                   ),
                 ),
@@ -88,15 +97,26 @@ class NewsCard extends StatelessWidget {
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
-                        side: const BorderSide(color: Color(0xFFFFE0B2)),
+                        side: BorderSide(
+                          color: AdaptiveColors.border(
+                            context,
+                            Color(0xFFFFE0B2),
+                          ),
+                        ),
                       ),
-                      backgroundColor: const Color(0xFFFEF7EE),
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFFEF7EE),
+                      ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Lire la suite',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFFFF9800),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFFFF9800),
+                        ),
                         fontWeight: FontWeight.bold,
                       ),
                     ),

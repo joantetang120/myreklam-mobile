@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/social_video_preview.dart';
 import 'package:myreklam/services/share_service.dart';
@@ -20,6 +21,7 @@ import 'package:myreklam/widgets/report_reason_dialog.dart';
 import 'package:myreklam/widgets/welcome_bonus_popup.dart';
 import 'package:myreklam/widgets/likers_modal.dart';
 import 'package:myreklam/widgets/bon_plan_carousel.dart';
+import 'package:myreklam/widgets/feed_photo_gallery.dart';
 import 'package:myreklam/screens/job_detail_screen.dart';
 import 'package:myreklam/screens/training_detail_screen.dart';
 import 'package:myreklam/screens/event_detail_screen.dart';
@@ -298,13 +300,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.45),
+                  color: AdaptiveColors.surface(
+                    context,
+                    Colors.black,
+                  ).withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   _formatDuration(remaining),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -322,13 +327,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.45),
+                    color: AdaptiveColors.surface(
+                      context,
+                      Colors.black,
+                    ).withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     _isMuted ? Icons.volume_off : Icons.volume_up,
                     size: 16,
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                   ),
                 ),
               ),
@@ -341,7 +349,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
     if (_isLoading) {
       return _wrapWithConstraints(
         Container(
-          color: Colors.grey[300],
+          color: AdaptiveColors.surface(context, Colors.grey[300]),
           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
       );
@@ -361,13 +369,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
           Center(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.play_circle_outline,
                 size: 40,
-                color: Colors.white,
+                color: AdaptiveColors.foreground(context, Colors.white),
               ),
             ),
           ),
@@ -379,7 +390,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
   Widget _buildFallback() {
     return _wrapWithConstraints(
       Container(
-        color: Colors.grey[300],
+        color: AdaptiveColors.surface(context, Colors.grey[300]),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -387,7 +398,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
               Icon(
                 Icons.play_circle_outline,
                 size: 40,
-                color: Colors.grey[700],
+                color: AdaptiveColors.foreground(context, Colors.grey[700]),
               ),
             ],
           ),
@@ -414,7 +425,7 @@ class _MediaItemWidget extends StatelessWidget {
           ? _VideoThumbnailWidget(videoUrl: url, height: height)
           : Image.network(
               url,
-              fit: BoxFit.cover,
+              fit: BoxFit.contain,
               height: height,
               width: double.infinity,
               errorBuilder: (_, __, ___) => const SizedBox.shrink(),
@@ -442,13 +453,16 @@ class _CarouselMediaItemWidget extends StatelessWidget {
           // Smaller play icon overlay for carousel
           Container(
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: AdaptiveColors.surface(
+                context,
+                Colors.black,
+              ).withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.play_circle_outline,
               size: 24,
-              color: Colors.white,
+              color: AdaptiveColors.foreground(context, Colors.white),
             ),
           ),
         ],
@@ -602,10 +616,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                 },
                 child: Text(
                   authorInfo.displayName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: Color(0xFF333333),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF333333),
+                    ),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -616,7 +633,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   authorInfo.employment!,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[700],
+                    color: AdaptiveColors.foreground(context, Colors.grey[700]),
                     fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
@@ -624,7 +641,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                 ),
               Text(
                 '${authorInfo.accountType} • ${widget.isRepost && widget.isQuoteRepost ? widget.timeAgoRepost : widget.timeAgo}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -636,7 +656,11 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
 
   Widget _buildPostMenu() {
     return PopupMenuButton<String>(
-      icon: Icon(Icons.more_vert, color: Colors.grey[600], size: 20),
+      icon: Icon(
+        Icons.more_vert,
+        color: AdaptiveColors.foreground(context, Colors.grey[600]),
+        size: 20,
+      ),
       padding: EdgeInsets.zero,
       onSelected: (value) async {
         if (value == 'delete') {
@@ -654,7 +678,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.red,
+                    ),
+                  ),
                   child: const Text('Supprimer'),
                 ),
               ],
@@ -666,13 +695,22 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'delete',
           child: Row(
             children: [
-              Icon(Icons.delete_outline, color: Colors.red, size: 20),
+              Icon(
+                Icons.delete_outline,
+                color: AdaptiveColors.foreground(context, Colors.red),
+                size: 20,
+              ),
               SizedBox(width: 8),
-              Text('Supprimer', style: TextStyle(color: Colors.red)),
+              Text(
+                'Supprimer',
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.red),
+                ),
+              ),
             ],
           ),
         ),
@@ -738,10 +776,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           border: Border(
             bottom: BorderSide(
-              color: Colors.grey.withValues(alpha: 0.2),
+              color: AdaptiveColors.border(
+                context,
+                Colors.grey,
+              ).withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -760,7 +801,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                     Container(
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.grey[200]!),
+                          bottom: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey[200]!,
+                            ),
+                          ),
                         ),
                       ),
                       padding: EdgeInsets.only(bottom: 4),
@@ -769,7 +815,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                           Icon(
                             Icons.repeat_rounded,
                             size: 14,
-                            color: Colors.grey[600],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[600],
+                            ),
                           ),
                           const SizedBox(width: 6),
                           ReklamAvatar(
@@ -792,7 +841,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                     text: widget.reposter.displayName,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[800],
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[800],
+                                      ),
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -800,7 +852,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                     text: ' a republié ce contenu',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[600],
+                                      ),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -833,9 +888,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   children: [
                     Text(
                       displayContent,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                         height: 1.4,
                       ),
                     ),
@@ -848,7 +906,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             _isExpanded ? '...moins' : '...plus',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -867,9 +928,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
                     displayContent,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Color(0xFF333333),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF333333),
+                      ),
                       height: 1.4,
                     ),
                   ),
@@ -879,7 +943,9 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(
+                    color: AdaptiveColors.border(context, Colors.grey[300]!),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -905,7 +971,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                               '${widget.author.displayName} • ${widget.timeAgo}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[700],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[700],
+                                ),
                                 fontWeight: FontWeight.w600,
                               ),
                               maxLines: 1,
@@ -923,9 +992,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                           widget.content.length > 200
                               ? '${widget.content.substring(0, 200)}...'
                               : widget.content,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF555555),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF555555),
+                            ),
                             height: 1.4,
                           ),
                         ),
@@ -972,6 +1044,14 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
 
   Widget _buildMediaSection(List<String> urls) {
     if (urls.isEmpty) return const SizedBox.shrink();
+
+    if (urls.every((url) => !_isVideoUrl(url))) {
+      return FeedPhotoGallery(
+        key: ValueKey(urls.join('|')),
+        urls: urls,
+        onOpen: (index) => _openImagePreview(context, urls, index),
+      );
+    }
 
     if (urls.length == 1) {
       return _MediaItemWidget(
@@ -1107,18 +1187,24 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                           ? _VideoThumbnailWidget(videoUrl: urls[3])
                           : Image.network(
                               urls[3],
-                              fit: BoxFit.cover,
+                              fit: BoxFit.contain,
                               errorBuilder: (_, __, ___) =>
                                   const SizedBox.shrink(),
                             ),
                       if (remaining > 0)
                         Container(
-                          color: Colors.black54,
+                          color: AdaptiveColors.surface(
+                            context,
+                            Colors.black54,
+                          ),
                           alignment: Alignment.center,
                           child: Text(
                             '+$remaining',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1534,7 +1620,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             content: Text(
               'Vous suivez maintenant ${user['particulier_profile']?['pseudo'] ?? user['pro_profile']?['company_name'] ?? 'cet utilisateur'}',
             ),
-            backgroundColor: const Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(
+              context,
+              const Color(0xFF3AAE5E),
+            ),
           ),
         );
       }
@@ -1566,12 +1655,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 "Des profils qui pourraient t'intéresser",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2A2A2A),
+                  color: AdaptiveColors.foreground(context, Color(0xFF2A2A2A)),
                 ),
               ),
               GestureDetector(
@@ -1583,11 +1672,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                     ),
                   ).then((_) => _loadSuggestions());
                 },
-                child: const Text(
+                child: Text(
                   "Voir tout",
                   style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -1618,9 +1710,17 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 margin: const EdgeInsets.only(right: 10, bottom: 5),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFAFAFA),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFFAFAFA),
+                  ),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+                  border: Border.all(
+                    color: AdaptiveColors.border(
+                      context,
+                      Colors.grey,
+                    ).withValues(alpha: 0.1),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -1665,17 +1765,26 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AdaptiveColors.surface(
+                                context,
+                                Colors.white,
+                              ),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(
-                                color: Colors.grey.withValues(alpha: 0.2),
+                                color: AdaptiveColors.border(
+                                  context,
+                                  Colors.grey,
+                                ).withValues(alpha: 0.2),
                               ),
                             ),
                             child: Text(
                               isPro ? 'Pro' : 'Particulier',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 9,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                           ),
@@ -1689,17 +1798,25 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       child: OutlinedButton(
                         onPressed: () => _toggleFollowSuggestion(index),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFF3AAE5E)),
+                          side: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Color(0xFF3AAE5E),
+                            ),
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(6),
                           ),
                           padding: EdgeInsets.zero,
                         ),
-                        child: const Text(
+                        child: Text(
                           'Suivre',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Color(0xFF3AAE5E),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF3AAE5E),
+                            ),
                           ),
                         ),
                       ),
@@ -2061,7 +2178,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.5),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.white,
+                ).withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
@@ -2073,18 +2193,22 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: const Color(0xFF757575),
+              color: AdaptiveColors.surface(context, const Color(0xFF757575)),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.event_busy, size: 13, color: Colors.white),
+                Icon(
+                  Icons.event_busy,
+                  size: 13,
+                  color: AdaptiveColors.foreground(context, Colors.white),
+                ),
                 SizedBox(width: 4),
                 Text(
                   'Expirée',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
@@ -2186,10 +2310,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                     isFavoritedNotifier.value
                         ? 'Ajouté aux favoris'
                         : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -2203,9 +2332,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('Erreur lors de la mise à jour des favoris'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -2215,7 +2344,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -2243,10 +2372,13 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                     ),
                     child: Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -2269,10 +2401,13 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                         bp['original_price'] != null && bp['price'] == null
                             ? Text(
                                 '${bp['original_price']}€',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2E9B5B),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF2E9B5B),
+                                  ),
                                 ),
                               )
                             : (type == 'Infos pouvoir d\'achat'
@@ -2282,10 +2417,13 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                               bp['price'].toString().isNotEmpty
                                           ? '${bp['price']}€'
                                           : 'Gratuit',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2E9B5B),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Color(0xFF2E9B5B),
+                                        ),
                                       ),
                                     )),
                         if (bp['price'] != null &&
@@ -2296,7 +2434,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             '${bp['original_price']}€',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                               decoration: TextDecoration.lineThrough,
                             ),
                           ),
@@ -2310,15 +2451,21 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF5722),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFFF5722),
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 '-${_calculateDiscount(bp['original_price'], bp['price'])}%',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
@@ -2336,30 +2483,40 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2E9B5B,
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFF2E9B5B),
                                 ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: const Color(0xFF2E9B5B),
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    const Color(0xFF2E9B5B),
+                                  ),
                                   width: 1,
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.local_offer_outlined,
                                     size: 14,
-                                    color: Color(0xFF2E9B5B),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF2E9B5B),
+                                    ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Code promo: ${bp['promo_code']}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF2E9B5B),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF2E9B5B),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -2381,7 +2538,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                           Icon(
                             Icons.store_outlined,
                             size: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -2389,7 +2549,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                               '$locationType chez $merchantName',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -2400,14 +2563,20 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                           Icon(
                             Icons.access_time,
                             size: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             _buildTimeAgo(createdAt),
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                         ],
@@ -2446,8 +2615,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                         icon: const Icon(Icons.visibility_outlined, size: 18),
                         label: const Text('VOIR LE BON PLAN'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF9800),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFF9800),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -2468,7 +2643,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AdaptiveColors.surface(
+                        context,
+                        Colors.white,
+                      ).withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -2484,7 +2662,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           )
                         : Icon(
@@ -2492,8 +2673,11 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                 ? Icons.favorite
                                 : Icons.favorite_border,
                             color: isFavoritedNotifier.value
-                                ? Colors.red
-                                : Colors.grey[600],
+                                ? AdaptiveColors.foreground(context, Colors.red)
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                             size: 20,
                           ),
                   ),
@@ -2513,7 +2697,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.white,
+                        ).withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
@@ -2523,9 +2710,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.report_outlined,
-                        color: Colors.redAccent,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.redAccent,
+                        ),
                         size: 20,
                       ),
                     ),
@@ -2537,7 +2727,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 right: 12,
                 child: _buildTypeTag(
                   'Bon Plan',
-                  const Color(0xFFFF9800),
+                  AdaptiveColors.surface(context, const Color(0xFFFF9800)),
                   Icons.local_offer,
                 ),
               ),
@@ -2566,7 +2756,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         if (loadingProgress == null) return child;
         return Container(
           height: 220,
-          color: Colors.grey[100],
+          color: AdaptiveColors.surface(context, Colors.grey[100]),
           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         );
       },
@@ -2574,11 +2764,11 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         debugPrint('Image load error: $error');
         return Container(
           height: 220,
-          color: Colors.grey[200],
-          child: const Center(
+          color: AdaptiveColors.surface(context, Colors.grey[200]),
+          child: Center(
             child: Icon(
               Icons.image_not_supported,
-              color: Colors.grey,
+              color: AdaptiveColors.foreground(context, Colors.grey),
               size: 48,
             ),
           ),
@@ -2702,10 +2892,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                     isFavoritedNotifier.value
                         ? 'Ajouté aux favoris'
                         : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -2718,7 +2913,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Erreur: $e'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -3027,7 +3222,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                         : 'Retiré des favoris',
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -3037,9 +3235,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('Erreur lors de la mise à jour des favoris'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -3223,10 +3421,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             SnackBar(
               content: Text(
                 newValue ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.white),
+                ),
               ),
               duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
+              backgroundColor: AdaptiveColors.surface(context, Colors.green),
             ),
           );
         }
@@ -3260,7 +3460,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Erreur: $e'),
+              backgroundColor: AdaptiveColors.surface(context, Colors.red),
+            ),
           );
         }
       }
@@ -3429,10 +3632,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                     isFavoritedNotifier.value
                         ? 'Ajouté aux favoris'
                         : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -3445,7 +3653,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Erreur: ${e.toString()}'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -3514,7 +3722,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -3523,7 +3731,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.1),
+        ),
       ),
       child: Text('Type de contenu "$type" non supporté'),
     );
@@ -3682,13 +3895,19 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
   Color _categoryColor(String label) {
     final lower = label.toLowerCase();
-    if (lower.contains('urgent')) return Colors.redAccent;
-    if (lower.contains('emploi')) return const Color(0xFF3AAE5E);
-    if (lower.contains('stage')) return const Color(0xFF2196F3);
-    if (lower.contains('formation')) return const Color(0xFF9C27B0);
-    if (lower.contains('immobilier')) return const Color(0xFFFF5722);
-    if (lower.contains('service')) return const Color(0xFFFF9800);
-    return const Color(0xFF3AAE5E);
+    if (lower.contains('urgent'))
+      return AdaptiveColors.foreground(context, Colors.redAccent);
+    if (lower.contains('emploi'))
+      return AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
+    if (lower.contains('stage'))
+      return AdaptiveColors.foreground(context, const Color(0xFF2196F3));
+    if (lower.contains('formation'))
+      return AdaptiveColors.foreground(context, const Color(0xFF9C27B0));
+    if (lower.contains('immobilier'))
+      return AdaptiveColors.foreground(context, const Color(0xFFFF5722));
+    if (lower.contains('service'))
+      return AdaptiveColors.foreground(context, const Color(0xFFFF9800));
+    return AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
   }
 
   int _asInt(dynamic value) {
@@ -3855,12 +4074,18 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             ),
                       if (remaining > 0)
                         Container(
-                          color: Colors.black54,
+                          color: AdaptiveColors.surface(
+                            context,
+                            Colors.black54,
+                          ),
                           alignment: Alignment.center,
                           child: Text(
                             '+$remaining',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -3888,10 +4113,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF616161),
+              color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             ),
           ),
         ],
@@ -3903,7 +4128,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(message, style: const TextStyle(color: Colors.red)),
+        Text(
+          message,
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Colors.red),
+          ),
+        ),
         if (onRetry != null)
           TextButton(onPressed: onRetry, child: const Text('Réessayer')),
       ],
@@ -3911,7 +4141,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
   }
 
   Widget _buildEmptyState(String message) {
-    return Text(message, style: const TextStyle(color: Color(0xFF9E9E9E)));
+    return Text(
+      message,
+      style: TextStyle(
+        color: AdaptiveColors.foreground(context, Color(0xFF9E9E9E)),
+      ),
+    );
   }
 
   Widget _buildTypeTag(String label, Color color, IconData icon) {
@@ -3938,12 +4173,16 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.white),
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.3,
@@ -4182,14 +4421,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     final result = await showModalBottomSheet<String?>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, modalSetState) {
             return Container(
               height: MediaQuery.of(ctx).size.height * 0.85,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
@@ -4200,7 +4439,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: AdaptiveColors.surface(context, Colors.grey[300]),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -4209,13 +4448,16 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                     padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
                     child: Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             'Republier cette publication',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF333333),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF333333),
+                              ),
                             ),
                           ),
                         ),
@@ -4257,17 +4499,23 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                     children: [
                                       Text(
                                         userName,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 15,
-                                          color: Color(0xFF333333),
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Color(0xFF333333),
+                                          ),
                                         ),
                                       ),
                                       Text(
                                         'Public',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[500],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[500],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -4288,18 +4536,27 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                 hintText:
                                     'Ajoutez un commentaire à votre republication...',
                                 hintStyle: TextStyle(
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                   fontSize: 14,
                                 ),
                                 border: InputBorder.none,
                                 counterStyle: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                 ),
                               ),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF333333),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF333333),
+                                ),
                                 height: 1.5,
                               ),
                               onChanged: (_) => modalSetState(() {}),
@@ -4310,7 +4567,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             Container(
                               margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey[300]!),
+                                border: Border.all(
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    Colors.grey[300]!,
+                                  ),
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -4336,7 +4598,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                             '$originalAuthorName • $originalTimeAgo',
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.grey[600],
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Colors.grey[600],
+                                              ),
                                               fontWeight: FontWeight.w500,
                                             ),
                                             maxLines: 1,
@@ -4358,9 +4623,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                         originalContent.length > 200
                                             ? '${originalContent.substring(0, 200)}...'
                                             : originalContent,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 13,
-                                          color: Color(0xFF555555),
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Color(0xFF555555),
+                                          ),
                                           height: 1.4,
                                         ),
                                       ),
@@ -4381,10 +4649,17 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                             fit: BoxFit.cover,
                                             errorBuilder: (_, __, ___) =>
                                                 Container(
-                                                  color: Colors.grey[200],
+                                                  color: AdaptiveColors.surface(
+                                                    context,
+                                                    Colors.grey[200],
+                                                  ),
                                                   child: Icon(
                                                     Icons.image,
-                                                    color: Colors.grey[400],
+                                                    color:
+                                                        AdaptiveColors.foreground(
+                                                          context,
+                                                          Colors.grey[400],
+                                                        ),
                                                   ),
                                                 ),
                                           ),
@@ -4409,8 +4684,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       MediaQuery.of(ctx).padding.bottom + 10,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(top: BorderSide(color: Colors.grey[200]!)),
+                      color: AdaptiveColors.surface(context, Colors.white),
+                      border: Border(
+                        top: BorderSide(
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey[200]!,
+                          ),
+                        ),
+                      ),
                     ),
                     child: SizedBox(
                       width: double.infinity,
@@ -4439,35 +4721,50 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                     ScaffoldMessenger.of(ctx).showSnackBar(
                                       SnackBar(
                                         content: Text(e.toString()),
-                                        backgroundColor: Colors.redAccent,
+                                        backgroundColor: AdaptiveColors.surface(
+                                          context,
+                                          Colors.redAccent,
+                                        ),
                                       ),
                                     );
                                   }
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3AAE5E),
-                          disabledBackgroundColor: Colors.grey[300],
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ),
+                          disabledBackgroundColor: AdaptiveColors.surface(
+                            context,
+                            Colors.grey[300],
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
                           elevation: 0,
                         ),
                         child: isSubmitting
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 'Republier',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               ),
                       ),
@@ -4485,9 +4782,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       await _loadUnifiedFeed(reset: true);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Publication republiée avec succès'),
-            backgroundColor: Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
             duration: Duration(seconds: 2),
           ),
         );
@@ -4527,7 +4824,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.grey[300],
+            color: AdaptiveColors.surface(context, Colors.grey[300]),
             image:
                 avatarUrl != null &&
                     avatarUrl.isNotEmpty &&
@@ -4547,7 +4844,11 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       : null),
           ),
           child: avatarUrl == null || avatarUrl.isEmpty
-              ? Icon(Icons.person, size: 16, color: Colors.grey[600])
+              ? Icon(
+                  Icons.person,
+                  size: 16,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                )
               : null,
         ),
         const SizedBox(width: 8),
@@ -4560,7 +4861,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
+                color: AdaptiveColors.foreground(context, Colors.grey[800]),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -4570,15 +4871,18 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 margin: const EdgeInsets.only(top: 2),
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3AAE5E),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
+                child: Text(
                   'PRO',
                   style: TextStyle(
                     fontSize: 7,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                   ),
                 ),
               ),
@@ -4610,7 +4914,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               Icon(
                 isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                 size: 18,
-                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                color: isLiked
+                    ? AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      )
+                    : AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               GestureDetector(
@@ -4619,7 +4928,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                   data.likesCount.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    color: isLiked
+                        ? AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -4636,12 +4950,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               Icon(
                 Icons.chat_bubble_outline,
                 size: 17,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               Text(
                 data.commentsCount.toString(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -4653,13 +4970,23 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               onTap: () => _repostPost(entityId, originalPostData: postData),
               child: Row(
                 children: [
-                  Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
+                  Icon(
+                    Icons.repeat_rounded,
+                    size: 18,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     data.repostsCount > 0
                         ? data.repostsCount.toString()
                         : 'Republier',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -4675,11 +5002,18 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
             ),
             child: Row(
               children: [
-                Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
+                Icon(
+                  Icons.share_outlined,
+                  size: 18,
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                ),
                 const SizedBox(width: 4),
                 Text(
                   'Partager',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ],
             ),
@@ -4751,7 +5085,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (ctx, modalSetState) {
@@ -4924,21 +5258,34 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () =>
                           Navigator.pop(context, editController.text),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enregistrer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -4974,7 +5321,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       content: Text(
                         'Erreur lors de la modification: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -5001,20 +5351,33 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       onPressed: () => Navigator.pop(context, false),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          Colors.redAccent,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Supprimer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -5067,7 +5430,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       content: Text(
                         'Erreur lors de la suppression: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -5144,7 +5510,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                       style: TextStyle(
                                         fontSize: isReply ? 12 : 13,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF333333),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          const Color(0xFF333333),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -5152,7 +5521,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                       _buildTimeAgo(createdAt),
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey[400],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[400],
+                                        ),
                                       ),
                                     ),
                                     if (isOwner) ...[
@@ -5178,20 +5550,28 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                                   ],
                                                 ),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'delete',
                                                 child: Row(
                                                   children: [
                                                     Icon(
                                                       Icons.delete,
                                                       size: 18,
-                                                      color: Colors.redAccent,
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Colors.redAccent,
+                                                          ),
                                                     ),
                                                     SizedBox(width: 8),
                                                     Text(
                                                       'Supprimer',
                                                       style: TextStyle(
-                                                        color: Colors.redAccent,
+                                                        color:
+                                                            AdaptiveColors.foreground(
+                                                              context,
+                                                              Colors.redAccent,
+                                                            ),
                                                       ),
                                                     ),
                                                   ],
@@ -5209,7 +5589,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                         child: Icon(
                                           Icons.more_horiz,
                                           size: 18,
-                                          color: Colors.grey[400],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[400],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -5218,9 +5601,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                 const SizedBox(height: 4),
                                 Text(
                                   body,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF4F4F4F),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF4F4F4F),
+                                    ),
                                     height: 1.4,
                                   ),
                                 ),
@@ -5240,8 +5626,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                                 : Icons.thumb_up_alt_outlined,
                                             size: 14,
                                             color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[400],
+                                                ? AdaptiveColors.foreground(
+                                                    context,
+                                                    const Color(0xFF3AAE5E),
+                                                  )
+                                                : AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.grey[400],
+                                                  ),
                                           ),
                                           const SizedBox(width: 3),
                                           Text(
@@ -5249,8 +5641,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: userReaction == 'like'
-                                                  ? const Color(0xFF3AAE5E)
-                                                  : Colors.grey[500],
+                                                  ? AdaptiveColors.foreground(
+                                                      context,
+                                                      const Color(0xFF3AAE5E),
+                                                    )
+                                                  : AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.grey[500],
+                                                    ),
                                             ),
                                           ),
                                         ],
@@ -5274,7 +5672,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2E9B5B),
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              const Color(0xFF2E9B5B),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -5312,8 +5713,8 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(ctx).size.height * 0.75,
                 ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Colors.white),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(24),
                     topRight: Radius.circular(24),
@@ -5326,7 +5727,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[300],
+                        ),
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
@@ -5337,29 +5741,38 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       ),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Commentaires',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2A2A2A),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF2A2A2A),
+                                ),
                               ),
                             ),
                           ),
                           GestureDetector(
                             onTap: () => Navigator.pop(ctx),
-                            child: const Icon(
+                            child: Icon(
                               Icons.close,
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                               size: 22,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Comment list
                     Expanded(
                       child: isLoading
@@ -5368,15 +5781,25 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                           ? Center(
                               child: Text(
                                 'Erreur: $error',
-                                style: const TextStyle(color: Colors.red),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.red,
+                                  ),
+                                ),
                               ),
                             )
                           : comments.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
                                 'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey,
+                                  ),
+                                ),
                               ),
                             )
                           : ListView.separated(
@@ -5391,7 +5814,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                   buildCommentItem(comments[i]),
                             ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Reply indicator
                     if (replyingToId != null)
                       Container(
@@ -5399,14 +5825,20 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                           horizontal: 16,
                           vertical: 6,
                         ),
-                        color: const Color(0xFFF5F5F5),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFF5F5F5),
+                        ),
                         child: Row(
                           children: [
                             Text(
                               'Répondre à $replyingToName',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                             const Spacer(),
@@ -5415,10 +5847,13 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                 replyingToId = null;
                                 replyingToName = null;
                               }),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close,
                                 size: 16,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                           ],
@@ -5435,12 +5870,15 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                 horizontal: 14,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F5),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFF5F5F5),
+                                ),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: TextField(
                                 controller: commentCtrl,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   isCollapsed: true,
                                   contentPadding: EdgeInsets.symmetric(
                                     vertical: 10,
@@ -5448,7 +5886,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                   border: InputBorder.none,
                                   hintText: 'Écrire un commentaire...',
                                   hintStyle: TextStyle(
-                                    color: Color(0xFF9E9E9E),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF9E9E9E),
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -5462,14 +5903,20 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             onTap: submitComment,
                             child: Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF3AAE5E),
+                              decoration: BoxDecoration(
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  Color(0xFF3AAE5E),
+                                ),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.send,
                                 size: 18,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -5564,9 +6011,9 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           });
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Publication supprimée'),
-            backgroundColor: Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
           ),
         );
       }
@@ -5575,7 +6022,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de la suppression: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -5792,19 +6239,19 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           PostTag(
             title: category,
             icon: Icons.local_offer_outlined,
-            color: Colors.orange,
+            color: AdaptiveColors.foreground(context, Colors.orange),
           ),
         if (subCategory.isNotEmpty)
           PostTag(
             title: subCategory,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (type.isNotEmpty)
           PostTag(
             title: type,
             icon: Icons.check_circle_outline,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
       ];
 
@@ -6053,14 +6500,17 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                 PostTag(
                   title: workTime,
                   icon: Icons.access_time,
-                  color: Colors.grey,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
                 ),
             ],
             subtags: contractType.isNotEmpty
                 ? PostTag(
                     title: contractType,
                     icon: Icons.description_outlined,
-                    color: const Color(0xFF27A5FF),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF27A5FF),
+                    ),
                   )
                 : null,
             advantages: advantagesList,
@@ -6337,19 +6787,19 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
           PostTag(
             title: categoryCode,
             icon: Icons.local_offer_outlined,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
         if (subCategoryCode != null && subCategoryCode.isNotEmpty)
           PostTag(
             title: _translateSubCategory(subCategoryCode),
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (formatType != null && formatType.isNotEmpty)
           PostTag(
             title: formatType,
             icon: Icons.videocam_outlined,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -6489,19 +6939,19 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         PostTag(
           title: categoryLabel,
           icon: Icons.label_outline,
-          color: Colors.orange,
+          color: AdaptiveColors.foreground(context, Colors.orange),
         ),
         if (urgent)
           PostTag(
             title: 'Urgent',
             icon: Icons.warning_amber_rounded,
-            color: Colors.red,
+            color: AdaptiveColors.foreground(context, Colors.red),
           ),
         if (nationwide)
           PostTag(
             title: 'Toute la France',
             icon: Icons.public,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -6594,16 +7044,31 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.grey[600]),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          ),
           const SizedBox(width: 4),
-          Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[700]),
+            ),
+          ),
         ],
       ),
     );
@@ -6668,10 +7133,17 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
         height: 32,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: const Color(0xFFE6F7EF),
-          border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
+          color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
+          border: Border.all(
+            color: AdaptiveColors.border(context, const Color(0xFF2A8143)),
+            width: 1.5,
+          ),
         ),
-        child: const Icon(Icons.search, color: Color(0xFF2A8143), size: 18),
+        child: Icon(
+          Icons.search,
+          color: AdaptiveColors.foreground(context, Color(0xFF2A8143)),
+          size: 18,
+        ),
       ),
     );
   }
@@ -6716,7 +7188,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
               floating: false,
               pinned: true,
               snap: false,
-              backgroundColor: const Color(0xFF2A8143),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF2A8143),
+              ),
               automaticallyImplyLeading: false,
               elevation: 0,
               shape: const RoundedRectangleBorder(
@@ -6735,11 +7210,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
 
                   return FlexibleSpaceBar(
                     background: Container(
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [Color(0xFF2A8143), Color(0xFF3AAE5E)],
+                          colors: [
+                            AdaptiveColors.surface(context, Color(0xFF2A8143)),
+                            AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
+                          ],
                         ),
                         borderRadius: BorderRadius.only(
                           bottomLeft: Radius.circular(30),
@@ -6777,9 +7255,12 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                 children: [
                                   GestureDetector(
                                     onTap: () => Navigator.pop(context),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.arrow_back,
-                                      color: Colors.white,
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       size: 22,
                                     ),
                                   ),
@@ -6815,9 +7296,17 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFF9E6),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFFFF9E6),
+                      ),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFFFD700)),
+                      border: Border.all(
+                        color: AdaptiveColors.border(
+                          context,
+                          const Color(0xFFFFD700),
+                        ),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -6830,7 +7319,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                         Text(
                           UserSession().mys.toString(),
                           style: TextStyle(
-                            color: Color(0xFFFFD700),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFFFFD700),
+                            ),
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -6938,22 +7430,34 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                                       color:
                                                           hasOwnStories &&
                                                               !ownStoriesViewed
-                                                          ? const Color(
-                                                              0xFFE6F7EF,
+                                                          ? AdaptiveColors.surface(
+                                                              context,
+                                                              const Color(
+                                                                0xFFE6F7EF,
+                                                              ),
                                                             )
-                                                          : Colors
-                                                                .grey
-                                                                .shade200,
+                                                          : AdaptiveColors.surface(
+                                                              context,
+                                                              Colors
+                                                                  .grey
+                                                                  .shade200,
+                                                            ),
                                                       border: Border.all(
                                                         color:
                                                             hasOwnStories &&
                                                                 !ownStoriesViewed
-                                                            ? const Color(
-                                                                0xFF3AAE5E,
+                                                            ? AdaptiveColors.border(
+                                                                context,
+                                                                const Color(
+                                                                  0xFF3AAE5E,
+                                                                ),
                                                               )
-                                                            : Colors
-                                                                  .grey
-                                                                  .shade400,
+                                                            : AdaptiveColors.border(
+                                                                context,
+                                                                Colors
+                                                                    .grey
+                                                                    .shade400,
+                                                              ),
                                                         width: hasOwnStories
                                                             ? 2.5
                                                             : 1.5,
@@ -6970,12 +7474,16 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                                                     .userName,
                                                             radius: 22,
                                                           )
-                                                        : const Center(
+                                                        : Center(
                                                             child: Icon(
                                                               Icons.add,
-                                                              color: Color(
-                                                                0xFF3AAE5E,
-                                                              ),
+                                                              color:
+                                                                  AdaptiveColors.foreground(
+                                                                    context,
+                                                                    Color(
+                                                                      0xFF3AAE5E,
+                                                                    ),
+                                                                  ),
                                                             ),
                                                           ),
                                                   ),
@@ -7012,23 +7520,32 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                                                             const EdgeInsets.all(
                                                               3,
                                                             ),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                              color:
-                                                                  const Color(
-                                                                    0xFF3AAE5E,
-                                                                  ),
-                                                              shape: BoxShape
-                                                                  .circle,
-                                                              border: Border.all(
-                                                                color: Colors
-                                                                    .white,
-                                                                width: 2,
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              AdaptiveColors.surface(
+                                                                context,
+                                                                const Color(
+                                                                  0xFF3AAE5E,
+                                                                ),
                                                               ),
-                                                            ),
-                                                        child: const Icon(
+                                                          shape:
+                                                              BoxShape.circle,
+                                                          border: Border.all(
+                                                            color:
+                                                                AdaptiveColors.border(
+                                                                  context,
+                                                                  Colors.white,
+                                                                ),
+                                                            width: 2,
+                                                          ),
+                                                        ),
+                                                        child: Icon(
                                                           Icons.add,
-                                                          color: Colors.white,
+                                                          color:
+                                                              AdaptiveColors.foreground(
+                                                                context,
+                                                                Colors.white,
+                                                              ),
                                                           size: 12,
                                                         ),
                                                       ),
@@ -7082,7 +7599,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                           ), // space on sides
                           child: Container(
                             height: 1, // thin line
-                            color: Colors.grey[300], // light gray
+                            color: AdaptiveColors.surface(
+                              context,
+                              Colors.grey[300],
+                            ), // light gray
                           ),
                         ),
 
@@ -7122,7 +7642,10 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                           CategoriesIcon(
                             title: "Bons plans",
                             iconColor: const Color.fromARGB(255, 252, 116, 37),
-                            bgColor: Color(0xFFFFE0B2).withValues(alpha: 0.2),
+                            bgColor: AdaptiveColors.surface(
+                              context,
+                              Color(0xFFFFE0B2),
+                            ).withValues(alpha: 0.2),
                             icon: Icons.card_giftcard_outlined,
                             onTap: () {
                               if (!_requireAuth('ouvrir les bons plans')) {
@@ -7140,8 +7663,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                           const SizedBox(width: 15),
                           CategoriesIcon(
                             title: "Offre d'emploi",
-                            iconColor: Colors.lightBlueAccent,
-                            bgColor: Color(0xFFB3E5FC).withValues(alpha: 0.2),
+                            iconColor: AdaptiveColors.foreground(
+                              context,
+                              Colors.lightBlueAccent,
+                            ),
+                            bgColor: AdaptiveColors.surface(
+                              context,
+                              Color(0xFFB3E5FC),
+                            ).withValues(alpha: 0.2),
                             iconAsset: 'assets/images/offres.png',
                             onTap: () {
                               if (!_requireAuth('ouvrir les offres')) {
@@ -7160,8 +7689,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                           const SizedBox(width: 15),
                           CategoriesIcon(
                             title: "Formations",
-                            iconColor: Colors.purple,
-                            bgColor: Color(0xFFE1BEE7).withValues(alpha: 0.1),
+                            iconColor: AdaptiveColors.foreground(
+                              context,
+                              Colors.purple,
+                            ),
+                            bgColor: AdaptiveColors.surface(
+                              context,
+                              Color(0xFFE1BEE7),
+                            ).withValues(alpha: 0.1),
                             iconAsset: 'assets/images/Formation.png',
                             onTap: () {
                               if (!_requireAuth('ouvrir les formations')) {
@@ -7179,8 +7714,14 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                           const SizedBox(width: 15),
                           CategoriesIcon(
                             title: "Evenements",
-                            iconColor: Colors.green,
-                            bgColor: Color(0xFFE6F7EF).withValues(alpha: 0.5),
+                            iconColor: AdaptiveColors.foreground(
+                              context,
+                              Colors.green,
+                            ),
+                            bgColor: AdaptiveColors.surface(
+                              context,
+                              Color(0xFFE6F7EF),
+                            ).withValues(alpha: 0.5),
                             icon: Icons.event_outlined,
                             onTap: () {
                               if (!_requireAuth('ouvrir les evenements')) {
@@ -7277,18 +7818,21 @@ class _ExpandableDescriptionStatefulState
                 text: text.length > 100
                     ? '${text.substring(0, 100)}... '
                     : text,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                   height: 1.4,
                 ),
               ),
               if (text.length > 100)
-                const TextSpan(
+                TextSpan(
                   text: 'voir plus',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -7297,9 +7841,9 @@ class _ExpandableDescriptionStatefulState
         ),
         secondChild: Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Color(0xFF666666),
+            color: AdaptiveColors.foreground(context, Color(0xFF666666)),
             height: 1.4,
           ),
         ),

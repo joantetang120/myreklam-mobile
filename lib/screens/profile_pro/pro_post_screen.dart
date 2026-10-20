@@ -1,9 +1,11 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/feed_photo_gallery.dart';
 import 'package:myreklam/widgets/social_video_preview.dart';
-// import 'package:myreklam/services/share_service.dart'; // Bouton partager masqué
+import 'package:myreklam/services/share_service.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/create_post_screen.dart';
 import 'package:myreklam/screens/image_preview_screen.dart';
@@ -249,13 +251,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.45),
+                  color: AdaptiveColors.surface(
+                    context,
+                    Colors.black,
+                  ).withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   _formatDuration(remaining),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -273,13 +278,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.45),
+                    color: AdaptiveColors.surface(
+                      context,
+                      Colors.black,
+                    ).withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     _isMuted ? Icons.volume_off : Icons.volume_up,
                     size: 16,
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                   ),
                 ),
               ),
@@ -292,7 +300,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
     if (_isLoading) {
       return _wrapWithConstraints(
         Container(
-          color: Colors.grey[300],
+          color: AdaptiveColors.surface(context, Colors.grey[300]),
           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
       );
@@ -312,13 +320,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
           Center(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.play_circle_outline,
                 size: 40,
-                color: Colors.white,
+                color: AdaptiveColors.foreground(context, Colors.white),
               ),
             ),
           ),
@@ -330,7 +341,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
   Widget _buildFallback() {
     return _wrapWithConstraints(
       Container(
-        color: Colors.grey[300],
+        color: AdaptiveColors.surface(context, Colors.grey[300]),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -338,7 +349,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
               Icon(
                 Icons.play_circle_outline,
                 size: 40,
-                color: Colors.grey[700],
+                color: AdaptiveColors.foreground(context, Colors.grey[700]),
               ),
             ],
           ),
@@ -365,7 +376,7 @@ class _MediaItemWidget extends StatelessWidget {
           ? _VideoThumbnailWidget(videoUrl: url, height: height)
           : Image.network(
               url,
-              fit: BoxFit.cover,
+              fit: BoxFit.contain,
               height: height,
               width: double.infinity,
               errorBuilder: (_, __, ___) => const SizedBox.shrink(),
@@ -463,10 +474,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                 onTap: () {},
                 child: Text(
                   authorInfo.displayName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: Color(0xFF333333),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF333333),
+                    ),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -474,7 +488,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               ),
               Text(
                 '${authorInfo.accountType} • ${widget.timeAgo}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -522,10 +539,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           border: Border(
             bottom: BorderSide(
-              color: Colors.grey.withValues(alpha: 0.2),
+              color: AdaptiveColors.border(
+                context,
+                Colors.grey,
+              ).withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -551,7 +571,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                     Container(
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.grey[200]!),
+                          bottom: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey[200]!,
+                            ),
+                          ),
                         ),
                       ),
                       padding: EdgeInsets.only(bottom: 4),
@@ -560,7 +585,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                           Icon(
                             Icons.repeat_rounded,
                             size: 14,
-                            color: Colors.grey[600],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[600],
+                            ),
                           ),
                           const SizedBox(width: 6),
                           ReklamAvatar(
@@ -583,7 +611,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                     text: widget.reposter.displayName,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[800],
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[800],
+                                      ),
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -591,7 +622,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                     text: ' a republié ce contenu',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[600],
+                                      ),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -619,9 +653,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   children: [
                     Text(
                       displayContent,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                         height: 1.4,
                       ),
                     ),
@@ -634,7 +671,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             _isExpanded ? '...moins' : '...plus',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -652,9 +692,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
                     displayContent,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Color(0xFF333333),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF333333),
+                      ),
                       height: 1.4,
                     ),
                   ),
@@ -664,7 +707,9 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(
+                    color: AdaptiveColors.border(context, Colors.grey[300]!),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -690,7 +735,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                               '${widget.author.displayName} • ${widget.timeAgo}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[700],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[700],
+                                ),
                                 fontWeight: FontWeight.w600,
                               ),
                               maxLines: 1,
@@ -708,9 +756,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                           widget.content.length > 200
                               ? '${widget.content.substring(0, 200)}...'
                               : widget.content,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF555555),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF555555),
+                            ),
                             height: 1.4,
                           ),
                         ),
@@ -767,7 +818,7 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
           child: Container(
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: AdaptiveColors.surface(context, Colors.grey[100]),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -784,15 +835,25 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       width: _actionWidth,
                       height: double.infinity,
                       // decoration: const BoxDecoration(color: Colors.grey),
-                      child: const Column(
+                      child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.edit, color: Colors.grey, size: 24),
+                          Icon(
+                            Icons.edit,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey,
+                            ),
+                            size: 24,
+                          ),
                           SizedBox(height: 4),
                           Text(
                             'Modifier',
                             style: TextStyle(
-                              color: Colors.black45,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.black45,
+                              ),
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
                             ),
@@ -818,15 +879,25 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                       //     bottomRight: Radius.circular(12),
                       //   ),
                       // ),
-                      child: const Column(
+                      child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.delete, color: Colors.red, size: 24),
+                          Icon(
+                            Icons.delete,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red,
+                            ),
+                            size: 24,
+                          ),
                           SizedBox(height: 4),
                           Text(
                             'Suppr.',
                             style: TextStyle(
-                              color: Colors.black45,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.black45,
+                              ),
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
                             ),
@@ -875,6 +946,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
 
   Widget _buildMediaSection(List<String> urls) {
     if (urls.isEmpty) return const SizedBox.shrink();
+    if (urls.every((url) => !_isVideoUrl(url))) {
+      return FeedPhotoGallery(
+        key: ValueKey(urls.join('|')),
+        urls: urls,
+        onOpen: (index) => _openImagePreview(context, urls, index),
+      );
+    }
 
     if (urls.length == 1) {
       return _MediaItemWidget(
@@ -1003,18 +1081,24 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                           ? _VideoThumbnailWidget(videoUrl: urls[3])
                           : Image.network(
                               urls[3],
-                              fit: BoxFit.cover,
+                              fit: BoxFit.contain,
                               errorBuilder: (_, __, ___) =>
                                   const SizedBox.shrink(),
                             ),
                       if (remaining > 0)
                         Container(
-                          color: Colors.black54,
+                          color: AdaptiveColors.surface(
+                            context,
+                            Colors.black54,
+                          ),
                           alignment: Alignment.center,
                           child: Text(
                             '+$remaining',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1199,15 +1283,15 @@ class _ProPostScreenState extends State<ProPostScreen>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AdaptiveColors.surface(context, Colors.grey[300]),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             if (!isRepost)
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.edit_outlined,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 ),
                 title: const Text('Modifier'),
                 onTap: () {
@@ -1216,13 +1300,15 @@ class _ProPostScreenState extends State<ProPostScreen>
                 },
               ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 Icons.delete_outline,
-                color: Colors.redAccent,
+                color: AdaptiveColors.foreground(context, Colors.redAccent),
               ),
-              title: const Text(
+              title: Text(
                 'Supprimer',
-                style: TextStyle(color: Colors.redAccent),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.redAccent),
+                ),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -1268,7 +1354,12 @@ class _ProPostScreenState extends State<ProPostScreen>
               Navigator.pop(dialogContext);
               await _deletePost(postId);
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            style: TextButton.styleFrom(
+              foregroundColor: AdaptiveColors.foreground(
+                context,
+                Colors.redAccent,
+              ),
+            ),
             child: const Text('Supprimer'),
           ),
         ],
@@ -1281,9 +1372,9 @@ class _ProPostScreenState extends State<ProPostScreen>
       await ApiClient().authenticatedDelete('/posts/$postId');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Post supprimé avec succès'),
-            backgroundColor: Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
           ),
         );
         _refreshPosts();
@@ -1293,7 +1384,7 @@ class _ProPostScreenState extends State<ProPostScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -1330,18 +1421,21 @@ class _ProPostScreenState extends State<ProPostScreen>
         .toList();
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Colors.black),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Mes posts',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -1349,9 +1443,12 @@ class _ProPostScreenState extends State<ProPostScreen>
         centerTitle: true,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.black,
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: const Color(0xFF3AAE5E),
+          labelColor: AdaptiveColors.foreground(context, Colors.black),
+          unselectedLabelColor: AdaptiveColors.surface(context, Colors.grey),
+          indicatorColor: AdaptiveColors.surface(
+            context,
+            const Color(0xFF3AAE5E),
+          ),
           tabs: [
             Tab(text: 'Posts(${myPostsOnly.length})'),
             Tab(text: 'Republications(${repostsOnly.length})'),
@@ -1375,8 +1472,10 @@ class _ProPostScreenState extends State<ProPostScreen>
 
   Widget _buildBody({required List<Map<String, dynamic>> postsOverride}) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF3AAE5E)),
+      return Center(
+        child: CircularProgressIndicator(
+          color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+        ),
       );
     }
 
@@ -1387,14 +1486,19 @@ class _ProPostScreenState extends State<ProPostScreen>
           children: [
             Text(
               _error!,
-              style: const TextStyle(color: Colors.redAccent),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.redAccent),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: _loadPosts,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3AAE5E),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ),
               ),
               child: const Text('Réessayer'),
             ),
@@ -1404,10 +1508,12 @@ class _ProPostScreenState extends State<ProPostScreen>
     }
 
     if (postsOverride.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'Vous n\'avez aucun post/republication pour l\'instant',
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Colors.grey),
+          ),
           textAlign: TextAlign.center,
         ),
       );
@@ -1415,7 +1521,7 @@ class _ProPostScreenState extends State<ProPostScreen>
 
     return RefreshIndicator(
       onRefresh: _refreshPosts,
-      color: const Color(0xFF3AAE5E),
+      color: AdaptiveColors.foreground(context, const Color(0xFF3AAE5E)),
       child: ListView.builder(
         padding: const EdgeInsets.all(12),
         itemCount: postsOverride.length + 1,
@@ -1425,22 +1531,38 @@ class _ProPostScreenState extends State<ProPostScreen>
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withValues(alpha: 0.08),
+                color: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: const Color(0xFF3AAE5E).withValues(alpha: 0.3),
+                  color: AdaptiveColors.border(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ).withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Color(0xFF3AAE5E), size: 16),
+                  Icon(
+                    Icons.info_outline,
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
+                    size: 16,
+                  ),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Pour supprimer un post, glissez vers la gauche',
                       style: TextStyle(
-                        color: Color(0xFF3AAE5E),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF3AAE5E),
+                        ),
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1667,12 +1789,16 @@ class _ProPostScreenState extends State<ProPostScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.white),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -1796,7 +1922,7 @@ class _ProPostScreenState extends State<ProPostScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (ctx, modalSetState) {
@@ -1958,21 +2084,34 @@ class _ProPostScreenState extends State<ProPostScreen>
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () =>
                           Navigator.pop(context, editController.text),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enregistrer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -2008,7 +2147,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                       content: Text(
                         'Erreur lors de la modification: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -2035,20 +2177,33 @@ class _ProPostScreenState extends State<ProPostScreen>
                       onPressed: () => Navigator.pop(context, false),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          Colors.redAccent,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Supprimer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -2101,7 +2256,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                       content: Text(
                         'Erreur lors de la suppression: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -2166,8 +2324,14 @@ class _ProPostScreenState extends State<ProPostScreen>
                             accountType: user['pro_profile'] != null
                                 ? 'pro'
                                 : 'particulier',
-                            backgroundColor: const Color(0xFFE6F7EF),
-                            textColor: const Color(0xFF2A8143),
+                            backgroundColor: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFE6F7EF),
+                            ),
+                            textColor: AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFF2A8143),
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -2181,7 +2345,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                                       style: TextStyle(
                                         fontSize: isReply ? 12 : 13,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF333333),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          const Color(0xFF333333),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -2189,7 +2356,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                                       _buildTimeAgo(createdAt),
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey[400],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[400],
+                                        ),
                                       ),
                                     ),
                                     if (isOwner) ...[
@@ -2215,20 +2385,28 @@ class _ProPostScreenState extends State<ProPostScreen>
                                                   ],
                                                 ),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'delete',
                                                 child: Row(
                                                   children: [
                                                     Icon(
                                                       Icons.delete,
                                                       size: 18,
-                                                      color: Colors.redAccent,
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Colors.redAccent,
+                                                          ),
                                                     ),
                                                     SizedBox(width: 8),
                                                     Text(
                                                       'Supprimer',
                                                       style: TextStyle(
-                                                        color: Colors.redAccent,
+                                                        color:
+                                                            AdaptiveColors.foreground(
+                                                              context,
+                                                              Colors.redAccent,
+                                                            ),
                                                       ),
                                                     ),
                                                   ],
@@ -2246,7 +2424,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                                         child: Icon(
                                           Icons.more_horiz,
                                           size: 18,
-                                          color: Colors.grey[400],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[400],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -2255,9 +2436,12 @@ class _ProPostScreenState extends State<ProPostScreen>
                                 const SizedBox(height: 4),
                                 Text(
                                   body,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF4F4F4F),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF4F4F4F),
+                                    ),
                                     height: 1.4,
                                   ),
                                 ),
@@ -2277,8 +2461,14 @@ class _ProPostScreenState extends State<ProPostScreen>
                                                 : Icons.thumb_up_alt_outlined,
                                             size: 14,
                                             color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[400],
+                                                ? AdaptiveColors.foreground(
+                                                    context,
+                                                    const Color(0xFF3AAE5E),
+                                                  )
+                                                : AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.grey[400],
+                                                  ),
                                           ),
                                           const SizedBox(width: 3),
                                           Text(
@@ -2286,8 +2476,14 @@ class _ProPostScreenState extends State<ProPostScreen>
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: userReaction == 'like'
-                                                  ? const Color(0xFF3AAE5E)
-                                                  : Colors.grey[500],
+                                                  ? AdaptiveColors.foreground(
+                                                      context,
+                                                      const Color(0xFF3AAE5E),
+                                                    )
+                                                  : AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.grey[500],
+                                                    ),
                                             ),
                                           ),
                                         ],
@@ -2311,7 +2507,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2E9B5B),
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              const Color(0xFF2E9B5B),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -2347,8 +2546,8 @@ class _ProPostScreenState extends State<ProPostScreen>
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(ctx).size.height * 0.75,
                 ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Colors.white),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(24),
                     topRight: Radius.circular(24),
@@ -2361,7 +2560,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[300],
+                        ),
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
@@ -2372,29 +2574,38 @@ class _ProPostScreenState extends State<ProPostScreen>
                       ),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Commentaires',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2A2A2A),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF2A2A2A),
+                                ),
                               ),
                             ),
                           ),
                           GestureDetector(
                             onTap: () => Navigator.pop(ctx),
-                            child: const Icon(
+                            child: Icon(
                               Icons.close,
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                               size: 22,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Comment list
                     Expanded(
                       child: isLoading
@@ -2403,15 +2614,25 @@ class _ProPostScreenState extends State<ProPostScreen>
                           ? Center(
                               child: Text(
                                 'Erreur: $error',
-                                style: const TextStyle(color: Colors.red),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.red,
+                                  ),
+                                ),
                               ),
                             )
                           : comments.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
                                 'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey,
+                                  ),
+                                ),
                               ),
                             )
                           : ListView.separated(
@@ -2426,7 +2647,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                                   buildCommentItem(comments[i]),
                             ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Reply indicator
                     if (replyingToId != null)
                       Container(
@@ -2434,14 +2658,20 @@ class _ProPostScreenState extends State<ProPostScreen>
                           horizontal: 16,
                           vertical: 6,
                         ),
-                        color: const Color(0xFFF5F5F5),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFF5F5F5),
+                        ),
                         child: Row(
                           children: [
                             Text(
                               'Répondre à $replyingToName',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                             const Spacer(),
@@ -2450,10 +2680,13 @@ class _ProPostScreenState extends State<ProPostScreen>
                                 replyingToId = null;
                                 replyingToName = null;
                               }),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close,
                                 size: 16,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                           ],
@@ -2470,12 +2703,15 @@ class _ProPostScreenState extends State<ProPostScreen>
                                 horizontal: 14,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F5),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFF5F5F5),
+                                ),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: TextField(
                                 controller: commentCtrl,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   isCollapsed: true,
                                   contentPadding: EdgeInsets.symmetric(
                                     vertical: 10,
@@ -2483,7 +2719,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                                   border: InputBorder.none,
                                   hintText: 'Écrire un commentaire...',
                                   hintStyle: TextStyle(
-                                    color: Color(0xFF9E9E9E),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF9E9E9E),
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -2497,14 +2736,20 @@ class _ProPostScreenState extends State<ProPostScreen>
                             onTap: submitComment,
                             child: Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF3AAE5E),
+                              decoration: BoxDecoration(
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  Color(0xFF3AAE5E),
+                                ),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.send,
                                 size: 18,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -2573,14 +2818,14 @@ class _ProPostScreenState extends State<ProPostScreen>
     final result = await showModalBottomSheet<String?>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, modalSetState) {
             return Container(
               height: MediaQuery.of(ctx).size.height * 0.85,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
@@ -2591,7 +2836,7 @@ class _ProPostScreenState extends State<ProPostScreen>
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: AdaptiveColors.surface(context, Colors.grey[300]),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -2605,10 +2850,13 @@ class _ProPostScreenState extends State<ProPostScreen>
                             isEditing
                                 ? 'Modifier la republication'
                                 : 'Republier cette publication',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF333333),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF333333),
+                              ),
                             ),
                           ),
                         ),
@@ -2647,17 +2895,23 @@ class _ProPostScreenState extends State<ProPostScreen>
                                     children: [
                                       Text(
                                         userName,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 15,
-                                          color: Color(0xFF333333),
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Color(0xFF333333),
+                                          ),
                                         ),
                                       ),
                                       Text(
                                         'Public',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[500],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[500],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -2679,18 +2933,27 @@ class _ProPostScreenState extends State<ProPostScreen>
                                     ? 'Modifiez votre commentaire...'
                                     : 'Ajoutez un commentaire à votre republication...',
                                 hintStyle: TextStyle(
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                   fontSize: 14,
                                 ),
                                 border: InputBorder.none,
                                 counterStyle: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                 ),
                               ),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF333333),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF333333),
+                                ),
                                 height: 1.5,
                               ),
                               onChanged: (_) => modalSetState(() {}),
@@ -2701,7 +2964,12 @@ class _ProPostScreenState extends State<ProPostScreen>
                             Container(
                               margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey[300]!),
+                                border: Border.all(
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    Colors.grey[300]!,
+                                  ),
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -2727,7 +2995,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                                             '$originalAuthorName • $originalTimeAgo',
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.grey[600],
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Colors.grey[600],
+                                              ),
                                               fontWeight: FontWeight.w500,
                                             ),
                                             maxLines: 1,
@@ -2749,9 +3020,12 @@ class _ProPostScreenState extends State<ProPostScreen>
                                         originalContent.length > 200
                                             ? '${originalContent.substring(0, 200)}...'
                                             : originalContent,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 13,
-                                          color: Color(0xFF555555),
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Color(0xFF555555),
+                                          ),
                                           height: 1.4,
                                         ),
                                       ),
@@ -2772,10 +3046,17 @@ class _ProPostScreenState extends State<ProPostScreen>
                                             fit: BoxFit.cover,
                                             errorBuilder: (_, __, ___) =>
                                                 Container(
-                                                  color: Colors.grey[200],
+                                                  color: AdaptiveColors.surface(
+                                                    context,
+                                                    Colors.grey[200],
+                                                  ),
                                                   child: Icon(
                                                     Icons.image,
-                                                    color: Colors.grey[400],
+                                                    color:
+                                                        AdaptiveColors.foreground(
+                                                          context,
+                                                          Colors.grey[400],
+                                                        ),
                                                   ),
                                                 ),
                                           ),
@@ -2800,8 +3081,15 @@ class _ProPostScreenState extends State<ProPostScreen>
                       MediaQuery.of(ctx).padding.bottom + 10,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(top: BorderSide(color: Colors.grey[200]!)),
+                      color: AdaptiveColors.surface(context, Colors.white),
+                      border: Border(
+                        top: BorderSide(
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey[200]!,
+                          ),
+                        ),
+                      ),
                     ),
                     child: SizedBox(
                       width: double.infinity,
@@ -2841,35 +3129,50 @@ class _ProPostScreenState extends State<ProPostScreen>
                                     ScaffoldMessenger.of(ctx).showSnackBar(
                                       SnackBar(
                                         content: Text(e.toString()),
-                                        backgroundColor: Colors.redAccent,
+                                        backgroundColor: AdaptiveColors.surface(
+                                          context,
+                                          Colors.redAccent,
+                                        ),
                                       ),
                                     );
                                   }
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3AAE5E),
-                          disabledBackgroundColor: Colors.grey[300],
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ),
+                          disabledBackgroundColor: AdaptiveColors.surface(
+                            context,
+                            Colors.grey[300],
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
                           elevation: 0,
                         ),
                         child: isSubmitting
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : Text(
                                 isEditing ? 'Enregistrer' : 'Republier',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               ),
                       ),
@@ -2892,7 +3195,10 @@ class _ProPostScreenState extends State<ProPostScreen>
                   ? 'Republication modifiée avec succès'
                   : 'Publication republiée avec succès',
             ),
-            backgroundColor: const Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(
+              context,
+              const Color(0xFF3AAE5E),
+            ),
             duration: const Duration(seconds: 2),
           ),
         );
@@ -2920,7 +3226,12 @@ class _ProPostScreenState extends State<ProPostScreen>
               Icon(
                 isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                 size: 18,
-                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                color: isLiked
+                    ? AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      )
+                    : AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               GestureDetector(
@@ -2929,7 +3240,12 @@ class _ProPostScreenState extends State<ProPostScreen>
                   data.likesCount.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    color: isLiked
+                        ? AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -2946,12 +3262,15 @@ class _ProPostScreenState extends State<ProPostScreen>
               Icon(
                 Icons.chat_bubble_outline,
                 size: 17,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               Text(
                 data.commentsCount.toString(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -2963,25 +3282,34 @@ class _ProPostScreenState extends State<ProPostScreen>
               onTap: () => _repostPost(entityId, originalPostData: postData),
               child: Row(
                 children: [
-                  Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
+                  Icon(
+                    Icons.repeat_rounded,
+                    size: 18,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     data.repostsCount > 0
                         ? data.repostsCount.toString()
                         : 'Republier',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
           ],
         ],
-        // Bouton partager masqué
-        // const SizedBox(width: 14),
-        // GestureDetector(
-        //   onTap: () => ShareService.shareEntity(apiSlug, entityId),
-        //   child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
-        // ),
+        IconButton(
+          tooltip: 'Partager',
+          icon: const Icon(Icons.share_outlined, size: 20),
+          onPressed: () => ShareService.shareEntity(apiSlug, entityId),
+        ),
       ],
     );
   }
@@ -3148,7 +3476,12 @@ class _ProPostScreenState extends State<ProPostScreen>
               Navigator.pop(context);
               await _deletePost(postId);
             },
-            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Supprimer',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.red),
+              ),
+            ),
           ),
         ],
       ),

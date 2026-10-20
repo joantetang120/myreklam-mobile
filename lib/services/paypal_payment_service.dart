@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:myreklam/utils/user_session.dart';
@@ -102,8 +103,14 @@ class PayPalPaymentService {
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0070BA),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF0070BA),
+                  ),
+                  foregroundColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
                 ),
                 child: const Text('J\'ai payé'),
               ),

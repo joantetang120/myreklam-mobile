@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/custom_bottom_bar.dart';
 
@@ -20,7 +21,8 @@ class AppLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor ?? Colors.white,
+      backgroundColor:
+          backgroundColor ?? AdaptiveColors.surface(context, Colors.white),
       appBar: appBar,
       body: body,
       bottomNavigationBar: CustomBottomBar(

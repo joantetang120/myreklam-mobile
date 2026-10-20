@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/models/delegation.dart';
 import 'package:myreklam/services/delegation_service.dart';
@@ -63,7 +64,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -113,7 +114,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _kGreen,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AdaptiveColors.foreground(
+                          context,
+                          Colors.white,
+                        ),
                       ),
                       onPressed: selected.isEmpty
                           ? null
@@ -158,7 +162,12 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Retirer', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Retirer',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.red),
+              ),
+            ),
           ),
         ],
       ),
@@ -172,11 +181,11 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
-        foregroundColor: Colors.black87,
+        foregroundColor: AdaptiveColors.foreground(context, Colors.black87),
         title: const Text(
           'Ajouter utilisateurs',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -189,9 +198,12 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  const Text(
+                  Text(
                     'Donnez à un utilisateur existant l\'accès à votre compte, avec des permissions précises. Le 1er gestionnaire est gratuit, chaque suivant coûte 5€.',
-                    style: TextStyle(fontSize: 13, color: Colors.black54),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AdaptiveColors.foreground(context, Colors.black54),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   if (_managers.isEmpty)
@@ -203,12 +215,20 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                             Icon(
                               Icons.group_outlined,
                               size: 56,
-                              color: Colors.grey[400],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[400],
+                              ),
                             ),
                             const SizedBox(height: 12),
                             Text(
                               'Aucun gestionnaire pour le moment',
-                              style: TextStyle(color: Colors.grey[500]),
+                              style: TextStyle(
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[500],
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -222,7 +242,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _kGreen,
-                        foregroundColor: Colors.white,
+                        foregroundColor: AdaptiveColors.foreground(
+                          context,
+                          Colors.white,
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                       onPressed: _openAddFlow,
@@ -245,9 +268,11 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: AdaptiveColors.surface(context, Colors.grey[50]),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: AdaptiveColors.border(context, Colors.grey[200]!),
+        ),
       ),
       child: Row(
         children: [
@@ -292,7 +317,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                 const SizedBox(height: 2),
                 Text(
                   '${d.permissions.length} permission(s)',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ],
             ),
@@ -302,7 +330,11 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
             onPressed: () => _editPermissions(d),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+            icon: Icon(
+              Icons.delete_outline,
+              size: 20,
+              color: AdaptiveColors.foreground(context, Colors.red),
+            ),
             onPressed: () => _remove(d),
           ),
         ],
@@ -395,11 +427,11 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
-        foregroundColor: Colors.black87,
+        foregroundColor: AdaptiveColors.foreground(context, Colors.black87),
         title: const Text(
           'Ajouter un utilisateur',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -433,7 +465,10 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _kGreen,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 14,
@@ -441,12 +476,15 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
                 ),
                 onPressed: _searching ? null : _search,
                 child: _searching
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                         ),
                       )
                     : const Text('Chercher'),
@@ -457,7 +495,10 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
             const SizedBox(height: 12),
             Text(
               _error!,
-              style: const TextStyle(color: Colors.red, fontSize: 13),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.red),
+                fontSize: 13,
+              ),
             ),
           ],
           if (_found != null) ...[
@@ -465,9 +506,11 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: AdaptiveColors.surface(context, Colors.grey[50]),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(
+                  color: AdaptiveColors.border(context, Colors.grey[200]!),
+                ),
               ),
               child: Row(
                 children: [
@@ -493,7 +536,10 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
                             _found!.email!,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                       ],
@@ -504,9 +550,12 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
             ),
             if (_alreadyAdded) ...[
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Cet utilisateur gère déjà votre compte.',
-                style: TextStyle(color: Colors.orange, fontSize: 13),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.orange),
+                  fontSize: 13,
+                ),
               ),
             ] else ...[
               const SizedBox(height: 20),
@@ -541,19 +590,25 @@ class _AddManagerScreenState extends State<_AddManagerScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _kGreen,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: (_selected.isEmpty || _submitting)
                       ? null
                       : _submit,
                   child: _submitting
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Text(

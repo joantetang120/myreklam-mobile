@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/models/delegation.dart';
 import 'package:myreklam/screens/splash_screen.dart';
@@ -68,11 +69,11 @@ class _ManagedAccountsScreenState extends State<ManagedAccountsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
-        foregroundColor: Colors.black87,
+        foregroundColor: AdaptiveColors.foreground(context, Colors.black87),
         title: const Text(
           'Gérer compte',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -89,14 +90,22 @@ class _ManagedAccountsScreenState extends State<ManagedAccountsScreen> {
                         Icon(
                           Icons.supervisor_account_outlined,
                           size: 64,
-                          color: Colors.grey[400],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[400],
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Center(
                           child: Text(
                             'Aucun compte à gérer.\nQuand quelqu\'un vous autorise, il apparaît ici.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey[500]),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -104,9 +113,15 @@ class _ManagedAccountsScreenState extends State<ManagedAccountsScreen> {
                   : ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
-                        const Text(
+                        Text(
                           'Connectez-vous à un compte que vous gérez. Vous agirez en son nom, selon les permissions accordées.',
-                          style: TextStyle(fontSize: 13, color: Colors.black54),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.black54,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 16),
                         ..._accounts.map(_buildAccountTile),
@@ -121,9 +136,11 @@ class _ManagedAccountsScreenState extends State<ManagedAccountsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: AdaptiveColors.surface(context, Colors.grey[50]),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: AdaptiveColors.border(context, Colors.grey[200]!),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,7 +165,10 @@ class _ManagedAccountsScreenState extends State<ManagedAccountsScreen> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _kGreen,
-                  foregroundColor: Colors.white,
+                  foregroundColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
                 ),
                 onPressed: _connecting ? null : () => _connect(d),
                 child: const Text('Se connecter'),

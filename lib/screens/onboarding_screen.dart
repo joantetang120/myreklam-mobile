@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 
@@ -78,7 +79,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       body: SafeArea(
         child: Column(
           children: [
@@ -95,11 +96,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFE0E0E0)),
+                          border: Border.all(
+                            color: AdaptiveColors.border(
+                              context,
+                              const Color(0xFFE0E0E0),
+                            ),
+                          ),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back,
-                          color: Color(0xFF1B8D4B),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF1B8D4B),
+                          ),
                           size: 20,
                         ),
                       ),
@@ -114,13 +123,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFE8F5E9),
+                        ),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Découvrir Myreklam',
                         style: TextStyle(
-                          color: Colors.black,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.black,
+                          ),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -147,22 +162,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           Text(
                             page.titleGray,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontFamily: 'Manjari',
 
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                               fontWeight: FontWeight.w400,
                             ),
                           ),
                           Text(
                             page.titleGreen,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 28,
                               fontFamily: 'Manjari',
 
-                              color: Color(0xFF1B8D4B),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF1B8D4B),
+                              ),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -176,11 +197,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           Text(
                             page.description,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontFamily: 'Manjari',
 
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                               height: 1.5,
                             ),
                           ),
@@ -202,16 +226,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: ElevatedButton(
                         onPressed: _skip,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1B8D4B),
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF1B8D4B),
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
+                        child: Text(
                           'Découvrir Myreklam',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -232,8 +262,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: _currentPage == index
-                                    ? const Color(0xFF1B8D4B)
-                                    : const Color(0xFFEEEEEE),
+                                    ? AdaptiveColors.surface(
+                                        context,
+                                        const Color(0xFF1B8D4B),
+                                      )
+                                    : AdaptiveColors.surface(
+                                        context,
+                                        const Color(0xFFEEEEEE),
+                                      ),
                               ),
                             ),
                           ),
@@ -247,17 +283,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             height: 56,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: const Color(0xFF1B8D4B),
+                              color: AdaptiveColors.surface(
+                                context,
+                                const Color(0xFF1B8D4B),
+                              ),
                               border: Border.all(
-                                color: const Color(
-                                  0xFF1B8D4B,
+                                color: AdaptiveColors.border(
+                                  context,
+                                  const Color(0xFF1B8D4B),
                                 ).withValues(alpha: 0.2),
                                 width: 4,
                               ),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.arrow_forward,
-                              color: Colors.white,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                             ),
                           ),
                         ),

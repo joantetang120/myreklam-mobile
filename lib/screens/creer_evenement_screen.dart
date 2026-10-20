@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
 import 'package:myreklam/widgets/announcement_ai_panel.dart';
 import 'package:myreklam/utils/announcement_ai_values.dart';
@@ -515,7 +516,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
             ),
             child: const Text('Continuer'),
           ),
@@ -693,8 +697,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(context, Colors.red),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
               ),
               child: const Text('Quitter'),
             ),
@@ -722,7 +729,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, 'save'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3AAE5E),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
             ),
             child: const Text('Sauvegarder'),
           ),
@@ -867,8 +877,8 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: isError
-            ? Colors.red.shade700
-            : const Color(0xFF3AAE5E),
+            ? AdaptiveColors.surface(context, Colors.red.shade700)
+            : AdaptiveColors.surface(context, const Color(0xFF3AAE5E)),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 4),
       ),
@@ -884,11 +894,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFFEF8A40),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Color(0xFF424242),
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+              onPrimary: AdaptiveColors.foreground(context, Colors.white),
+              surface: AdaptiveColors.surface(context, Colors.white),
+              onSurface: AdaptiveColors.foreground(context, Color(0xFF424242)),
             ),
           ),
           child: child!,
@@ -918,7 +928,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -935,7 +945,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                       Navigator.pop(context); // Pop EventDetailScreen
                     }
                   },
-                  child: const Icon(Icons.close, color: Colors.grey, size: 22),
+                  child: Icon(
+                    Icons.close,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                    size: 22,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -943,10 +957,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               const SizedBox(height: 20),
               Text(
                 _isEditMode ? 'Evenement mis à jour' : 'Evenement publié',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                 ),
               ),
               const SizedBox(height: 10),
@@ -959,7 +973,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   height: 1.4,
                 ),
               ),
@@ -1390,7 +1404,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       },
       child: AppLayout(
         currentIndex: 2,
-        backgroundColor: const Color(0xFFF9F9FB),
+        backgroundColor: AdaptiveColors.surface(
+          context,
+          const Color(0xFFF9F9FB),
+        ),
         onTabTapped: (index) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
@@ -1417,9 +1434,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                       alignment: Alignment.centerLeft,
                       child: GestureDetector(
                         onTap: _handleBackButton,
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back,
-                          color: Color(0xFF616161),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF616161),
+                          ),
                           size: 24,
                         ),
                       ),
@@ -1428,11 +1448,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                       _isEditMode
                           ? 'Modifier l\'événement'
                           : 'Créer un événement',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontFamily: 'Manjari',
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF424242),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF424242),
+                        ),
                       ),
                     ),
                   ],
@@ -1443,7 +1466,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   'Partagez vos événements avec la communauté',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1469,12 +1495,21 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: Colors.grey.withValues(alpha: 0.3),
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey,
+                            ).withValues(alpha: 0.3),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Précédent',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -1500,8 +1535,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       borderRadius: BorderRadius.circular(6),
       child: LinearProgressIndicator(
         value: (_currentStep + 1) / (_totalSteps + 1),
-        backgroundColor: Colors.grey[200],
-        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF9800)),
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[200]),
+        valueColor: AlwaysStoppedAnimation<Color>(
+          AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+        ),
         minHeight: 6,
       ),
     );
@@ -1530,7 +1567,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1540,7 +1577,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               SizedBox(height: 8),
@@ -1548,7 +1585,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 'Ajoutez des photos de votre événement pour donner envie aux participants et mettre l’ambiance en avant.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                   height: 1.4,
                 ),
               ),
@@ -1558,7 +1595,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
             ],
@@ -1608,10 +1645,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       onTap: _pickMediaFiles,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF0F9F4),
+          color: AdaptiveColors.surface(context, const Color(0xFFF0F9F4)),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFF3AAE5E),
+            color: AdaptiveColors.border(context, const Color(0xFF3AAE5E)),
             width: 2,
             style: BorderStyle.solid,
           ),
@@ -1622,22 +1659,25 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.camera_alt,
                 size: 40,
-                color: Color(0xFF3AAE5E),
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
               ),
             ),
             const SizedBox(height: 12),
             Text(
               'Ajouter ${_selectedMediaFiles.isEmpty ? "" : "des "}photos',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF3AAE5E),
+                color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
               ),
             ),
           ],
@@ -1667,7 +1707,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             child: Container(
               width: double.infinity,
               height: double.infinity,
-              color: const Color(0xFFF5F5F5),
+              color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
               child: _buildMediaPreview(file),
             ),
           ),
@@ -1678,18 +1718,18 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3AAE5E),
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Photo de couverture',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1704,7 +1744,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -1714,10 +1754,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
                   size: 18,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                 ),
               ),
             ),
@@ -1746,9 +1786,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
   Widget _buildBrokenMediaPlaceholder() {
     return Container(
-      color: const Color(0xFFF9FAFB),
-      child: const Center(
-        child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+      color: AdaptiveColors.surface(context, const Color(0xFFF9FAFB)),
+      child: Center(
+        child: Icon(
+          Icons.broken_image,
+          size: 40,
+          color: AdaptiveColors.foreground(context, Colors.grey),
+        ),
       ),
     );
   }
@@ -1770,9 +1814,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       );
     } else if (isVideo) {
       content = Container(
-        color: Colors.black87,
-        child: const Center(
-          child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white),
+        color: AdaptiveColors.surface(context, Colors.black87),
+        child: Center(
+          child: Icon(
+            Icons.play_circle_outline,
+            size: 40,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
         ),
       );
     } else {
@@ -1804,16 +1852,21 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.4),
+                  color: AdaptiveColors.surface(
+                    context,
+                    Colors.black,
+                  ).withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Center(
+                child: Center(
                   child: SizedBox(
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AdaptiveColors.foreground(context, Colors.white),
+                      ),
                     ),
                   ),
                 ),
@@ -1832,7 +1885,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AdaptiveColors.surface(context, Colors.white),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -1842,10 +1895,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.close,
                     size: 18,
-                    color: Color(0xFF666666),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF666666),
+                    ),
                   ),
                 ),
               ),
@@ -1868,9 +1924,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
 
     if (isVideo) {
       return Container(
-        color: Colors.black87,
-        child: const Center(
-          child: Icon(Icons.play_circle_outline, size: 40, color: Colors.white),
+        color: AdaptiveColors.surface(context, Colors.black87),
+        child: Center(
+          child: Icon(
+            Icons.play_circle_outline,
+            size: 40,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
         ),
       );
     }
@@ -1894,10 +1954,18 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,
-                errorBuilder: (_, __, ___) =>
-                    Container(color: const Color(0xFFF9FAFB), child: fileIcon),
+                errorBuilder: (_, __, ___) => Container(
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFF9FAFB),
+                  ),
+                  child: fileIcon,
+                ),
               )
-            : Container(color: const Color(0xFFF9FAFB), child: fileIcon),
+            : Container(
+                color: AdaptiveColors.surface(context, const Color(0xFFF9FAFB)),
+                child: fileIcon,
+              ),
       );
     }
     if (file.path.isNotEmpty) {
@@ -1906,11 +1974,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, __, ___) =>
-            Container(color: const Color(0xFFF9FAFB), child: fileIcon),
+        errorBuilder: (_, __, ___) => Container(
+          color: AdaptiveColors.surface(context, const Color(0xFFF9FAFB)),
+          child: fileIcon,
+        ),
       );
     }
-    return Container(color: const Color(0xFFF9FAFB), child: fileIcon);
+    return Container(
+      color: AdaptiveColors.surface(context, const Color(0xFFF9FAFB)),
+      child: fileIcon,
+    );
   }
 
   // ─── STEP 1: Informations ───
@@ -2120,7 +2193,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 hint: _buildRequiredHint(
                   'Choisissez la catégorie d\'événement',
                 ),
-                backgroundColor: const Color(0xFFF9FAFB),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF9FAFB),
+                ),
                 enabled: hasCategories,
               ),
             const SizedBox(height: 12),
@@ -2131,7 +2207,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               menuItems: subCategoryItems,
               onChanged: (val) => setState(() => _selectedSubCategory = val),
               hint: _buildRequiredHint('Type d\'événement'),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
               enabled: hasSubCategories,
             ),
             const SizedBox(height: 12),
@@ -2141,7 +2220,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               items: _types,
               onChanged: (val) => setState(() => _selectedType = val),
               hint: _buildRequiredHint("Format de l'evenement"),
-              backgroundColor: const Color(0xFFF9FAFB),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFF9FAFB),
+              ),
             ),
           ],
         ),
@@ -2180,8 +2262,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           child: OutlinedButton(
             onPressed: _nextStep,
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFFF9800),
-              side: const BorderSide(color: Color(0xFFFF9800)),
+              foregroundColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFFFF9800),
+              ),
+              side: BorderSide(
+                color: AdaptiveColors.border(context, Color(0xFFFF9800)),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -2257,16 +2344,27 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: AdaptiveColors.border(
+                    context,
+                    Colors.grey,
+                  ).withValues(alpha: 0.2),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Toute la France',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF424242)),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF424242),
+                      ),
+                    ),
                   ),
                   Switch(
                     value: _touteLaFrance,
@@ -2280,8 +2378,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                             });
                           }
                         : null,
-                    activeThumbColor: Colors.white,
-                    activeTrackColor: const Color(0xFFEF8A40),
+                    activeThumbColor: AdaptiveColors.surface(
+                      context,
+                      Colors.white,
+                    ),
+                    activeTrackColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFEF8A40),
+                    ),
                   ),
                 ],
               ),
@@ -2322,10 +2426,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                       width: 250,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AdaptiveColors.surface(context, Colors.white),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.grey.withValues(alpha: 0.2),
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey,
+                          ).withValues(alpha: 0.2),
                         ),
                       ),
                       child: TextField(
@@ -2340,14 +2447,17 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                         ),
                       ),
                     ),
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(left: 8),
                       child: Text(
                         '€',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF2E9B5B),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF2E9B5B),
+                          ),
                         ),
                       ),
                     ),
@@ -2365,10 +2475,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AdaptiveColors.surface(
+                                context,
+                                Colors.white,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.grey.withValues(alpha: 0.2),
+                                color: AdaptiveColors.border(
+                                  context,
+                                  Colors.grey,
+                                ).withValues(alpha: 0.2),
                               ),
                             ),
                             child: TextField(
@@ -2377,7 +2493,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                                 hintText: 'ex: Enfant, VIP...',
                                 hintStyle: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                 ),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(
@@ -2393,10 +2512,16 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 14),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AdaptiveColors.surface(
+                                context,
+                                Colors.white,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.grey.withValues(alpha: 0.2),
+                                color: AdaptiveColors.border(
+                                  context,
+                                  Colors.grey,
+                                ).withValues(alpha: 0.2),
                               ),
                             ),
                             child: TextField(
@@ -2409,7 +2534,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                                 hintText: '€',
                                 hintStyle: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                 ),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(
@@ -2420,19 +2548,25 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Text(
+                        Text(
                           '€',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF2E9B5B),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF2E9B5B),
+                            ),
                           ),
                         ),
                         if (_priceCategories.length > 1)
                           IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.remove_circle_outline,
-                              color: Colors.red,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.red,
+                              ),
                               size: 22,
                             ),
                             onPressed: () => _removePriceCategory(index),
@@ -2448,14 +2582,23 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
                     onPressed: _addPriceCategory,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.add_circle_outline,
                       size: 20,
-                      color: Color(0xFFEF8A40),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFFEF8A40),
+                      ),
                     ),
-                    label: const Text(
+                    label: Text(
                       'Ajouter une catégorie de prix',
-                      style: TextStyle(color: Color(0xFFEF8A40), fontSize: 13),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFFEF8A40),
+                        ),
+                        fontSize: 13,
+                      ),
                     ),
                     style: TextButton.styleFrom(padding: EdgeInsets.zero),
                   ),
@@ -2555,20 +2698,26 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   )
                 : const SizedBox(),
             // Horaires
-            const Text(
+            Text(
               'Horaires :',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
               ),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                const Text(
+                Text(
                   'De',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF424242)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF424242),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -2580,10 +2729,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AdaptiveColors.surface(context, Colors.white),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.grey.withValues(alpha: 0.2),
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey,
+                          ).withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
@@ -2594,8 +2746,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               color: _startTime != null
-                                  ? const Color(0xFF424242)
-                                  : Colors.grey[400],
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      const Color(0xFF424242),
+                                    )
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[400],
+                                    ),
                             ),
                           ),
                           _startTime != null
@@ -2606,13 +2764,19 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                                   child: Icon(
                                     Icons.close,
                                     size: 18,
-                                    color: Colors.grey[500],
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[500],
+                                    ),
                                   ),
                                 )
                               : Icon(
                                   Icons.access_time,
                                   size: 20,
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                 ),
                         ],
                       ),
@@ -2620,9 +2784,15 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   ),
                 ),
                 const SizedBox(width: 20),
-                const Text(
+                Text(
                   'À',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF424242)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF424242),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -2634,10 +2804,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AdaptiveColors.surface(context, Colors.white),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.grey.withValues(alpha: 0.2),
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey,
+                          ).withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
@@ -2648,8 +2821,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               color: _endTime != null
-                                  ? const Color(0xFF424242)
-                                  : Colors.grey[400],
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      const Color(0xFF424242),
+                                    )
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[400],
+                                    ),
                             ),
                           ),
                           _endTime != null
@@ -2659,13 +2838,19 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                                   child: Icon(
                                     Icons.close,
                                     size: 18,
-                                    color: Colors.grey[500],
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[500],
+                                    ),
                                   ),
                                 )
                               : Icon(
                                   Icons.access_time,
                                   size: 20,
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                 ),
                         ],
                       ),
@@ -2678,12 +2863,12 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             // Days of week selection (for multi_day and permanent)
             if (_selectedTimeEvenement == 'Sur plusieurs jours' ||
                 _selectedTimeEvenement == 'Permanent') ...[
-              const Text(
+              Text(
                 'Jours de la semaine :',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -2708,28 +2893,35 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           child: Container(
             width: 50,
             height: 50,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Color(0xFFE6F7EF),
+              color: AdaptiveColors.surface(context, Color(0xFFE6F7EF)),
             ),
-            child: const Icon(Icons.check, color: Color(0xFF3AAE5E), size: 30),
+            child: Icon(
+              Icons.check,
+              color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+              size: 30,
+            ),
           ),
         ),
         const SizedBox(height: 12),
-        const Center(
+        Center(
           child: Text(
             'Vérifiez votre évènement',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF424242),
+              color: AdaptiveColors.foreground(context, Color(0xFF424242)),
             ),
           ),
         ),
         Center(
           child: Text(
             'Relisez les informations avant de publier votre événement',
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+            style: TextStyle(
+              fontSize: 11,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
             textAlign: TextAlign.center,
           ),
         ),
@@ -2873,25 +3065,28 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFE6F7EF),
+            color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
             children: [
-              const Text(
+              Text(
                 'Accepter de recevoir des messages à propos de cet événement',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Les intéressés pourront vous contacter pour connaître le programme, l’accès ou les modalités pratiques de l’événement.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
               const SizedBox(height: 12),
               Row(
@@ -2917,8 +3112,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           child: ElevatedButton(
             onPressed: _isSubmitting ? null : _submitEvent,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF9800),
-              foregroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFFFF9800),
+              ),
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -2929,13 +3127,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(
+                      SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                            AdaptiveColors.foreground(context, Colors.white),
                           ),
                         ),
                       ),
@@ -2962,7 +3160,10 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           const SizedBox(height: 12),
           Text(
             _submitError!,
-            style: const TextStyle(color: Colors.red, fontSize: 12),
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.red),
+              fontSize: 12,
+            ),
           ),
         ],
         const SizedBox(height: 30),
@@ -2988,13 +3189,21 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               title,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.black.withValues(alpha: 0.8),
+                color: AdaptiveColors.foreground(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.8),
                 fontFamily: 'Manjari',
                 fontWeight: FontWeight.bold,
               ),
             ),
             if (isRequired)
-              const Text(" *", style: TextStyle(color: Colors.red)),
+              Text(
+                " *",
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.red),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 2),
@@ -3015,7 +3224,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey),
+              border: Border.all(
+                color: AdaptiveColors.border(context, Colors.grey),
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -3026,7 +3237,9 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                         ? "${selectedDate.day}/${selectedDate.month}/${selectedDate.year}"
                         : "Sélectionner une date",
                     style: TextStyle(
-                      color: selectedDate != null ? Colors.black : Colors.grey,
+                      color: selectedDate != null
+                          ? AdaptiveColors.foreground(context, Colors.black)
+                          : AdaptiveColors.foreground(context, Colors.grey),
                     ),
                   ),
                 ),
@@ -3034,9 +3247,13 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   GestureDetector(
                     onTap: onCleared,
                     behavior: HitTestBehavior.opaque,
-                    child: const Padding(
+                    child: Padding(
                       padding: EdgeInsets.only(left: 8),
-                      child: Icon(Icons.close, size: 18, color: Colors.grey),
+                      child: Icon(
+                        Icons.close,
+                        size: 18,
+                        color: AdaptiveColors.foreground(context, Colors.grey),
+                      ),
                     ),
                   ),
               ],
@@ -3059,19 +3276,24 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF424242),
+            color: AdaptiveColors.foreground(context, Color(0xFF424242)),
             fontFamily: 'Manjari',
           ),
         ),
         ...values.map(
           (value) => Theme(
-            data: ThemeData(visualDensity: const VisualDensity(vertical: -4)),
+            data: Theme.of(
+              context,
+            ).copyWith(visualDensity: const VisualDensity(vertical: -4)),
             child: RadioListTile<T>(
               dense: true,
-              activeColor: const Color(0xFF3AAE5E),
+              activeColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF3AAE5E),
+              ),
               contentPadding: EdgeInsets.zero,
               title: Text(
                 labelBuilder(value),
@@ -3098,9 +3320,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.1),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -3117,18 +3344,28 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE6F7EF),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFE6F7EF),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: const Color(0xFF3AAE5E), size: 20),
+                child: Icon(
+                  icon,
+                  color: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF424242),
+                  color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                   fontFamily: 'Manjari',
                 ),
               ),
@@ -3140,7 +3377,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               subtitle,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
                 height: 1.5,
               ),
             ),
@@ -3179,9 +3416,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
+        color: backgroundColor ?? AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
       ),
       child: DropdownButtonFormField<String>(
         initialValue: value,
@@ -3189,13 +3431,19 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             hint ??
             Text(
               label,
-              style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+              style: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[400]),
+              ),
             ),
         decoration: const InputDecoration(
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 12),
         ),
-        icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[400]),
+        icon: Icon(
+          Icons.keyboard_arrow_down,
+          color: AdaptiveColors.foreground(context, Colors.grey[400]),
+        ),
         isExpanded: true,
         items: dropdownItems,
         onChanged: enabled ? onChanged : null,
@@ -3208,18 +3456,27 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
+        color: AdaptiveColors.surface(context, const Color(0xFFFFF3E0)),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFB74D)),
+        border: Border.all(
+          color: AdaptiveColors.border(context, const Color(0xFFFFB74D)),
+        ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: Color(0xFFF57C00), size: 20),
+          Icon(
+            Icons.error_outline,
+            color: AdaptiveColors.foreground(context, Color(0xFFF57C00)),
+            size: 20,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF6D4C41)),
+              style: TextStyle(
+                fontSize: 12,
+                color: AdaptiveColors.foreground(context, Color(0xFF6D4C41)),
+              ),
             ),
           ),
           if (onRetry != null)
@@ -3235,14 +3492,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         text: text,
         style: TextStyle(
           fontSize: 13,
-          color: Colors.grey[500],
+          color: AdaptiveColors.foreground(context, Colors.grey[500]),
           fontFamily: 'Manjari',
         ),
-        children: const [
+        children: [
           TextSpan(
             text: ' *',
             style: TextStyle(
-              color: Color(0xFFFF6B6B),
+              color: AdaptiveColors.foreground(context, Color(0xFFFF6B6B)),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -3258,23 +3515,30 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       margin: const EdgeInsets.only(top: 8, bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E9),
+        color: AdaptiveColors.surface(context, const Color(0xFFE8F5E9)),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+          color: AdaptiveColors.border(
+            context,
+            const Color(0xFF4CAF50),
+          ).withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline, color: Color(0xFF4CAF50), size: 18),
+          Icon(
+            Icons.info_outline,
+            color: AdaptiveColors.foreground(context, Color(0xFF4CAF50)),
+            size: 18,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               helperText,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF2E7D32),
+                color: AdaptiveColors.foreground(context, Color(0xFF2E7D32)),
                 height: 1.4,
               ),
             ),
@@ -3302,9 +3566,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: AdaptiveColors.border(
+                context,
+                Colors.grey,
+              ).withValues(alpha: 0.2),
+            ),
           ),
           child: TextField(
             controller: controller,
@@ -3324,17 +3593,26 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             },
             decoration: InputDecoration(
               hintText: label,
-              hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+              hintStyle: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[400]),
+              ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
               prefixIcon: prefixIcon != null
-                  ? Icon(prefixIcon, color: Colors.grey[400])
+                  ? Icon(
+                      prefixIcon,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                    )
                   : null,
               suffixText: suffix,
-              suffixStyle: const TextStyle(
+              suffixStyle: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
               ),
             ),
           ),
@@ -3362,9 +3640,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AdaptiveColors.surface(context, Colors.white),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              border: Border.all(
+                color: AdaptiveColors.border(
+                  context,
+                  Colors.grey,
+                ).withValues(alpha: 0.2),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3373,12 +3656,21 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                   padding: const EdgeInsets.only(left: 14, top: 10),
                   child: Text(
                     label,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                    ),
                   ),
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFF5F5F5),
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   margin: const EdgeInsets.symmetric(
@@ -3447,8 +3739,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       child: ElevatedButton(
         onPressed: _nextStep,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFF9800),
-          foregroundColor: Colors.white,
+          backgroundColor: AdaptiveColors.surface(
+            context,
+            const Color(0xFFFF9800),
+          ),
+          foregroundColor: AdaptiveColors.foreground(context, Colors.white),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -3478,9 +3773,14 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.15),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3492,15 +3792,15 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 title,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   fontWeight: FontWeight.w500,
                 ),
               ),
               GestureDetector(
                 onTap: onEdit,
-                child: const Icon(
+                child: Icon(
                   Icons.edit_outlined,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                   size: 18,
                 ),
               ),
@@ -3519,13 +3819,19 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            ),
+          ),
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
-                color: Color(0xFF424242),
+                color: AdaptiveColors.foreground(context, Color(0xFF424242)),
                 fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.right,
@@ -3550,20 +3856,39 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
                 color: isSelected
-                    ? const Color(0xFF3AAE5E)
-                    : Colors.grey.withValues(alpha: 0.4),
+                    ? AdaptiveColors.border(context, const Color(0xFF3AAE5E))
+                    : AdaptiveColors.border(
+                        context,
+                        Colors.grey,
+                      ).withValues(alpha: 0.4),
                 width: 1.5,
               ),
               color: isSelected
-                  ? const Color(0xFF3AAE5E).withValues(alpha: 0.1)
-                  : Colors.transparent,
+                  ? AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ).withValues(alpha: 0.1)
+                  : AdaptiveColors.surface(context, Colors.transparent),
             ),
             child: isSelected
-                ? const Icon(Icons.check, color: Color(0xFF3AAE5E), size: 16)
+                ? Icon(
+                    Icons.check,
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
+                    size: 16,
+                  )
                 : null,
           ),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: AdaptiveColors.foreground(context, Colors.grey[700]),
+            ),
+          ),
         ],
       ),
     );
@@ -3594,12 +3919,20 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF3AAE5E) : Colors.white,
+                  color: isSelected
+                      ? AdaptiveColors.surface(context, const Color(0xFF3AAE5E))
+                      : AdaptiveColors.surface(context, Colors.white),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isSelected
-                        ? const Color(0xFF3AAE5E)
-                        : Colors.grey.withValues(alpha: 0.3),
+                        ? AdaptiveColors.border(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.border(
+                            context,
+                            Colors.grey,
+                          ).withValues(alpha: 0.3),
                     width: 1.5,
                   ),
                 ),
@@ -3610,8 +3943,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: isSelected
-                          ? Colors.white
-                          : const Color(0xFF424242),
+                          ? AdaptiveColors.foreground(context, Colors.white)
+                          : AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFF424242),
+                            ),
                     ),
                   ),
                 ),
@@ -3625,19 +3961,28 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFE6F7EF),
+              color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF3AAE5E)),
+              border: Border.all(
+                color: AdaptiveColors.border(context, const Color(0xFF3AAE5E)),
+              ),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.select_all, size: 18, color: Color(0xFF3AAE5E)),
+                Icon(
+                  Icons.select_all,
+                  size: 18,
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+                ),
                 SizedBox(width: 8),
                 Text(
                   'Tout sélectionner',
                   style: TextStyle(
-                    color: Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),

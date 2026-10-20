@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/utils/user_session.dart';
 
@@ -125,16 +126,22 @@ class _MysRewardModalState extends State<MysRewardModal>
           child: Opacity(
             opacity: _fadeAnimation.value,
             child: Dialog(
-              backgroundColor: Colors.transparent,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                Colors.transparent,
+              ),
               insetPadding: const EdgeInsets.all(20),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFFFFF8F1), Colors.white],
+                    colors: [
+                      AdaptiveColors.surface(context, Color(0xFFFFF8F1)),
+                      AdaptiveColors.surface(context, Colors.white),
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
@@ -156,8 +163,17 @@ class _MysRewardModalState extends State<MysRewardModal>
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFFFFD54F), Color(0xFFFF9800)],
+                          gradient: LinearGradient(
+                            colors: [
+                              AdaptiveColors.surface(
+                                context,
+                                Color(0xFFFFD54F),
+                              ),
+                              AdaptiveColors.surface(
+                                context,
+                                Color(0xFFFF9800),
+                              ),
+                            ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -172,21 +188,27 @@ class _MysRewardModalState extends State<MysRewardModal>
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.monetization_on,
                           size: 60,
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 24),
                     // Title
-                    const Text(
+                    Text(
                       'Félicitations !',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2D2D2D),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF2D2D2D),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -194,7 +216,13 @@ class _MysRewardModalState extends State<MysRewardModal>
                     Text(
                       _getActionDescription(),
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     // My's Earned
@@ -204,29 +232,41 @@ class _MysRewardModalState extends State<MysRewardModal>
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFF3E0), Color(0xFFFFE0B2)],
+                        gradient: LinearGradient(
+                          colors: [
+                            AdaptiveColors.surface(context, Color(0xFFFFF3E0)),
+                            AdaptiveColors.surface(context, Color(0xFFFFE0B2)),
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: const Color(0xFFFF9800).withValues(alpha: 0.3),
+                          color: AdaptiveColors.border(
+                            context,
+                            const Color(0xFFFF9800),
+                          ).withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.add_circle,
-                            color: Color(0xFFFF9800),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFFFF9800),
+                            ),
                             size: 24,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             '+${widget.amount.toStringAsFixed(widget.amount is int || widget.amount == widget.amount.roundToDouble() ? 0 : 1)}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFFFF9800),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFFFF9800),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 4),
@@ -234,12 +274,14 @@ class _MysRewardModalState extends State<MysRewardModal>
                             'assets/images/image-removebg-preview 2.png',
                             width: 32,
                             height: 32,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(
-                                  Icons.monetization_on,
-                                  color: Color(0xFFFF9800),
-                                  size: 24,
-                                ),
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.monetization_on,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFFFF9800),
+                              ),
+                              size: 24,
+                            ),
                           ),
                         ],
                       ),
@@ -253,7 +295,10 @@ class _MysRewardModalState extends State<MysRewardModal>
                           'Nouveau solde: ${UserSession().mys} My\'s',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                         );
                       },
@@ -265,8 +310,14 @@ class _MysRewardModalState extends State<MysRewardModal>
                       child: ElevatedButton(
                         onPressed: widget.onClose,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF9800),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFF9800),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),

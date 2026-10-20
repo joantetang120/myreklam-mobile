@@ -1,5 +1,9 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
+import 'package:myreklam/widgets/appearance_settings.dart';
 import 'package:flutter/material.dart';
+import 'package:myreklam/widgets/follow_approval_settings.dart';
+import 'package:myreklam/screens/match_alerts_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myreklam/widgets/app_layout.dart';
@@ -12,6 +16,8 @@ import 'package:myreklam/screens/login_screen.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'package:myreklam/screens/privacy_screen.dart';
+import 'package:myreklam/services/auth_service.dart';
 
 // Sub-page for account security settings
 class SecuritySettingsScreen extends StatelessWidget {
@@ -48,7 +54,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: AdaptiveColors.surface(context, Colors.grey[300]),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -99,15 +105,20 @@ class SecuritySettingsScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red[50],
+                      color: AdaptiveColors.surface(context, Colors.red[50]),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red[200]!),
+                      border: Border.all(
+                        color: AdaptiveColors.border(context, Colors.red[200]!),
+                      ),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.error_outline,
-                          color: Colors.red[700],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.red[700],
+                          ),
                           size: 20,
                         ),
                         const SizedBox(width: 8),
@@ -115,7 +126,10 @@ class SecuritySettingsScreen extends StatelessWidget {
                           child: Text(
                             errorMessage!,
                             style: TextStyle(
-                              color: Colors.red[700],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.red[700],
+                              ),
                               fontSize: 13,
                             ),
                           ),
@@ -200,11 +214,14 @@ class SecuritySettingsScreen extends StatelessWidget {
                                   if (response['success'] == true) {
                                     Navigator.pop(sheetContext);
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
+                                      SnackBar(
                                         content: Text(
                                           'Mot de passe modifié avec succès',
                                         ),
-                                        backgroundColor: Color(0xFF3AAE5E),
+                                        backgroundColor: AdaptiveColors.surface(
+                                          context,
+                                          Color(0xFF3AAE5E),
+                                        ),
                                       ),
                                     );
                                   } else {
@@ -221,21 +238,30 @@ class SecuritySettingsScreen extends StatelessWidget {
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3AAE5E),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         child: isLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation(
-                                    Colors.white,
+                                    AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                   ),
                                 ),
                               )
@@ -256,22 +282,22 @@ class SecuritySettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             size: 18,
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Sécurité du compte',
           style: TextStyle(
-            color: Color(0xFF2D2D2D),
+            color: AdaptiveColors.foreground(context, Color(0xFF2D2D2D)),
             fontFamily: 'Manjari',
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -293,7 +319,7 @@ class SecuritySettingsScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AdaptiveColors.surface(context, Colors.white),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -308,12 +334,18 @@ class SecuritySettingsScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFEBEE),
+                          color: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFFEBEE),
+                          ),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.lock_outline,
-                          color: Color(0xFFE53935),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFFE53935),
+                          ),
                           size: 20,
                         ),
                       ),
@@ -322,12 +354,15 @@ class SecuritySettingsScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Modifier le mot de passe',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2D2D2D),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF2D2D2D),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -335,7 +370,10 @@ class SecuritySettingsScreen extends StatelessWidget {
                               'Changez votre mot de passe actuel',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey[500],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[500],
+                                ),
                               ),
                             ),
                           ],
@@ -344,7 +382,10 @@ class SecuritySettingsScreen extends StatelessWidget {
                       Icon(
                         Icons.arrow_forward_ios,
                         size: 14,
-                        color: Colors.grey[400],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[400],
+                        ),
                       ),
                     ],
                   ),
@@ -358,7 +399,7 @@ class SecuritySettingsScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -373,12 +414,18 @@ class SecuritySettingsScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFE8F5E9),
+                        ),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.verified_user_outlined,
-                        color: Color(0xFF4CAF50),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF4CAF50),
+                        ),
                         size: 20,
                       ),
                     ),
@@ -387,12 +434,15 @@ class SecuritySettingsScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Authentification à deux facteurs',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF2D2D2D),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF2D2D2D),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -400,7 +450,10 @@ class SecuritySettingsScreen extends StatelessWidget {
                             'Sécurisez davantage votre compte',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                             ),
                           ),
                         ],
@@ -409,7 +462,10 @@ class SecuritySettingsScreen extends StatelessWidget {
                     Icon(
                       Icons.arrow_forward_ios,
                       size: 14,
-                      color: Colors.grey[400],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
                     ),
                   ],
                 ),
@@ -522,22 +578,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       },
       body: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AdaptiveColors.surface(context, Colors.white),
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
-              color: Color(0xFF616161),
+              color: AdaptiveColors.foreground(context, Color(0xFF616161)),
               size: 18,
             ),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
+          title: Text(
             'Paramètre du compte',
             style: TextStyle(
-              color: Color(0xFF2D2D2D),
+              color: AdaptiveColors.foreground(context, Color(0xFF2D2D2D)),
               fontFamily: 'Manjari',
               fontWeight: FontWeight.bold,
               fontSize: 18,
@@ -553,7 +609,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Center(
                 child: Text(
                   'Gérez vos préférences et paramètres de sécurité',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -564,9 +623,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Card(
                   elevation: 0,
                   child: ListTile(
-                    leading: const Icon(
+                    leading: Icon(
                       Icons.notifications_outlined,
-                      color: Color(0xFFFF9800),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFFFF9800),
+                      ),
                     ),
                     title: const Text('Notifications'),
                     subtitle: const Text(
@@ -582,12 +644,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+              ListTile(
+                leading: const Icon(Icons.privacy_tip_outlined),
+                title: const Text('Confidentialité et mes données'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PrivacyScreen()),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.notifications_active_outlined),
+                title: const Text('Alertes de correspondance'),
+                subtitle: const Text('Emploi, demandes et zone géographique'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MatchAlertsScreen()),
+                ),
+              ),
+              const FollowApprovalSettings(),
+              const AppearanceSettings(),
               if (_showLegacyNotificationSettings)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AdaptiveColors.surface(context, Colors.white),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -607,12 +690,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF3E0),
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFFFFF3E0),
+                                  ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.notifications_outlined,
-                                  color: Color(0xFFFF9800),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFFFF9800),
+                                  ),
                                   size: 20,
                                 ),
                               ),
@@ -620,12 +709,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'Réseaux sociaux',
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF2D2D2D),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF2D2D2D),
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -633,7 +725,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     'Gérez vos préférences de notifications',
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: Colors.grey[500],
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[500],
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -641,7 +736,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 1, color: Colors.grey[200]),
+                        Divider(
+                          height: 1,
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey[200],
+                          ),
+                        ),
 
                         // Table header
                         Padding(
@@ -651,26 +752,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Expanded(
+                              Expanded(
                                 flex: 3,
                                 child: Text(
                                   'Type',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF2D2D2D),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Center(
-                                  child: const Text(
-                                    'Email',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF2D2D2D),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF2D2D2D),
                                     ),
                                   ),
                                 ),
@@ -678,12 +769,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Expanded(
                                 flex: 2,
                                 child: Center(
-                                  child: const Text(
+                                  child: Text(
+                                    'Email',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF2D2D2D),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Center(
+                                  child: Text(
                                     'Mobile',
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF2D2D2D),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF2D2D2D),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -691,7 +801,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ],
                           ),
                         ),
-                        Divider(height: 1, color: Colors.grey[100]),
+                        Divider(
+                          height: 1,
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey[100],
+                          ),
+                        ),
 
                         // Toggle rows
                         _buildToggleRow(
@@ -701,7 +817,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           (val) => setState(() => _emailNewMessages = val),
                           (val) => setState(() => _mobileNewMessages = val),
                         ),
-                        Divider(height: 1, color: Colors.grey[100]),
+                        Divider(
+                          height: 1,
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey[100],
+                          ),
+                        ),
                         _buildToggleRow(
                           'Alertes',
                           _emailAlerts,
@@ -709,7 +831,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           (val) => setState(() => _emailAlerts = val),
                           (val) => setState(() => _mobileAlerts = val),
                         ),
-                        Divider(height: 1, color: Colors.grey[100]),
+                        Divider(
+                          height: 1,
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey[100],
+                          ),
+                        ),
                         _buildToggleRow(
                           'Commentaires',
                           _emailComments,
@@ -717,7 +845,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           (val) => setState(() => _emailComments = val),
                           (val) => setState(() => _mobileComments = val),
                         ),
-                        Divider(height: 1, color: Colors.grey[100]),
+                        Divider(
+                          height: 1,
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey[100],
+                          ),
+                        ),
                         _buildToggleRow(
                           'Avis',
                           _emailAvis,
@@ -725,7 +859,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           (val) => setState(() => _emailAvis = val),
                           (val) => setState(() => _mobileAvis = val),
                         ),
-                        Divider(height: 1, color: Colors.grey[100]),
+                        Divider(
+                          height: 1,
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey[100],
+                          ),
+                        ),
                         _buildToggleRow(
                           'Newsletter',
                           _emailNewsletter,
@@ -757,7 +897,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AdaptiveColors.surface(context, Colors.white),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -772,12 +912,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE3F2FD),
+                            color: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFE3F2FD),
+                            ),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.supervisor_account_outlined,
-                            color: Color(0xFF2196F3),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF2196F3),
+                            ),
                             size: 20,
                           ),
                         ),
@@ -786,12 +932,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Gérer compte',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF2D2D2D),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF2D2D2D),
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -799,7 +948,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 'Comptes auxquels vous avez accès',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey[500],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[500],
+                                  ),
                                 ),
                               ),
                             ],
@@ -808,7 +960,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Icon(
                           Icons.arrow_forward_ios,
                           size: 16,
-                          color: Colors.grey[400],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[400],
+                          ),
                         ),
                       ],
                     ),
@@ -834,7 +989,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AdaptiveColors.surface(context, Colors.white),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -849,12 +1004,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFEBEE),
+                            color: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFFFEBEE),
+                            ),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.shield_outlined,
-                            color: Color(0xFFE53935),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFFE53935),
+                            ),
                             size: 20,
                           ),
                         ),
@@ -863,12 +1024,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Sécurité du compte',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF2D2D2D),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF2D2D2D),
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -876,7 +1040,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 'Gérez votre mot de passe et la sécurité de votre compte',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey[500],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[500],
+                                  ),
                                 ),
                               ),
                             ],
@@ -885,7 +1052,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Icon(
                           Icons.arrow_forward_ios,
                           size: 14,
-                          color: Colors.grey[400],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[400],
+                          ),
                         ),
                       ],
                     ),
@@ -901,7 +1071,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AdaptiveColors.surface(context, Colors.white),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -918,16 +1088,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         children: [
                           Icon(
                             Icons.person_outline,
-                            color: Colors.grey[600],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[600],
+                            ),
                             size: 20,
                           ),
                           const SizedBox(width: 8),
-                          const Text(
+                          Text(
                             'Informations du compte',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF2D2D2D),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF2D2D2D),
+                              ),
                             ),
                           ),
                         ],
@@ -944,7 +1120,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   'Email',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.grey[500],
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[500],
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -953,7 +1132,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
-                                    color: Color(0xFF2D2D2D),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF2D2D2D),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -967,7 +1149,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   'Type de compte',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.grey[500],
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[500],
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
@@ -978,7 +1163,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
-                                    color: Color(0xFF2D2D2D),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF2D2D2D),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -998,7 +1186,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AdaptiveColors.surface(context, Colors.white),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -1027,16 +1215,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               Icon(
                                 Icons.settings_outlined,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
-                              const Text(
+                              Text(
                                 'Action du compte',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF2D2D2D),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF2D2D2D),
+                                  ),
                                 ),
                               ),
                               const Spacer(),
@@ -1046,7 +1240,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 child: Icon(
                                   Icons.keyboard_arrow_down,
                                   size: 20,
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                 ),
                               ),
                             ],
@@ -1054,7 +1251,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       if (_isAccountActionExpanded) ...[
-                        Divider(height: 1, color: Colors.grey[200]),
+                        Divider(
+                          height: 1,
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey[200],
+                          ),
+                        ),
                         if (_bioAvailable)
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
@@ -1063,7 +1266,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 Icon(
                                   _bioIcon,
                                   size: 20,
-                                  color: Colors.grey[700],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[700],
+                                  ),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -1071,19 +1277,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
+                                      Text(
                                         'Connexion biométrique',
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
-                                          color: Color(0xFF2D2D2D),
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Color(0xFF2D2D2D),
+                                          ),
                                         ),
                                       ),
                                       Text(
                                         'Déverrouiller avec $_bioLabel',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[500],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[500],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -1091,7 +1303,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                                 Switch(
                                   value: _bioEnabled,
-                                  activeThumbColor: const Color(0xFFE7412A),
+                                  activeThumbColor: AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFFE7412A),
+                                  ),
                                   onChanged: _bioBusy ? null : _toggleBiometric,
                                 ),
                               ],
@@ -1106,12 +1321,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ? null
                                   : _showDeleteAccountDialog,
                               icon: _isDeleting
-                                  ? const SizedBox(
+                                  ? SizedBox(
                                       width: 18,
                                       height: 18,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        color: Colors.white,
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.white,
+                                        ),
                                       ),
                                     )
                                   : const Icon(Icons.delete_outline, size: 18),
@@ -1125,8 +1343,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                foregroundColor: Colors.white,
+                                backgroundColor: AdaptiveColors.surface(
+                                  context,
+                                  Colors.red,
+                                ),
+                                foregroundColor: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 elevation: 0,
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 14,
@@ -1167,7 +1391,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             flex: 3,
             child: Text(
               label,
-              style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+              style: TextStyle(
+                fontSize: 13,
+                color: AdaptiveColors.foreground(context, Colors.grey[700]),
+              ),
             ),
           ),
           Expanded(
@@ -1178,10 +1405,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Switch(
                   value: emailValue,
                   onChanged: onEmailChanged,
-                  activeThumbColor: Colors.white,
-                  activeTrackColor: const Color(0xFFFF9800),
-                  inactiveThumbColor: Colors.white,
-                  inactiveTrackColor: Colors.grey[300],
+                  activeThumbColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
+                  activeTrackColor: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFFFF9800),
+                  ),
+                  inactiveThumbColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
+                  inactiveTrackColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.grey[300],
+                  ),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
@@ -1195,10 +1434,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Switch(
                   value: mobileValue,
                   onChanged: onMobileChanged,
-                  activeThumbColor: Colors.white,
-                  activeTrackColor: const Color(0xFFFF9800),
-                  inactiveThumbColor: Colors.white,
-                  inactiveTrackColor: Colors.grey[300],
+                  activeThumbColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
+                  activeTrackColor: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFFFF9800),
+                  ),
+                  inactiveThumbColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
+                  inactiveTrackColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.grey[300],
+                  ),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
@@ -1214,17 +1465,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text(
+          title: Text(
             'Supprimer le compte',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF333333),
+              color: AdaptiveColors.foreground(context, Color(0xFF333333)),
             ),
           ),
-          content: const Text(
+          content: Text(
             'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront perdues.',
-            style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
+            style: TextStyle(
+              fontSize: 14,
+              color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+            ),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -1232,10 +1486,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
+              child: Text(
                 'Annuler',
                 style: TextStyle(
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -1247,8 +1501,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _deleteAccount();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF44336),
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFF44336),
+                ),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -1283,7 +1543,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         },
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 202) {
         // Clear onboarding flags before deleting
         final userId = UserSession().id;
         if (userId != null) {
@@ -1291,14 +1551,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           await prefs.remove('onboarding_completed_$userId');
           await prefs.remove('welcome_bonus_shown_$userId');
         }
-        await TokenStorage.clearTokens();
-        UserSession().clear();
+        await AuthService.clearLocalAccountData();
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Compte supprimé avec succès'),
-              backgroundColor: Color(0xFF3AAE5E),
+            SnackBar(
+              content: Text(
+                'Demande de suppression enregistrée. Votre accès est fermé ; les opérations complémentaires sont suivies par notre équipe.',
+              ),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                Color(0xFF3AAE5E),
+              ),
             ),
           );
           Navigator.of(context).pushAndRemoveUntil(
@@ -1315,7 +1579,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }

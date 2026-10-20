@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
@@ -146,23 +147,23 @@ class _FollowersScreenState extends State<FollowersScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
           padding: const EdgeInsets.only(left: 10),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
             size: 18,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           _userName,
-          style: const TextStyle(
-            color: Color(0xFF616161),
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             fontFamily: 'Manjari',
             fontWeight: FontWeight.bold,
           ),
@@ -171,13 +172,19 @@ class _FollowersScreenState extends State<FollowersScreen>
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             child: TabBar(
               controller: _tabController,
-              indicatorColor: const Color(0xFF757575),
+              indicatorColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF757575),
+              ),
               indicatorWeight: 3,
-              labelColor: Colors.black,
-              unselectedLabelColor: Colors.grey,
+              labelColor: AdaptiveColors.foreground(context, Colors.black),
+              unselectedLabelColor: AdaptiveColors.surface(
+                context,
+                Colors.grey,
+              ),
               indicatorSize: TabBarIndicatorSize.tab,
               labelStyle: const TextStyle(
                 fontSize: 14,
@@ -210,7 +217,9 @@ class _FollowersScreenState extends State<FollowersScreen>
           type == 'followers'
               ? "Vous n'avez aucun follower pour l'instant"
               : "Vous ne suivez personne pour l'instant",
-          style: const TextStyle(color: Colors.grey),
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Colors.grey),
+          ),
         ),
       );
     }
@@ -218,7 +227,7 @@ class _FollowersScreenState extends State<FollowersScreen>
     return Column(
       children: [
         _buildSearchField(),
-        Divider(color: Colors.grey[300]),
+        Divider(color: AdaptiveColors.border(context, Colors.grey[300])),
         _buildSectionTitle(
           type == 'followers' ? 'Tous les followers' : 'Suivie(s)',
         ),
@@ -243,10 +252,10 @@ class _FollowersScreenState extends State<FollowersScreen>
         alignment: Alignment.centerLeft,
         child: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF333333),
+            color: AdaptiveColors.foreground(context, Color(0xFF333333)),
           ),
         ),
       ),
@@ -259,10 +268,16 @@ class _FollowersScreenState extends State<FollowersScreen>
       child: TextField(
         decoration: InputDecoration(
           hintText: 'Recherche',
-          hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
-          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+          hintStyle: TextStyle(
+            color: AdaptiveColors.foreground(context, Colors.grey),
+            fontSize: 14,
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: AdaptiveColors.foreground(context, Colors.grey),
+          ),
           filled: true,
-          fillColor: Colors.grey[100],
+          fillColor: AdaptiveColors.surface(context, Colors.grey[100]),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
             borderSide: BorderSide.none,
@@ -300,10 +315,13 @@ class _FollowersScreenState extends State<FollowersScreen>
                 children: [
                   Text(
                     name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF333333),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF333333),
+                      ),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -316,10 +334,18 @@ class _FollowersScreenState extends State<FollowersScreen>
             onPressed: () => _toggleFollow(user),
             style: OutlinedButton.styleFrom(
               backgroundColor: isFollowing
-                  ? Colors.transparent
-                  : const Color(0xFF04BC7B).withValues(alpha: 0.1),
-              foregroundColor: const Color(0xFF2E9B5B),
-              side: const BorderSide(color: Color(0xFF2E9B5B)),
+                  ? AdaptiveColors.surface(context, Colors.transparent)
+                  : AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF04BC7B),
+                    ).withValues(alpha: 0.1),
+              foregroundColor: AdaptiveColors.foreground(
+                context,
+                const Color(0xFF2E9B5B),
+              ),
+              side: BorderSide(
+                color: AdaptiveColors.border(context, Color(0xFF2E9B5B)),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

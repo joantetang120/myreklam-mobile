@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/services/app_update_service.dart';
 import 'package:myreklam/widgets/dot_loader.dart';
@@ -52,7 +53,7 @@ class _UpdateLoadingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       body: Stack(
         children: [
           Center(
@@ -129,7 +130,7 @@ class _RequiredUpdateScreenState extends State<_RequiredUpdateScreen> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -145,10 +146,13 @@ class _RequiredUpdateScreenState extends State<_RequiredUpdateScreen> {
                       fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 36),
-                    const Icon(
+                    Icon(
                       Icons.system_update_alt_rounded,
                       size: 52,
-                      color: Color(0xFF1B8D4B),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1B8D4B),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Text(
@@ -157,7 +161,10 @@ class _RequiredUpdateScreenState extends State<_RequiredUpdateScreen> {
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF17211B),
+                            color: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFF17211B),
+                            ),
                           ),
                     ),
                     const SizedBox(height: 12),
@@ -166,7 +173,10 @@ class _RequiredUpdateScreenState extends State<_RequiredUpdateScreen> {
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         height: 1.45,
-                        color: const Color(0xFF526057),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF526057),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 30),
@@ -176,18 +186,27 @@ class _RequiredUpdateScreenState extends State<_RequiredUpdateScreen> {
                       child: FilledButton.icon(
                         onPressed: _openingStore ? null : _openStore,
                         icon: _openingStore
-                            ? const SizedBox.square(
+                            ? SizedBox.square(
                                 dimension: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : const Icon(Icons.open_in_new_rounded),
                         label: Text('Mettre à jour sur $storeName'),
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF1B8D4B),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF1B8D4B),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),

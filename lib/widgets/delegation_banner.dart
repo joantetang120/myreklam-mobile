@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/main.dart';
 import 'package:myreklam/screens/splash_screen.dart';
@@ -31,24 +32,24 @@ class _DelegationBannerState extends State<DelegationBanner> {
   Widget build(BuildContext context) {
     final name = DelegationManager.instance.ownerName;
     return Material(
-      color: const Color(0xFF1B8D4B),
+      color: AdaptiveColors.surface(context, const Color(0xFF1B8D4B)),
       child: SafeArea(
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.supervisor_account,
-                color: Colors.white,
+                color: AdaptiveColors.foreground(context, Colors.white),
                 size: 18,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Vous gérez le compte de $name',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -58,18 +59,27 @@ class _DelegationBannerState extends State<DelegationBanner> {
               TextButton(
                 onPressed: _exiting ? null : _exit,
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  foregroundColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.white,
+                  ).withValues(alpha: 0.2),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   minimumSize: const Size(0, 32),
                 ),
                 child: _exiting
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                         ),
                       )
                     : const Text('Quitter', style: TextStyle(fontSize: 12.5)),

@@ -1,4 +1,6 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:myreklam/services/share_service.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/constants/demande_natures.dart';
 import 'package:myreklam/screens/chat_conversation_screen.dart';
@@ -185,12 +187,24 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+            child: Text(
+              'Annuler',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-            child: const Text('Bloquer', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AdaptiveColors.surface(context, Colors.orange),
+            ),
+            child: Text(
+              'Bloquer',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.white),
+              ),
+            ),
           ),
         ],
       ),
@@ -204,16 +218,16 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('$displayName a été bloqué'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AdaptiveColors.surface(context, Colors.orange),
         ),
       );
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Erreur lors du blocage. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     }
@@ -231,28 +245,41 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+            child: Text(
+              'Annuler',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               // TODO: Implement report API call
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('Signalement envoyé'),
-                  backgroundColor: Color(0xFF3AAE5E),
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Color(0xFF3AAE5E),
+                  ),
                 ),
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                Colors.redAccent,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text(
+            child: Text(
               'Signaler',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.white),
+              ),
             ),
           ),
         ],
@@ -313,7 +340,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     : () => Navigator.pop(dialogContext),
                 child: Text(
                   'Annuler',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ),
               ElevatedButton(
@@ -339,9 +368,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                           if (!mounted) return;
                           Navigator.pop(dialogContext);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            SnackBar(
                               content: Text('Signalement envoye'),
-                              backgroundColor: Color(0xFF3AAE5E),
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
                             ),
                           );
                         } catch (e) {
@@ -355,23 +387,34 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.redAccent,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: isSubmitting
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'Signaler',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
               ),
             ],
@@ -430,31 +473,66 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     final accountType = _userData?['pro_profile'] != null
         ? 'Professionnel'
         : 'Particulier';
+    final particular = _userData?['particulier_profile'];
+    final student =
+        particular is Map &&
+        (particular['career_statuses'] as List? ?? []).contains('student');
+    final studies = student
+        ? [particular['study_program'], particular['educational_institution']]
+              .where(
+                (value) => value != null && value.toString().trim().isNotEmpty,
+              )
+              .map((value) => value.toString().trim())
+              .join(' — ')
+        : '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF3AAE5E)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           displayName,
-          style: const TextStyle(
-            color: Color(0xFF616161),
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             fontWeight: FontWeight.bold,
           ),
         ),
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(40),
+          child: TextButton.icon(
+            icon: const Icon(Icons.share_outlined),
+            label: const Text('Partager ce profil'),
+            onPressed: _userData?['id'] == null
+                ? null
+                : () => ShareService.shareEntity(
+                    'profiles',
+                    _userData!['id'].toString(),
+                    title: displayName,
+                  ),
+          ),
+        ),
         actions:
             (widget.userId == null && widget.initialData?['id'] == null) ||
                 _isOwnProfile
             ? null
             : [
                 PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, color: Color(0xFF616161)),
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF616161),
+                    ),
+                  ),
                   onSelected: (value) {
                     if (value == 'report') {
                       _showReportReasonDialog();
@@ -463,32 +541,52 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'block',
                       child: Row(
                         children: [
-                          Icon(Icons.block, color: Colors.orange, size: 20),
+                          Icon(
+                            Icons.block,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.orange,
+                            ),
+                            size: 20,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             'Bloquer cet utilisateur',
-                            style: TextStyle(color: Colors.orange),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.orange,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'report',
                       child: Row(
                         children: [
                           Icon(
                             Icons.report_outlined,
-                            color: Colors.red,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red,
+                            ),
                             size: 20,
                           ),
                           SizedBox(width: 8),
                           Text(
                             'Signaler le compte',
-                            style: TextStyle(color: Colors.red),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.red,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -508,10 +606,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   margin: const EdgeInsets.fromLTRB(16, 40, 16, 16),
                   padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AdaptiveColors.surface(context, Colors.white),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFF2E9B5B),
+                      color: AdaptiveColors.border(
+                        context,
+                        const Color(0xFF2E9B5B),
+                      ),
                       width: 1,
                     ),
                   ),
@@ -526,8 +627,16 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        accountType,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                        studies.isNotEmpty
+                            ? 'Étudiant · $studies'
+                            : accountType,
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                          fontSize: 13,
+                        ),
                       ),
                       const SizedBox(height: 12),
 
@@ -544,10 +653,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                                   fontSize: 16,
                                 ),
                               ),
-                              const Text(
+                              Text(
                                 'Posts',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey,
+                                  ),
                                   fontSize: 12,
                                 ),
                               ),
@@ -579,10 +691,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                                     fontSize: 16,
                                   ),
                                 ),
-                                const Text(
+                                Text(
                                   'Followers',
                                   style: TextStyle(
-                                    color: Colors.grey,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    ),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -615,10 +730,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                                     fontSize: 16,
                                   ),
                                 ),
-                                const Text(
+                                Text(
                                   'Suivi(s)',
                                   style: TextStyle(
-                                    color: Colors.grey,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    ),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -643,8 +761,14 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                                 ),
                                 label: const Text('Message'),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF3AAE5E),
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFF3AAE5E),
+                                  ),
+                                  foregroundColor: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 10,
                                   ),
@@ -666,9 +790,15 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                                 ),
                                 label: Text(_isFollowing ? 'Suivi' : 'Suivre'),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFF3AAE5E),
-                                  side: const BorderSide(
-                                    color: Color(0xFF3AAE5E),
+                                  foregroundColor: AdaptiveColors.foreground(
+                                    context,
+                                    const Color(0xFF3AAE5E),
+                                  ),
+                                  side: BorderSide(
+                                    color: AdaptiveColors.border(
+                                      context,
+                                      Color(0xFF3AAE5E),
+                                    ),
                                   ),
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 10,
@@ -693,8 +823,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   child: Center(
                     child: Container(
                       padding: const EdgeInsets.all(3),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF2E9B5B),
+                      decoration: BoxDecoration(
+                        color: AdaptiveColors.surface(
+                          context,
+                          Color(0xFF2E9B5B),
+                        ),
                         shape: BoxShape.circle,
                       ),
                       child: ReklamAvatar(
@@ -715,7 +848,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -747,14 +880,18 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFEF8A40) : Colors.transparent,
+            color: isSelected
+                ? AdaptiveColors.surface(context, const Color(0xFFEF8A40))
+                : AdaptiveColors.surface(context, Colors.transparent),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isSelected ? Colors.white : Colors.grey[600],
+              color: isSelected
+                  ? AdaptiveColors.foreground(context, Colors.white)
+                  : AdaptiveColors.foreground(context, Colors.grey[600]),
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               fontSize: 13,
             ),
@@ -776,7 +913,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           margin: const EdgeInsets.symmetric(horizontal: 16),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(
@@ -789,7 +926,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               const SizedBox(height: 12),
               Text(
                 _userData?['bio'] ?? 'Aucune présentation disponible.',
-                style: TextStyle(color: Colors.grey[700], height: 1.5),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.grey[700]),
+                  height: 1.5,
+                ),
               ),
             ],
           ),
@@ -815,7 +955,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Colors.black,
+                    ).withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -845,7 +988,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           if (_isLoadingAnnonces)
             const Center(child: CircularProgressIndicator())
           else if (_annoncesError != null)
-            Text(_annoncesError!, style: const TextStyle(color: Colors.red))
+            Text(
+              _annoncesError!,
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.red),
+              ),
+            )
           else if (_selectedAnnonceFilter == 'Tout')
             Column(
               children: [
@@ -853,9 +1001,14 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 if (_events.isNotEmpty) _buildEventsList(),
                 if (_demandes.isNotEmpty) _buildDemandesList(),
                 if (_bonPlans.isEmpty && _events.isEmpty && _demandes.isEmpty)
-                  const Text(
+                  Text(
                     'Aucune annonce',
-                    style: TextStyle(color: Color(0xFF666666)),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF666666),
+                      ),
+                    ),
                   ),
               ],
             )
@@ -876,13 +1029,17 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[200],
+          color: isSelected
+              ? AdaptiveColors.surface(context, const Color(0xFF3AAE5E))
+              : AdaptiveColors.surface(context, Colors.grey[200]),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[700],
+            color: isSelected
+                ? AdaptiveColors.foreground(context, Colors.white)
+                : AdaptiveColors.foreground(context, Colors.grey[700]),
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
@@ -911,7 +1068,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Column(
                 children: [
-                  Text(_postsError!, style: const TextStyle(color: Colors.red)),
+                  Text(
+                    _postsError!,
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.red),
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => _loadPosts(),
@@ -921,12 +1083,14 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               ),
             )
           else if (_myPosts.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 40),
               child: Center(
                 child: Text(
                   'Pas de post',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
               ),
             )
@@ -953,8 +1117,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         title: userType,
         icon: userType.toUpperCase() == 'PRO' ? Icons.business : Icons.person,
         color: userType.toUpperCase() == 'PRO'
-            ? const Color(0xFF2E9B5B)
-            : const Color(0xFF3AAE5E),
+            ? AdaptiveColors.foreground(context, const Color(0xFF2E9B5B))
+            : AdaptiveColors.foreground(context, const Color(0xFF3AAE5E)),
       ),
     ];
 
@@ -1086,9 +1250,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Widget _buildBonPlansList() {
     final items = _bonPlans;
     if (items.isEmpty) {
-      return const Text(
+      return Text(
         'Aucune annonce',
-        style: TextStyle(color: Color(0xFF666666)),
+        style: TextStyle(
+          color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+        ),
       );
     }
     return Column(children: items.map((bp) => _buildBonPlanCard(bp)).toList());
@@ -1097,9 +1263,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Widget _buildEventsList() {
     final items = _events;
     if (items.isEmpty) {
-      return const Text(
+      return Text(
         'Aucune annonce',
-        style: TextStyle(color: Color(0xFF666666)),
+        style: TextStyle(
+          color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+        ),
       );
     }
     return Column(children: items.map((ev) => _buildEventCard(ev)).toList());
@@ -1108,9 +1276,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Widget _buildDemandesList() {
     final items = _demandes;
     if (items.isEmpty) {
-      return const Text(
+      return Text(
         'Aucune annonce',
-        style: TextStyle(color: Color(0xFF666666)),
+        style: TextStyle(
+          color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+        ),
       );
     }
     return Column(children: items.map((d) => _buildDemandeCard(d)).toList());
@@ -1145,8 +1315,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(
                   height: 180,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.image, color: Colors.grey),
+                  color: AdaptiveColors.surface(context, Colors.grey[300]),
+                  child: Icon(
+                    Icons.image,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
               ),
             ),
@@ -1162,13 +1335,19 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       category,
-                      style: const TextStyle(
-                        color: Color(0xFF3AAE5E),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF3AAE5E),
+                        ),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1187,7 +1366,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   description,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 if (discount != null && discount.isNotEmpty)
@@ -1195,14 +1377,20 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     children: [
                       Icon(
                         Icons.local_offer,
-                        color: Colors.orange[700],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.orange[700],
+                        ),
                         size: 18,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'Réduction: $discount',
                         style: TextStyle(
-                          color: Colors.orange[700],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.orange[700],
+                          ),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1214,7 +1402,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   children: [
                     Text(
                       _buildTimeAgo(createdAt),
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[500],
+                        ),
+                        fontSize: 12,
+                      ),
                     ),
                     if (bpId.isNotEmpty) ...[
                       Builder(
@@ -1266,8 +1460,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(
                   height: 180,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.image, color: Colors.grey),
+                  color: AdaptiveColors.surface(context, Colors.grey[300]),
+                  child: Icon(
+                    Icons.image,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
               ),
             ),
@@ -1278,12 +1475,22 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.event, color: Colors.blue[700], size: 18),
+                    Icon(
+                      Icons.event,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.blue[700],
+                      ),
+                      size: 18,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       isPaid && price != null ? '$price€' : 'Gratuit',
                       style: TextStyle(
-                        color: Colors.blue[700],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.blue[700],
+                        ),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1303,7 +1510,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     children: [
                       Icon(
                         Icons.location_on,
-                        color: Colors.grey[600],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
                         size: 16,
                       ),
                       const SizedBox(width: 4),
@@ -1311,7 +1521,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                         child: Text(
                           location,
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[600],
+                            ),
                             fontSize: 13,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -1324,7 +1537,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   description,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -1332,7 +1548,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   children: [
                     Text(
                       _buildTimeAgo(createdAt),
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[500],
+                        ),
+                        fontSize: 12,
+                      ),
                     ),
                     if (eventId.isNotEmpty) ...[
                       Builder(
@@ -1386,8 +1608,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(
                   height: 180,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.image, color: Colors.grey),
+                  color: AdaptiveColors.surface(context, Colors.grey[300]),
+                  child: Icon(
+                    Icons.image,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
               ),
             ),
@@ -1427,7 +1652,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   description,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 if (location.isNotEmpty)
@@ -1435,13 +1663,22 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     children: [
                       Icon(
                         Icons.location_on,
-                        color: Colors.grey[600],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
                         size: 16,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         location,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -1451,7 +1688,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   children: [
                     Text(
                       _buildTimeAgo(createdAt),
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[500],
+                        ),
+                        fontSize: 12,
+                      ),
                     ),
                     if (demandeId.isNotEmpty) ...[
                       Builder(
@@ -1581,7 +1824,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               Icon(
                 isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                 size: 18,
-                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                color: isLiked
+                    ? AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      )
+                    : AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               GestureDetector(
@@ -1590,7 +1838,12 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   data.likesCount.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    color: isLiked
+                        ? AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -1606,12 +1859,15 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               Icon(
                 Icons.chat_bubble_outline,
                 size: 17,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               Text(
                 data.commentsCount.toString(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -1665,13 +1921,19 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
   Color _categoryColor(String label) {
     final lower = label.toLowerCase();
-    if (lower.contains('urgent')) return Colors.redAccent;
-    if (lower.contains('emploi')) return const Color(0xFF3AAE5E);
-    if (lower.contains('stage')) return const Color(0xFF2196F3);
-    if (lower.contains('formation')) return const Color(0xFF9C27B0);
-    if (lower.contains('immobilier')) return const Color(0xFFFF5722);
-    if (lower.contains('service')) return const Color(0xFFFF9800);
-    return const Color(0xFF3AAE5E);
+    if (lower.contains('urgent'))
+      return AdaptiveColors.foreground(context, Colors.redAccent);
+    if (lower.contains('emploi'))
+      return AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
+    if (lower.contains('stage'))
+      return AdaptiveColors.foreground(context, const Color(0xFF2196F3));
+    if (lower.contains('formation'))
+      return AdaptiveColors.foreground(context, const Color(0xFF9C27B0));
+    if (lower.contains('immobilier'))
+      return AdaptiveColors.foreground(context, const Color(0xFFFF5722));
+    if (lower.contains('service'))
+      return AdaptiveColors.foreground(context, const Color(0xFFFF9800));
+    return AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
   }
 
   int _asInt(dynamic value) {

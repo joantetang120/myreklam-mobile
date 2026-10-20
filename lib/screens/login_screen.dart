@@ -1,12 +1,13 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'register_screen.dart';
+import 'privacy_screen.dart';
 import 'forgot_password_screen.dart';
 import 'package:myreklam/services/auth_service.dart';
 import 'package:myreklam/services/api_client.dart';
 import 'package:myreklam/services/google_sign_in_service.dart';
-import 'package:myreklam/services/facebook_sign_in_service.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/utils/auth_navigator.dart';
 import 'package:myreklam/utils/user_session.dart';
@@ -27,7 +28,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _authService = AuthService();
   final _googleSignInService = GoogleSignInService();
-  final _facebookSignInService = FacebookSignInService();
 
   @override
   void dispose() {
@@ -55,14 +55,17 @@ class _LoginScreenState extends State<LoginScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.firstError),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Une erreur est survenue. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     } finally {
@@ -79,6 +82,8 @@ class _LoginScreenState extends State<LoginScreen> {
       // The authentication itself succeeded. Use its response if refreshing
       // the extended profile is temporarily unavailable.
     }
+    if (!mounted) return;
+    await ensureAgeConfirmation(context);
     if (!mounted) return;
     AuthNavigator.navigateAfterAuth(context, user);
   }
@@ -107,11 +112,14 @@ class _LoginScreenState extends State<LoginScreen> {
             right: 0,
             height: MediaQuery.of(context).size.height * 0.3,
             child: Container(
-              color: const Color(0xFF1B8D4B),
+              color: AdaptiveColors.surface(context, const Color(0xFF1B8D4B)),
               child: Image.asset(
                 'assets/images/auth/Rectangle 4.png',
                 fit: BoxFit.cover,
-                color: Colors.white.withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.white,
+                ).withValues(alpha: 0.1),
                 colorBlendMode: BlendMode.dstIn,
               ),
             ),
@@ -136,8 +144,8 @@ class _LoginScreenState extends State<LoginScreen> {
             alignment: Alignment.bottomCenter,
             child: Container(
               height: MediaQuery.of(context).size.height * 0.8,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(40),
                   topRight: Radius.circular(40),
@@ -160,18 +168,27 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: Column(
                     children: [
-                      const Text(
+                      Text(
                         'Connexion',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF616161),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF616161),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 10),
-                      const Text(
+                      Text(
                         'Connectez-vous à votre compte Myreklam',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 40),
                       // Email Field
@@ -226,9 +243,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             );
                           },
-                          child: const Text(
+                          child: Text(
                             'mot de passe oublié?',
-                            style: TextStyle(color: Colors.orangeAccent),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.orangeAccent,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -239,7 +261,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 56,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1B8D4B),
+                            backgroundColor: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFF1B8D4B),
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -247,18 +272,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           onPressed: _isLoading ? null : () => _handleLogin(),
                           child: _isLoading
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 24,
                                   height: 24,
                                   child: CircularProgressIndicator(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     strokeWidth: 2.5,
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   'Se connecter',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -271,9 +302,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: RichText(
                           textAlign: TextAlign.center,
                           text: TextSpan(
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                             ),
                             children: [
                               const TextSpan(
@@ -281,8 +315,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               TextSpan(
                                 text: "Conditions d'Utilisation",
-                                style: const TextStyle(
-                                  color: Color(0xFF1B8D4B),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF1B8D4B),
+                                  ),
                                   decoration: TextDecoration.underline,
                                 ),
                                 recognizer: TapGestureRecognizer()
@@ -296,8 +333,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               const TextSpan(text: ' et notre '),
                               TextSpan(
                                 text: 'Politique de Confidentialité',
-                                style: const TextStyle(
-                                  color: Color(0xFF1B8D4B),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF1B8D4B),
+                                  ),
                                   decoration: TextDecoration.underline,
                                 ),
                                 recognizer: TapGestureRecognizer()
@@ -319,8 +359,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 50,
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF1B8D4B),
-                            side: const BorderSide(color: Color(0xFF1B8D4B)),
+                            foregroundColor: AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFF1B8D4B),
+                            ),
+                            side: BorderSide(
+                              color: AdaptiveColors.border(
+                                context,
+                                Color(0xFF1B8D4B),
+                              ),
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -378,10 +426,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               );
                             },
-                            child: const Text(
+                            child: Text(
                               'Créer un compte',
                               style: TextStyle(
-                                color: Colors.orangeAccent,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.orangeAccent,
+                                ),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -417,22 +468,27 @@ class _LoginScreenState extends State<LoginScreen> {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: Colors.grey),
+        prefixIcon: Icon(
+          icon,
+          color: AdaptiveColors.foreground(context, Colors.grey),
+        ),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
                   obscureText
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: Colors.grey,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
                 ),
                 onPressed: onToggleVisibility,
               )
             : null,
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey),
+        hintStyle: TextStyle(
+          color: AdaptiveColors.foreground(context, Colors.grey),
+        ),
         filled: true,
-        fillColor: const Color(0xFFF5F5F5),
+        fillColor: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 18,
           horizontal: 16,
@@ -447,20 +503,29 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFF1B8D4B), width: 2),
+          borderSide: BorderSide(
+            color: AdaptiveColors.border(context, Color(0xFF1B8D4B)),
+            width: 2,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
+          borderSide: BorderSide(
+            color: AdaptiveColors.border(context, Color(0xFFD32F2F)),
+            width: 2,
+          ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Color(0xFFD32F2F), width: 2),
+          borderSide: BorderSide(
+            color: AdaptiveColors.border(context, Color(0xFFD32F2F)),
+            width: 2,
+          ),
         ),
-        errorStyle: const TextStyle(
+        errorStyle: TextStyle(
           fontSize: 12,
           height: 1.2,
-          color: Color(0xFFD32F2F),
+          color: AdaptiveColors.foreground(context, Color(0xFFD32F2F)),
         ),
         errorMaxLines: 2,
       ),
@@ -471,7 +536,10 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await _googleSignInService.signIn();
+      final response = await _googleSignInService.signIn(
+        confirmNewAccountAge: () => confirmAgeBand(context),
+        confirmNewAccountTerms: () => confirmNewAccountTerms(context),
+      );
 
       if (!mounted) return;
 
@@ -481,7 +549,10 @@ class _LoginScreenState extends State<LoginScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.firstError),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } catch (e) {
       debugPrint('Google Sign-In error: $e');
@@ -490,37 +561,10 @@ class _LoginScreenState extends State<LoginScreen> {
           ? 'Connexion Google annul\u00e9e.'
           : 'Erreur de connexion Google. Veuillez r\u00e9essayer.';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$message\n$e'), backgroundColor: Colors.red),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _handleFacebookLogin() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final response = await _facebookSignInService.signIn();
-
-      if (!mounted) return;
-
-      if (response['user'] != null) {
-        await _navigateAfterAuth(response['user']);
-      }
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
-      );
-    } catch (e) {
-      debugPrint('Facebook Sign-In error: $e');
-      if (!mounted) return;
-      final message = e.toString().contains('annul')
-          ? 'Connexion Facebook annulée.'
-          : 'Erreur de connexion Facebook. Veuillez réessayer.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('$message\n$e'),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -534,7 +578,7 @@ class _LoginScreenState extends State<LoginScreen> {
         width: 60,
         height: 60,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(

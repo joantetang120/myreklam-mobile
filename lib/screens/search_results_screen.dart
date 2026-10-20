@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -184,7 +185,9 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   }) {
     final data = _getReaction(apiSlug, entityId);
     final isLiked = data.userReaction == 'like';
-    final likeColor = isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500]!;
+    final likeColor = isLiked
+        ? AdaptiveColors.foreground(context, const Color(0xFF3AAE5E))
+        : AdaptiveColors.foreground(context, Colors.grey[500]!);
 
     return Row(
       children: [
@@ -217,12 +220,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.chat_bubble_outline, color: Colors.grey[500], size: 18),
+            Icon(
+              Icons.chat_bubble_outline,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              size: 18,
+            ),
             const SizedBox(width: 4),
             Text(
               '${data.commentsCount}',
               style: TextStyle(
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -236,7 +243,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF3AAE5E).withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -244,14 +254,20 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 children: [
                   Icon(
                     Icons.message_outlined,
-                    color: const Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ),
                     size: 14,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     'Message',
                     style: TextStyle(
-                      color: const Color(0xFF3AAE5E),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -423,12 +439,15 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Colors.black),
+          ),
           onPressed: () {
             Navigator.pushReplacement(
               context,
@@ -439,10 +458,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             );
           },
         ),
-        title: const Text(
+        title: Text(
           'Résultats de la recherche',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -452,7 +471,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         children: [
           // Inline search bar
           Container(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
             child: Row(
               children: [
@@ -463,12 +482,24 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     decoration: InputDecoration(
                       hintText: 'Rechercher...',
                       hintStyle: TextStyle(
-                        color: Colors.grey[400],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[400],
+                        ),
                         fontSize: 13,
                       ),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[400],
+                        ),
+                      ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: AdaptiveColors.surface(
+                        context,
+                        Colors.grey[100],
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -491,11 +522,23 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: AdaptiveColors.surface(context, Colors.grey[100]),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
+                      border: Border.all(
+                        color: AdaptiveColors.border(
+                          context,
+                          Colors.grey[300]!,
+                        ),
+                      ),
                     ),
-                    child: Icon(Icons.tune, color: Colors.grey[600], size: 24),
+                    child: Icon(
+                      Icons.tune,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
+                      size: 24,
+                    ),
                   ),
                 ),
               ],
@@ -503,7 +546,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           ),
           // Filter tabs
           Container(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Row(
               children: [
@@ -528,8 +571,13 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           // Results
           Expanded(
             child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF3AAE5E)),
+                ? Center(
+                    child: CircularProgressIndicator(
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF3AAE5E),
+                      ),
+                    ),
                   )
                 : _error != null
                 ? Center(
@@ -539,14 +587,20 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         Icon(
                           Icons.error_outline,
                           size: 48,
-                          color: Colors.grey[400],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[400],
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'Erreur lors de la recherche',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.grey[600],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[600],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -747,7 +801,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         : 'Retiré des favoris',
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -760,7 +817,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         return Container(
           margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -784,10 +841,13 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     ),
                     child: Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -806,10 +866,13 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         bp['original_price'] != null && bp['price'] == null
                             ? Text(
                                 '${bp['original_price']}€',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2E9B5B),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF2E9B5B),
+                                  ),
                                 ),
                               )
                             : (type == 'Infos pouvoir d\'achat'
@@ -819,10 +882,13 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                                               bp['price'].toString().isNotEmpty
                                           ? '${bp['price']}€'
                                           : 'Gratuit',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2E9B5B),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Color(0xFF2E9B5B),
+                                        ),
                                       ),
                                     )),
                         if (bp['price'] != null &&
@@ -833,7 +899,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                             '${bp['original_price']}€',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                               decoration: TextDecoration.lineThrough,
                             ),
                           ),
@@ -850,7 +919,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                           Icon(
                             Icons.store_outlined,
                             size: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -858,7 +930,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                               '$locationType chez $merchantName',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -869,14 +944,20 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                           Icon(
                             Icons.access_time,
                             size: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             _timeAgo(createdAt),
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                         ],
@@ -932,10 +1013,13 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                                 const SizedBox(width: 6),
                                 Text(
                                   ownerName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: Color(0xFF333333),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF333333),
+                                    ),
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -961,8 +1045,14 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         icon: const Icon(Icons.visibility_outlined, size: 18),
                         label: const Text('VOIR LE BON PLAN'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF9800),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFF9800),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -983,7 +1073,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AdaptiveColors.surface(
+                        context,
+                        Colors.white,
+                      ).withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -999,7 +1092,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           )
                         : Icon(
@@ -1007,8 +1103,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                                 ? Icons.favorite
                                 : Icons.favorite_border,
                             color: isFavoritedNotifier.value
-                                ? Colors.red
-                                : Colors.grey[600],
+                                ? AdaptiveColors.foreground(context, Colors.red)
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                             size: 20,
                           ),
                   ),
@@ -1020,7 +1119,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 right: 12,
                 child: _buildTypeTag(
                   'Bon Plan',
-                  const Color(0xFFFF9800),
+                  AdaptiveColors.surface(context, const Color(0xFFFF9800)),
                   Icons.local_offer,
                 ),
               ),
@@ -1107,7 +1206,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         : 'Retiré des favoris',
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -1232,7 +1334,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         : 'Retiré des favoris',
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -1345,7 +1450,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -1375,7 +1480,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             ),
             subtitle: Text(
               'Demande',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                fontSize: 12,
+              ),
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -1389,15 +1497,21 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                       entityId: demandeId,
                       title: title,
                     ),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.report_outlined,
-                      color: Colors.redAccent,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.redAccent,
+                      ),
                       size: 20,
                     ),
                   ),
                 Text(
                   _timeAgo(createdAt),
-                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),
@@ -1414,14 +1528,20 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE6F7EF),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFE6F7EF),
+                      ),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       category,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF3AAE5E),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF3AAE5E),
+                        ),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -1439,7 +1559,13 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 if (description.isNotEmpty)
                   Text(
                     description,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
+                    ),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1450,15 +1576,21 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                       Icon(
                         Icons.euro,
                         size: 14,
-                        color: const Color(0xFF3AAE5E),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'Budget: $budget €',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF3AAE5E),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF3AAE5E),
+                          ),
                         ),
                       ),
                     ],
@@ -1475,8 +1607,14 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     icon: const Icon(Icons.visibility_outlined, size: 18),
                     label: const Text('VOIR LA DEMANDE'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3AAE5E),
-                      foregroundColor: Colors.white,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
+                      foregroundColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.white,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -1506,7 +1644,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -1536,11 +1674,17 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             ),
             subtitle: Text(
               'Publication',
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                fontSize: 12,
+              ),
             ),
             trailing: Text(
               _timeAgo(createdAt),
-              style: TextStyle(color: Colors.grey[500], fontSize: 11),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                fontSize: 11,
+              ),
             ),
           ),
           if (content.isNotEmpty)
@@ -1585,7 +1729,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       margin: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -1599,9 +1743,15 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(
           _timeAgo(createdAt),
-          style: TextStyle(color: Colors.grey[500], fontSize: 12),
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Colors.grey[500]),
+            fontSize: 12,
+          ),
         ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: AdaptiveColors.foreground(context, Colors.grey),
+        ),
       ),
     );
   }
@@ -1613,7 +1763,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     if (desc.isEmpty) return const SizedBox.shrink();
     return Text(
       desc,
-      style: TextStyle(fontSize: 13, color: Colors.grey[600], height: 1.4),
+      style: TextStyle(
+        fontSize: 13,
+        color: AdaptiveColors.foreground(context, Colors.grey[600]),
+        height: 1.4,
+      ),
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
     );
@@ -1631,8 +1785,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         errorBuilder: (_, __, ___) => Container(
           width: double.infinity,
           height: 180,
-          color: Colors.grey[200],
-          child: Icon(Icons.image_not_supported, color: Colors.grey[400]),
+          color: AdaptiveColors.surface(context, Colors.grey[200]),
+          child: Icon(
+            Icons.image_not_supported,
+            color: AdaptiveColors.foreground(context, Colors.grey[400]),
+          ),
         ),
       ),
     );
@@ -1648,12 +1805,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white, size: 14),
+          Icon(
+            icon,
+            color: AdaptiveColors.foreground(context, Colors.white),
+            size: 14,
+          ),
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.white),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -1766,13 +1927,13 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           PostTag(
             title: data['category'].toString(),
             icon: Icons.local_offer_outlined,
-            color: Colors.orange,
+            color: AdaptiveColors.foreground(context, Colors.orange),
           ),
         if (data['sub_category']?.toString().isNotEmpty == true)
           PostTag(
             title: data['sub_category'].toString(),
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
       ];
       Navigator.push(
@@ -2026,7 +2187,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           PostTag(
             title: data['category'].toString(),
             icon: Icons.category_outlined,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
       final isNationwide = data['is_nationwide'] == true;
@@ -2108,7 +2269,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           PostTag(
             title: data['category'].toString(),
             icon: Icons.category_outlined,
-            color: Colors.purple,
+            color: AdaptiveColors.foreground(context, Colors.purple),
           ),
       ];
       Navigator.push(
@@ -2210,7 +2371,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -2240,8 +2401,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: accountType == 'pro'
-                    ? const Color(0xFFFFF3E0)
-                    : const Color(0xFFE6F7EF),
+                    ? AdaptiveColors.surface(context, const Color(0xFFFFF3E0))
+                    : AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -2250,8 +2411,14 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   color: accountType == 'pro'
-                      ? const Color(0xFFFF9800)
-                      : const Color(0xFF3AAE5E),
+                      ? AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFFFF9800),
+                        )
+                      : AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                 ),
               ),
             ),
@@ -2261,15 +2428,21 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 margin: const EdgeInsets.only(top: 4),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE3F2FD),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFE3F2FD),
+                  ),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
+                child: Text(
                   'Suivi',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2196F3),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF2196F3),
+                    ),
                   ),
                 ),
               ),
@@ -2284,12 +2457,21 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     Icon(
                       Icons.location_on_outlined,
                       size: 13,
-                      color: Colors.grey[500],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[500],
+                      ),
                     ),
                     const SizedBox(width: 2),
                     Text(
                       ville,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[500],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -2297,7 +2479,10 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             ],
           ],
         ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: AdaptiveColors.foreground(context, Colors.grey),
+        ),
       ),
     );
   }
@@ -2308,20 +2493,27 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
+          Icon(
+            Icons.search_off,
+            size: 64,
+            color: AdaptiveColors.foreground(context, Colors.grey[300]),
+          ),
           const SizedBox(height: 16),
           Text(
             title,
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: AdaptiveColors.foreground(context, Colors.grey[600]),
             ),
           ),
           const SizedBox(height: 6),
           Text(
             subtitle,
-            style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+            style: TextStyle(
+              fontSize: 13,
+              color: AdaptiveColors.foreground(context, Colors.grey[400]),
+            ),
           ),
         ],
       ),
@@ -2334,7 +2526,9 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[200],
+          color: isSelected
+              ? AdaptiveColors.surface(context, const Color(0xFF3AAE5E))
+              : AdaptiveColors.surface(context, Colors.grey[200]),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -2342,7 +2536,9 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : Colors.grey[700],
+            color: isSelected
+                ? AdaptiveColors.foreground(context, Colors.white)
+                : AdaptiveColors.foreground(context, Colors.grey[700]),
           ),
         ),
       ),

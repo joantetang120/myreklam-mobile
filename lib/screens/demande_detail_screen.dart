@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/constants/api_labels.dart';
 import 'package:myreklam/constants/demande_natures.dart';
@@ -385,7 +386,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -502,21 +503,34 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       onPressed: () => Navigator.pop(dialogCtx),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () =>
                           Navigator.pop(dialogCtx, editController.text),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enregistrer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -549,7 +563,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       content: Text(
                         'Erreur lors de la modification: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -576,20 +593,33 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       onPressed: () => Navigator.pop(dialogCtx, false),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(dialogCtx, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          Colors.redAccent,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Supprimer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -632,7 +662,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       content: Text(
                         'Erreur lors de la suppression: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -654,7 +687,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       height: 4,
                       margin: const EdgeInsets.only(top: 10, bottom: 12),
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[300],
+                        ),
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
@@ -688,7 +724,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                 'Réponse à $replyingToName',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.grey[600],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                                   fontFamily: 'Manjari',
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -725,7 +764,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                   'Aucun commentaire. Soyez le premier !',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.grey[500],
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[500],
+                                    ),
                                     fontStyle: FontStyle.italic,
                                     fontFamily: 'Manjari',
                                   ),
@@ -762,7 +804,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                               decoration: InputDecoration(
                                 hintText: 'Écrire un commentaire...',
                                 filled: true,
-                                fillColor: Colors.grey[100],
+                                fillColor: AdaptiveColors.surface(
+                                  context,
+                                  Colors.grey[100],
+                                ),
                                 contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 10,
@@ -778,8 +823,14 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                           ElevatedButton(
                             onPressed: submitComment,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF3AAE5E),
-                              foregroundColor: Colors.white,
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                const Color(0xFF3AAE5E),
+                              ),
+                              foregroundColor: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -899,7 +950,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                             style: TextStyle(
                               fontSize: isReply ? 12 : 13,
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF333333),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                const Color(0xFF333333),
+                              ),
                               fontFamily: 'Manjari',
                             ),
                           ),
@@ -908,7 +962,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                             timeAgo,
                             style: TextStyle(
                               fontSize: isReply ? 10 : 11,
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                               fontFamily: 'Manjari',
                             ),
                           ),
@@ -936,20 +993,26 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                         ],
                                       ),
                                     ),
-                                    const PopupMenuItem(
+                                    PopupMenuItem(
                                       value: 'delete',
                                       child: Row(
                                         children: [
                                           Icon(
                                             Icons.delete,
                                             size: 18,
-                                            color: Colors.redAccent,
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              Colors.redAccent,
+                                            ),
                                           ),
                                           SizedBox(width: 8),
                                           Text(
                                             'Supprimer',
                                             style: TextStyle(
-                                              color: Colors.redAccent,
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Colors.redAccent,
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -966,7 +1029,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                               child: Icon(
                                 Icons.more_horiz,
                                 size: 18,
-                                color: Colors.grey[400],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[400],
+                                ),
                               ),
                             ),
                           ],
@@ -977,7 +1043,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                         body,
                         style: TextStyle(
                           fontSize: isReply ? 12 : 13,
-                          color: Colors.grey[700],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[700],
+                          ),
                           height: 1.4,
                           fontFamily: 'Manjari',
                         ),
@@ -990,7 +1059,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                             'Répondre',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                               fontWeight: FontWeight.w500,
                               fontFamily: 'Manjari',
                             ),
@@ -1271,9 +1343,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
     if (authorId == null || authorId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Impossible de démarrer la conversation'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: AdaptiveColors.surface(context, Colors.redAccent),
         ),
       );
       return;
@@ -1282,9 +1354,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     final otherUserId = int.tryParse(authorId);
     if (otherUserId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('ID utilisateur invalide'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: AdaptiveColors.surface(context, Colors.redAccent),
         ),
       );
       return;
@@ -1333,7 +1405,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: AdaptiveColors.surface(context, Colors.redAccent),
             duration: const Duration(seconds: 4),
           ),
         );
@@ -1529,7 +1601,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     }
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1547,9 +1619,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
             const Divider(height: 1),
             for (var i = 0; i < docs.length; i++)
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.description_outlined,
-                  color: Color(0xFF3AAE5E),
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
                 ),
                 title: Text('Document ${i + 1}'),
                 subtitle: docs[i]['type']!.isNotEmpty
@@ -1572,7 +1644,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
   Widget build(BuildContext context) {
     final effectiveImages = _extractImagesFromDemandeData();
     return AppLayout(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF9F9FB)),
       onTabTapped: (index) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
@@ -1582,21 +1654,21 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         );
       },
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
           padding: const EdgeInsets.only(left: 10),
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
             size: 18,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Détails de la demande',
           style: TextStyle(
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             fontFamily: 'Manjari',
             fontWeight: FontWeight.bold,
           ),
@@ -1607,9 +1679,9 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 14),
               child: PopupMenuButton<String>(
-                icon: const Icon(
+                icon: Icon(
                   Icons.more_vert,
-                  color: Color(0xFF616161),
+                  color: AdaptiveColors.foreground(context, Color(0xFF616161)),
                   size: 24,
                 ),
                 offset: const Offset(0, 45),
@@ -1645,14 +1717,17 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       DelegationManager.instance.can(
                         DelegationPermission.announcements,
                       ))
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
                           Icon(
                             Icons.edit_outlined,
                             size: 20,
-                            color: Color(0xFF616161),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF616161),
+                            ),
                           ),
                           SizedBox(width: 12),
                           Text('Modifier'),
@@ -1662,19 +1737,27 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                   if (DelegationManager.instance.can(
                     DelegationPermission.announcements,
                   ))
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
                           Icon(
                             Icons.delete_outline,
                             size: 20,
-                            color: Colors.red,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red,
+                            ),
                           ),
                           SizedBox(width: 12),
                           Text(
                             'Supprimer',
-                            style: TextStyle(color: Colors.red),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.red,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -1694,12 +1777,18 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
               height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFE6F7EF),
-                border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
+                color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
+                border: Border.all(
+                  color: AdaptiveColors.border(
+                    context,
+                    const Color(0xFF2A8143),
+                  ),
+                  width: 1.5,
+                ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.notifications,
-                color: Color(0xFF2A8143),
+                color: AdaptiveColors.foreground(context, Color(0xFF2A8143)),
                 size: 18,
               ),
             ),
@@ -1725,7 +1814,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     _buildTag(
                       _getTypeLabel(widget.type!),
                       Icons.description_outlined,
-                      const Color(0xFF3AAE5E),
+                      AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
                     ),
                   if (widget.type != null && widget.type!.isNotEmpty)
                     const SizedBox(height: 10),
@@ -1738,18 +1830,27 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.1),
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.red,
+                        ).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Colors.red.withValues(alpha: 0.3),
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.red,
+                          ).withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.warning_amber_rounded,
-                            color: Colors.red,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red,
+                            ),
                             size: 16,
                           ),
                           const SizedBox(width: 6),
@@ -1758,7 +1859,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: Colors.red[700],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.red[700],
+                              ),
                             ),
                           ),
                         ],
@@ -1767,10 +1871,13 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                   // Title
                   Text(
                     widget.demandeTitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1A1A1A),
+                      ),
                       fontFamily: 'Manjari',
                       height: 1.3,
                     ),
@@ -1786,12 +1893,15 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Description',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1A1A1A),
+                      ),
                       fontFamily: 'Manjari',
                     ),
                   ),
@@ -1802,7 +1912,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                         : 'Aucune description fournie.',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
                       height: 1.6,
                       fontFamily: 'Manjari',
                     ),
@@ -1818,12 +1931,15 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Informations',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF1A1A1A),
+                      ),
                       fontFamily: 'Manjari',
                     ),
                   ),
@@ -1836,8 +1952,14 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     const SizedBox(height: 12),
                     _buildDetailItem(
                       icon: Icons.calendar_today_outlined,
-                      iconColor: const Color(0xFF2196F3),
-                      bgColor: const Color(0xFFE3F2FD),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF2196F3),
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFE3F2FD),
+                      ),
                       label: 'Date Souhaitée',
                       value:
                           'Du ${formatDate(widget.demandeData!['start_date'])} jusqu\'au ${formatDate(widget.demandeData!['end_date'])}',
@@ -1848,8 +1970,14 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     const SizedBox(height: 4),
                     _buildDetailItem(
                       icon: Icons.location_on_outlined,
-                      iconColor: const Color(0xFF3AAE5E),
-                      bgColor: const Color(0xFFE6F7EF),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFE6F7EF),
+                      ),
                       label: 'Localisation',
                       value: widget.nationwide
                           ? 'Toute la France'
@@ -1863,8 +1991,14 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     const SizedBox(height: 12),
                     _buildDetailItem(
                       icon: Icons.account_balance_wallet_outlined,
-                      iconColor: const Color(0xFF2A8143),
-                      bgColor: const Color(0xFFE6F7EF),
+                      iconColor: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF2A8143),
+                      ),
+                      bgColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFE6F7EF),
+                      ),
                       label: 'Budget',
                       value: _buildBudgetText(),
                     ),
@@ -1908,19 +2042,28 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                               return;
                             }
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                 content: Text(
                                   'Impossible de démarrer la conversation',
                                 ),
-                                backgroundColor: Colors.redAccent,
+                                backgroundColor: AdaptiveColors.surface(
+                                  context,
+                                  Colors.redAccent,
+                                ),
                               ),
                             );
                           },
                           icon: const Icon(Icons.reply_outlined, size: 20),
                           label: const Text('Répondre à la demande'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF9800),
-                            foregroundColor: Colors.white,
+                            backgroundColor: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFFF9800),
+                            ),
+                            foregroundColor: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1945,8 +2088,16 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                           ),
                           label: const Text('Voir les documents'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF3AAE5E),
-                            side: const BorderSide(color: Color(0xFF3AAE5E)),
+                            foregroundColor: AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFF3AAE5E),
+                            ),
+                            side: BorderSide(
+                              color: AdaptiveColors.border(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -1984,8 +2135,14 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                   ? Icons.favorite
                                   : Icons.favorite_outline,
                               color: _isFavorite
-                                  ? Colors.red
-                                  : Colors.grey[600],
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      Colors.red,
+                                    )
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey[600],
+                                    ),
                               size: 24,
                             ),
                     ),
@@ -1993,7 +2150,12 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       'Favoris',
                       style: TextStyle(
                         fontSize: 12,
-                        color: _isFavorite ? Colors.red : Colors.grey[600],
+                        color: _isFavorite
+                            ? AdaptiveColors.foreground(context, Colors.red)
+                            : AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                       ),
                     ),
                   ],
@@ -2021,10 +2183,13 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       children: [
                         Text(
                           _resolveOwnerName(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1A1A1A),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF1A1A1A),
+                            ),
                             fontFamily: 'Manjari',
                           ),
                         ),
@@ -2034,11 +2199,15 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE6F7EF),
+                            color: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFE6F7EF),
+                            ),
                             borderRadius: BorderRadius.circular(5),
                             border: Border.all(
-                              color: const Color(
-                                0xFF3AAE5E,
+                              color: AdaptiveColors.border(
+                                context,
+                                const Color(0xFF3AAE5E),
                               ).withValues(alpha: 0.2),
                             ),
                           ),
@@ -2046,7 +2215,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                             _resolveUserType(),
                             style: TextStyle(
                               fontSize: 10,
-                              color: Color(0xFF3AAE5E),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -2065,12 +2237,24 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                             onPressed: _toggleFollow,
                             style: OutlinedButton.styleFrom(
                               foregroundColor: _isFollowing
-                                  ? Colors.grey
-                                  : const Color(0xFF3AAE5E),
+                                  ? AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    )
+                                  : AdaptiveColors.foreground(
+                                      context,
+                                      const Color(0xFF3AAE5E),
+                                    ),
                               side: BorderSide(
                                 color: _isFollowing
-                                    ? Colors.grey
-                                    : const Color(0xFF3AAE5E),
+                                    ? AdaptiveColors.border(
+                                        context,
+                                        Colors.grey,
+                                      )
+                                    : AdaptiveColors.border(
+                                        context,
+                                        const Color(0xFF3AAE5E),
+                                      ),
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
@@ -2097,7 +2281,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                 widget.timeAgo.isNotEmpty ? widget.timeAgo : 'Posté récemment',
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[500],
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
                   fontFamily: 'Manjari',
                 ),
               ),
@@ -2112,18 +2296,24 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.comment_outlined,
-                        color: Color(0xFF616161),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF616161),
+                        ),
                         size: 20,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Commentaires',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF1A1A1A),
+                          ),
                           fontFamily: 'Manjari',
                         ),
                       ),
@@ -2132,7 +2322,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                         '${_localCommentsCount ?? _comments.length}',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[500],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[500],
+                          ),
                           fontFamily: 'Manjari',
                         ),
                       ),
@@ -2155,7 +2348,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                           'Aucun commentaire. Soyez le premier !',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                             fontStyle: FontStyle.italic,
                             fontFamily: 'Manjari',
                           ),
@@ -2186,8 +2382,16 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                             : 'Voir tous les commentaires',
                       ),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF3AAE5E),
-                        side: const BorderSide(color: Color(0xFF3AAE5E)),
+                        foregroundColor: AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
+                        side: BorderSide(
+                          color: AdaptiveColors.border(
+                            context,
+                            Color(0xFF3AAE5E),
+                          ),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -2200,13 +2404,13 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
             const SizedBox(height: 32),
 
             // 10. Demandes similaires
-            const Center(
+            Center(
               child: Text(
                 'Autres demandes similaires qui pourraient vous interesser',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF616161),
+                  color: AdaptiveColors.foreground(context, Color(0xFF616161)),
                   fontFamily: 'Manjari',
                 ),
                 textAlign: TextAlign.center,
@@ -2214,7 +2418,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Container(height: 1, color: Colors.grey[300]),
+              child: Container(
+                height: 1,
+                color: AdaptiveColors.surface(context, Colors.grey[300]),
+              ),
             ),
             if (_isLoadingSimilar)
               const Padding(
@@ -2232,7 +2439,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     'Aucune demande similaire trouvée.',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey[500],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[500],
+                      ),
                       fontFamily: 'Manjari',
                     ),
                   ),
@@ -2316,9 +2526,12 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                               response.statusCode < 300) {
                             Navigator.pop(dialogContext);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                 content: Text('Demande supprimée avec succès'),
-                                backgroundColor: Color(0xFF3AAE5E),
+                                backgroundColor: AdaptiveColors.surface(
+                                  context,
+                                  Color(0xFF3AAE5E),
+                                ),
                               ),
                             );
                             Navigator.pop(context, 'deleted');
@@ -2334,21 +2547,30 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                               content: Text(
                                 'Erreur: ${e.toString().replaceFirst("Exception: ", "")}',
                               ),
-                              backgroundColor: Colors.red,
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                Colors.red,
+                              ),
                             ),
                           );
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
+                  foregroundColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
                 ),
                 child: isDeleting
-                    ? const SizedBox(
+                    ? SizedBox(
                         height: 18,
                         width: 18,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           strokeWidth: 2,
                         ),
                       )
@@ -2420,17 +2642,17 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                 label,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   fontFamily: 'Manjari',
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A1A),
+                  color: AdaptiveColors.foreground(context, Color(0xFF1A1A1A)),
                   fontFamily: 'Manjari',
                 ),
               ),
@@ -2605,8 +2827,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
           data['details']?['sector'];
       addTile(
         icon: Icons.hub_outlined,
-        iconBg: const Color(0xFFE6F7EF),
-        iconColor: const Color(0xFF2A8143),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFE6F7EF)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFF2A8143)),
         title: 'Secteur de formation',
         value: str(fSector) == null ? null : _humanizeApiLabel(str(fSector)!),
       );
@@ -2619,8 +2841,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
           data['details']?['type'];
       addTile(
         icon: Icons.auto_stories_outlined,
-        iconBg: const Color(0xFFE3F2FD),
-        iconColor: const Color(0xFF1E88E5),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFE3F2FD)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFF1E88E5)),
         title: 'Type de formation souhaité',
         value: str(fType) == null
             ? null
@@ -2657,8 +2879,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
       ).map((c) => _translatedValue(c, teachingLabels)!).toList();
       addTile(
         icon: Icons.cast_for_education_outlined,
-        iconBg: const Color(0xFFFFF3E0),
-        iconColor: const Color(0xFFFF9800),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFFFF3E0)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFFFF9800)),
         title: 'Type d\'enseignement souhaité',
         value: teaching.isNotEmpty ? teaching.join(', ') : null,
       );
@@ -2674,8 +2896,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
       ).map((c) => _translatedValue(c, financingLabels)!).toList();
       addTile(
         icon: Icons.payments_outlined,
-        iconBg: const Color(0xFFFFEBEE),
-        iconColor: const Color(0xFFE53935),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFFFEBEE)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFFE53935)),
         title: 'Financement possible',
         value: financing.isNotEmpty ? financing.join(', ') : null,
       );
@@ -2686,8 +2908,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
       if (immediate == 'Oui') {
         addTile(
           icon: Icons.flash_on_outlined,
-          iconBg: const Color(0xFFFFF3E0),
-          iconColor: const Color(0xFFFF9800),
+          iconBg: AdaptiveColors.foreground(context, const Color(0xFFFFF3E0)),
+          iconColor: AdaptiveColors.foreground(
+            context,
+            const Color(0xFFFF9800),
+          ),
           title: 'Disponibilité',
           value: 'Immédiate',
         );
@@ -2702,8 +2927,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         );
         addTile(
           icon: Icons.event_available_outlined,
-          iconBg: const Color(0xFFE6F7EF),
-          iconColor: const Color(0xFF2A8143),
+          iconBg: AdaptiveColors.foreground(context, const Color(0xFFE6F7EF)),
+          iconColor: AdaptiveColors.foreground(
+            context,
+            const Color(0xFF2A8143),
+          ),
           title: 'Dates de formation souhaitées',
           value: start != null
               ? (end != null ? 'Du $start au $end' : 'À partir du $start')
@@ -2743,8 +2971,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         }
         addTile(
           icon: Icons.people_outline,
-          iconBg: const Color(0xFFF5F5F5),
-          iconColor: const Color(0xFF616161),
+          iconBg: AdaptiveColors.foreground(context, const Color(0xFFF5F5F5)),
+          iconColor: AdaptiveColors.foreground(
+            context,
+            const Color(0xFF616161),
+          ),
           title: 'Public à former',
           value: targetValue,
         );
@@ -2756,8 +2987,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
             data['details']?['education_level'];
         addTile(
           icon: Icons.school_outlined,
-          iconBg: Colors.orange.withValues(alpha: 0.1),
-          iconColor: Colors.orange,
+          iconBg: AdaptiveColors.foreground(
+            context,
+            Colors.orange,
+          ).withValues(alpha: 0.1),
+          iconColor: AdaptiveColors.foreground(context, Colors.orange),
           title: 'Niveau d\'étude',
           value: educationLabels[str(edRaw)] ?? str(edRaw) ?? 'À définir',
         );
@@ -2768,8 +3002,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
             data['details']?['experience_level'];
         addTile(
           icon: Icons.work_history_outlined,
-          iconBg: const Color(0xFFE6F7EF),
-          iconColor: const Color(0xFF3AAE5E),
+          iconBg: AdaptiveColors.foreground(context, const Color(0xFFE6F7EF)),
+          iconColor: AdaptiveColors.foreground(
+            context,
+            const Color(0xFF3AAE5E),
+          ),
           title: 'Niveau d\'expérience',
           value: experienceLabels[str(exRaw)] ?? str(exRaw) ?? 'À définir',
         );
@@ -2778,8 +3015,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
       final props = listStr(data['property_types']);
       addTile(
         icon: Icons.home_work_outlined,
-        iconBg: const Color(0xFFF5F5F5),
-        iconColor: const Color(0xFF616161),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFF5F5F5)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFF616161)),
         title: 'Type de bien souhaité',
         value: props.isNotEmpty
             ? props.map(_humanizeApiLabel).join(', ')
@@ -2797,8 +3034,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
       }
       addTile(
         icon: Icons.square_foot_outlined,
-        iconBg: const Color(0xFFE3F2FD),
-        iconColor: const Color(0xFF1E88E5),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFE3F2FD)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFF1E88E5)),
         title: 'Surface habitable',
         value: surfaceHabitableValue,
       );
@@ -2821,22 +3058,22 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
       addTile(
         icon: Icons.terrain_outlined,
-        iconBg: const Color(0xFFEDE7F6),
-        iconColor: const Color(0xFF673AB7),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFEDE7F6)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFF673AB7)),
         title: 'Terrain',
         value: terrainValue,
       );
       addTile(
         icon: Icons.meeting_room_outlined,
-        iconBg: const Color(0xFFFFF3E0),
-        iconColor: const Color(0xFFFF9800),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFFFF3E0)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFFFF9800)),
         title: 'Nombre de Pièces',
         value: str(data['nb_pieces']) ?? "indifférent",
       );
       addTile(
         icon: Icons.bed_outlined,
-        iconBg: const Color(0xFFFFEBEE),
-        iconColor: const Color(0xFFE53935),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFFFEBEE)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFFE53935)),
         title: 'Nombre de Chambres',
         value: str(data['nb_chambres']) ?? "indifférent",
       );
@@ -2959,8 +3196,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                 _humanizeApiLabel(sectorKey);
       addTile(
         icon: Icons.work_outline,
-        iconBg: const Color(0xFFE3F2FD),
-        iconColor: const Color(0xFF1E88E5),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFE3F2FD)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFF1E88E5)),
         title: 'Secteur d\'activité',
         value: sectorLabel,
       );
@@ -2972,8 +3209,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                 _humanizeApiLabel(functionKey);
       addTile(
         icon: Icons.badge_outlined,
-        iconBg: const Color(0xFFF5F5F5),
-        iconColor: const Color(0xFF616161),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFF5F5F5)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFF616161)),
         title: 'Fonction recherchée',
         value: functionLabel,
       );
@@ -2982,40 +3219,46 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
       ).map((c) => _translatedValue(c, contractLabels)!).toList();
       addTile(
         icon: Icons.assignment_outlined,
-        iconBg: const Color(0xFFE6F7EF),
-        iconColor: const Color(0xFF2A8143),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFE6F7EF)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFF2A8143)),
         title: 'Type de contrat souhaité',
         value: contracts.isNotEmpty ? contracts.join(', ') : null,
       );
       final workTypeKey = str(data['work_type']);
       addTile(
         icon: Icons.schedule_outlined,
-        iconBg: const Color(0xFFFFF3E0),
-        iconColor: const Color(0xFFFF9800),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFFFF3E0)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFFFF9800)),
         title: 'Temps de travail souhaité',
         value: _translatedValue(workTypeKey, workTypeLabels),
       );
 
       addTile(
         icon: Icons.school_outlined,
-        iconBg: Colors.orange.withValues(alpha: 0.1),
-        iconColor: Colors.orange,
+        iconBg: AdaptiveColors.foreground(
+          context,
+          Colors.orange,
+        ).withValues(alpha: 0.1),
+        iconColor: AdaptiveColors.foreground(context, Colors.orange),
         title: 'Niveau d\'étude',
         value: _translatedValue(data['education_level'], educationLabels),
       );
 
       addTile(
         icon: Icons.work_history_outlined,
-        iconBg: const Color(0xFFE6F7EF),
-        iconColor: const Color(0xFF3AAE5E),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFE6F7EF)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFF3AAE5E)),
         title: 'Niveau d\'expérience',
         value: _translatedValue(data['experience_level'], experienceLabels),
       );
 
       addTile(
         icon: Icons.home_work_outlined,
-        iconBg: Colors.blue.withValues(alpha: 0.1),
-        iconColor: Colors.blue,
+        iconBg: AdaptiveColors.foreground(
+          context,
+          Colors.blue,
+        ).withValues(alpha: 0.1),
+        iconColor: AdaptiveColors.foreground(context, Colors.blue),
         title: 'Télétravail souhaité',
         value: formatBool(data['accept_remote_work']),
       );
@@ -3024,8 +3267,11 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
       if (immediate == 'Oui') {
         addTile(
           icon: Icons.flash_on_outlined,
-          iconBg: const Color(0xFFFFF3E0),
-          iconColor: const Color(0xFFFF9800),
+          iconBg: AdaptiveColors.foreground(context, const Color(0xFFFFF3E0)),
+          iconColor: AdaptiveColors.foreground(
+            context,
+            const Color(0xFFFF9800),
+          ),
           title: 'Disponibilité',
           value: 'Immédiate',
         );
@@ -3034,15 +3280,21 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
       if (immediate == 'Non') {
         addTile(
           icon: Icons.event_available_outlined,
-          iconBg: const Color(0xFFE6F7EF),
-          iconColor: const Color(0xFF2A8143),
+          iconBg: AdaptiveColors.foreground(context, const Color(0xFFE6F7EF)),
+          iconColor: AdaptiveColors.foreground(
+            context,
+            const Color(0xFF2A8143),
+          ),
           title: 'Date de début souhaité',
           value: formatDate(data['start_date']),
         );
         addTile(
           icon: Icons.event_outlined,
-          iconBg: const Color(0xFFFFEBEE),
-          iconColor: const Color(0xFFE53935),
+          iconBg: AdaptiveColors.foreground(context, const Color(0xFFFFEBEE)),
+          iconColor: AdaptiveColors.foreground(
+            context,
+            const Color(0xFFE53935),
+          ),
           title: 'Fin',
           value: formatDate(data['end_date']),
         );
@@ -3101,8 +3353,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
       addTile(
         icon: Icons.euro,
-        iconBg: const Color(0xFFFFEBEE),
-        iconColor: const Color(0xFFE53935),
+        iconBg: AdaptiveColors.foreground(context, const Color(0xFFFFEBEE)),
+        iconColor: AdaptiveColors.foreground(context, const Color(0xFFE53935)),
         title: 'Prétention salariale',
         value: salaryText(),
       );
@@ -3211,7 +3463,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (ctx, modalSetState) {
@@ -3380,21 +3632,34 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () =>
                           Navigator.pop(context, editController.text),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enregistrer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -3427,7 +3692,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       content: Text(
                         'Erreur lors de la modification: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -3454,20 +3722,33 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       onPressed: () => Navigator.pop(context, false),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          Colors.redAccent,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Supprimer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -3514,7 +3795,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       content: Text(
                         'Erreur lors de la suppression: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -3591,7 +3875,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                       style: TextStyle(
                                         fontSize: isReply ? 12 : 13,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF333333),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          const Color(0xFF333333),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -3599,7 +3886,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                       _buildTimeAgo(createdAt),
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey[400],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[400],
+                                        ),
                                       ),
                                     ),
                                     if (isOwner) ...[
@@ -3625,20 +3915,28 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                                   ],
                                                 ),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'delete',
                                                 child: Row(
                                                   children: [
                                                     Icon(
                                                       Icons.delete,
                                                       size: 18,
-                                                      color: Colors.redAccent,
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Colors.redAccent,
+                                                          ),
                                                     ),
                                                     SizedBox(width: 8),
                                                     Text(
                                                       'Supprimer',
                                                       style: TextStyle(
-                                                        color: Colors.redAccent,
+                                                        color:
+                                                            AdaptiveColors.foreground(
+                                                              context,
+                                                              Colors.redAccent,
+                                                            ),
                                                       ),
                                                     ),
                                                   ],
@@ -3656,7 +3954,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                         child: Icon(
                                           Icons.more_horiz,
                                           size: 18,
-                                          color: Colors.grey[400],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[400],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -3665,9 +3966,12 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   body,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF4F4F4F),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF4F4F4F),
+                                    ),
                                     height: 1.4,
                                   ),
                                 ),
@@ -3687,8 +3991,14 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                                 : Icons.thumb_up_alt_outlined,
                                             size: 14,
                                             color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[400],
+                                                ? AdaptiveColors.foreground(
+                                                    context,
+                                                    const Color(0xFF3AAE5E),
+                                                  )
+                                                : AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.grey[400],
+                                                  ),
                                           ),
                                           const SizedBox(width: 3),
                                           Text(
@@ -3696,8 +4006,14 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: userReaction == 'like'
-                                                  ? const Color(0xFF3AAE5E)
-                                                  : Colors.grey[500],
+                                                  ? AdaptiveColors.foreground(
+                                                      context,
+                                                      const Color(0xFF3AAE5E),
+                                                    )
+                                                  : AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.grey[500],
+                                                    ),
                                             ),
                                           ),
                                         ],
@@ -3721,7 +4037,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2E9B5B),
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              const Color(0xFF2E9B5B),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -3759,8 +4078,8 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(ctx).size.height * 0.75,
                 ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Colors.white),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(24),
                     topRight: Radius.circular(24),
@@ -3773,7 +4092,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[300],
+                        ),
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
@@ -3784,29 +4106,38 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Commentaires',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2A2A2A),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF2A2A2A),
+                                ),
                               ),
                             ),
                           ),
                           GestureDetector(
                             onTap: () => Navigator.pop(ctx),
-                            child: const Icon(
+                            child: Icon(
                               Icons.close,
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                               size: 22,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Comment list
                     Expanded(
                       child: isLoading
@@ -3815,15 +4146,25 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                           ? Center(
                               child: Text(
                                 'Erreur: $error',
-                                style: const TextStyle(color: Colors.red),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.red,
+                                  ),
+                                ),
                               ),
                             )
                           : comments.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
                                 'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey,
+                                  ),
+                                ),
                               ),
                             )
                           : ListView.separated(
@@ -3838,7 +4179,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                   buildCommentItem(comments[i]),
                             ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Reply indicator
                     if (replyingToId != null)
                       Container(
@@ -3846,14 +4190,20 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                           horizontal: 16,
                           vertical: 6,
                         ),
-                        color: const Color(0xFFF5F5F5),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFF5F5F5),
+                        ),
                         child: Row(
                           children: [
                             Text(
                               'Répondre à $replyingToName',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                             const Spacer(),
@@ -3862,10 +4212,13 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                 replyingToId = null;
                                 replyingToName = null;
                               }),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close,
                                 size: 16,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                           ],
@@ -3882,12 +4235,15 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                 horizontal: 14,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F5),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFF5F5F5),
+                                ),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: TextField(
                                 controller: commentCtrl,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   isCollapsed: true,
                                   contentPadding: EdgeInsets.symmetric(
                                     vertical: 10,
@@ -3895,7 +4251,10 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                                   border: InputBorder.none,
                                   hintText: 'Écrire un commentaire...',
                                   hintStyle: TextStyle(
-                                    color: Color(0xFF9E9E9E),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF9E9E9E),
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -3909,14 +4268,20 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                             onTap: submitComment,
                             child: Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF3AAE5E),
+                              decoration: BoxDecoration(
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  Color(0xFF3AAE5E),
+                                ),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.send,
                                 size: 18,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -3982,13 +4347,19 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
 
   Color _categoryColor(String label) {
     final lower = label.toLowerCase();
-    if (lower.contains('urgent')) return Colors.redAccent;
-    if (lower.contains('emploi')) return const Color(0xFF3AAE5E);
-    if (lower.contains('stage')) return const Color(0xFF2196F3);
-    if (lower.contains('formation')) return const Color(0xFF9C27B0);
-    if (lower.contains('immobilier')) return const Color(0xFFFF5722);
-    if (lower.contains('service')) return const Color(0xFFFF9800);
-    return const Color(0xFF3AAE5E);
+    if (lower.contains('urgent'))
+      return AdaptiveColors.foreground(context, Colors.redAccent);
+    if (lower.contains('emploi'))
+      return AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
+    if (lower.contains('stage'))
+      return AdaptiveColors.foreground(context, const Color(0xFF2196F3));
+    if (lower.contains('formation'))
+      return AdaptiveColors.foreground(context, const Color(0xFF9C27B0));
+    if (lower.contains('immobilier'))
+      return AdaptiveColors.foreground(context, const Color(0xFFFF5722));
+    if (lower.contains('service'))
+      return AdaptiveColors.foreground(context, const Color(0xFFFF9800));
+    return AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
   }
 
   String _buildTimeAgo(String? isoDate) {
@@ -4122,19 +4493,19 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
         PostTag(
           title: categoryLabel,
           icon: Icons.label_outline,
-          color: Colors.orange,
+          color: AdaptiveColors.foreground(context, Colors.orange),
         ),
         if (urgent)
           PostTag(
             title: 'Urgent',
             icon: Icons.warning_amber_rounded,
-            color: Colors.red,
+            color: AdaptiveColors.foreground(context, Colors.red),
           ),
         if (nationwide)
           PostTag(
             title: 'Toute la France',
             icon: Icons.public,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -4207,7 +4578,12 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
               Icon(
                 isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                 size: 18,
-                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                color: isLiked
+                    ? AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      )
+                    : AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               GestureDetector(
@@ -4216,7 +4592,12 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                   data.likesCount.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    color: isLiked
+                        ? AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -4233,12 +4614,15 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
               Icon(
                 Icons.chat_bubble_outline,
                 size: 17,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               Text(
                 data.commentsCount.toString(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -4363,10 +4747,15 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
                     isFavoritedNotifier.value
                         ? 'Ajouté aux favoris'
                         : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -4379,7 +4768,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Erreur: ${e.toString()}'),
-                backgroundColor: Colors.red,
+                backgroundColor: AdaptiveColors.surface(context, Colors.red),
               ),
             );
           }

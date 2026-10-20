@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'package:myreklam/services/auth_service.dart';
@@ -59,22 +60,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Mot de passe mis à jour avec succès'),
-          backgroundColor: Colors.green,
+          backgroundColor: AdaptiveColors.surface(context, Colors.green),
         ),
       );
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.firstError),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Une erreur est survenue. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     } finally {
@@ -85,26 +89,28 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFE0E0E0)),
+              border: Border.all(
+                color: AdaptiveColors.border(context, const Color(0xFFE0E0E0)),
+              ),
             ),
             child: IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.arrow_back,
-                color: Color(0xFF1B8D4B),
+                color: AdaptiveColors.foreground(context, Color(0xFF1B8D4B)),
                 size: 20,
               ),
               onPressed: () => Navigator.pop(context),
             ),
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -123,20 +129,24 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
               const SizedBox(height: 30),
               // Title
-              const Text(
+              Text(
                 'Entrer votre nouveau mot de passe',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1B8D4B),
+                  color: AdaptiveColors.foreground(context, Color(0xFF1B8D4B)),
                 ),
               ),
               const SizedBox(height: 15),
               // Subtitle
-              const Text(
+              Text(
                 'Saisissez votre nouveau mot de passe et confirmez-le',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 40),
               // Password Field
@@ -191,7 +201,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 height: 56,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1B8D4B),
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF1B8D4B),
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -199,18 +212,24 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   ),
                   onPressed: _isLoading ? null : () => _handleResetPassword(),
                   child: _isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 24,
                           height: 24,
                           child: CircularProgressIndicator(
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             strokeWidth: 2.5,
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'Terminer',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -236,7 +255,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         borderRadius: BorderRadius.circular(10),
       ),
       child: TextFormField(
@@ -244,20 +263,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         obscureText: obscureText,
         validator: validator,
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.grey),
+          prefixIcon: Icon(
+            icon,
+            color: AdaptiveColors.foreground(context, Colors.grey),
+          ),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
                     obscureText
                         ? Icons.visibility_outlined
                         : Icons.visibility_off_outlined,
-                    color: Colors.grey,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
                   ),
                   onPressed: onToggleVisibility,
                 )
               : null,
           hintText: hint,
-          hintStyle: const TextStyle(color: Colors.grey),
+          hintStyle: TextStyle(
+            color: AdaptiveColors.foreground(context, Colors.grey),
+          ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             vertical: 18,

@@ -53,7 +53,11 @@ class AppUpdatePolicy {
     final store = _parseVersion(storeVersion);
     if (current.isEmpty || store.isEmpty) return false;
 
-    for (var i = 0; i < (current.length > store.length ? current.length : store.length); i++) {
+    for (
+      var i = 0;
+      i < (current.length > store.length ? current.length : store.length);
+      i++
+    ) {
       final a = i < current.length ? current[i] : 0;
       final b = i < store.length ? store[i] : 0;
       if (a != b) return a < b;

@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class SearchCard extends StatelessWidget {
@@ -20,7 +21,7 @@ class SearchCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9F9F9),
+        color: AdaptiveColors.surface(context, const Color(0xFFF9F9F9)),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -38,23 +39,29 @@ class SearchCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF757575),
+                  color: AdaptiveColors.foreground(context, Color(0xFF757575)),
                 ),
               ),
               Row(
                 children: [
                   _buildActionButton(
                     icon: Icons.visibility_outlined,
-                    color: const Color(0xFF2196F3),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF2196F3),
+                    ),
                     onTap: onView,
                   ),
                   const SizedBox(width: 8),
                   _buildActionButton(
                     icon: Icons.delete_outline,
-                    color: const Color(0xFFFF3D00),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFF3D00),
+                    ),
                     onTap: onDelete,
                   ),
                 ],
@@ -68,7 +75,7 @@ class SearchCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: criteria.entries.map((entry) {
-              return _buildCriteriaTag(entry.key, entry.value);
+              return _buildCriteriaTag(context, entry.key, entry.value);
             }).toList(),
           ),
         ],
@@ -94,19 +101,25 @@ class SearchCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCriteriaTag(String label, String value) {
+  Widget _buildCriteriaTag(BuildContext context, String label, String value) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
+        color: AdaptiveColors.surface(context, const Color(0xFFFFF3E0)),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: const Color(0xFFFF9800).withValues(alpha: 0.5),
+          color: AdaptiveColors.border(
+            context,
+            const Color(0xFFFF9800),
+          ).withValues(alpha: 0.5),
         ),
       ),
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(fontSize: 12, color: Color(0xFFFF9800)),
+          style: TextStyle(
+            fontSize: 12,
+            color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+          ),
           children: [
             TextSpan(text: '$label : '),
             TextSpan(

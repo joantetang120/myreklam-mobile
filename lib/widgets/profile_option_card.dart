@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class ProfileOptionCard extends StatelessWidget {
@@ -25,7 +26,7 @@ class ProfileOptionCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
@@ -51,10 +52,10 @@ class ProfileOptionCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF4A4A4A),
+                color: AdaptiveColors.foreground(context, Color(0xFF4A4A4A)),
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -64,7 +65,7 @@ class ProfileOptionCard extends StatelessWidget {
               description,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
                 height: 1.4,
               ),
               maxLines: 3,

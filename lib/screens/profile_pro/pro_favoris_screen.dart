@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -5,7 +6,7 @@ import 'package:myreklam/constants/annonce_status_labels.dart';
 import 'package:myreklam/constants/demande_natures.dart';
 import 'package:myreklam/constants/demande_types.dart';
 import 'package:myreklam/constants/job_labels.dart';
-// import 'package:myreklam/services/share_service.dart'; // Bouton partager masqué
+import 'package:myreklam/services/share_service.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:myreklam/config/api_config.dart';
 import 'package:myreklam/screens/demande_detail_screen.dart';
@@ -411,17 +412,17 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
   Color _statusColor(String? status) {
     switch (status?.toUpperCase()) {
       case 'PUBLISHED':
-        return const Color(0xFF4CAF50);
+        return AdaptiveColors.foreground(context, const Color(0xFF4CAF50));
       case 'PENDING_REVIEW':
-        return const Color(0xFFFF9800);
+        return AdaptiveColors.foreground(context, const Color(0xFFFF9800));
       case 'DRAFT':
-        return Colors.grey;
+        return AdaptiveColors.foreground(context, Colors.grey);
       case 'REJECTED':
-        return const Color(0xFFF44336);
+        return AdaptiveColors.foreground(context, const Color(0xFFF44336));
       case 'ARCHIVED':
-        return Colors.blueGrey;
+        return AdaptiveColors.foreground(context, Colors.blueGrey);
       default:
-        return Colors.grey;
+        return AdaptiveColors.foreground(context, Colors.grey);
     }
   }
 
@@ -477,18 +478,21 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2E9B5B)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Mes Favoris',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 18,
             fontFamily: 'Manjari',
             fontWeight: FontWeight.w600,
@@ -517,8 +521,20 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                   onChanged: (v) => setState(() => _searchQuery = v),
                   decoration: InputDecoration(
                     hintText: 'Faire une recherche',
-                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+                    hintStyle: TextStyle(
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                      fontSize: 14,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                    ),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.close, size: 18),
@@ -529,14 +545,27 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: AdaptiveColors.surface(
+                      context,
+                      Colors.grey[100],
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[400]!),
+                      borderSide: BorderSide(
+                        color: AdaptiveColors.border(
+                          context,
+                          Colors.grey[400]!,
+                        ),
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[400]!),
+                      borderSide: BorderSide(
+                        color: AdaptiveColors.border(
+                          context,
+                          Colors.grey[400]!,
+                        ),
+                      ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -547,12 +576,15 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Filtre par catégorie',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                       ),
                     ),
                     // Container(
@@ -599,7 +631,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                         CategoriesIcon(
                           title: "Bons plans",
                           iconColor: const Color.fromARGB(255, 252, 116, 37),
-                          bgColor: Color(0xFFFFE0B2).withValues(alpha: 0.2),
+                          bgColor: AdaptiveColors.surface(
+                            context,
+                            Color(0xFFFFE0B2),
+                          ).withValues(alpha: 0.2),
                           icon: Icons.card_giftcard_outlined,
                           onTap: () =>
                               setState(() => selectedCategory = 'Bons plans'),
@@ -607,8 +642,14 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                         const SizedBox(width: 15),
                         CategoriesIcon(
                           title: "Offre d'emploi",
-                          iconColor: Colors.lightBlueAccent,
-                          bgColor: Color(0xFFB3E5FC).withValues(alpha: 0.2),
+                          iconColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.lightBlueAccent,
+                          ),
+                          bgColor: AdaptiveColors.surface(
+                            context,
+                            Color(0xFFB3E5FC),
+                          ).withValues(alpha: 0.2),
                           iconAsset: 'assets/images/offres.png',
                           onTap: () => setState(
                             () => selectedCategory = 'Offre d\'emploi',
@@ -617,8 +658,14 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                         const SizedBox(width: 15),
                         CategoriesIcon(
                           title: "Formations",
-                          iconColor: Colors.purple,
-                          bgColor: Color(0xFFE1BEE7).withValues(alpha: 0.1),
+                          iconColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.purple,
+                          ),
+                          bgColor: AdaptiveColors.surface(
+                            context,
+                            Color(0xFFE1BEE7),
+                          ).withValues(alpha: 0.1),
                           iconAsset: 'assets/images/Formation.png',
                           onTap: () =>
                               setState(() => selectedCategory = 'Formations'),
@@ -626,8 +673,14 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                         const SizedBox(width: 15),
                         CategoriesIcon(
                           title: "Evenements",
-                          iconColor: Colors.green,
-                          bgColor: Color(0xFFE6F7EF).withValues(alpha: 0.5),
+                          iconColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.green,
+                          ),
+                          bgColor: AdaptiveColors.surface(
+                            context,
+                            Color(0xFFE6F7EF),
+                          ).withValues(alpha: 0.5),
                           icon: Icons.event_outlined,
                           onTap: () =>
                               setState(() => selectedCategory = 'Evenements'),
@@ -675,10 +728,12 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
   Widget _buildFavorisDemandesList() {
     if (_isLoadingDemandes) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFEF8A40)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+          ),
         ),
       );
     }
@@ -745,13 +800,19 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
   Color _categoryColor(String label) {
     final lower = label.toLowerCase();
-    if (lower.contains('urgent')) return Colors.redAccent;
-    if (lower.contains('emploi')) return const Color(0xFF3AAE5E);
-    if (lower.contains('stage')) return const Color(0xFF2196F3);
-    if (lower.contains('formation')) return const Color(0xFF9C27B0);
-    if (lower.contains('immobilier')) return const Color(0xFFFF5722);
-    if (lower.contains('service')) return const Color(0xFFFF9800);
-    return const Color(0xFF3AAE5E);
+    if (lower.contains('urgent'))
+      return AdaptiveColors.foreground(context, Colors.redAccent);
+    if (lower.contains('emploi'))
+      return AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
+    if (lower.contains('stage'))
+      return AdaptiveColors.foreground(context, const Color(0xFF2196F3));
+    if (lower.contains('formation'))
+      return AdaptiveColors.foreground(context, const Color(0xFF9C27B0));
+    if (lower.contains('immobilier'))
+      return AdaptiveColors.foreground(context, const Color(0xFFFF5722));
+    if (lower.contains('service'))
+      return AdaptiveColors.foreground(context, const Color(0xFFFF9800));
+    return AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
   }
 
   int _asInt(dynamic value) {
@@ -931,7 +992,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (ctx, modalSetState) {
@@ -1090,21 +1151,34 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () =>
                           Navigator.pop(context, editController.text),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enregistrer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1140,7 +1214,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                       content: Text(
                         'Erreur lors de la modification: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -1167,20 +1244,33 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                       onPressed: () => Navigator.pop(context, false),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          Colors.redAccent,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Supprimer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1233,7 +1323,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                       content: Text(
                         'Erreur lors de la suppression: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -1298,8 +1391,14 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                             accountType: user['pro_profile'] != null
                                 ? 'pro'
                                 : 'particulier',
-                            backgroundColor: const Color(0xFFE6F7EF),
-                            textColor: const Color(0xFF2A8143),
+                            backgroundColor: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFE6F7EF),
+                            ),
+                            textColor: AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFF2A8143),
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -1313,7 +1412,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                       style: TextStyle(
                                         fontSize: isReply ? 12 : 13,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF333333),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          const Color(0xFF333333),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -1321,7 +1423,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                       _buildTimeAgo(createdAt),
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey[400],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[400],
+                                        ),
                                       ),
                                     ),
                                     if (isOwner) ...[
@@ -1347,20 +1452,28 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                                   ],
                                                 ),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'delete',
                                                 child: Row(
                                                   children: [
                                                     Icon(
                                                       Icons.delete,
                                                       size: 18,
-                                                      color: Colors.redAccent,
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Colors.redAccent,
+                                                          ),
                                                     ),
                                                     SizedBox(width: 8),
                                                     Text(
                                                       'Supprimer',
                                                       style: TextStyle(
-                                                        color: Colors.redAccent,
+                                                        color:
+                                                            AdaptiveColors.foreground(
+                                                              context,
+                                                              Colors.redAccent,
+                                                            ),
                                                       ),
                                                     ),
                                                   ],
@@ -1378,7 +1491,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                         child: Icon(
                                           Icons.more_horiz,
                                           size: 18,
-                                          color: Colors.grey[400],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[400],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -1387,9 +1503,12 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   body,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF4F4F4F),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF4F4F4F),
+                                    ),
                                     height: 1.4,
                                   ),
                                 ),
@@ -1409,8 +1528,14 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                                 : Icons.thumb_up_alt_outlined,
                                             size: 14,
                                             color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[400],
+                                                ? AdaptiveColors.foreground(
+                                                    context,
+                                                    const Color(0xFF3AAE5E),
+                                                  )
+                                                : AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.grey[400],
+                                                  ),
                                           ),
                                           const SizedBox(width: 3),
                                           Text(
@@ -1418,8 +1543,14 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: userReaction == 'like'
-                                                  ? const Color(0xFF3AAE5E)
-                                                  : Colors.grey[500],
+                                                  ? AdaptiveColors.foreground(
+                                                      context,
+                                                      const Color(0xFF3AAE5E),
+                                                    )
+                                                  : AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.grey[500],
+                                                    ),
                                             ),
                                           ),
                                         ],
@@ -1443,7 +1574,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2E9B5B),
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              const Color(0xFF2E9B5B),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -1479,8 +1613,8 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(ctx).size.height * 0.75,
                 ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Colors.white),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(24),
                     topRight: Radius.circular(24),
@@ -1493,7 +1627,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[300],
+                        ),
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
@@ -1504,29 +1641,38 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Commentaires',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2A2A2A),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF2A2A2A),
+                                ),
                               ),
                             ),
                           ),
                           GestureDetector(
                             onTap: () => Navigator.pop(ctx),
-                            child: const Icon(
+                            child: Icon(
                               Icons.close,
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                               size: 22,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Comment list
                     Expanded(
                       child: isLoading
@@ -1535,15 +1681,25 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                           ? Center(
                               child: Text(
                                 'Erreur: $error',
-                                style: const TextStyle(color: Colors.red),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.red,
+                                  ),
+                                ),
                               ),
                             )
                           : comments.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
                                 'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey,
+                                  ),
+                                ),
                               ),
                             )
                           : ListView.separated(
@@ -1558,7 +1714,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                   buildCommentItem(comments[i]),
                             ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Reply indicator
                     if (replyingToId != null)
                       Container(
@@ -1566,14 +1725,20 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                           horizontal: 16,
                           vertical: 6,
                         ),
-                        color: const Color(0xFFF5F5F5),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFF5F5F5),
+                        ),
                         child: Row(
                           children: [
                             Text(
                               'Répondre à $replyingToName',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                             const Spacer(),
@@ -1582,10 +1747,13 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                 replyingToId = null;
                                 replyingToName = null;
                               }),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close,
                                 size: 16,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                           ],
@@ -1602,12 +1770,15 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                 horizontal: 14,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F5),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFF5F5F5),
+                                ),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: TextField(
                                 controller: commentCtrl,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   isCollapsed: true,
                                   contentPadding: EdgeInsets.symmetric(
                                     vertical: 10,
@@ -1615,7 +1786,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                   border: InputBorder.none,
                                   hintText: 'Écrire un commentaire...',
                                   hintStyle: TextStyle(
-                                    color: Color(0xFF9E9E9E),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF9E9E9E),
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -1629,14 +1803,20 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                             onTap: submitComment,
                             child: Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF3AAE5E),
+                              decoration: BoxDecoration(
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  Color(0xFF3AAE5E),
+                                ),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.send,
                                 size: 18,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -1685,7 +1865,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.grey[300],
+            color: AdaptiveColors.surface(context, Colors.grey[300]),
             image:
                 avatarUrl != null &&
                     avatarUrl.isNotEmpty &&
@@ -1705,7 +1885,11 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                       : null),
           ),
           child: avatarUrl == null || avatarUrl.isEmpty
-              ? Icon(Icons.person, size: 16, color: Colors.grey[600])
+              ? Icon(
+                  Icons.person,
+                  size: 16,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                )
               : null,
         ),
         const SizedBox(width: 8),
@@ -1718,7 +1902,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
+                color: AdaptiveColors.foreground(context, Colors.grey[800]),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1728,15 +1912,18 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                 margin: const EdgeInsets.only(top: 2),
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3AAE5E),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
+                child: Text(
                   'PRO',
                   style: TextStyle(
                     fontSize: 7,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                   ),
                 ),
               ),
@@ -1767,7 +1954,12 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               Icon(
                 isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                 size: 18,
-                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                color: isLiked
+                    ? AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      )
+                    : AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               GestureDetector(
@@ -1776,7 +1968,12 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                   data.likesCount.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    color: isLiked
+                        ? AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -1793,22 +1990,24 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               Icon(
                 Icons.chat_bubble_outline,
                 size: 17,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               Text(
                 data.commentsCount.toString(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
         ),
-        // Bouton partager masqué
-        // const SizedBox(width: 14),
-        // GestureDetector(
-        //   onTap: () => ShareService.shareEntity(apiSlug, entityId),
-        //   child: Icon(Icons.share_outlined, size: 18, color: Colors.grey[500]),
-        // ),
+        IconButton(
+          tooltip: 'Partager',
+          icon: const Icon(Icons.share_outlined, size: 20),
+          onPressed: () => ShareService.shareEntity(apiSlug, entityId),
+        ),
         // For bon plans: show author avatar and name on the left
         if (isBonPlan && authorData != null) ...[
           const Spacer(),
@@ -1929,10 +2128,15 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                     isFavoritedNotifier.value
                         ? 'Ajouté aux favoris'
                         : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -1946,7 +2150,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Erreur: ${e.toString()}'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -2065,19 +2269,19 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         PostTag(
           title: categoryLabel,
           icon: Icons.label_outline,
-          color: Colors.grey,
+          color: AdaptiveColors.foreground(context, Colors.grey),
         ),
         if (urgent)
           PostTag(
             title: 'Urgent',
             icon: Icons.warning_amber_rounded,
-            color: Colors.red,
+            color: AdaptiveColors.foreground(context, Colors.red),
           ),
         if (nationwide)
           PostTag(
             title: 'Toute la France',
             icon: Icons.public,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -2086,7 +2290,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       final subTag = PostTag(
         title: subTagsCat,
         icon: Icons.label_outline,
-        color: Colors.orange,
+        color: AdaptiveColors.foreground(context, Colors.orange),
       );
 
       final currentUserId = _currentUserId;
@@ -2141,10 +2345,12 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
   Widget _buildFavorisTrainingsList() {
     if (_isLoadingTrainings) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFEF8A40)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+          ),
         ),
       );
     }
@@ -2399,7 +2605,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                         : 'Retiré des favoris',
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -2411,9 +2620,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('Erreur lors de la mise à jour des favoris'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -2604,10 +2813,12 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
   Widget _buildFavorisBonPlansList() {
     if (_isLoadingBonPlans) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFEF8A40)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+          ),
         ),
       );
     }
@@ -2627,10 +2838,12 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
   Widget _buildFavorisJobOffersList() {
     if (_isLoadingJobOffers) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFEF8A40)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+          ),
         ),
       );
     }
@@ -2650,10 +2863,12 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
   Widget _buildFavorisEventsList() {
     if (_isLoadingEvents) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFEF8A40)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+          ),
         ),
       );
     }
@@ -2961,10 +3176,15 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                 SnackBar(
                   content: Text(
                     favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -3003,7 +3223,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Erreur: $e'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -3114,19 +3334,19 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           PostTag(
             title: categoryCode,
             icon: Icons.local_offer_outlined,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
         if (subCategoryCode != null && subCategoryCode.isNotEmpty)
           PostTag(
             title: subCategoryCode,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (formatType != null && formatType.isNotEmpty)
           PostTag(
             title: formatType,
             icon: Icons.videocam_outlined,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -3212,12 +3432,16 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.white),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -3237,7 +3461,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         if (loadingProgress == null) return child;
         return Container(
           height: 220,
-          color: Colors.grey[100],
+          color: AdaptiveColors.surface(context, Colors.grey[100]),
           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         );
       },
@@ -3245,11 +3469,11 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         debugPrint('Image load error: $error');
         return Container(
           height: 220,
-          color: Colors.grey[200],
-          child: const Center(
+          color: AdaptiveColors.surface(context, Colors.grey[200]),
+          child: Center(
             child: Icon(
               Icons.image_not_supported,
-              color: Colors.grey,
+              color: AdaptiveColors.foreground(context, Colors.grey),
               size: 40,
             ),
           ),
@@ -3262,7 +3486,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     final descriptionPlain = item['description']?.toString() ?? '';
     return Text(
       _stripHtml(descriptionPlain),
-      style: const TextStyle(fontSize: 14, color: Color(0xFF666666)),
+      style: TextStyle(
+        fontSize: 14,
+        color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+      ),
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
     );
@@ -3346,10 +3573,15 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                 SnackBar(
                   content: Text(
                     favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -3364,9 +3596,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('Erreur lors de la mise à jour des favoris'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -3376,7 +3608,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -3404,10 +3636,13 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                     ),
                     child: Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -3431,10 +3666,13 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                 bp['prix_final'] == null
                             ? Text(
                                 '${bp['prix_avant_reduction']}€',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2E9B5B),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF2E9B5B),
+                                  ),
                                 ),
                               )
                             : (type == 'Infos pouvoir d\'achat'
@@ -3446,10 +3684,13 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                                   .isNotEmpty
                                           ? '${bp['prix_final']}€'
                                           : 'Gratuit',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2E9B5B),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Color(0xFF2E9B5B),
+                                        ),
                                       ),
                                     )),
                         if (bp['prix_final'] != null &&
@@ -3462,7 +3703,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                             '${bp['prix_avant_reduction']}€',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                               decoration: TextDecoration.lineThrough,
                             ),
                           ),
@@ -3476,15 +3720,21 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF5722),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFFF5722),
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 '-${_calculateDiscount(bp['prix_avant_reduction'], bp['prix_final'])}%',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
@@ -3502,30 +3752,40 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2E9B5B,
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFF2E9B5B),
                                 ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: const Color(0xFF2E9B5B),
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    const Color(0xFF2E9B5B),
+                                  ),
                                   width: 1,
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.local_offer_outlined,
                                     size: 14,
-                                    color: Color(0xFF2E9B5B),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF2E9B5B),
+                                    ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Code promo: ${bp['promo_code']}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF2E9B5B),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF2E9B5B),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -3547,7 +3807,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                           Icon(
                             Icons.store_outlined,
                             size: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -3555,7 +3818,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                               '$locationType chez $merchantName',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -3566,14 +3832,20 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                           Icon(
                             Icons.access_time,
                             size: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             _buildTimeAgo(createdAt),
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                         ],
@@ -3612,8 +3884,14 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                         icon: const Icon(Icons.visibility_outlined, size: 18),
                         label: const Text('VOIR LE BON PLAN'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF9800),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFF9800),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -3634,7 +3912,10 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AdaptiveColors.surface(
+                        context,
+                        Colors.white,
+                      ).withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -3650,12 +3931,20 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           )
                         : Icon(
                             favoris ? Icons.favorite : Icons.favorite_border,
-                            color: favoris ? Colors.red : Colors.grey[600],
+                            color: favoris
+                                ? AdaptiveColors.foreground(context, Colors.red)
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                             size: 20,
                           ),
                   ),
@@ -3667,7 +3956,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                 right: 12,
                 child: _buildTypeTag(
                   'Bon Plan',
-                  const Color(0xFFFF9800),
+                  AdaptiveColors.surface(context, const Color(0xFFFF9800)),
                   Icons.local_offer,
                 ),
               ),
@@ -3823,10 +4112,15 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                 SnackBar(
                   content: Text(
                     favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -3840,7 +4134,7 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Erreur: $e'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -4027,14 +4321,17 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
                 PostTag(
                   title: workTime,
                   icon: Icons.access_time,
-                  color: Colors.grey,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
                 ),
             ],
             subtags: contractType.isNotEmpty
                 ? PostTag(
                     title: contractType,
                     icon: Icons.description_outlined,
-                    color: const Color(0xFF27A5FF),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF27A5FF),
+                    ),
                   )
                 : null,
             advantages: advantagesList,
@@ -4130,19 +4427,19 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
           PostTag(
             title: category,
             icon: Icons.local_offer_outlined,
-            color: Colors.orange,
+            color: AdaptiveColors.foreground(context, Colors.orange),
           ),
         if (subCategory.isNotEmpty)
           PostTag(
             title: subCategory,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (type.isNotEmpty)
           PostTag(
             title: type,
             icon: Icons.check_circle_outline,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
       ];
 
@@ -4207,16 +4504,31 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.grey[600]),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          ),
           const SizedBox(width: 4),
-          Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[700]),
+            ),
+          ),
         ],
       ),
     );
@@ -4228,11 +4540,18 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[400]),
+            Icon(
+              Icons.inbox_outlined,
+              size: 48,
+              color: AdaptiveColors.foreground(context, Colors.grey[400]),
+            ),
             const SizedBox(height: 12),
             Text(
               message,
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              style: TextStyle(
+                fontSize: 14,
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -4247,11 +4566,18 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: AdaptiveColors.foreground(context, Colors.red[300]),
+            ),
             const SizedBox(height: 12),
             Text(
               message,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 14,
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[
@@ -4345,9 +4671,9 @@ class _ProFavorisScreenState extends State<ProFavorisScreen> {
 
     return Text(
       descriptionPlain,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
-        color: Color(0xFF666666),
+        color: AdaptiveColors.foreground(context, Color(0xFF666666)),
         height: 1.5,
       ),
       maxLines: 3,

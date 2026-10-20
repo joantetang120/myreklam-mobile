@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'pro_subscription_screen.dart';
 import 'package:myreklam/services/profile_service.dart';
@@ -56,14 +57,17 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.firstError),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Une erreur est survenue. Veuillez réessayer.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
         ),
       );
     } finally {
@@ -74,18 +78,21 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.grey),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Colors.grey),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Information professionnel',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -95,9 +102,12 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
       body: Column(
         children: [
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Complétez les informations de votre entreprise',
-            style: TextStyle(color: Colors.grey, fontSize: 14),
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.grey),
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 30),
           // Progress Bar
@@ -106,7 +116,7 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
             height: 6,
             margin: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
-              color: Colors.grey[200],
+              color: AdaptiveColors.surface(context, Colors.grey[200]),
               borderRadius: BorderRadius.circular(3),
             ),
             child: FractionallySizedBox(
@@ -114,7 +124,10 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
               widthFactor: 1.0, // 100% for step 2 of 2
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1B8D4B),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF1B8D4B),
+                  ),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -131,7 +144,10 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F5),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFF5F5F5),
+                        ),
                         borderRadius: BorderRadius.circular(15),
                         boxShadow: [
                           BoxShadow(
@@ -151,23 +167,32 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(8),
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFE8F5E8),
+                                  decoration: BoxDecoration(
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      Color(0xFFE8F5E8),
+                                    ),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.person_outline_rounded,
-                                    color: Color(0xFF1B8D4B),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF1B8D4B),
+                                    ),
                                     size: 20,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                const Text(
+                                Text(
                                   'Informations personnelles',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.grey,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -180,17 +205,23 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Prénom*',
                                   style: TextStyle(
-                                    color: Colors.grey,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: TextFormField(
@@ -213,17 +244,23 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                                   ),
                                 ),
                                 const SizedBox(height: 20),
-                                const Text(
+                                Text(
                                   'Nom*',
                                   style: TextStyle(
-                                    color: Colors.grey,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: TextFormField(
@@ -246,17 +283,23 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                                   ),
                                 ),
                                 const SizedBox(height: 20),
-                                const Text(
+                                Text(
                                   'Email*',
                                   style: TextStyle(
-                                    color: Colors.grey,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: TextFormField(
@@ -285,17 +328,23 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                                   ),
                                 ),
                                 const SizedBox(height: 20),
-                                const Text(
+                                Text(
                                   'Téléphone',
                                   style: TextStyle(
-                                    color: Colors.grey,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 Container(
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
@@ -314,11 +363,15 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                                               width: 24,
                                             ),
                                             const SizedBox(width: 8),
-                                            const Text(
+                                            Text(
                                               '+33',
                                               style: TextStyle(
                                                 fontSize: 16,
-                                                color: Colors.grey,
+                                                color:
+                                                    AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.grey,
+                                                    ),
                                               ),
                                             ),
                                           ],
@@ -368,7 +421,10 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                       height: 56,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1B8D4B),
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF1B8D4B),
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -376,21 +432,27 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                         ),
                         onPressed: _isLoading ? null : () => _handleSubmit(),
                         child: _isLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 24,
                                 height: 24,
                                 child: CircularProgressIndicator(
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   strokeWidth: 2.5,
                                 ),
                               )
                             : Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
+                                children: [
                                   Text(
                                     'Terminer',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       fontSize: 18,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -398,7 +460,10 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                                   SizedBox(width: 8),
                                   Icon(
                                     Icons.check_rounded,
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                   ),
                                 ],
                               ),

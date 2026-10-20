@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -282,11 +283,11 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       insetPadding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(20),
         ),
         child: SingleChildScrollView(
@@ -304,10 +305,13 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                       padding: const EdgeInsets.only(right: 16, top: 8),
                       child: TextButton(
                         onPressed: _skipOnboarding,
-                        child: const Text(
+                        child: Text(
                           'le faire plus tard',
                           style: TextStyle(
-                            color: Color(0xFF3AAE5E),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF3AAE5E),
+                            ),
                             fontSize: 14,
                           ),
                         ),
@@ -338,15 +342,15 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
     return Container(
       height: 4,
       width: double.infinity,
-      color: Colors.grey[200],
+      color: AdaptiveColors.surface(context, Colors.grey[200]),
       child: Row(
         children: List.generate(_totalSteps, (index) {
           return Expanded(
             child: Container(
               height: 4,
               color: index <= _currentStep
-                  ? const Color(0xFF3AAE5E)
-                  : Colors.transparent,
+                  ? AdaptiveColors.surface(context, const Color(0xFF3AAE5E))
+                  : AdaptiveColors.surface(context, Colors.transparent),
             ),
           );
         }),
@@ -381,13 +385,13 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             height: 120,
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Bienvenue sur MyReklam!',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFFF8C42),
+              color: AdaptiveColors.foreground(context, Color(0xFFFF8C42)),
             ),
           ),
           const SizedBox(height: 16),
@@ -396,7 +400,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[600],
+              color: AdaptiveColors.foreground(context, Colors.grey[600]),
               height: 1.5,
             ),
           ),
@@ -417,7 +421,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF5EE),
+              color: AdaptiveColors.surface(context, const Color(0xFFFFF5EE)),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Image.asset(
@@ -427,36 +431,46 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Ajoutez votre logo',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFFF8C42),
+              color: AdaptiveColors.foreground(context, Color(0xFFFF8C42)),
             ),
           ),
           const SizedBox(height: 6),
           Text(
             'Une photo ou un logo augmente la confiance et rend votre profil plus attractif.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[600]),
+            ),
           ),
           const SizedBox(height: 24),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFE6F7EF),
+              color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.stars, color: Color(0xFF3AAE5E), size: 16),
+                Icon(
+                  Icons.stars,
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+                  size: 16,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'Gagnez 1 My\'s',
                   style: TextStyle(
-                    color: const Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ),
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -472,7 +486,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
               height: 140,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: Colors.grey[300]!,
+                  color: AdaptiveColors.border(context, Colors.grey[300]!),
                   style: BorderStyle.solid,
                   width: 2,
                 ),
@@ -489,13 +503,19 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                         Icon(
                           Icons.cloud_upload_outlined,
                           size: 32,
-                          color: Colors.grey[400],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[400],
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           'Cliquez pour ajouter',
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[600],
+                            ),
                             fontSize: 12,
                           ),
                         ),
@@ -520,7 +540,7 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF5EE),
+              color: AdaptiveColors.surface(context, const Color(0xFFFFF5EE)),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Image.asset(
@@ -530,19 +550,22 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Complétez votre profil',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFFF8C42),
+              color: AdaptiveColors.foreground(context, Color(0xFFFF8C42)),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Plus votre profil est complet, plus vous êtes visible et crédible auprès des autres utilisateurs.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 14,
+              color: AdaptiveColors.foreground(context, Colors.grey[600]),
+            ),
           ),
           const SizedBox(height: 16),
           const SizedBox(height: 24),
@@ -552,18 +575,28 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFE6F7EF),
+                color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.stars, color: Color(0xFF3AAE5E), size: 18),
+                  Icon(
+                    Icons.stars,
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Ajoutez votre numéro (+0.5 My)',
                     style: TextStyle(
-                      color: const Color(0xFF3AAE5E),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
                       fontWeight: FontWeight.w600,
                       fontSize: 10,
                     ),
@@ -584,11 +617,15 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide: BorderSide(
+                    color: AdaptiveColors.border(context, Colors.grey[300]!),
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF3AAE5E)),
+                  borderSide: BorderSide(
+                    color: AdaptiveColors.border(context, Color(0xFF3AAE5E)),
+                  ),
                 ),
               ),
             ),
@@ -597,21 +634,27 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFE6F7EF),
+                color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.check_circle,
-                    color: Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'Numéro de téléphone déjà ajouté',
                     style: TextStyle(
-                      color: const Color(0xFF3AAE5E),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ),
                       fontWeight: FontWeight.w600,
                       fontSize: 10,
                     ),
@@ -631,18 +674,31 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE6F7EF),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFE6F7EF),
+                  ),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.stars, color: Color(0xFF3AAE5E), size: 18),
+                    Icon(
+                      Icons.stars,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF3AAE5E),
+                      ),
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       'Ajoutez un réseau social (+0.5 My)',
                       style: TextStyle(
-                        color: const Color(0xFF3AAE5E),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         fontWeight: FontWeight.w600,
                         fontSize: 10,
                       ),
@@ -673,11 +729,21 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(
+                        color: AdaptiveColors.border(
+                          context,
+                          Colors.grey[300]!,
+                        ),
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF3AAE5E)),
+                      borderSide: BorderSide(
+                        color: AdaptiveColors.border(
+                          context,
+                          Color(0xFF3AAE5E),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -700,46 +766,56 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF5EE),
+              color: AdaptiveColors.surface(context, const Color(0xFFFFF5EE)),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.description_outlined,
               size: 40,
-              color: Color(0xFFFF8C42),
+              color: AdaptiveColors.foreground(context, Color(0xFFFF8C42)),
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Présentez votre activité',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFFF8C42),
+              color: AdaptiveColors.foreground(context, Color(0xFFFF8C42)),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Décrivez votre activité professionnelle pour attirer plus de clients.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            style: TextStyle(
+              fontSize: 14,
+              color: AdaptiveColors.foreground(context, Colors.grey[600]),
+            ),
           ),
           const SizedBox(height: 24),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFE6F7EF),
+              color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.stars, color: Color(0xFF3AAE5E), size: 18),
+                Icon(
+                  Icons.stars,
+                  color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Gagnez 1 My\'s',
                   style: TextStyle(
-                    color: const Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ),
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -762,11 +838,15 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(
+                  color: AdaptiveColors.border(context, Colors.grey[300]!),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF3AAE5E)),
+                borderSide: BorderSide(
+                  color: AdaptiveColors.border(context, Color(0xFF3AAE5E)),
+                ),
               ),
             ),
           ),
@@ -788,10 +868,14 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE6F7EF) : Colors.grey[100],
+          color: isSelected
+              ? AdaptiveColors.surface(context, const Color(0xFFE6F7EF))
+              : AdaptiveColors.surface(context, Colors.grey[100]),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? const Color(0xFF3AAE5E) : Colors.transparent,
+            color: isSelected
+                ? AdaptiveColors.border(context, const Color(0xFF3AAE5E))
+                : AdaptiveColors.border(context, Colors.transparent),
             width: 2,
           ),
         ),
@@ -801,7 +885,9 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
           style: TextStyle(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            color: isSelected ? const Color(0xFF3AAE5E) : Colors.grey[600],
+            color: isSelected
+                ? AdaptiveColors.foreground(context, const Color(0xFF3AAE5E))
+                : AdaptiveColors.foreground(context, Colors.grey[600]),
           ),
         ),
       ),
@@ -819,10 +905,13 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: index == _currentStep
-                ? const Color(0xFF3AAE5E)
+                ? AdaptiveColors.surface(context, const Color(0xFF3AAE5E))
                 : index < _currentStep
-                ? const Color(0xFF3AAE5E).withValues(alpha: 0.5)
-                : Colors.grey[300],
+                ? AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ).withValues(alpha: 0.5)
+                : AdaptiveColors.surface(context, Colors.grey[300]),
           ),
         );
       }),
@@ -840,7 +929,12 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                     onPressed: _previousStep,
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: BorderSide(color: Colors.grey[300]!),
+                      side: BorderSide(
+                        color: AdaptiveColors.border(
+                          context,
+                          Colors.grey[300]!,
+                        ),
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -848,7 +942,10 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                     child: Text(
                       'Précédent',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -863,20 +960,26 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                   ? null
                   : _nextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF8C42),
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFFF8C42),
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                disabledBackgroundColor: Colors.grey[300],
+                disabledBackgroundColor: AdaptiveColors.surface(
+                  context,
+                  Colors.grey[300],
+                ),
               ),
               child: _isUploadingImage || _isSavingProfile
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                       ),
                     )
                   : Row(
@@ -886,18 +989,24 @@ class _ProOnboardingModalState extends State<ProOnboardingModal>
                           _currentStep == _totalSteps - 1
                               ? 'Terminer'
                               : 'Suivant',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),
                         ),
                         if (_currentStep < _totalSteps - 1) ...[
                           const SizedBox(width: 4),
-                          const Icon(
+                          Icon(
                             Icons.arrow_forward,
                             size: 16,
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                           ),
                         ],
                       ],

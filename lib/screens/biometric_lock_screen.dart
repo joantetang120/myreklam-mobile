@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/screens/onboarding_screen.dart';
 import 'package:myreklam/services/auth_service.dart';
@@ -5,6 +6,7 @@ import 'package:myreklam/services/biometric_service.dart';
 import 'package:myreklam/services/token_storage.dart';
 import 'package:myreklam/utils/auth_navigator.dart';
 import 'package:myreklam/utils/user_session.dart';
+import 'privacy_screen.dart';
 
 /// Shown at launch when biometric unlock is enabled. Requires a fingerprint /
 /// Face ID check before the (already-restored) session is entered.
@@ -51,6 +53,8 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
     setState(() => _authenticating = false);
 
     if (ok) {
+      await ensureAgeConfirmation(context);
+      if (!mounted) return;
       AuthNavigator.navigateAfterAuth(context, widget.user);
     }
   }
@@ -73,7 +77,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -91,26 +95,39 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                 width: 96,
                 height: 96,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE7412A).withValues(alpha: 0.08),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFE7412A),
+                  ).withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(_icon, size: 48, color: const Color(0xFFE7412A)),
+                child: Icon(
+                  _icon,
+                  size: 48,
+                  color: AdaptiveColors.foreground(
+                    context,
+                    const Color(0xFFE7412A),
+                  ),
+                ),
               ),
               const SizedBox(height: 24),
               Text(
                 'Déverrouillez avec $_label',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2D2D2D),
+                  color: AdaptiveColors.foreground(context, Color(0xFF2D2D2D)),
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Confirmez votre identité pour accéder à votre compte.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13.5, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
               ),
               const Spacer(),
               SizedBox(
@@ -118,12 +135,15 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _authenticating ? null : _unlock,
                   icon: _authenticating
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Icon(_icon, size: 20),
@@ -131,8 +151,14 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                     _authenticating ? 'Vérification…' : 'Déverrouiller',
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE7412A),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFE7412A),
+                    ),
+                    foregroundColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(
@@ -144,9 +170,11 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
               const SizedBox(height: 12),
               TextButton(
                 onPressed: _authenticating ? null : _useAnotherAccount,
-                child: const Text(
+                child: Text(
                   'Utiliser un autre compte',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
               ),
               const SizedBox(height: 8),

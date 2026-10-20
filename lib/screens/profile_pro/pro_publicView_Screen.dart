@@ -1,4 +1,6 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:async';
+import 'package:myreklam/widgets/additional_social_links.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -82,7 +84,7 @@ class _ReviewEntry {
   });
 }
 
-Widget _buildBonPlanImage(String url) {
+Widget _buildBonPlanImage(BuildContext context, String url) {
   return Image.network(
     url,
     width: double.infinity,
@@ -92,7 +94,7 @@ Widget _buildBonPlanImage(String url) {
       if (loadingProgress == null) return child;
       return Container(
         height: 220,
-        color: Colors.grey[100],
+        color: AdaptiveColors.surface(context, Colors.grey[100]),
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     },
@@ -100,18 +102,22 @@ Widget _buildBonPlanImage(String url) {
       debugPrint('Image load error: $error');
       return Container(
         height: 220,
-        color: Colors.grey[200],
-        child: const Center(
-          child: Icon(Icons.image_not_supported, color: Colors.grey, size: 40),
+        color: AdaptiveColors.surface(context, Colors.grey[200]),
+        child: Center(
+          child: Icon(
+            Icons.image_not_supported,
+            color: AdaptiveColors.foreground(context, Colors.grey),
+            size: 40,
+          ),
         ),
       );
     },
   );
 }
 
-Widget _buildBonPlanImageCarousel(List<String> urls) {
+Widget _buildBonPlanImageCarousel(BuildContext context, List<String> urls) {
   if (urls.length == 1) {
-    return _buildBonPlanImage(urls.first);
+    return _buildBonPlanImage(context, urls.first);
   }
 
   return BonPlanCarousel(urls: urls);
@@ -348,13 +354,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.45),
+                  color: AdaptiveColors.surface(
+                    context,
+                    Colors.black,
+                  ).withValues(alpha: 0.45),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   _formatDuration(remaining),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.white),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -372,13 +381,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.45),
+                    color: AdaptiveColors.surface(
+                      context,
+                      Colors.black,
+                    ).withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     _isMuted ? Icons.volume_off : Icons.volume_up,
                     size: 16,
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                   ),
                 ),
               ),
@@ -391,7 +403,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
     if (_isLoading) {
       return _wrapWithConstraints(
         Container(
-          color: Colors.grey[300],
+          color: AdaptiveColors.surface(context, Colors.grey[300]),
           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         ),
       );
@@ -411,13 +423,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
           Center(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.play_circle_outline,
                 size: 40,
-                color: Colors.white,
+                color: AdaptiveColors.foreground(context, Colors.white),
               ),
             ),
           ),
@@ -429,7 +444,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
   Widget _buildFallback() {
     return _wrapWithConstraints(
       Container(
-        color: Colors.grey[300],
+        color: AdaptiveColors.surface(context, Colors.grey[300]),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -437,7 +452,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
               Icon(
                 Icons.play_circle_outline,
                 size: 40,
-                color: Colors.grey[700],
+                color: AdaptiveColors.foreground(context, Colors.grey[700]),
               ),
             ],
           ),
@@ -479,18 +494,21 @@ class _ExpandableDescriptionStatefulState
                 text: text.length > 100
                     ? '${text.substring(0, 100)}... '
                     : text,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                   height: 1.4,
                 ),
               ),
               if (text.length > 100)
-                const TextSpan(
+                TextSpan(
                   text: 'voir plus',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -499,9 +517,9 @@ class _ExpandableDescriptionStatefulState
         ),
         secondChild: Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Color(0xFF666666),
+            color: AdaptiveColors.foreground(context, Color(0xFF666666)),
             height: 1.4,
           ),
         ),
@@ -620,10 +638,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                 },
                 child: Text(
                   authorInfo.displayName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: Color(0xFF333333),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF333333),
+                    ),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -631,7 +652,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               ),
               Text(
                 '${authorInfo.accountType} • ${widget.timeAgo}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -678,10 +702,13 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           border: Border(
             bottom: BorderSide(
-              color: Colors.grey.withValues(alpha: 0.2),
+              color: AdaptiveColors.border(
+                context,
+                Colors.grey,
+              ).withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -707,7 +734,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                     Container(
                       decoration: BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Colors.grey[200]!),
+                          bottom: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey[200]!,
+                            ),
+                          ),
                         ),
                       ),
                       padding: EdgeInsets.only(bottom: 4),
@@ -716,7 +748,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                           Icon(
                             Icons.repeat_rounded,
                             size: 14,
-                            color: Colors.grey[600],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[600],
+                            ),
                           ),
                           const SizedBox(width: 6),
                           ReklamAvatar(
@@ -736,7 +771,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                     text: widget.reposter.displayName,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[800],
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[800],
+                                      ),
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -744,7 +782,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                                     text: ' a republié ce contenu',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey[600],
+                                      ),
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -772,9 +813,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   children: [
                     Text(
                       displayContent,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                         height: 1.4,
                       ),
                     ),
@@ -787,7 +831,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             _isExpanded ? '...moins' : '...plus',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -805,9 +852,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
                     displayContent,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Color(0xFF333333),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF333333),
+                      ),
                       height: 1.4,
                     ),
                   ),
@@ -817,7 +867,9 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(
+                    color: AdaptiveColors.border(context, Colors.grey[300]!),
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -840,7 +892,10 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                               '${widget.author.displayName} • ${widget.timeAgo}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[700],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[700],
+                                ),
                                 fontWeight: FontWeight.w600,
                               ),
                               maxLines: 1,
@@ -858,9 +913,12 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                           widget.content.length > 200
                               ? '${widget.content.substring(0, 200)}...'
                               : widget.content,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF555555),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF555555),
+                            ),
                             height: 1.4,
                           ),
                         ),
@@ -1042,12 +1100,18 @@ class _PostCardWidgetState extends State<_PostCardWidget> {
                             ),
                       if (remaining > 0)
                         Container(
-                          color: Colors.black54,
+                          color: AdaptiveColors.surface(
+                            context,
+                            Colors.black54,
+                          ),
                           alignment: Alignment.center,
                           child: Text(
                             '+$remaining',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1110,13 +1174,16 @@ class _CarouselMediaItemWidget extends StatelessWidget {
           // Smaller play icon overlay for carousel
           Container(
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: AdaptiveColors.surface(
+                context,
+                Colors.black,
+              ).withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.play_circle_outline,
               size: 24,
-              color: Colors.white,
+              color: AdaptiveColors.foreground(context, Colors.white),
             ),
           ),
         ],
@@ -1236,9 +1303,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           Padding(
             padding: EdgeInsets.symmetric(vertical: 60),
             child: Center(
-              child: const Text(
+              child: Text(
                 'Aucune annonce',
-                style: TextStyle(color: Color(0xFF666666)),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -1257,9 +1326,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           Padding(
             padding: EdgeInsets.symmetric(vertical: 60),
             child: Center(
-              child: const Text(
+              child: Text(
                 'Aucune annonce',
-                style: TextStyle(color: Color(0xFF666666)),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -1278,9 +1349,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           Padding(
             padding: EdgeInsets.symmetric(vertical: 60),
             child: Center(
-              child: const Text(
+              child: Text(
                 'Aucune annonce',
-                style: TextStyle(color: Color(0xFF666666)),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -1299,9 +1372,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           Padding(
             padding: EdgeInsets.symmetric(vertical: 60),
             child: Center(
-              child: const Text(
+              child: Text(
                 'Aucune annonce',
-                style: TextStyle(color: Color(0xFF666666)),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -1320,9 +1395,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           Padding(
             padding: EdgeInsets.symmetric(vertical: 60),
             child: Center(
-              child: const Text(
+              child: Text(
                 'Aucune annonce',
-                style: TextStyle(color: Color(0xFF666666)),
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -1357,12 +1434,16 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.white),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -1421,7 +1502,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (ctx, modalSetState) {
@@ -1580,21 +1661,34 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () =>
                           Navigator.pop(context, editController.text),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enregistrer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1630,7 +1724,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       content: Text(
                         'Erreur lors de la modification: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -1657,20 +1754,33 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       onPressed: () => Navigator.pop(context, false),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          Colors.redAccent,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Supprimer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1723,7 +1833,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       content: Text(
                         'Erreur lors de la suppression: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -1798,7 +1911,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                       style: TextStyle(
                                         fontSize: isReply ? 12 : 13,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF333333),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          const Color(0xFF333333),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -1806,7 +1922,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                       _buildTimeAgo(createdAt),
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey[400],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[400],
+                                        ),
                                       ),
                                     ),
                                     if (isOwner) ...[
@@ -1832,20 +1951,28 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                                   ],
                                                 ),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'delete',
                                                 child: Row(
                                                   children: [
                                                     Icon(
                                                       Icons.delete,
                                                       size: 18,
-                                                      color: Colors.redAccent,
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Colors.redAccent,
+                                                          ),
                                                     ),
                                                     SizedBox(width: 8),
                                                     Text(
                                                       'Supprimer',
                                                       style: TextStyle(
-                                                        color: Colors.redAccent,
+                                                        color:
+                                                            AdaptiveColors.foreground(
+                                                              context,
+                                                              Colors.redAccent,
+                                                            ),
                                                       ),
                                                     ),
                                                   ],
@@ -1863,7 +1990,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                         child: Icon(
                                           Icons.more_horiz,
                                           size: 18,
-                                          color: Colors.grey[400],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[400],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -1872,9 +2002,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 const SizedBox(height: 4),
                                 Text(
                                   body,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF4F4F4F),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF4F4F4F),
+                                    ),
                                     height: 1.4,
                                   ),
                                 ),
@@ -1894,8 +2027,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                                 : Icons.thumb_up_alt_outlined,
                                             size: 14,
                                             color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[400],
+                                                ? AdaptiveColors.foreground(
+                                                    context,
+                                                    const Color(0xFF3AAE5E),
+                                                  )
+                                                : AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.grey[400],
+                                                  ),
                                           ),
                                           const SizedBox(width: 3),
                                           Text(
@@ -1903,8 +2042,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: userReaction == 'like'
-                                                  ? const Color(0xFF3AAE5E)
-                                                  : Colors.grey[500],
+                                                  ? AdaptiveColors.foreground(
+                                                      context,
+                                                      const Color(0xFF3AAE5E),
+                                                    )
+                                                  : AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.grey[500],
+                                                    ),
                                             ),
                                           ),
                                         ],
@@ -1928,7 +2073,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2E9B5B),
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              const Color(0xFF2E9B5B),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -1964,8 +2112,8 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(ctx).size.height * 0.75,
                 ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Colors.white),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(24),
                     topRight: Radius.circular(24),
@@ -1978,7 +2126,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[300],
+                        ),
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
@@ -1989,29 +2140,38 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       ),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Commentaires',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2A2A2A),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF2A2A2A),
+                                ),
                               ),
                             ),
                           ),
                           GestureDetector(
                             onTap: () => Navigator.pop(ctx),
-                            child: const Icon(
+                            child: Icon(
                               Icons.close,
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                               size: 22,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Comment list
                     Expanded(
                       child: isLoading
@@ -2020,15 +2180,25 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                           ? Center(
                               child: Text(
                                 'Erreur: $error',
-                                style: const TextStyle(color: Colors.red),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.red,
+                                  ),
+                                ),
                               ),
                             )
                           : comments.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
                                 'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey,
+                                  ),
+                                ),
                               ),
                             )
                           : ListView.separated(
@@ -2043,7 +2213,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                   buildCommentItem(comments[i]),
                             ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Reply indicator
                     if (replyingToId != null)
                       Container(
@@ -2051,14 +2224,20 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                           horizontal: 16,
                           vertical: 6,
                         ),
-                        color: const Color(0xFFF5F5F5),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFF5F5F5),
+                        ),
                         child: Row(
                           children: [
                             Text(
                               'Répondre à $replyingToName',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                             const Spacer(),
@@ -2067,10 +2246,13 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 replyingToId = null;
                                 replyingToName = null;
                               }),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close,
                                 size: 16,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                           ],
@@ -2087,12 +2269,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 horizontal: 14,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F5),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFF5F5F5),
+                                ),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: TextField(
                                 controller: commentCtrl,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   isCollapsed: true,
                                   contentPadding: EdgeInsets.symmetric(
                                     vertical: 10,
@@ -2100,7 +2285,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                   border: InputBorder.none,
                                   hintText: 'Écrire un commentaire...',
                                   hintStyle: TextStyle(
-                                    color: Color(0xFF9E9E9E),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF9E9E9E),
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -2114,14 +2302,20 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             onTap: submitComment,
                             child: Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF3AAE5E),
+                              decoration: BoxDecoration(
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  Color(0xFF3AAE5E),
+                                ),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.send,
                                 size: 18,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -2316,7 +2510,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.grey[300],
+            color: AdaptiveColors.surface(context, Colors.grey[300]),
             image:
                 avatarUrl != null &&
                     avatarUrl.isNotEmpty &&
@@ -2336,7 +2530,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       : null),
           ),
           child: avatarUrl == null || avatarUrl.isEmpty
-              ? Icon(Icons.person, size: 16, color: Colors.grey[600])
+              ? Icon(
+                  Icons.person,
+                  size: 16,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                )
               : null,
         ),
         const SizedBox(width: 8),
@@ -2349,7 +2547,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
+                color: AdaptiveColors.foreground(context, Colors.grey[800]),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -2359,15 +2557,18 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 margin: const EdgeInsets.only(top: 2),
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3AAE5E),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
+                child: Text(
                   'PRO',
                   style: TextStyle(
                     fontSize: 7,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                   ),
                 ),
               ),
@@ -2427,14 +2628,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     final result = await showModalBottomSheet<String?>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, modalSetState) {
             return Container(
               height: MediaQuery.of(ctx).size.height * 0.85,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
@@ -2445,7 +2646,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: AdaptiveColors.surface(context, Colors.grey[300]),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -2454,13 +2655,16 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
                     child: Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             'Republier cette publication',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF333333),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF333333),
+                              ),
                             ),
                           ),
                         ),
@@ -2499,17 +2703,23 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                     children: [
                                       Text(
                                         userName,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 15,
-                                          color: Color(0xFF333333),
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Color(0xFF333333),
+                                          ),
                                         ),
                                       ),
                                       Text(
                                         'Public',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[500],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[500],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -2530,18 +2740,27 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 hintText:
                                     'Ajoutez un commentaire à votre republication...',
                                 hintStyle: TextStyle(
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                   fontSize: 14,
                                 ),
                                 border: InputBorder.none,
                                 counterStyle: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey[400],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[400],
+                                  ),
                                 ),
                               ),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: Color(0xFF333333),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF333333),
+                                ),
                                 height: 1.5,
                               ),
                               onChanged: (_) => modalSetState(() {}),
@@ -2552,7 +2771,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             Container(
                               margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                               decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey[300]!),
+                                border: Border.all(
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    Colors.grey[300]!,
+                                  ),
+                                ),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -2578,7 +2802,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                             '$originalAuthorName • $originalTimeAgo',
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: Colors.grey[600],
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Colors.grey[600],
+                                              ),
                                               fontWeight: FontWeight.w500,
                                             ),
                                             maxLines: 1,
@@ -2600,9 +2827,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                         originalContent.length > 200
                                             ? '${originalContent.substring(0, 200)}...'
                                             : originalContent,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 13,
-                                          color: Color(0xFF555555),
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Color(0xFF555555),
+                                          ),
                                           height: 1.4,
                                         ),
                                       ),
@@ -2623,10 +2853,17 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                             fit: BoxFit.cover,
                                             errorBuilder: (_, __, ___) =>
                                                 Container(
-                                                  color: Colors.grey[200],
+                                                  color: AdaptiveColors.surface(
+                                                    context,
+                                                    Colors.grey[200],
+                                                  ),
                                                   child: Icon(
                                                     Icons.image,
-                                                    color: Colors.grey[400],
+                                                    color:
+                                                        AdaptiveColors.foreground(
+                                                          context,
+                                                          Colors.grey[400],
+                                                        ),
                                                   ),
                                                 ),
                                           ),
@@ -2651,8 +2888,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       MediaQuery.of(ctx).padding.bottom + 10,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(top: BorderSide(color: Colors.grey[200]!)),
+                      color: AdaptiveColors.surface(context, Colors.white),
+                      border: Border(
+                        top: BorderSide(
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey[200]!,
+                          ),
+                        ),
+                      ),
                     ),
                     child: SizedBox(
                       width: double.infinity,
@@ -2681,35 +2925,50 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                     ScaffoldMessenger.of(ctx).showSnackBar(
                                       SnackBar(
                                         content: Text(e.toString()),
-                                        backgroundColor: Colors.redAccent,
+                                        backgroundColor: AdaptiveColors.surface(
+                                          context,
+                                          Colors.redAccent,
+                                        ),
                                       ),
                                     );
                                   }
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3AAE5E),
-                          disabledBackgroundColor: Colors.grey[300],
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ),
+                          disabledBackgroundColor: AdaptiveColors.surface(
+                            context,
+                            Colors.grey[300],
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
                           elevation: 0,
                         ),
                         child: isSubmitting
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 'Republier',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               ),
                       ),
@@ -2726,9 +2985,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     if (result == 'success') {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Publication republiée avec succès'),
-            backgroundColor: Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
             duration: Duration(seconds: 2),
           ),
         );
@@ -2758,7 +3017,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               Icon(
                 isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                 size: 18,
-                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                color: isLiked
+                    ? AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      )
+                    : AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               GestureDetector(
@@ -2767,7 +3031,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   data.likesCount.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    color: isLiked
+                        ? AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -2784,12 +3053,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               Icon(
                 Icons.chat_bubble_outline,
                 size: 17,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               Text(
                 data.commentsCount.toString(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
@@ -2801,13 +3073,23 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               onTap: () => _repostPost(entityId, originalPostData: postData),
               child: Row(
                 children: [
-                  Icon(Icons.repeat_rounded, size: 18, color: Colors.grey[500]),
+                  Icon(
+                    Icons.repeat_rounded,
+                    size: 18,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     data.repostsCount > 0
                         ? data.repostsCount.toString()
                         : 'Republier',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -2850,17 +3132,17 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   Color _statusColor(String? status) {
     switch (status?.toUpperCase()) {
       case 'PUBLISHED':
-        return const Color(0xFF4CAF50);
+        return AdaptiveColors.foreground(context, const Color(0xFF4CAF50));
       case 'PENDING_REVIEW':
-        return const Color(0xFFFF9800);
+        return AdaptiveColors.foreground(context, const Color(0xFFFF9800));
       case 'DRAFT':
-        return Colors.grey;
+        return AdaptiveColors.foreground(context, Colors.grey);
       case 'REJECTED':
-        return const Color(0xFFF44336);
+        return AdaptiveColors.foreground(context, const Color(0xFFF44336));
       case 'ARCHIVED':
-        return Colors.blueGrey;
+        return AdaptiveColors.foreground(context, Colors.blueGrey);
       default:
-        return Colors.grey;
+        return AdaptiveColors.foreground(context, Colors.grey);
     }
   }
 
@@ -2976,19 +3258,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           PostTag(
             title: category,
             icon: Icons.local_offer_outlined,
-            color: Colors.orange,
+            color: AdaptiveColors.foreground(context, Colors.orange),
           ),
         if (subCategory.isNotEmpty)
           PostTag(
             title: subCategory,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (type.isNotEmpty)
           PostTag(
             title: type,
             icon: Icons.check_circle_outline,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
       ];
 
@@ -3116,10 +3398,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 SnackBar(
                   content: Text(
                     favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -3134,9 +3421,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('Erreur lors de la mise à jour des favoris'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -3146,7 +3433,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -3162,7 +3449,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 children: [
                   // Image carousel at top
                   if (imageUrls.isNotEmpty)
-                    _buildBonPlanImageCarousel(imageUrls),
+                    _buildBonPlanImageCarousel(context, imageUrls),
 
                   // Title
                   Padding(
@@ -3174,10 +3461,13 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     ),
                     child: Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -3201,10 +3491,13 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 bp['prix_final'] == null
                             ? Text(
                                 '${bp['prix_avant_reduction']}€',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2E9B5B),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF2E9B5B),
+                                  ),
                                 ),
                               )
                             : (type == 'Infos pouvoir d\'achat'
@@ -3216,10 +3509,13 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                                   .isNotEmpty
                                           ? '${bp['prix_final']}€'
                                           : 'Gratuit',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2E9B5B),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Color(0xFF2E9B5B),
+                                        ),
                                       ),
                                     )),
                         if (bp['prix_final'] != null &&
@@ -3232,7 +3528,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             '${bp['prix_avant_reduction']}€',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                               decoration: TextDecoration.lineThrough,
                             ),
                           ),
@@ -3246,15 +3545,21 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF5722),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFFF5722),
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 '-${_calculateDiscount(bp['prix_avant_reduction'], bp['prix_final'])}%',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
@@ -3272,30 +3577,40 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2E9B5B,
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFF2E9B5B),
                                 ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: const Color(0xFF2E9B5B),
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    const Color(0xFF2E9B5B),
+                                  ),
                                   width: 1,
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.local_offer_outlined,
                                     size: 14,
-                                    color: Color(0xFF2E9B5B),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF2E9B5B),
+                                    ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Code promo: ${bp['promo_code']}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF2E9B5B),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF2E9B5B),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -3317,7 +3632,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                           Icon(
                             Icons.store_outlined,
                             size: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -3325,7 +3643,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                               '$locationType chez $merchantName',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -3336,14 +3657,20 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                           Icon(
                             Icons.access_time,
                             size: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             _buildTimeAgo(createdAt),
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                         ],
@@ -3382,8 +3709,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         icon: const Icon(Icons.visibility_outlined, size: 18),
                         label: const Text('VOIR LE BON PLAN'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF9800),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFF9800),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -3404,7 +3737,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AdaptiveColors.surface(
+                        context,
+                        Colors.white,
+                      ).withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -3420,12 +3756,20 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           )
                         : Icon(
                             favoris ? Icons.favorite : Icons.favorite_border,
-                            color: favoris ? Colors.red : Colors.grey[600],
+                            color: favoris
+                                ? AdaptiveColors.foreground(context, Colors.red)
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                             size: 20,
                           ),
                   ),
@@ -3437,7 +3781,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 right: 12,
                 child: _buildTypeTag(
                   'Bon Plan',
-                  const Color(0xFFFF9800),
+                  AdaptiveColors.surface(context, const Color(0xFFFF9800)),
                   Icons.local_offer,
                 ),
               ),
@@ -3452,16 +3796,31 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.grey[600]),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          ),
           const SizedBox(width: 4),
-          Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[700]),
+            ),
+          ),
         ],
       ),
     );
@@ -3742,14 +4101,17 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 PostTag(
                   title: workTime,
                   icon: Icons.access_time,
-                  color: Colors.grey,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
                 ),
             ],
             subtags: contractType.isNotEmpty
                 ? PostTag(
                     title: contractType,
                     icon: Icons.description_outlined,
-                    color: const Color(0xFF27A5FF),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF27A5FF),
+                    ),
                   )
                 : null,
             advantages: advantagesList,
@@ -3871,10 +4233,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 SnackBar(
                   content: Text(
                     favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -3888,7 +4255,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Erreur: $e'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -4348,7 +4715,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         : 'Retiré des favoris',
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -4360,9 +4730,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('Erreur lors de la mise à jour des favoris'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -4564,19 +4934,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           PostTag(
             title: categoryCode,
             icon: Icons.local_offer_outlined,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
         if (subCategoryCode != null && subCategoryCode.isNotEmpty)
           PostTag(
             title: subCategoryCode,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (formatType != null && formatType.isNotEmpty)
           PostTag(
             title: formatType,
             icon: Icons.videocam_outlined,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -4853,10 +5223,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 SnackBar(
                   content: Text(
                     favoris ? 'Ajouté aux favoris' : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -4895,7 +5270,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Erreur: $e'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -4941,13 +5316,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
 
   Color _categoryColor(String label) {
     final lower = label.toLowerCase();
-    if (lower.contains('urgent')) return Colors.redAccent;
-    if (lower.contains('emploi')) return const Color(0xFF3AAE5E);
-    if (lower.contains('stage')) return const Color(0xFF2196F3);
-    if (lower.contains('formation')) return const Color(0xFF9C27B0);
-    if (lower.contains('immobilier')) return const Color(0xFFFF5722);
-    if (lower.contains('service')) return const Color(0xFFFF9800);
-    return const Color(0xFF3AAE5E);
+    if (lower.contains('urgent'))
+      return AdaptiveColors.foreground(context, Colors.redAccent);
+    if (lower.contains('emploi'))
+      return AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
+    if (lower.contains('stage'))
+      return AdaptiveColors.foreground(context, const Color(0xFF2196F3));
+    if (lower.contains('formation'))
+      return AdaptiveColors.foreground(context, const Color(0xFF9C27B0));
+    if (lower.contains('immobilier'))
+      return AdaptiveColors.foreground(context, const Color(0xFFFF5722));
+    if (lower.contains('service'))
+      return AdaptiveColors.foreground(context, const Color(0xFFFF9800));
+    return AdaptiveColors.foreground(context, const Color(0xFF3AAE5E));
   }
 
   Future<void> _navigateToDemandeDetail(Map<String, dynamic> d) async {
@@ -5019,19 +5400,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         PostTag(
           title: categoryLabel,
           icon: Icons.label_outline,
-          color: Colors.grey,
+          color: AdaptiveColors.foreground(context, Colors.grey),
         ),
         if (urgent)
           PostTag(
             title: 'Urgent',
             icon: Icons.warning_amber_rounded,
-            color: Colors.red,
+            color: AdaptiveColors.foreground(context, Colors.red),
           ),
         if (nationwide)
           PostTag(
             title: 'Toute la France',
             icon: Icons.public,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -5040,7 +5421,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       final subTag = PostTag(
         title: subTagsCat,
         icon: Icons.label_outline,
-        color: Colors.orange,
+        color: AdaptiveColors.foreground(context, Colors.orange),
       );
 
       final currentUserId = _currentUserId;
@@ -5202,10 +5583,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     isFavoritedNotifier.value
                         ? 'Ajouté aux favoris'
                         : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -5219,7 +5605,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Erreur: ${e.toString()}'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -5413,7 +5799,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               content: Text(
                 response['message'] ?? 'Erreur lors de l\'envoi de l\'avis',
               ),
-              backgroundColor: Colors.red,
+              backgroundColor: AdaptiveColors.surface(context, Colors.red),
             ),
           );
         }
@@ -5424,7 +5810,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur de connexion: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -5458,7 +5844,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   ? 'Vous suivez maintenant cet utilisateur'
                   : 'Vous ne suivez plus cet utilisateur',
             ),
-            backgroundColor: const Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(
+              context,
+              const Color(0xFF3AAE5E),
+            ),
           ),
         );
       }
@@ -5466,7 +5855,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       if (mounted) {
         setState(() => _isLoadingFollow = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
+          ),
         );
       }
     }
@@ -5554,12 +5946,24 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+            child: Text(
+              'Annuler',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-            child: const Text('Bloquer', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AdaptiveColors.surface(context, Colors.orange),
+            ),
+            child: Text(
+              'Bloquer',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.white),
+              ),
+            ),
           ),
         ],
       ),
@@ -5571,7 +5975,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$displayName a été bloqué'),
-        backgroundColor: Colors.orange,
+        backgroundColor: AdaptiveColors.surface(context, Colors.orange),
       ),
     );
     Navigator.pop(context);
@@ -5592,28 +5996,41 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Annuler', style: TextStyle(color: Colors.grey[600])),
+            child: Text(
+              'Annuler',
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               // TODO: Implement report API call
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('Signalement envoyé'),
-                  backgroundColor: Color(0xFF3AAE5E),
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Color(0xFF3AAE5E),
+                  ),
                 ),
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                Colors.redAccent,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            child: const Text(
+            child: Text(
               'Signaler',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.white),
+              ),
             ),
           ),
         ],
@@ -5678,7 +6095,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     : () => Navigator.pop(dialogContext),
                 child: Text(
                   'Annuler',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ),
               ElevatedButton(
@@ -5704,9 +6123,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                           if (!mounted) return;
                           Navigator.pop(dialogContext);
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            SnackBar(
                               content: Text('Signalement envoye'),
-                              backgroundColor: Color(0xFF3AAE5E),
+                              backgroundColor: AdaptiveColors.surface(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
                             ),
                           );
                         } catch (e) {
@@ -5720,23 +6142,34 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         }
                       },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.redAccent,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: isSubmitting
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                         ),
                       )
-                    : const Text(
+                    : Text(
                         'Signaler',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
               ),
             ],
@@ -6200,18 +6633,21 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     final snapchatUrl = socialLinks['snapchat']?.toString();
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
       appBar: AppBar(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2E9B5B)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Profil',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -6221,7 +6657,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             ? null
             : [
                 PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, color: Colors.black),
+                  icon: Icon(
+                    Icons.more_vert,
+                    color: AdaptiveColors.foreground(context, Colors.black),
+                  ),
                   onSelected: (value) {
                     if (value == 'report') {
                       _showReportReasonDialog();
@@ -6230,32 +6669,52 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'block',
                       child: Row(
                         children: [
-                          Icon(Icons.block, color: Colors.orange, size: 20),
+                          Icon(
+                            Icons.block,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.orange,
+                            ),
+                            size: 20,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             'Bloquer cet utilisateur',
-                            style: TextStyle(color: Colors.orange),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.orange,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'report',
                       child: Row(
                         children: [
                           Icon(
                             Icons.report_outlined,
-                            color: Colors.red,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red,
+                            ),
                             size: 20,
                           ),
                           SizedBox(width: 8),
                           Text(
                             'Signaler le compte',
-                            style: TextStyle(color: Colors.red),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.red,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -6286,10 +6745,13 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                           bottom: 20,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AdaptiveColors.surface(context, Colors.white),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color(0xFF2E9B5B),
+                            color: AdaptiveColors.border(
+                              context,
+                              const Color(0xFF2E9B5B),
+                            ),
                             width: 2,
                           ),
                         ),
@@ -6297,10 +6759,13 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                           children: [
                             Text(
                               displayName.isNotEmpty ? displayName : '—',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF333333),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF333333),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -6308,9 +6773,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                               ville != null && ville.trim().isNotEmpty
                                   ? 'Ville : $ville'
                                   : 'Ville : —',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -6327,9 +6795,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                   (secteur != null && secteur.trim().isNotEmpty)
                                       ? secteur
                                       : '—',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.grey,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.grey,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -6338,9 +6809,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.star,
-                                  color: Color(0xFFFFD700),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFFFFD700),
+                                  ),
                                   size: 16,
                                 ),
                                 const SizedBox(width: 4),
@@ -6363,13 +6837,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF2E9B5B),
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      const Color(0xFF2E9B5B),
+                                    ),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     'Pro',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Colors.white,
+                                      ),
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -6383,8 +6863,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                   ),
                                   decoration: BoxDecoration(
                                     color: subscriptionStatus.isPremium
-                                        ? const Color(0xFFEF8A40)
-                                        : const Color(0xFF607D8B),
+                                        ? AdaptiveColors.surface(
+                                            context,
+                                            const Color(0xFFEF8A40),
+                                          )
+                                        : AdaptiveColors.surface(
+                                            context,
+                                            const Color(0xFF607D8B),
+                                          ),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Row(
@@ -6394,14 +6880,20 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                         subscriptionStatus.isPremium
                                             ? Icons.workspace_premium
                                             : Icons.person_outline,
-                                        color: Colors.white,
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.white,
+                                        ),
                                         size: 13,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
                                         subscriptionStatus.label,
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                        style: TextStyle(
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.white,
+                                          ),
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -6423,7 +6915,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Color(0xFF2E9B5B),
+                                color: AdaptiveColors.border(
+                                  context,
+                                  Color(0xFF2E9B5B),
+                                ),
                                 width: 2,
                               ),
                             ),
@@ -6446,8 +6941,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 width: 38,
                                 height: 38,
                                 decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF1877F2,
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFF1877F2),
                                   ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -6465,9 +6961,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                       );
                                     }
                                   },
-                                  icon: const Icon(
+                                  icon: Icon(
                                     FontAwesomeIcons.facebook,
-                                    color: Color(0xFF1877F2),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF1877F2),
+                                    ),
                                     size: 22,
                                   ),
                                   padding: EdgeInsets.zero,
@@ -6481,8 +6980,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 width: 38,
                                 height: 38,
                                 decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFFE1306C,
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFFE1306C),
                                   ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -6500,9 +7000,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                       );
                                     }
                                   },
-                                  icon: const Icon(
+                                  icon: Icon(
                                     FontAwesomeIcons.instagram,
-                                    color: Color(0xFFE1306C),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFFE1306C),
+                                    ),
                                     size: 22,
                                   ),
                                   padding: EdgeInsets.zero,
@@ -6516,8 +7019,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFFFF0000,
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFFFF0000),
                                   ).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -6535,9 +7039,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                       );
                                     }
                                   },
-                                  icon: const Icon(
+                                  icon: Icon(
                                     FontAwesomeIcons.youtube,
-                                    color: Color(0xFFFF0000),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFFFF0000),
+                                    ),
                                     size: 22,
                                   ),
                                   padding: EdgeInsets.zero,
@@ -6564,8 +7071,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                               ),
                               label: const Text('Message'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF3AAE5E),
-                                foregroundColor: Colors.white,
+                                backgroundColor: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFF3AAE5E),
+                                ),
+                                foregroundColor: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 12,
                                 ),
@@ -6589,7 +7102,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                         strokeWidth: 2,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
-                                              Color(0xFF3AAE5E),
+                                              AdaptiveColors.foreground(
+                                                context,
+                                                Color(0xFF3AAE5E),
+                                              ),
                                             ),
                                       ),
                                     )
@@ -6601,9 +7117,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                     ),
                               label: Text(_isFollowing ? 'Suivi' : 'Suivre'),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF3AAE5E),
-                                side: const BorderSide(
-                                  color: Color(0xFF3AAE5E),
+                                foregroundColor: AdaptiveColors.foreground(
+                                  context,
+                                  const Color(0xFF3AAE5E),
+                                ),
+                                side: BorderSide(
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    Color(0xFF3AAE5E),
+                                  ),
                                 ),
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 12,
@@ -6627,15 +7149,27 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                     padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                     height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF8A40).withValues(alpha: 0.15),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFEF8A40),
+                      ).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: TabBar(
                       controller: _tabController,
                       indicatorSize: TabBarIndicatorSize.tab,
-                      dividerColor: Colors.transparent,
-                      labelColor: Colors.white,
-                      unselectedLabelColor: const Color(0xFF666666),
+                      dividerColor: AdaptiveColors.border(
+                        context,
+                        Colors.transparent,
+                      ),
+                      labelColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.white,
+                      ),
+                      unselectedLabelColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF666666),
+                      ),
                       labelStyle: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -6646,7 +7180,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       ),
                       labelPadding: EdgeInsets.zero,
                       indicator: BoxDecoration(
-                        color: const Color(0xFFEF8A40),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFEF8A40),
+                        ),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       tabs: [
@@ -6756,7 +7293,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AdaptiveColors.surface(context, Colors.white),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
@@ -6845,7 +7382,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black.withValues(alpha: 0.5),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.black,
+                                    ).withValues(alpha: 0.5),
                                   ),
                                 ),
                               ),
@@ -6858,15 +7398,26 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                 ),
                                 child: Text(
                                   presentation!,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF666666),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF666666),
+                                    ),
                                     height: 1.5,
                                   ),
                                 ),
                               ),
                             ],
 
+                            AdditionalSocialLinks(
+                              links: socialLinks,
+                              profileId:
+                                  widget.userId ??
+                                  (profile is Map
+                                      ? profile['user_id']?.toString()
+                                      : null),
+                            ),
                             // Social Links Section
                             if (facebookUrl != null ||
                                 instagramUrl != null ||
@@ -6881,7 +7432,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                   18,
                                   0,
                                 ),
-                                child: Divider(color: Colors.grey[200]),
+                                child: Divider(
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    Colors.grey[200],
+                                  ),
+                                ),
                               ),
                               Padding(
                                 padding: const EdgeInsets.fromLTRB(
@@ -6895,7 +7451,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black.withValues(alpha: 0.5),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.black,
+                                    ).withValues(alpha: 0.5),
                                   ),
                                 ),
                               ),
@@ -6914,35 +7473,50 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                                         facebookUrl.isNotEmpty)
                                       _buildSocialIcon(
                                         Icons.facebook,
-                                        const Color(0xFF1877F2),
+                                        AdaptiveColors.surface(
+                                          context,
+                                          const Color(0xFF1877F2),
+                                        ),
                                         facebookUrl,
                                       ),
                                     if (instagramUrl != null &&
                                         instagramUrl.isNotEmpty)
                                       _buildSocialIcon(
                                         Icons.camera_alt,
-                                        const Color(0xFFE1306C),
+                                        AdaptiveColors.surface(
+                                          context,
+                                          const Color(0xFFE1306C),
+                                        ),
                                         instagramUrl,
                                       ),
                                     if (youtubeUrl != null &&
                                         youtubeUrl.isNotEmpty)
                                       _buildSocialIcon(
                                         Icons.play_circle_filled,
-                                        const Color(0xFFFF0000),
+                                        AdaptiveColors.surface(
+                                          context,
+                                          const Color(0xFFFF0000),
+                                        ),
                                         youtubeUrl,
                                       ),
                                     if (linkedinUrl != null &&
                                         linkedinUrl.isNotEmpty)
                                       _buildSocialIcon(
                                         Icons.business,
-                                        const Color(0xFF0A66C2),
+                                        AdaptiveColors.surface(
+                                          context,
+                                          const Color(0xFF0A66C2),
+                                        ),
                                         linkedinUrl,
                                       ),
                                     if (snapchatUrl != null &&
                                         snapchatUrl.isNotEmpty)
                                       _buildSocialIcon(
                                         Icons.screenshot,
-                                        const Color(0xFFFFFC00),
+                                        AdaptiveColors.surface(
+                                          context,
+                                          const Color(0xFFFFFC00),
+                                        ),
                                         snapchatUrl,
                                       ),
                                   ],
@@ -6958,7 +7532,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AdaptiveColors.surface(context, Colors.white),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -6979,7 +7553,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black.withValues(alpha: 0.5),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.black,
+                        ).withValues(alpha: 0.5),
                       ),
                     ),
                   ),
@@ -6995,16 +7572,28 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                               Icon(
                                 Icons.photo_library_outlined,
                                 color: _selectedMediaTab == 0
-                                    ? const Color(0xFFEF8A40)
-                                    : Colors.grey,
+                                    ? AdaptiveColors.foreground(
+                                        context,
+                                        const Color(0xFFEF8A40),
+                                      )
+                                    : AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey,
+                                      ),
                                 size: 24,
                               ),
                               const SizedBox(height: 4),
                               Container(
                                 height: 3,
                                 color: _selectedMediaTab == 0
-                                    ? const Color(0xFFEF8A40)
-                                    : Colors.transparent,
+                                    ? AdaptiveColors.surface(
+                                        context,
+                                        const Color(0xFFEF8A40),
+                                      )
+                                    : AdaptiveColors.surface(
+                                        context,
+                                        Colors.transparent,
+                                      ),
                               ),
                             ],
                           ),
@@ -7018,16 +7607,28 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                               Icon(
                                 Icons.videocam_outlined,
                                 color: _selectedMediaTab == 1
-                                    ? const Color(0xFFEF8A40)
-                                    : Colors.grey,
+                                    ? AdaptiveColors.foreground(
+                                        context,
+                                        const Color(0xFFEF8A40),
+                                      )
+                                    : AdaptiveColors.foreground(
+                                        context,
+                                        Colors.grey,
+                                      ),
                                 size: 24,
                               ),
                               const SizedBox(height: 4),
                               Container(
                                 height: 3,
                                 color: _selectedMediaTab == 1
-                                    ? const Color(0xFFEF8A40)
-                                    : Colors.transparent,
+                                    ? AdaptiveColors.surface(
+                                        context,
+                                        const Color(0xFFEF8A40),
+                                      )
+                                    : AdaptiveColors.surface(
+                                        context,
+                                        Colors.transparent,
+                                      ),
                               ),
                             ],
                           ),
@@ -7082,7 +7683,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   ) {
     if (images.isEmpty) {
       return Center(
-        child: Text('Aucune photo', style: TextStyle(color: Colors.grey[600])),
+        child: Text(
+          'Aucune photo',
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          ),
+        ),
       );
     }
     return GridView.builder(
@@ -7102,7 +7708,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return Container(
-                color: Colors.grey[300],
+                color: AdaptiveColors.surface(context, Colors.grey[300]),
                 child: const Icon(Icons.image_not_supported, size: 30),
               );
             },
@@ -7118,7 +7724,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
   ) {
     if (videos.isEmpty) {
       return Center(
-        child: Text('Aucune vidéo', style: TextStyle(color: Colors.grey[600])),
+        child: Text(
+          'Aucune vidéo',
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          ),
+        ),
       );
     }
     return GridView.builder(
@@ -7134,11 +7745,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
         return ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: Container(
-            color: Colors.grey[800],
-            child: const Center(
+            color: AdaptiveColors.surface(context, Colors.grey[800]),
+            child: Center(
               child: Icon(
                 Icons.play_circle_outline,
-                color: Colors.white,
+                color: AdaptiveColors.foreground(context, Colors.white),
                 size: 40,
               ),
             ),
@@ -7164,7 +7775,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Colors.black,
+                    ).withValues(alpha: 0.5),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -7202,7 +7816,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           if (_isLoadingAnnonces)
             const Center(child: CircularProgressIndicator())
           else if (_annoncesError != null)
-            Text(_annoncesError!, style: const TextStyle(color: Colors.red))
+            Text(
+              _annoncesError!,
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Colors.red),
+              ),
+            )
           else if (_selectedAnnonceFilter == 'Tout')
             Column(
               children: [
@@ -7221,9 +7840,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       Padding(
                         padding: EdgeInsets.symmetric(vertical: 60),
                         child: Center(
-                          child: const Text(
+                          child: Text(
                             'Aucune annonce',
-                            style: TextStyle(color: Color(0xFF666666)),
+                            style: TextStyle(
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF666666),
+                              ),
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -7269,7 +7893,12 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Column(
                 children: [
-                  Text(_postsError!, style: const TextStyle(color: Colors.red)),
+                  Text(
+                    _postsError!,
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.red),
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => _loadPosts(),
@@ -7286,7 +7915,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   _isViewingOwnProfile
                       ? "Vous n'avez pas encore publié de post."
                       : "Aucun post disponible pour l'instant.",
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
               ),
             )
@@ -7324,7 +7955,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   children: [
                     Text(
                       _reviewsError!,
-                      style: const TextStyle(color: Colors.red),
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(context, Colors.red),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     TextButton(
@@ -7350,12 +7983,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 ),
               )
             else
-              const Center(
+              Center(
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 60),
                   child: Text(
                     'Aucun avis pour le moment.',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.grey),
+                    ),
                   ),
                 ),
               ),
@@ -7366,18 +8001,21 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AdaptiveColors.surface(context, Colors.white),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Donner votre avis',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -7395,7 +8033,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                               index < _reviewRating
                                   ? Icons.star
                                   : Icons.star_border,
-                              color: Colors.amber,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.amber,
+                              ),
                               size: 28,
                             ),
                           ),
@@ -7410,22 +8051,41 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         hintText: 'Votre commentaire...',
                         hintStyle: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey[400],
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[400],
+                          ),
                         ),
                         filled: true,
-                        fillColor: Colors.grey[50],
+                        fillColor: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[50],
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey[300]!,
+                            ),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
+                          borderSide: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.grey[300]!,
+                            ),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFFF9800),
+                          borderSide: BorderSide(
+                            color: AdaptiveColors.border(
+                              context,
+                              Color(0xFFFF9800),
+                            ),
                           ),
                         ),
                         contentPadding: const EdgeInsets.all(12),
@@ -7437,19 +8097,25 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       child: ElevatedButton(
                         onPressed: _submitReview,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF9800),
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFF9800),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
+                        child: Text(
                           'Envoyer',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             fontFamily: 'Manjari',
                           ),
                         ),
@@ -7474,7 +8140,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -7494,16 +8160,25 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF616161),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF616161),
+                        ),
                         fontFamily: 'Manjari',
                       ),
                     ),
                     Text(
                       timeAgo,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[400],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -7511,8 +8186,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               Row(
                 children: List.generate(
                   rating,
-                  (index) =>
-                      const Icon(Icons.star, size: 16, color: Colors.amber),
+                  (index) => Icon(
+                    Icons.star,
+                    size: 16,
+                    color: AdaptiveColors.foreground(context, Colors.amber),
+                  ),
                 ),
               ),
             ],
@@ -7520,9 +8198,9 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           const SizedBox(height: 12),
           Text(
             reviewText,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: Color(0xFF4F4F4F),
+              color: AdaptiveColors.foreground(context, Color(0xFF4F4F4F)),
               height: 1.4,
               fontFamily: 'Manjari',
             ),
@@ -7540,10 +8218,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF2A8143) : Colors.white,
+          color: isSelected
+              ? AdaptiveColors.surface(context, const Color(0xFF2A8143))
+              : AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF2A8143) : Colors.grey[300]!,
+            color: isSelected
+                ? AdaptiveColors.border(context, const Color(0xFF2A8143))
+                : AdaptiveColors.border(context, Colors.grey[300]!),
           ),
         ),
         child: Text(
@@ -7551,8 +8233,11 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           style: TextStyle(
             fontSize: 12,
             color: isSelected
-                ? Colors.white
-                : Colors.black.withValues(alpha: 0.5),
+                ? AdaptiveColors.foreground(context, Colors.white)
+                : AdaptiveColors.foreground(
+                    context,
+                    Colors.black,
+                  ).withValues(alpha: 0.5),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
@@ -7577,7 +8262,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -7607,7 +8292,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black.withValues(alpha: 0.5),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.black,
+                        ).withValues(alpha: 0.5),
                       ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -7620,19 +8308,33 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                       ),
                       decoration: BoxDecoration(
                         color: userType == 'Pro'
-                            ? Colors.green.withValues(alpha: 0.15)
-                            : Colors.grey.withValues(alpha: 0.15),
+                            ? AdaptiveColors.surface(
+                                context,
+                                Colors.green,
+                              ).withValues(alpha: 0.15)
+                            : AdaptiveColors.surface(
+                                context,
+                                Colors.grey,
+                              ).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(
-                          color: userType == 'Pro' ? Colors.green : Colors.grey,
+                          color: userType == 'Pro'
+                              ? AdaptiveColors.border(context, Colors.green)
+                              : AdaptiveColors.border(context, Colors.grey),
                         ),
                       ),
                       child: Text(
                         userType,
                         style: TextStyle(
                           color: userType == 'Pro'
-                              ? Colors.green.withValues(alpha: 0.8)
-                              : Colors.grey.withValues(alpha: 0.8),
+                              ? AdaptiveColors.foreground(
+                                  context,
+                                  Colors.green,
+                                ).withValues(alpha: 0.8)
+                              : AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ).withValues(alpha: 0.8),
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -7642,12 +8344,24 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 ),
               ),
               Row(
-                children: const [
-                  Icon(Icons.favorite_border, size: 20, color: Colors.grey),
+                children: [
+                  Icon(
+                    Icons.favorite_border,
+                    size: 20,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                   SizedBox(width: 12),
-                  Icon(Icons.more_horiz, size: 20, color: Colors.grey),
+                  Icon(
+                    Icons.more_horiz,
+                    size: 20,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                   SizedBox(width: 12),
-                  Icon(Icons.close, size: 20, color: Colors.grey),
+                  Icon(
+                    Icons.close,
+                    size: 20,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ],
               ),
             ],
@@ -7655,16 +8369,21 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           const SizedBox(height: 14),
           RichText(
             text: TextSpan(
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: Color(0xFF666666),
+                color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                 height: 1.5,
               ),
               children: [
                 TextSpan(text: description),
-                const TextSpan(
+                TextSpan(
                   text: '...plus',
-                  style: TextStyle(color: Color(0xFF999999)),
+                  style: TextStyle(
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF999999),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -7692,13 +8411,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEF8A40),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFEF8A40),
+                        ),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         discount,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
@@ -7715,12 +8440,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 Icon(
                   Icons.local_offer_outlined,
                   size: 16,
-                  color: Colors.grey[500],
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   category,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ],
             ),
@@ -7732,20 +8460,29 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 Icon(
                   Icons.location_on_outlined,
                   size: 16,
-                  color: Colors.grey[500],
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: RichText(
                     text: TextSpan(
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
+                      ),
                       children: [
                         const TextSpan(text: 'En ligne disponible chez '),
                         TextSpan(
                           text: 'Amazon',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF333333),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF333333),
+                            ),
                           ),
                         ),
                       ],
@@ -7755,14 +8492,21 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 Container(
                   width: 1,
                   height: 14,
-                  color: Colors.grey[300],
+                  color: AdaptiveColors.surface(context, Colors.grey[300]),
                   margin: const EdgeInsets.symmetric(horizontal: 10),
                 ),
-                Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                Icon(
+                  Icons.access_time,
+                  size: 14,
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                ),
                 const SizedBox(width: 4),
                 Text(
                   time,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ],
             ),
@@ -7773,10 +8517,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
             children: [
               Text(
                 price,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFEF8A40),
+                  color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
                 ),
               ),
               if (oldPrice != null) ...[
@@ -7785,7 +8529,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                   oldPrice,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[400],
+                    color: AdaptiveColors.foreground(context, Colors.grey[400]),
                     decoration: TextDecoration.lineThrough,
                   ),
                 ),
@@ -7794,8 +8538,14 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               ElevatedButton.icon(
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEF8A40),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFEF8A40),
+                  ),
+                  foregroundColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -7824,12 +8574,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 Icon(
                   Icons.thumb_up_outlined,
                   size: 18,
-                  color: Colors.grey[500],
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '$likes',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
                 const SizedBox(width: 16),
               ],
@@ -7842,7 +8595,10 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 const SizedBox(width: 4),
                 Text(
                   '$comments',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
                 const SizedBox(width: 16),
               ],
@@ -7862,7 +8618,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
@@ -7878,11 +8634,17 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           RichText(
             text: TextSpan(
               text: 'Publier ',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 12,
+                color: AdaptiveColors.foreground(context, Colors.grey),
+              ),
               children: [
                 TextSpan(
                   text: time,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
+                  ),
                 ),
               ],
             ),
@@ -7904,12 +8666,15 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore ...voir plus',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF666666),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF666666),
+                        ),
                         height: 1.4,
                       ),
                       maxLines: 5,
@@ -7923,9 +8688,19 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.thumb_up_outlined, size: 18, color: Colors.grey),
+              Icon(
+                Icons.thumb_up_outlined,
+                size: 18,
+                color: AdaptiveColors.foreground(context, Colors.grey),
+              ),
               SizedBox(width: 4),
-              Text('125', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                '125',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
+              ),
               SizedBox(width: 16),
               Image.asset(
                 'assets/images/profil_pro/ann-card-comm.png',
@@ -7933,7 +8708,13 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 height: 18,
               ),
               SizedBox(width: 4),
-              Text('10', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                '10',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
+              ),
               SizedBox(width: 16),
               Image.asset(
                 'assets/images/profil_pro/ann-card-share.png',
@@ -7941,7 +8722,13 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
                 height: 18,
               ),
               SizedBox(width: 4),
-              Text('2', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                '2',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
+              ),
             ],
           ),
         ],
@@ -7962,12 +8749,12 @@ class _ReviewConfirmationDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
       child: Container(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
@@ -7989,13 +8776,16 @@ class _ReviewConfirmationDialog extends StatelessWidget {
                   child: Container(
                     width: 32,
                     height: 32,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Color(0xFFFFF0E0),
+                      color: AdaptiveColors.surface(context, Color(0xFFFFF0E0)),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.close,
-                      color: Color(0xFFFF8600),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFFFF8600),
+                      ),
                       size: 18,
                     ),
                   ),
@@ -8005,13 +8795,13 @@ class _ReviewConfirmationDialog extends StatelessWidget {
             const SizedBox(height: 8),
             const _AvisSuccessBadge(),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Cet avis sera définitif après publication et ne pourra être modifié ou supprimé.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF4A4A4A),
+                color: AdaptiveColors.foreground(context, Color(0xFF4A4A4A)),
                 height: 1.4,
               ),
             ),
@@ -8022,19 +8812,22 @@ class _ReviewConfirmationDialog extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: onConfirm,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF8600),
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFFF8600),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
+                    child: Text(
                       'Continuer',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: AdaptiveColors.foreground(context, Colors.white),
                         fontFamily: 'Manjari',
                       ),
                     ),
@@ -8049,8 +8842,16 @@ class _ReviewConfirmationDialog extends StatelessWidget {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      side: BorderSide(color: Colors.grey[300]!),
-                      foregroundColor: const Color(0xFF6F6F6F),
+                      side: BorderSide(
+                        color: AdaptiveColors.border(
+                          context,
+                          Colors.grey[300]!,
+                        ),
+                      ),
+                      foregroundColor: AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF6F6F6F),
+                      ),
                     ),
                     child: const Text(
                       'Annuler',
@@ -8087,8 +8888,11 @@ class _AvisSuccessBadge extends StatelessWidget {
             height: 120,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFF9EF), Color(0xFFFFE0B2)],
+              gradient: LinearGradient(
+                colors: [
+                  AdaptiveColors.surface(context, Color(0xFFFFF9EF)),
+                  AdaptiveColors.surface(context, Color(0xFFFFE0B2)),
+                ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -8102,9 +8906,12 @@ class _AvisSuccessBadge extends StatelessWidget {
             width: 96,
             height: 96,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AdaptiveColors.surface(context, Colors.white),
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFFFC477), width: 2),
+              border: Border.all(
+                color: AdaptiveColors.border(context, const Color(0xFFFFC477)),
+                width: 2,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),

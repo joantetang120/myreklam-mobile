@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -136,38 +137,38 @@ class _AddStoryScreenState extends State<AddStoryScreen>
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new,
             size: 18,
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Ajouter une storie',
           style: TextStyle(
-            color: Color(0xFF616161),
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
       ),
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // _buildStoryModes(),
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Text(
               'Récents',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF616161),
+                color: AdaptiveColors.foreground(context, Color(0xFF616161)),
               ),
             ),
           ),
@@ -241,10 +242,12 @@ class _AddStoryScreenState extends State<AddStoryScreen>
     }
 
     if (_assets.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           'Aucune photo trouvée dans votre galerie.',
-          style: TextStyle(color: Color(0xFF9E9E9E)),
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Color(0xFF9E9E9E)),
+          ),
         ),
       );
     }
@@ -272,18 +275,26 @@ class _AddStoryScreenState extends State<AddStoryScreen>
       onTap: _openCamera,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
+          border: Border.all(
+            color: AdaptiveColors.border(context, const Color(0xFFE0E0E0)),
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.photo_camera_outlined, color: Color(0xFF2E9B5B)),
+          children: [
+            Icon(
+              Icons.photo_camera_outlined,
+              color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
+            ),
             SizedBox(height: 6),
             Text(
               'Caméra',
-              style: TextStyle(color: Color(0xFF616161), fontSize: 12),
+              style: TextStyle(
+                color: AdaptiveColors.foreground(context, Color(0xFF616161)),
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -307,22 +318,22 @@ class _AddStoryScreenState extends State<AddStoryScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: AdaptiveColors.surface(context, Colors.grey[300]),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.photo_camera_outlined,
-                  color: Color(0xFF2E9B5B),
+                  color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
                 ),
                 title: const Text('Prendre une photo'),
                 onTap: () => Navigator.pop(ctx, 'photo'),
               ),
               ListTile(
-                leading: const Icon(
+                leading: Icon(
                   Icons.videocam_outlined,
-                  color: Color(0xFF2E9B5B),
+                  color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
                 ),
                 title: const Text('Enregistrer une vidéo'),
                 onTap: () => Navigator.pop(ctx, 'video'),
@@ -377,16 +388,19 @@ class _PermissionPrompt extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.photo_library_outlined,
             size: 48,
-            color: Color(0xFF2E9B5B),
+            color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Autorisez l\'accès à votre galerie pour ajouter une storie.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 15, color: Color(0xFF616161)),
+            style: TextStyle(
+              fontSize: 15,
+              color: AdaptiveColors.foreground(context, Color(0xFF616161)),
+            ),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
@@ -395,7 +409,10 @@ class _PermissionPrompt extends StatelessWidget {
               await onRetry();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E9B5B),
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF2E9B5B),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
@@ -442,11 +459,15 @@ class _GalleryAssetTile extends StatelessWidget {
               ),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Container(color: Colors.grey[200]);
+                  return Container(
+                    color: AdaptiveColors.surface(context, Colors.grey[200]),
+                  );
                 }
                 final data = snapshot.data;
                 if (data == null) {
-                  return Container(color: Colors.grey[300]);
+                  return Container(
+                    color: AdaptiveColors.surface(context, Colors.grey[300]),
+                  );
                 }
                 return Image.memory(data, fit: BoxFit.cover);
               },
@@ -461,23 +482,30 @@ class _GalleryAssetTile extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.55),
+                    color: AdaptiveColors.surface(
+                      context,
+                      Colors.black,
+                    ).withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     _formatDuration(asset.videoDuration),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ),
-              const Positioned(
+              Positioned(
                 left: 6,
                 bottom: 6,
-                child: Icon(Icons.videocam, size: 16, color: Colors.white),
+                child: Icon(
+                  Icons.videocam,
+                  size: 16,
+                  color: AdaptiveColors.foreground(context, Colors.white),
+                ),
               ),
             ],
           ],

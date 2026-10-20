@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/utils/user_session.dart';
 
@@ -22,16 +23,22 @@ class GuestAccess {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.lock_outline, color: Color(0xFF2E9B5B)),
+            Icon(
+              Icons.lock_outline,
+              color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
+            ),
             SizedBox(width: 10),
             Expanded(child: Text('Connexion requise')),
           ],
         ),
         content: Text(
           'Connectez-vous pour acceder a $featureName.',
-          style: const TextStyle(fontSize: 14, color: Color(0xFF616161)),
+          style: TextStyle(
+            fontSize: 14,
+            color: AdaptiveColors.foreground(context, Color(0xFF616161)),
+          ),
         ),
         actions: [
           TextButton(
@@ -40,8 +47,11 @@ class GuestAccess {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E9B5B),
-              foregroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(
+                context,
+                const Color(0xFF2E9B5B),
+              ),
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
             ),
             onPressed: () {
               Navigator.pop(ctx);

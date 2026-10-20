@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
@@ -33,7 +34,7 @@ class ChatItemWidget extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -58,9 +59,15 @@ class ChatItemWidget extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF3AAE5E),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
+                        border: Border.all(
+                          color: AdaptiveColors.border(context, Colors.white),
+                          width: 1.5,
+                        ),
                       ),
                       constraints: const BoxConstraints(
                         minWidth: 20,
@@ -68,8 +75,11 @@ class ChatItemWidget extends StatelessWidget {
                       ),
                       child: Text(
                         unreadCount > 99 ? '99+' : unreadCount.toString(),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -100,8 +110,14 @@ class ChatItemWidget extends StatelessWidget {
                                       ? FontWeight.normal
                                       : FontWeight.bold,
                                   color: isRead
-                                      ? const Color(0xFF616161)
-                                      : Colors.black,
+                                      ? AdaptiveColors.foreground(
+                                          context,
+                                          const Color(0xFF616161),
+                                        )
+                                      : AdaptiveColors.foreground(
+                                          context,
+                                          Colors.black,
+                                        ),
                                 ),
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,
@@ -115,15 +131,24 @@ class ChatItemWidget extends StatelessWidget {
                                 ),
                                 decoration: BoxDecoration(
                                   color: isPro
-                                      ? const Color(0xFF2E9B5B)
-                                      : const Color(0xFF3AAE5E),
+                                      ? AdaptiveColors.surface(
+                                          context,
+                                          const Color(0xFF2E9B5B),
+                                        )
+                                      : AdaptiveColors.surface(
+                                          context,
+                                          const Color(0xFF3AAE5E),
+                                        ),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
                                   userType!,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 10,
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -138,8 +163,14 @@ class ChatItemWidget extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11,
                           color: isRead
-                              ? const Color(0xFF9E9E9E)
-                              : const Color(0xFF3AAE5E),
+                              ? AdaptiveColors.foreground(
+                                  context,
+                                  const Color(0xFF9E9E9E),
+                                )
+                              : AdaptiveColors.foreground(
+                                  context,
+                                  const Color(0xFF3AAE5E),
+                                ),
                           fontWeight: isRead
                               ? FontWeight.normal
                               : FontWeight.w500,
@@ -156,8 +187,14 @@ class ChatItemWidget extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 14,
                             color: isRead
-                                ? const Color(0xFF9E9E9E)
-                                : Colors.black,
+                                ? AdaptiveColors.foreground(
+                                    context,
+                                    const Color(0xFF9E9E9E),
+                                  )
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    Colors.black,
+                                  ),
                             fontWeight: isRead
                                 ? FontWeight.normal
                                 : FontWeight.w400,
@@ -170,24 +207,28 @@ class ChatItemWidget extends StatelessWidget {
                         SizedBox.shrink()
                       else if (isFromMe && isRead)
                         // Double coche seulement pour nos messages lus
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(left: 4),
                           child: Icon(
                             Icons.done_all,
                             size: 16,
-                            color: Color(
-                              0xFF2196F3,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF2196F3),
                             ), // Blue color for read messages
                           ),
                         )
                       else if (isFromMe && !isRead)
                         // Simple coche seulement pour nos messages non lus
-                        const Padding(
+                        Padding(
                           padding: EdgeInsets.only(left: 4),
                           child: Icon(
                             Icons.done_all,
                             size: 16,
-                            color: Colors.grey, // Blue color for read messages
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey,
+                            ), // Blue color for read messages
                           ),
                         )
                       else if (!isFromMe && !isRead)
@@ -195,9 +236,12 @@ class ChatItemWidget extends StatelessWidget {
                           width: 8,
                           height: 8,
                           margin: const EdgeInsets.only(left: 8),
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Color(0xFF3AAE5E),
+                            color: AdaptiveColors.surface(
+                              context,
+                              Color(0xFF3AAE5E),
+                            ),
                           ),
                         )
                       else

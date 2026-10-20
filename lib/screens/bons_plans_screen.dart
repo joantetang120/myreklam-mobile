@@ -1,5 +1,6 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
-// Bouton partager masqué — import 'package:myreklam/services/share_service.dart';
+import 'package:myreklam/services/share_service.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/screens/profile_particulier/particulier_public_view_screen.dart';
 import 'package:myreklam/screens/profile_pro/pro_publicView_Screen.dart';
@@ -242,19 +243,19 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
           PostTag(
             title: category,
             icon: Icons.local_offer_outlined,
-            color: Colors.orange,
+            color: AdaptiveColors.foreground(context, Colors.orange),
           ),
         if (subCategory.isNotEmpty)
           PostTag(
             title: subCategory,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (type.isNotEmpty)
           PostTag(
             title: type,
             icon: Icons.check_circle_outline,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
       ];
 
@@ -328,12 +329,15 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
         height: 32,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: const Color(0xFFE6F7EF),
-          border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
+          color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
+          border: Border.all(
+            color: AdaptiveColors.border(context, const Color(0xFF2A8143)),
+            width: 1.5,
+          ),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.notifications,
-          color: Color(0xFF2A8143),
+          color: AdaptiveColors.foreground(context, Color(0xFF2A8143)),
           size: 18,
         ),
       ),
@@ -343,7 +347,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
   @override
   Widget build(BuildContext context) {
     return AppLayout(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF9F9FB)),
       onTabTapped: (index) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
@@ -358,7 +362,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
             floating: false,
             pinned: true,
             snap: false,
-            backgroundColor: const Color(0xFF2A8143),
+            backgroundColor: AdaptiveColors.surface(
+              context,
+              const Color(0xFF2A8143),
+            ),
             automaticallyImplyLeading: false,
             elevation: 0,
             shape: const RoundedRectangleBorder(
@@ -377,11 +384,14 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
 
                 return FlexibleSpaceBar(
                   background: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Color(0xFF2A8143), Color(0xFF3AAE5E)],
+                        colors: [
+                          AdaptiveColors.surface(context, Color(0xFF2A8143)),
+                          AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
+                        ],
                       ),
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(30),
@@ -407,17 +417,23 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                               ),
                               child: GestureDetector(
                                 onTap: () => Navigator.pop(context),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.arrow_back,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   size: 22,
                                 ),
                               ),
                             ),
-                            const Text(
+                            Text(
                               'Bons plans',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 fontSize: 22,
                                 fontFamily: 'Manjari',
                                 fontWeight: FontWeight.bold,
@@ -439,9 +455,12 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                               children: [
                                 GestureDetector(
                                   onTap: () => Navigator.pop(context),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.arrow_back,
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     size: 22,
                                   ),
                                 ),
@@ -477,9 +496,17 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF9E6),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFFF9E6),
+                    ),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFFFD700)),
+                    border: Border.all(
+                      color: AdaptiveColors.border(
+                        context,
+                        const Color(0xFFFFD700),
+                      ),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -492,7 +519,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                       Text(
                         UserSession().mys.toString(),
                         style: TextStyle(
-                          color: Color(0xFFFFD700),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFFFFD700),
+                          ),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -527,21 +557,34 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                       height: 44,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AdaptiveColors.surface(context, Colors.white),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.grey.withValues(alpha: 0.2),
+                          color: AdaptiveColors.border(
+                            context,
+                            Colors.grey,
+                          ).withValues(alpha: 0.2),
                         ),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.search, color: Colors.grey[400], size: 20),
+                          Icon(
+                            Icons.search,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[400],
+                            ),
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Rechercher un bon plan, une marque...',
                               style: TextStyle(
-                                color: Colors.grey[400],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[400],
+                                ),
                                 fontSize: 13,
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -556,13 +599,23 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                     height: 44,
                     width: 44,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AdaptiveColors.surface(context, Colors.white),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.grey.withValues(alpha: 0.2),
+                        color: AdaptiveColors.border(
+                          context,
+                          Colors.grey,
+                        ).withValues(alpha: 0.2),
                       ),
                     ),
-                    child: Icon(Icons.tune, color: Colors.grey[500], size: 20),
+                    child: Icon(
+                      Icons.tune,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[500],
+                      ),
+                      size: 20,
+                    ),
                   ),
                 ],
               ),
@@ -583,7 +636,12 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    Text(_error!, style: const TextStyle(color: Colors.red)),
+                    Text(
+                      _error!,
+                      style: TextStyle(
+                        color: AdaptiveColors.foreground(context, Colors.red),
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     ElevatedButton(
                       onPressed: _loadData,
@@ -594,13 +652,15 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
               ),
             )
           else if (_items.isEmpty)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(40),
                 child: Center(
                   child: Text(
                     'Aucun bon plan disponible pour le moment.',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.grey),
+                    ),
                   ),
                 ),
               ),
@@ -725,10 +785,15 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                     isFavoritedNotifier.value
                         ? 'Ajouté aux favoris'
                         : 'Retiré des favoris',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(context, Colors.white),
+                    ),
                   ),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.green,
+                  ),
                 ),
               );
             }
@@ -742,9 +807,9 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Text('Erreur lors de la mise à jour des favoris'),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AdaptiveColors.surface(context, Colors.red),
                 ),
               );
             }
@@ -754,7 +819,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AdaptiveColors.surface(context, Colors.white),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -782,10 +847,13 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                     ),
                     child: Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -808,10 +876,13 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                         bp['original_price'] != null && bp['price'] == null
                             ? Text(
                                 '${bp['original_price']}€',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2E9B5B),
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Color(0xFF2E9B5B),
+                                  ),
                                 ),
                               )
                             : (type == 'Infos pouvoir d\'achat'
@@ -821,10 +892,13 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                               bp['price'].toString().isNotEmpty
                                           ? '${bp['price']}€'
                                           : 'Gratuit',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2E9B5B),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Color(0xFF2E9B5B),
+                                        ),
                                       ),
                                     )),
                         if (bp['price'] != null &&
@@ -835,7 +909,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                             '${bp['original_price']}€',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                               decoration: TextDecoration.lineThrough,
                             ),
                           ),
@@ -849,15 +926,21 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF5722),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFFF5722),
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 '-${_calculateDiscount(bp['original_price'], bp['price'])}%',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
@@ -875,30 +958,40 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFF2E9B5B,
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFF2E9B5B),
                                 ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: const Color(0xFF2E9B5B),
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    const Color(0xFF2E9B5B),
+                                  ),
                                   width: 1,
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.local_offer_outlined,
                                     size: 14,
-                                    color: Color(0xFF2E9B5B),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF2E9B5B),
+                                    ),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Code promo: ${bp['promo_code']}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
-                                      color: Color(0xFF2E9B5B),
+                                      color: AdaptiveColors.foreground(
+                                        context,
+                                        Color(0xFF2E9B5B),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -920,7 +1013,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                           Icon(
                             Icons.store_outlined,
                             size: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -928,7 +1024,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                               '$locationType chez $merchantName',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -939,14 +1038,20 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                           Icon(
                             Icons.access_time,
                             size: 14,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             _buildTimeAgo(createdAt),
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                         ],
@@ -985,8 +1090,14 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                         icon: const Icon(Icons.visibility_outlined, size: 18),
                         label: const Text('VOIR LE BON PLAN'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF9800),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFF9800),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -1007,7 +1118,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: AdaptiveColors.surface(
+                        context,
+                        Colors.white,
+                      ).withValues(alpha: 0.9),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -1023,7 +1137,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           )
                         : Icon(
@@ -1031,8 +1148,11 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                 ? Icons.favorite
                                 : Icons.favorite_border,
                             color: isFavoritedNotifier.value
-                                ? Colors.red
-                                : Colors.grey[600],
+                                ? AdaptiveColors.foreground(context, Colors.red)
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                             size: 20,
                           ),
                   ),
@@ -1052,7 +1172,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.white,
+                        ).withValues(alpha: 0.9),
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
@@ -1062,9 +1185,12 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                           ),
                         ],
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.report_outlined,
-                        color: Colors.redAccent,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.redAccent,
+                        ),
                         size: 20,
                       ),
                     ),
@@ -1076,7 +1202,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                 right: 12,
                 child: _buildTypeTag(
                   'Bon Plan',
-                  const Color(0xFFFF9800),
+                  AdaptiveColors.surface(context, const Color(0xFFFF9800)),
                   Icons.local_offer,
                 ),
               ),
@@ -1105,7 +1231,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
         if (loadingProgress == null) return child;
         return Container(
           height: 220,
-          color: Colors.grey[100],
+          color: AdaptiveColors.surface(context, Colors.grey[100]),
           child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         );
       },
@@ -1113,11 +1239,11 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
         debugPrint('Image load error: $error');
         return Container(
           height: 220,
-          color: Colors.grey[200],
-          child: const Center(
+          color: AdaptiveColors.surface(context, Colors.grey[200]),
+          child: Center(
             child: Icon(
               Icons.image_not_supported,
-              color: Colors.grey,
+              color: AdaptiveColors.foreground(context, Colors.grey),
               size: 40,
             ),
           ),
@@ -1150,12 +1276,16 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.white),
+          ),
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AdaptiveColors.foreground(context, Colors.white),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -1328,7 +1458,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AdaptiveColors.surface(context, Colors.transparent),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (ctx, modalSetState) {
@@ -1487,21 +1617,34 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () =>
                           Navigator.pop(context, editController.text),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3AAE5E),
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFF3AAE5E),
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Enregistrer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1534,7 +1677,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                       content: Text(
                         'Erreur lors de la modification: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -1561,20 +1707,33 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                       onPressed: () => Navigator.pop(context, false),
                       child: Text(
                         'Annuler',
-                        style: TextStyle(color: Colors.grey[600]),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: AdaptiveColors.surface(
+                          context,
+                          Colors.redAccent,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Supprimer',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1624,7 +1783,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                       content: Text(
                         'Erreur lors de la suppression: ${e.toString()}',
                       ),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.redAccent,
+                      ),
                     ),
                   );
                 }
@@ -1702,7 +1864,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                       style: TextStyle(
                                         fontSize: isReply ? 12 : 13,
                                         fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF333333),
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          const Color(0xFF333333),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -1710,7 +1875,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                       _buildTimeAgo(createdAt),
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey[400],
+                                        color: AdaptiveColors.foreground(
+                                          context,
+                                          Colors.grey[400],
+                                        ),
                                       ),
                                     ),
                                     if (isOwner) ...[
@@ -1736,20 +1904,28 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                                   ],
                                                 ),
                                               ),
-                                              const PopupMenuItem(
+                                              PopupMenuItem(
                                                 value: 'delete',
                                                 child: Row(
                                                   children: [
                                                     Icon(
                                                       Icons.delete,
                                                       size: 18,
-                                                      color: Colors.redAccent,
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Colors.redAccent,
+                                                          ),
                                                     ),
                                                     SizedBox(width: 8),
                                                     Text(
                                                       'Supprimer',
                                                       style: TextStyle(
-                                                        color: Colors.redAccent,
+                                                        color:
+                                                            AdaptiveColors.foreground(
+                                                              context,
+                                                              Colors.redAccent,
+                                                            ),
                                                       ),
                                                     ),
                                                   ],
@@ -1767,7 +1943,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                         child: Icon(
                                           Icons.more_horiz,
                                           size: 18,
-                                          color: Colors.grey[400],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[400],
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -1776,9 +1955,12 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   body,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF4F4F4F),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF4F4F4F),
+                                    ),
                                     height: 1.4,
                                   ),
                                 ),
@@ -1798,8 +1980,14 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                                 : Icons.thumb_up_alt_outlined,
                                             size: 14,
                                             color: userReaction == 'like'
-                                                ? const Color(0xFF3AAE5E)
-                                                : Colors.grey[400],
+                                                ? AdaptiveColors.foreground(
+                                                    context,
+                                                    const Color(0xFF3AAE5E),
+                                                  )
+                                                : AdaptiveColors.foreground(
+                                                    context,
+                                                    Colors.grey[400],
+                                                  ),
                                           ),
                                           const SizedBox(width: 3),
                                           Text(
@@ -1807,8 +1995,14 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: userReaction == 'like'
-                                                  ? const Color(0xFF3AAE5E)
-                                                  : Colors.grey[500],
+                                                  ? AdaptiveColors.foreground(
+                                                      context,
+                                                      const Color(0xFF3AAE5E),
+                                                    )
+                                                  : AdaptiveColors.foreground(
+                                                      context,
+                                                      Colors.grey[500],
+                                                    ),
                                             ),
                                           ),
                                         ],
@@ -1832,7 +2026,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2E9B5B),
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              const Color(0xFF2E9B5B),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -1870,8 +2067,8 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(ctx).size.height * 0.75,
                 ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: AdaptiveColors.surface(context, Colors.white),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(24),
                     topRight: Radius.circular(24),
@@ -1884,7 +2081,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[300],
+                        ),
                         borderRadius: BorderRadius.circular(50),
                       ),
                     ),
@@ -1895,29 +2095,38 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Commentaires',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Color(0xFF2A2A2A),
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Color(0xFF2A2A2A),
+                                ),
                               ),
                             ),
                           ),
                           GestureDetector(
                             onTap: () => Navigator.pop(ctx),
-                            child: const Icon(
+                            child: Icon(
                               Icons.close,
-                              color: Colors.grey,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey,
+                              ),
                               size: 22,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Comment list
                     Expanded(
                       child: isLoading
@@ -1926,15 +2135,25 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                           ? Center(
                               child: Text(
                                 'Erreur: $error',
-                                style: const TextStyle(color: Colors.red),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.red,
+                                  ),
+                                ),
                               ),
                             )
                           : comments.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
                                 'Aucun commentaire pour le moment.\nSoyez le premier à commenter !',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey,
+                                  ),
+                                ),
                               ),
                             )
                           : ListView.separated(
@@ -1949,7 +2168,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                   buildCommentItem(comments[i]),
                             ),
                     ),
-                    Divider(height: 1, color: Colors.grey[200]),
+                    Divider(
+                      height: 1,
+                      color: AdaptiveColors.border(context, Colors.grey[200]),
+                    ),
                     // Reply indicator
                     if (replyingToId != null)
                       Container(
@@ -1957,14 +2179,20 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                           horizontal: 16,
                           vertical: 6,
                         ),
-                        color: const Color(0xFFF5F5F5),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFF5F5F5),
+                        ),
                         child: Row(
                           children: [
                             Text(
                               'Répondre à $replyingToName',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                             const Spacer(),
@@ -1973,10 +2201,13 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                 replyingToId = null;
                                 replyingToName = null;
                               }),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.close,
                                 size: 16,
-                                color: Colors.grey,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey,
+                                ),
                               ),
                             ),
                           ],
@@ -1993,12 +2224,15 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                 horizontal: 14,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5F5),
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  const Color(0xFFF5F5F5),
+                                ),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: TextField(
                                 controller: commentCtrl,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   isCollapsed: true,
                                   contentPadding: EdgeInsets.symmetric(
                                     vertical: 10,
@@ -2006,7 +2240,10 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                                   border: InputBorder.none,
                                   hintText: 'Écrire un commentaire...',
                                   hintStyle: TextStyle(
-                                    color: Color(0xFF9E9E9E),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF9E9E9E),
+                                    ),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -2020,14 +2257,20 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                             onTap: submitComment,
                             child: Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF3AAE5E),
+                              decoration: BoxDecoration(
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  Color(0xFF3AAE5E),
+                                ),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.send,
                                 size: 18,
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -2065,7 +2308,12 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
               Icon(
                 isLiked ? Icons.thumb_up_alt : Icons.thumb_up_alt_outlined,
                 size: 18,
-                color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[500],
+                color: isLiked
+                    ? AdaptiveColors.foreground(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      )
+                    : AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               GestureDetector(
@@ -2074,7 +2322,12 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                   data.likesCount.toString(),
                   style: TextStyle(
                     fontSize: 12,
-                    color: isLiked ? const Color(0xFF3AAE5E) : Colors.grey[600],
+                    color: isLiked
+                        ? AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          )
+                        : AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: isLiked ? FontWeight.w600 : FontWeight.normal,
                   ),
                 ),
@@ -2091,17 +2344,24 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
               Icon(
                 Icons.chat_bubble_outline,
                 size: 17,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               Text(
                 data.commentsCount.toString(),
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
             ],
           ),
         ),
-        // Bouton partager masqué
+        IconButton(
+          tooltip: 'Partager',
+          icon: const Icon(Icons.share_outlined, size: 20),
+          onPressed: () => ShareService.shareEntity(apiSlug, entityId),
+        ),
         // For bon plans: show author avatar and name on the left
         if (isBonPlan && authorData != null) ...[
           const Spacer(),
@@ -2159,7 +2419,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.grey[300],
+            color: AdaptiveColors.surface(context, Colors.grey[300]),
             image:
                 avatarUrl != null &&
                     avatarUrl.isNotEmpty &&
@@ -2179,7 +2439,11 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                       : null),
           ),
           child: avatarUrl == null || avatarUrl.isEmpty
-              ? Icon(Icons.person, size: 16, color: Colors.grey[600])
+              ? Icon(
+                  Icons.person,
+                  size: 16,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                )
               : null,
         ),
         const SizedBox(width: 8),
@@ -2192,7 +2456,7 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
+                color: AdaptiveColors.foreground(context, Colors.grey[800]),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -2202,15 +2466,18 @@ class _BonsPlansScreenState extends State<BonsPlansScreen> {
                 margin: const EdgeInsets.only(top: 2),
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF3AAE5E),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF3AAE5E),
+                  ),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
+                child: Text(
                   'PRO',
                   style: TextStyle(
                     fontSize: 7,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AdaptiveColors.foreground(context, Colors.white),
                   ),
                 ),
               ),
@@ -2258,18 +2525,21 @@ class _ExpandableDescriptionStatefulState
                 text: text.length > 100
                     ? '${text.substring(0, 100)}... '
                     : text,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF666666),
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
                   height: 1.4,
                 ),
               ),
               if (text.length > 100)
-                const TextSpan(
+                TextSpan(
                   text: 'voir plus',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF3AAE5E),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF3AAE5E),
+                    ),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -2278,9 +2548,9 @@ class _ExpandableDescriptionStatefulState
         ),
         secondChild: Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Color(0xFF666666),
+            color: AdaptiveColors.foreground(context, Color(0xFF666666)),
             height: 1.4,
           ),
         ),

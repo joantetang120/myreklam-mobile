@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
 class JobAnnouncementCard extends StatelessWidget {
@@ -40,7 +41,7 @@ class JobAnnouncementCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -48,7 +49,12 @@ class JobAnnouncementCard extends StatelessWidget {
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.1),
+        ),
       ),
       child: Stack(
         children: [
@@ -65,9 +71,15 @@ class JobAnnouncementCard extends StatelessWidget {
                       height: 48,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFFE6F7EF),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFE6F7EF),
+                        ),
                         border: Border.all(
-                          color: const Color(0xFF3AAE5E).withValues(alpha: 0.2),
+                          color: AdaptiveColors.border(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ).withValues(alpha: 0.2),
                         ),
                         image: companyLogo.isNotEmpty
                             ? DecorationImage(
@@ -79,9 +91,12 @@ class JobAnnouncementCard extends StatelessWidget {
                             : null,
                       ),
                       child: companyLogo.isEmpty
-                          ? const Icon(
+                          ? Icon(
                               Icons.business_rounded,
-                              color: Color(0xFF1B8D4B),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF1B8D4B),
+                              ),
                               size: 24,
                             )
                           : null,
@@ -99,10 +114,13 @@ class JobAnnouncementCard extends StatelessWidget {
                                 onTap: onAvatarTap,
                                 child: Text(
                                   companyName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF616161),
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Color(0xFF616161),
+                                    ),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -118,9 +136,12 @@ class JobAnnouncementCard extends StatelessWidget {
                                 ),
                                 padding: EdgeInsets.zero,
                                 onPressed: onReport,
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.report_outlined,
-                                  color: Colors.redAccent,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.redAccent,
+                                  ),
                                   size: 18,
                                 ),
                               ),
@@ -134,7 +155,10 @@ class JobAnnouncementCard extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: AdaptiveColors.surface(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
@@ -152,7 +176,10 @@ class JobAnnouncementCard extends StatelessWidget {
                                         height: 16,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          color: Colors.grey[600],
+                                          color: AdaptiveColors.foreground(
+                                            context,
+                                            Colors.grey[600],
+                                          ),
                                         ),
                                       )
                                     : Icon(
@@ -160,8 +187,14 @@ class JobAnnouncementCard extends StatelessWidget {
                                             ? Icons.favorite
                                             : Icons.favorite_border,
                                         color: isFavorited
-                                            ? Colors.red
-                                            : Colors.grey[600],
+                                            ? AdaptiveColors.foreground(
+                                                context,
+                                                Colors.red,
+                                              )
+                                            : AdaptiveColors.foreground(
+                                                context,
+                                                Colors.grey[600],
+                                              ),
                                         size: 18,
                                       ),
                               ),
@@ -175,19 +208,26 @@ class JobAnnouncementCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE6F7EF),
+                            color: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFE6F7EF),
+                            ),
                             borderRadius: BorderRadius.circular(5),
                             border: Border.all(
-                              color: const Color(
-                                0xFF3AAE5E,
+                              color: AdaptiveColors.border(
+                                context,
+                                const Color(0xFF3AAE5E),
                               ).withValues(alpha: 0.2),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             'Pro',
                             style: TextStyle(
                               fontSize: 10,
-                              color: Color(0xFF3AAE5E),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF3AAE5E),
+                              ),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -206,25 +246,37 @@ class JobAnnouncementCard extends StatelessWidget {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3AAE5E).withValues(alpha: 0.12),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFF3AAE5E),
+                    ).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: const Color(0xFF3AAE5E).withValues(alpha: 0.35),
+                      color: AdaptiveColors.border(
+                        context,
+                        const Color(0xFF3AAE5E),
+                      ).withValues(alpha: 0.35),
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.work_outline,
                         size: 14,
-                        color: Color(0xFF3AAE5E),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF3AAE5E),
+                        ),
                       ),
                       SizedBox(width: 5),
                       Text(
                         'Offre d\'emploi',
                         style: TextStyle(
-                          color: Color(0xFF3AAE5E),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF3AAE5E),
+                          ),
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
@@ -237,10 +289,10 @@ class JobAnnouncementCard extends StatelessWidget {
               // Job Title
               Text(
                 jobTitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF757575),
+                  color: AdaptiveColors.foreground(context, Color(0xFF757575)),
                 ),
               ),
               const SizedBox(height: 15),
@@ -250,7 +302,9 @@ class JobAnnouncementCard extends StatelessWidget {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: tags.map((tag) => _buildDetailTag(tag)).toList(),
+                children: tags
+                    .map((tag) => _buildDetailTag(context, tag))
+                    .toList(),
               ),
               const SizedBox(height: 15),
               const Divider(height: 1),
@@ -258,9 +312,9 @@ class JobAnnouncementCard extends StatelessWidget {
               // Description
               Text(
                 description,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: Color(0xFF616161),
+                  color: AdaptiveColors.foreground(context, Color(0xFF616161)),
                   height: 1.5,
                 ),
               ),
@@ -269,12 +323,15 @@ class JobAnnouncementCard extends StatelessWidget {
               const SizedBox(height: 15),
               // Avantages (only show if not null and not empty)
               if (advantages?.isNotEmpty == true) ...[
-                const Text(
+                Text(
                   'Avantages',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF616161),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF616161),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -282,7 +339,7 @@ class JobAnnouncementCard extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 8,
                   children: advantages!
-                      .map((adv) => _buildAdvantageTag(adv))
+                      .map((adv) => _buildAdvantageTag(context, adv))
                       .toList(),
                 ),
                 const SizedBox(height: 15),
@@ -297,8 +354,14 @@ class JobAnnouncementCard extends StatelessWidget {
                   icon: const Icon(Icons.work_outline, size: 18),
                   label: const Text("Voir l'offre d'emploi"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9800),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFF9800),
+                    ),
+                    foregroundColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 12,
@@ -325,13 +388,19 @@ class JobAnnouncementCard extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.access_time,
-                      color: Colors.grey.withValues(alpha: 0.7),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey,
+                      ).withValues(alpha: 0.7),
                       size: 14,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       timeAgo,
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AdaptiveColors.foreground(context, Colors.grey),
+                      ),
                     ),
                   ],
                 ),
@@ -344,17 +413,25 @@ class JobAnnouncementCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailTag(JobDetailTag tag) {
+  Widget _buildDetailTag(BuildContext context, JobDetailTag tag) {
     final isSpecial = tag.isSpecial;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: isSpecial ? const Color(0xFFE6F7EF) : const Color(0xFFF5F5F5),
+        color: isSpecial
+            ? AdaptiveColors.surface(context, const Color(0xFFE6F7EF))
+            : AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isSpecial
-              ? const Color(0xFF3AAE5E).withValues(alpha: 0.5)
-              : Colors.grey.withValues(alpha: 0.2),
+              ? AdaptiveColors.border(
+                  context,
+                  const Color(0xFF3AAE5E),
+                ).withValues(alpha: 0.5)
+              : AdaptiveColors.border(
+                  context,
+                  Colors.grey,
+                ).withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -363,14 +440,18 @@ class JobAnnouncementCard extends StatelessWidget {
           Icon(
             tag.icon,
             size: 16,
-            color: isSpecial ? const Color(0xFF3AAE5E) : Colors.grey,
+            color: isSpecial
+                ? AdaptiveColors.foreground(context, const Color(0xFF3AAE5E))
+                : AdaptiveColors.foreground(context, Colors.grey),
           ),
           const SizedBox(width: 6),
           Text(
             tag.text,
             style: TextStyle(
               fontSize: 12,
-              color: isSpecial ? const Color(0xFF3AAE5E) : Colors.grey,
+              color: isSpecial
+                  ? AdaptiveColors.foreground(context, const Color(0xFF3AAE5E))
+                  : AdaptiveColors.foreground(context, Colors.grey),
               fontWeight: isSpecial ? FontWeight.bold : FontWeight.w500,
             ),
           ),
@@ -379,21 +460,24 @@ class JobAnnouncementCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAdvantageTag(String text) {
+  Widget _buildAdvantageTag(BuildContext context, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFE6F7EF),
+        color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF3AAE5E).withValues(alpha: 0.5),
+          color: AdaptiveColors.border(
+            context,
+            const Color(0xFF3AAE5E),
+          ).withValues(alpha: 0.5),
         ),
       ),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
-          color: Color(0xFF3AAE5E),
+          color: AdaptiveColors.foreground(context, Color(0xFF3AAE5E)),
           fontWeight: FontWeight.bold,
         ),
       ),

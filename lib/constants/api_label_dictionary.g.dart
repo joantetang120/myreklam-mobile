@@ -104,7 +104,8 @@ const Map<String, String> kApiLabelDictionary = {
   'DegreeProgram': 'Formation diplomante',
   'CertificationProgram': 'Formation certifiante',
   'OtherTraining': 'Autre formation',
-  'RegionalCouncilLocalAuthorities': 'Conseil régional - Collectivités territoriales',
+  'RegionalCouncilLocalAuthorities':
+      'Conseil régional - Collectivités territoriales',
   'Agefiph': 'AGEFIPH',
   'CompetenceOperatorOPCO': 'Opérateur de compétences (OPCO)',
   'PoleEmploi': 'Pôle Emploi',
@@ -345,15 +346,18 @@ const Map<String, String> kApiLabelDictionary = {
   'SeminarOutings': 'Séminaire / Sorties',
   'TradeShowForumExhibition': 'Salon / Forum / Exposition',
   'EntrepreneurialNetworking': 'Réseautage entrepreneurial',
-  'ConcertsShowsTheaterCinemaArts': 'Concerts / Spectacles / Théâtre / Arts et Cinéma',
+  'ConcertsShowsTheaterCinemaArts':
+      'Concerts / Spectacles / Théâtre / Arts et Cinéma',
   'EveningParties': 'Soirées / Fêtes',
   'ArtExhibitions': 'Expositions d\'art',
   'SportsEvents': 'Événements Sportifs',
   'AutoMotoBoatPlane': 'Auto / Moto / Bateau / Avion',
-  'TourismHikingGourmetWalk': 'Tourisme / Visite / Randonnée / Marche Gourmande',
+  'TourismHikingGourmetWalk':
+      'Tourisme / Visite / Randonnée / Marche Gourmande',
   'EsportsGamingEvents': 'Événements e-sport / Gaming',
   'WorkshopsInternshipsCourses': 'Ateliers / Stage / Cours',
-  'ConferencesProfessionalTraining': 'Conférences et formations professionnelles',
+  'ConferencesProfessionalTraining':
+      'Conférences et formations professionnelles',
   'SolidarityEvents': 'Manifestations solidaires',
   'ChildrenMuseums': 'Enfants / Musées',
   'WorkshopsShowsForChildren': 'Ateliers et spectacles pour enfants',
@@ -365,7 +369,8 @@ const Map<String, String> kApiLabelDictionary = {
   'CulinaryFestivals': 'Festivals culinaires',
   'CookingWorkshops': 'Ateliers cuisine',
   'MeditationYogaWellnessRetreats': 'Méditation, yoga, retraites bien-être',
-  'ConferencesWorkshopsPersonalDevelopment': 'Conférences et ateliers sur le développement personnel',
+  'ConferencesWorkshopsPersonalDevelopment':
+      'Conférences et ateliers sur le développement personnel',
   'AlternativeHealingTherapies': 'Soins et thérapies alternatives',
   'Hackathons': 'Hackathons',
   'TechConferencesStartups': 'Conférences tech & start-up',
@@ -397,7 +402,8 @@ const Map<String, String> kApiLabelDictionary = {
   'EconomyPoliticalScience': 'Économie & Sciences Politiques',
   'WebMobileDevelopment': 'Développement Web & Mobile',
   'Cybersecurity': 'Cybersécurité',
-  'ArtificialIntelligenceDataScience': 'Intelligence Artificielle & Data Science',
+  'ArtificialIntelligenceDataScience':
+      'Intelligence Artificielle & Data Science',
   'CloudComputing': 'Informatique en nuage',
   'NetworksInfrastructure': 'Réseaux & Infrastructure',
   'UXUIDesign': 'UX/UI Design',
@@ -773,7 +779,8 @@ const Map<String, String> kApiLabelDictionary = {
   'ResponsableAnimationSalleSport': 'Responsable Animation Salle de Sport',
   'adjointDirection': 'Adjoint de direction',
   'CadreDirectionDirigeant': 'Cadre de Direction / Dirigeant',
-  'ChefAgenceEntrepriseEquipeCentre': 'Chef d\'Agence / Entreprise / Équipe / Centre',
+  'ChefAgenceEntrepriseEquipeCentre':
+      'Chef d\'Agence / Entreprise / Équipe / Centre',
   'delegueGeneral': 'Délégué général',
   'franchise': 'Franchisé',
   'GeneralManagerManagingDirector': 'Directeur Général',
@@ -781,7 +788,8 @@ const Map<String, String> kApiLabelDictionary = {
   'Responsable': 'Responsable',
   'Adjoint': 'Adjoint',
   'animateurDemonstrateur': 'Animateur-démonstrateur',
-  'AreaManagerCountryManagerDistrictManager': 'Responsable de Zone / Pays / District',
+  'AreaManagerCountryManagerDistrictManager':
+      'Responsable de Zone / Pays / District',
   'AssistantChefRayonMerchandising': 'Assistant Chef de Rayon / Merchandising',
   'ChefCaisseRayonSecteurVentes': 'Chef de Caisse / Rayon / Secteur Ventes',
   'commercant': 'Commerçant',
@@ -798,11 +806,13 @@ const Map<String, String> kApiLabelDictionary = {
   'Vendeur': 'Vendeur',
   'VisuelMerchandiserScenographe': 'Merchandiser Visuel / Scénographe',
   'AdjointSecurity': 'Adjoint Sécurité',
-  'AgentCirculationSurveillanceVoiePublique': 'Agent de Circulation / Surveillance Voie Publique',
+  'AgentCirculationSurveillanceVoiePublique':
+      'Agent de Circulation / Surveillance Voie Publique',
   'Armurier': 'Armurier',
   'AssistantDouane': 'Assistant Douane',
   'ASVP': 'ASVP',
-  'BrigadierCapitaineCommandantCommissaireOfficier': 'Brigadier / Capitaine / Commandant / Commissaire / Officier',
+  'BrigadierCapitaineCommandantCommissaireOfficier':
+      'Brigadier / Capitaine / Commandant / Commissaire / Officier',
   'CavalierEntrainementProfessionnel': 'Cavalier d\'Entraînement Professionnel',
   'ChefServicePoliceMunicipale': 'Chef de Service Police Municipale',
   'Militaire': 'Militaire',
@@ -810,14 +820,16 @@ const Map<String, String> kApiLabelDictionary = {
   'DeclarantDouane': 'Déclarant Douane',
   'DemineurTechnicienPyrotechnie': 'Démineur / Technicien Pyrotechnie',
   'DirecteurPoliceMunicipale': 'Directeur Police Municipale',
-  'DouanierResponsableDouaneGestionnaireDouane': 'Douanier / Responsable Douane / Gestionnaire Douane',
+  'DouanierResponsableDouaneGestionnaireDouane':
+      'Douanier / Responsable Douane / Gestionnaire Douane',
   'GardienPaix': 'Gardien de la Paix',
   'GendarmeAdjoint': 'Gendarme Adjoint',
   'JockeyLadDriverLadJockey': 'Jockey / Lad Driver / Lad Jockey',
   'Missilier': 'Missilier',
   'PiloteChasseDrone': 'Pilote de Chasse / Drone',
   'Policier': 'Policier',
-  'AdjointAssistantAttachéPresseEditionEditorialPresse': 'Adjoint / Assistant / Attaché Presse / Édition / Editorial / Presse',
+  'AdjointAssistantAttachéPresseEditionEditorialPresse':
+      'Adjoint / Assistant / Attaché Presse / Édition / Editorial / Presse',
   'AttachePresse': 'Attaché de Presse',
   'Auteur': 'Auteur',
   'ChargéEdition': 'Chargé d\'Édition',
@@ -839,11 +851,14 @@ const Map<String, String> kApiLabelDictionary = {
   'Relieur': 'Relieur',
   'Reporter': 'Reporter',
   'Reprographe': 'Reprographe',
-  'ResponsableEditionEditorialPrePresse': 'Responsable Édition / Editorial / Pré-Presse',
+  'ResponsableEditionEditorialPrePresse':
+      'Responsable Édition / Editorial / Pré-Presse',
   'Rotativiste': 'Rotativiste',
-  'TechnicienImpressionNumeriqueImprimerie': 'Technicien Impression Numérique / Imprimerie',
+  'TechnicienImpressionNumeriqueImprimerie':
+      'Technicien Impression Numérique / Imprimerie',
   'AgentControleQualiteElectronique': 'Agent Contrôle Qualité Électronique',
-  'ChargeAffairesElectroniqueRobotiqueElectromecanique': 'Chargé d\'Affaires Électronique / Robotique / Électromécanique',
+  'ChargeAffairesElectroniqueRobotiqueElectromecanique':
+      'Chargé d\'Affaires Électronique / Robotique / Électromécanique',
   'ChefProduitElectronique': 'Chef de Produit Électronique',
   'ChefProjet': 'Chef de Projet',
   'DessinateurProjeteurElectronique': 'Dessinateur Projeteur Électronique',
@@ -904,7 +919,8 @@ const Map<String, String> kApiLabelDictionary = {
   'ChargeAdministration': 'Chargé d\'Administration',
   'ChargeAffaires': 'Chargé d\'Affaires',
   'ChargeAffairesFerroviaire': 'Chargé d\'Affaires Ferroviaire',
-  'ChargeEtudesFinancieresReporting': 'Chargé d\'Études Financières et Reporting',
+  'ChargeEtudesFinancieresReporting':
+      'Chargé d\'Études Financières et Reporting',
   'ChargeEtudesMissionProjet': 'Chargé d\'Études Mission Projet',
   'ChargeFormation': 'Chargé de Formation',
   'ChargeMission': 'Chargé de Mission',
@@ -930,10 +946,12 @@ const Map<String, String> kApiLabelDictionary = {
   'concierge': 'Concierge',
   'ConfigurationManager': 'Gestionnaire de Configuration',
   'condominiumManager': 'Gestionnaire de copropriété',
-  'ConducteurEnginForestierInstallationIncinerationBalayeuse': 'Conducteur d\'Engin Forestier/Installation d\'Incinération/Balayage',
+  'ConducteurEnginForestierInstallationIncinerationBalayeuse':
+      'Conducteur d\'Engin Forestier/Installation d\'Incinération/Balayage',
   'ConducteurTrain': 'Conducteur de Train',
   'ConseillerConsultantEnvironnement': 'Conseiller/Consultant Environnement',
-  'ConseillerFinancierTechniqueFinances': 'Conseiller Financier/Technique Finances',
+  'ConseillerFinancierTechniqueFinances':
+      'Conseiller Financier/Technique Finances',
   'ConseillerPrincipalEducation': 'Conseiller Principal d\'Éducation',
   'ConsolideurFinancier': 'Consolideur Financier',
   'ConstructionManager': 'Responsable Construction',
@@ -975,7 +993,8 @@ const Map<String, String> kApiLabelDictionary = {
   'Expert': 'Expert',
   'ExpertFinancier': 'Expert Financier',
   'facilityManager': 'Facility manager',
-  'FinanceBusinessPartnerFinanceManager': 'Partenaire Financier / Responsable Financier',
+  'FinanceBusinessPartnerFinanceManager':
+      'Partenaire Financier / Responsable Financier',
   'Fiscaliste': 'Fiscaliste',
   'FlashDesigner': 'Designer Flash',
   'fontainier': 'Fontainier',
@@ -1021,7 +1040,8 @@ const Map<String, String> kApiLabelDictionary = {
   'iconographer': 'Iconographe',
   'illustrator': 'Illustrateur',
   'implantologist': 'Implantologue',
-  'IndustrialAnalysisLaboratoryManager': 'Responsable de Laboratoire d\'Analyses Industrielles',
+  'IndustrialAnalysisLaboratoryManager':
+      'Responsable de Laboratoire d\'Analyses Industrielles',
   'industrialButcher': 'Boucher industriel',
   'industrialEngineer': 'Ingénieur industriel',
   'industrialManager': 'Manager industriel',
@@ -1265,7 +1285,8 @@ const Map<String, String> kApiLabelDictionary = {
   'riverPilot': 'Pilote fluvial',
   'bridgeOperator': 'Pontier',
   'pontooner': 'Pontonnier',
-  'maritimeTransportOperationsManager': 'Responsable d\'exploitation transport maritime',
+  'maritimeTransportOperationsManager':
+      'Responsable d\'exploitation transport maritime',
   'shipManager': 'Ship manager',
   'skipper': 'Skipper',
   'aquacultureTechnician': 'Technicien aquacole',
@@ -1370,10 +1391,12 @@ const Map<String, String> kApiLabelDictionary = {
   'Secretariat': 'Secrétariat',
   'Sport': 'Sport',
   'Web': 'Web',
-  'AgricultureAgriFoodEnvironment': 'Agriculture, Agroalimentaire, Environnement',
+  'AgricultureAgriFoodEnvironment':
+      'Agriculture, Agroalimentaire, Environnement',
   'ArtAppliedArtsCrafts': 'Arts, Arts appliqués, Artisanat',
   'CommerceSalesMarketing': 'Commerce, Vente, Marketing',
-  'CommunicationInformationJournalism': 'Communication, Information, Journalisme',
+  'CommunicationInformationJournalism':
+      'Communication, Information, Journalisme',
   'AccountingManagementFinanceAudit': 'Comptabilité, Gestion, Finance, Audit',
   'ConstructionBuildingPublicWorks': 'Construction, Bâtiment, Travaux publics',
   'PersonalDevelopmentCoaching': 'Développement personnel, Coaching',
@@ -1386,13 +1409,17 @@ const Map<String, String> kApiLabelDictionary = {
   'TransportLogisticsSecurity': 'Transport, Logistique, Sécurité',
   'RegulatoryTraining': 'Formation réglementaire',
   'EnergyRenewablesNuclear': 'Énergie, Renouvelables, Nucléaire',
-  'PrecisionMechanicsAerospaceRailway': 'Mécanique de précision, Aéronautique, Ferroviaire',
-  'PublicServiceLocalAuthorities': 'Service public, Collectivités territoriales',
+  'PrecisionMechanicsAerospaceRailway':
+      'Mécanique de précision, Aéronautique, Ferroviaire',
+  'PublicServiceLocalAuthorities':
+      'Service public, Collectivités territoriales',
   'VideoGamesAnimationMultimedia': 'Jeux vidéo, Animation, Multimédia',
   'ScienceResearchQuality': 'Sciences, Recherche, Qualité',
   'ForeignLanguages': 'Langues étrangères',
-  'NeuroscienceLearningInnovativePedagogy': 'Neurosciences, Apprentissage, Pédagogie innovante',
-  'TransversalEntrepreneurshipSoftSkills': 'Transversal, Entrepreneuriat, Soft Skills',
+  'NeuroscienceLearningInnovativePedagogy':
+      'Neurosciences, Apprentissage, Pédagogie innovante',
+  'TransversalEntrepreneurshipSoftSkills':
+      'Transversal, Entrepreneuriat, Soft Skills',
   'SpecificStatuses': 'Statuts spécifiques',
   'OrganicFarming': 'Agriculture biologique',
   'MarketGardeningBreedingViticulture': 'Maraîchage, élevage, viticulture',
@@ -1525,8 +1552,10 @@ const Map<String, String> kApiLabelDictionary = {
   'AppliedCognitiveScience': 'Science cognitive appliquée à la formation',
   'SoftSkills': 'Compétences comportementales',
   'DigitalTransformationSMEs': 'Transformation numérique PME',
-  'EntrepreneurshipBusinessCreation': 'Entrepreneuriat et création d\'entreprise',
-  'ProfessionalReintegrationSupport': 'Accompagnement à la réinsertion professionnelle',
+  'EntrepreneurshipBusinessCreation':
+      'Entrepreneuriat et création d\'entreprise',
+  'ProfessionalReintegrationSupport':
+      'Accompagnement à la réinsertion professionnelle',
   'DisabilityAccessibilityTraining': 'Formation handicap et accessibilité',
   'EuropeanMobilityErasmusPro': 'Mobilité européenne Erasmus Pro',
   'SelfEmployedTraining': 'Formation auto-entrepreneurs',
@@ -1782,7 +1811,8 @@ const Map<String, String> kApiLabelDictionary = {
   'TopsolidDrafter': 'Dessinateur topsolid',
   'PublicWorksDrafter': 'Dessinateur TP',
   'VRDDrafter': 'Dessinateur VRD',
-  'GeneralInstallationsProjector': 'Dessinateur-projeteur installations générales',
+  'GeneralInstallationsProjector':
+      'Dessinateur-projeteur installations générales',
   'QuantitySurveyorEstimator': 'Deviseur métreur',
   'ProjectManagementDirector': 'Directeur maîtrise d\'ouvrage',
   'WorksDirectorTCE': 'Directeur travaux TCE',
@@ -1962,7 +1992,8 @@ const Map<String, String> kApiLabelDictionary = {
   'generalManager': 'General manager',
   'LightingManager': 'Régisseur lumière',
   'SoundManager': 'Régisseur son',
-  'AudiovisualProgrammingManager': 'Responsable de la programmation audiovisuelle',
+  'AudiovisualProgrammingManager':
+      'Responsable de la programmation audiovisuelle',
   'Roadie': 'Road',
   'ExtraRole': 'Silhouette',
   'SoundOperator': 'Sonorisateur',
@@ -2105,7 +2136,8 @@ const Map<String, String> kApiLabelDictionary = {
   'CladdingBusinessManager': 'Chargé affaires bardage',
   'SiteBusinessManager': 'Responsable affaires chantier',
   'BTPBusinessManager': 'Chargé d\'affaire BTP',
-  'EnergyEfficiencyBusinessManager': 'Responsable d\'affaire efficacité énergétique',
+  'EnergyEfficiencyBusinessManager':
+      'Responsable d\'affaire efficacité énergétique',
   'JoineryBusinessManager': 'Chargé d\'affaire menuiserie',
   'PaintingBusinessManager': 'Chargé d\'affaire peinture',
   'FittingBusinessManager': 'Responsable d\'affaires agencement',
@@ -2114,7 +2146,8 @@ const Map<String, String> kApiLabelDictionary = {
   'BGCBusinessManager': 'Chargé d\'affaires BGC',
   'FrameworkBusinessManager': 'Chargé d\'affaires charpente',
   'ConstructionBusinessManager': 'Chargé d\'affaires construction',
-  'MetalConstructionBusinessManager': 'Chargé d\'affaires constructions métalliques',
+  'MetalConstructionBusinessManager':
+      'Chargé d\'affaires constructions métalliques',
   'RoofingBusinessManager': 'Chargé d\'affaires couverture',
   'CVCBusinessManager': 'Responsable affaires CVC',
   'CVCDBusinessManager': 'Responsable d\'affaires coffrage',
@@ -2304,7 +2337,8 @@ const Map<String, String> kApiLabelDictionary = {
   'directeurPartenariats': 'Directeur des partenariats',
   'responsableCommunication': 'Responsable communication',
   'responsableEvenementiel': 'Responsable de l\'évènementiel',
-  'responsableCommunicationEntreprise': 'Responsable de la communication en entreprise',
+  'responsableCommunicationEntreprise':
+      'Responsable de la communication en entreprise',
   'responsableRelationsPresse': 'Responsable de relations presse',
   'responsableRelationsPubliques': 'Responsable de relations publiques',
   'responsablePartenariats': 'Responsable des partenariats',
@@ -2626,7 +2660,8 @@ const Map<String, String> kApiLabelDictionary = {
   'vendeurGrandeDistribution': 'Vendeur grande distribution',
   'vendeurMiseEnRayon': 'Vendeur mise en rayon',
   'visuelMerchandiser': 'Visuel merchandiser',
-  'AdjointSecurityPoliceNationale': 'Adjoint de sécurité de la police nationale',
+  'AdjointSecurityPoliceNationale':
+      'Adjoint de sécurité de la police nationale',
   'AgentCirculation': 'Agent de circulation',
   'AgentPoliceMunicipale': 'Agent de police municipale',
   'AgentSurveillanceVoiePublique': 'Agent de surveillance de la voie publique',
@@ -2646,7 +2681,8 @@ const Map<String, String> kApiLabelDictionary = {
   'LadDriver': 'Lad-driver',
   'LadJockey': 'Lad-jockey',
   'Officier': 'Officier',
-  'OfficierCommandementOperationnelArmeeAir': 'Officier commandement opérationnel de l\'armée de l\'air',
+  'OfficierCommandementOperationnelArmeeAir':
+      'Officier commandement opérationnel de l\'armée de l\'air',
   'PiloteChasse': 'Pilote de chasse',
   'PiloteDrone': 'Pilote de drone',
   'ResponsableDouane': 'Responsable douane',
@@ -2675,12 +2711,15 @@ const Map<String, String> kApiLabelDictionary = {
   'TechnicienImprimerie': 'Technicien imprimerie',
   'ChargeAffairesRobotique': 'Chargé affaires robotique',
   'ChargeAffairesElectronique': 'Chargé d\'affaires électronique',
-  'ChargeSurveillanceElectromecanique': 'Chargé de surveillance électromécanique',
+  'ChargeSurveillanceElectromecanique':
+      'Chargé de surveillance électromécanique',
   'ChefProjetAutomatisme': 'Chef de projet automatisme',
-  'DessinateurProjeteurEtudesElectronique': 'Dessinateur-projeteur d\'études en électronique',
+  'DessinateurProjeteurEtudesElectronique':
+      'Dessinateur-projeteur d\'études en électronique',
   'ElectronicienSystemesArmes': 'Electronicien systèmes d\'armes',
   'ElectrotechnicienMaintenance': 'Electrotechnicien de maintenance',
-  'IngenieurConcepteurCarteElectronique': 'Ingénieur concepteur carte électronique',
+  'IngenieurConcepteurCarteElectronique':
+      'Ingénieur concepteur carte électronique',
   'IngenieurElectroniqueAnalogique': 'Ingénieur électronique analogique',
   'IngenieurElectroniquePuissance': 'Ingénieur électronique de puissance',
   'IngenieurElectromecanique': 'Ingénieur en électromécanique',
@@ -2688,17 +2727,21 @@ const Map<String, String> kApiLabelDictionary = {
   'IngenieurFPGA': 'Ingénieur FPGA',
   'IngenieurMicroelectronique': 'Ingénieur microélectronique',
   'IngenieurQualiteElectronique': 'Ingénieur qualité électronique',
-  'IngenieurSupportClientElectronique': 'Ingénieur support client en électronique',
+  'IngenieurSupportClientElectronique':
+      'Ingénieur support client en électronique',
   'TechnicienAvion': 'Technicien avion',
   'TechnicienAvionique': 'Technicien avionique',
-  'TechnicienEssaisElectriciteElectronique': 'Technicien d\'essais en électricité-électronique',
-  'TechnicienMaintenanceElectronique': 'Technicien de maintenance en électronique',
+  'TechnicienEssaisElectriciteElectronique':
+      'Technicien d\'essais en électricité-électronique',
+  'TechnicienMaintenanceElectronique':
+      'Technicien de maintenance en électronique',
   'TechnicienElectronique': 'Technicien électronique',
   'TechnicienElectromecanique': 'Technicien en électromécanique',
   'TechnicienElectromenager': 'Technicien en électroménager',
   'TechnicienElectrotechnique': 'Technicien en électrotechnique',
   'TechnicienMecatronique': 'Technicien en mécatronique',
-  'TechnicienSupportClientElectronique': 'Technicien support client en électronique',
+  'TechnicienSupportClientElectronique':
+      'Technicien support client en électronique',
   'TechnicienTelephonie': 'Technicien téléphonie',
   'AnimatricePetiteEnfance': 'Animatrice petite enfance',
   'DirecteurEcole': 'Directeur d\'école',
@@ -2710,7 +2753,8 @@ const Map<String, String> kApiLabelDictionary = {
   'EducateurDeRue': 'Educateur de rue',
   'EducateurIME': 'Educateur IME',
   'EducateurPetiteEnfance': 'Educateur petite enfance',
-  'EducateurProtectionJudiciaire': 'Educateur protection judiciaire de la jeunesse',
+  'EducateurProtectionJudiciaire':
+      'Educateur protection judiciaire de la jeunesse',
   'EducateurScolaire': 'Educateur scolaire',
   'EducateurSocial': 'Educateur social',
   'EducateurSpecialise': 'Educateur spécialisé',
@@ -2788,9 +2832,11 @@ const Map<String, String> kApiLabelDictionary = {
   'assistantDéveloppementDurable': 'Assistant développement durable',
   'chargéAffairesNucléaire': 'Chargé d\'affaires nucléaire',
   'chargéAffairesSitesPollués': 'Chargé d\'affaires sites pollués',
-  'chargéÉtudesEauPotableAssainissement': 'Chargé d\'études eau potable et assainissement',
+  'chargéÉtudesEauPotableAssainissement':
+      'Chargé d\'études eau potable et assainissement',
   'chargéÉtudesEnvironnement': 'Chargé d\'études environnement',
-  'chargéMissionDéveloppementDurable': 'Chargé de mission développement durable',
+  'chargéMissionDéveloppementDurable':
+      'Chargé de mission développement durable',
   'chargéProjetEnvironnement': 'Chargé de projet environnement',
   'chauffeurAgricole': 'Chauffeur agricole',
   'chauffeurBétaillère': 'Chauffeur bétaillère',
@@ -2806,7 +2852,8 @@ const Map<String, String> kApiLabelDictionary = {
   'chefServiceCollecte': 'Chef de service collecte',
   'commisCoupe': 'Commis de coupe',
   'conducteurEnginForestier': 'Conducteur d\'engin forestier',
-  'conducteurInstallationIncinération': 'Conducteur d\'installation d\'incinération',
+  'conducteurInstallationIncinération':
+      'Conducteur d\'installation d\'incinération',
   'conducteurBalayeuse': 'Conducteur de balayeuse',
   'conseillerEnvironnement': 'Conseiller en environnement',
   'desamianteur': 'Désamianteur',
@@ -2827,13 +2874,15 @@ const Map<String, String> kApiLabelDictionary = {
   'ingenieurEcologue': 'Ingénieur écologue',
   'ingenieurÉnergiesRenouvelables': 'Ingénieur en énergies renouvelables',
   'ingenieurSitesSolsPollués': 'Ingénieur en sites et sols pollués',
-  'ingenieurTraitementDéchetsIndustriels': 'Ingénieur en traitement des déchets industriels',
+  'ingenieurTraitementDéchetsIndustriels':
+      'Ingénieur en traitement des déchets industriels',
   'ingenieurTraitementEaux': 'Ingénieur en traitement des eaux',
   'ingenieurEnvironnement': 'Ingénieur environnement',
   'ingenieurÉolien': 'Ingénieur éolien',
   'ingenieurForestier': 'Ingénieur forestier',
   'ingenieurGestionDéchets': 'Ingénieur gestion des déchets',
-  'ingenieurMéthodesDémantèlementNucléaire': 'Ingénieur méthodes démantèlement nucléaire',
+  'ingenieurMéthodesDémantèlementNucléaire':
+      'Ingénieur méthodes démantèlement nucléaire',
   'ingenieurPaysagiste': 'Ingénieur paysagiste',
   'ingenieurPhotovoltaïque': 'Ingénieur photovoltaïque',
   'ingenieurSanitaire': 'Ingénieur sanitaire',
@@ -2846,7 +2895,8 @@ const Map<String, String> kApiLabelDictionary = {
   'ouvrierPaysagiste': 'Ouvrier paysagiste',
   'ouvrierSylvicole': 'Ouvrier sylvicole',
   'responsableDémantèlementNucléaire': 'Responsable de démantèlement nucléaire',
-  'responsableRéseauxAssainissement': 'Responsable de réseaux d\'assainissement',
+  'responsableRéseauxAssainissement':
+      'Responsable de réseaux d\'assainissement',
   'responsableServiceEspacesVerts': 'Responsable de service espaces verts',
   'responsableDéveloppementDurable': 'Responsable du développement durable',
   'responsableEfficacitéÉnergétique': 'Responsable efficacité énergétique',
@@ -2878,8 +2928,10 @@ const Map<String, String> kApiLabelDictionary = {
   'IngenieurSignalisationFerroviaire': 'Ingénieur en signalisation ferroviaire',
   'MecanicienFerroviaire': 'Mécanicien ferroviaire',
   'OperateurCirculationFerroviaire': 'Opérateur circulation ferroviaire',
-  'OperateurCirculationReseauFerroviaire': 'Opérateur de circulation du réseau ferroviaire',
-  'ResponsableExploitationTransportFerroviaire': 'Responsable d\'exploitation transport ferroviaire',
+  'OperateurCirculationReseauFerroviaire':
+      'Opérateur de circulation du réseau ferroviaire',
+  'ResponsableExploitationTransportFerroviaire':
+      'Responsable d\'exploitation transport ferroviaire',
   'ResponsableMaintenanceBâtiment': 'Responsable maintenance bâtiment',
   'TechnicienFerroviaire': 'Technicien ferroviaire',
   'almAnalyst': 'Analyste ALM',
@@ -3246,12 +3298,14 @@ const Map<String, String> kApiLabelDictionary = {
   'condominiumSyndic': 'Syndic de copropriété',
   'technicalCommercialAgent': 'Technico commercial immobilier',
   'industrialMaintenanceAgent': 'Agent de maintenance industrielle',
-  'maintenanceWorkshopSupervisor': 'Agent de maîtrise d\'atelier de maintenance industrielle',
+  'maintenanceWorkshopSupervisor':
+      'Agent de maîtrise d\'atelier de maintenance industrielle',
   'maintenanceSupervisor': 'Agent de maîtrise maintenance',
   'maintenanceWorkshopManager': 'Chef atelier maintenance',
   'industrialTeamLeader': 'Chef d\'équipe en industrie',
   'industrialPaintingTeamLeader': 'Chef d\'équipe peinture industrielle',
-  'industrialAnalysisLabManager': 'Chef de laboratoire d\'analyses industrielles',
+  'industrialAnalysisLabManager':
+      'Chef de laboratoire d\'analyses industrielles',
   'industrializationProjectManager': 'Chef de projet industrialisation',
   'productionProjectManager': 'Chef de projet production',
   'technicalServiceManager': 'Chef de service technique',
@@ -3272,7 +3326,8 @@ const Map<String, String> kApiLabelDictionary = {
   'cadEngineer': 'Ingénieur CAO',
   'maintenanceEngineer': 'Ingénieur de maintenance',
   'industrialITEngineer': 'Ingénieur en informatique industrielle',
-  'methodsIndustrializationEngineer': 'Ingénieur en méthode et industrialisation',
+  'methodsIndustrializationEngineer':
+      'Ingénieur en méthode et industrialisation',
   'cmmsEngineer': 'Ingénieur GMAO',
   'industrializationEngineer': 'Ingénieur industrialisation',
   'leanEngineer': 'Ingénieur lean',
@@ -3303,7 +3358,8 @@ const Map<String, String> kApiLabelDictionary = {
   'industrialPerformanceManager': 'Responsable performance industrielle',
   'newWorksManager': 'Responsable travaux neufs',
   'industrialMaintenanceTechnician': 'Technicien de maintenance industrielle',
-  'machineToolMaintenanceTechnician': 'Technicien de maintenance machines-outils',
+  'machineToolMaintenanceTechnician':
+      'Technicien de maintenance machines-outils',
   'cmmsTechnician': 'Technicien GMAO',
   'industrialTechnician': 'Technicien industriel',
   'industrialMethodsTechnician': 'Technicien méthodes industrialisation',
@@ -3339,7 +3395,8 @@ const Map<String, String> kApiLabelDictionary = {
   'vmwareAdmin': 'Administrateur VMWare',
   'webAdmin': 'Administrateur web',
   'qaAgent': 'Agent de contrôle qualité logicielle',
-  'projectSupport': 'AMOE (Assistance à Maîtrise d\'Ouvrage et d\'Exploitation)',
+  'projectSupport':
+      'AMOE (Assistance à Maîtrise d\'Ouvrage et d\'Exploitation)',
   'biAnalyst': 'Analyste BI',
   'itAnalyst': 'Analyste concepteur',
   'operationsAnalyst': 'Analyste d\'études informatiques',
@@ -3383,7 +3440,8 @@ const Map<String, String> kApiLabelDictionary = {
   'as400ProjectManager': 'Chef de produit technique',
   'crmProjectManager': 'Chef de produit web',
   'dataProjectManager': 'Chef de projet AMO (Assistance à Maîtrise d’Ouvrage)',
-  'biProjectManager': 'Chef de projet AMOA (Assistance à Maîtrise d’Ouvrage et d’Assistance)',
+  'biProjectManager':
+      'Chef de projet AMOA (Assistance à Maîtrise d’Ouvrage et d’Assistance)',
   'deploymentProjectManager': 'Chef de projet AS400',
   'digitalProjectManager': 'Chef de projet CRM',
   'elearningProjectManager': 'Chef de projet data',
@@ -3411,7 +3469,8 @@ const Map<String, String> kApiLabelDictionary = {
   'networkSystemProjectManager': 'Chef de projet SAP',
   'testingProjectManager': 'Chef de projet SharePoint',
   'digitalTransformationManager': 'Chef de projet SI',
-  'webProjectManager': 'Chef de projet SIG (Système d’Information Géographique)',
+  'webProjectManager':
+      'Chef de projet SIG (Système d’Information Géographique)',
   'agileCoach': 'Chef de projet testing',
   'elearningDeveloper': 'Chef de projet web',
   'amoaConsultant': 'Chief Data Officer (CDO)',
@@ -3564,7 +3623,8 @@ const Map<String, String> kApiLabelDictionary = {
   'mechanicalStudyEngineer': 'Chargé d\'études en mécanique',
   'bimExecutionEngineer': 'Chargé d\'études exécution BIM',
   'wiringWorkshopManager': 'Chef d\'atelier de câblage',
-  'electromechanicalWorkshopManager': 'Chef d\'atelier en montage électromécanique',
+  'electromechanicalWorkshopManager':
+      'Chef d\'atelier en montage électromécanique',
   'pipingTeamLeader': 'Chef d\'équipe tuyauteur',
   'hvacConstructionManager': 'Chef de chantier CVC',
   'electricalConstructionManager': 'Chef de chantier électricité',
@@ -3623,7 +3683,8 @@ const Map<String, String> kApiLabelDictionary = {
   'thermalCalculationEngineer': 'Ingénieur calcul thermique',
   'mechanicalCalculationEngineer': 'Ingénieur calculs mécanique',
   'cfdEngineer': 'Ingénieur CFD',
-  'mechanicalBusinessEngineer': 'Ingénieur chargé d\'affaires en génie mécanique',
+  'mechanicalBusinessEngineer':
+      'Ingénieur chargé d\'affaires en génie mécanique',
   'sheetMetalBusinessEngineer': 'Ingénieur chargé d\'affaires en tôlerie',
   'boilermakingEngineer': 'Ingénieur chaudronnerie',
   'compositeEngineer': 'Ingénieur composites',
@@ -3672,7 +3733,8 @@ const Map<String, String> kApiLabelDictionary = {
   'WeldingEngineer': 'Welding engineer',
   'structuralEngineer': 'Ingénieur structure génie civil',
   'industrialSystemsEngineer': 'Ingénieur systèmes industriels',
-  'industrialSimulationEngineer': 'Ingénieur systèmes et simulations en industrie',
+  'industrialSimulationEngineer':
+      'Ingénieur systèmes et simulations en industrie',
   'textileEngineer': 'Ingénieur textile',
   'thermalEngineer': 'Ingénieur thermicien',
   'thermodynamicsEngineer': 'Ingénieur thermodynamique',
@@ -4039,10 +4101,12 @@ const Map<String, String> kApiLabelDictionary = {
   'adjointResponsableProduction': 'Adjoint au responsable de production',
   'adjointResponsableMaintenance': 'Adjoint au responsable maintenance',
   'adjointExploitation': 'Adjoint d\'exploitation',
-  'administrateurProductionOrdonnancement': 'Administrateur production ordonnancement',
+  'administrateurProductionOrdonnancement':
+      'Administrateur production ordonnancement',
   'afficheur': 'Afficheur',
   'affuteur': 'Affûteur',
-  'agentApprovisionnementDistributeursAutomatiques': 'Agent d\'approvisionnement de distributeurs automatiques',
+  'agentApprovisionnementDistributeursAutomatiques':
+      'Agent d\'approvisionnement de distributeurs automatiques',
   'agentEmballage': 'Agent d\'emballage',
   'agentExploitationHydraulique': 'Agent d\'exploitation hydraulique',
   'agentOrdonnancement': 'Agent d\'ordonnancement',
@@ -4060,7 +4124,8 @@ const Map<String, String> kApiLabelDictionary = {
   'agentMontage': 'Agent de montage',
   'agentParachevement': 'Agent de parachèvement',
   'agentProduction': 'Agent de production automobile',
-  'agentProductionBlanchisserieIndustrielle': 'Agent de production en blanchisserie industrielle',
+  'agentProductionBlanchisserieIndustrielle':
+      'Agent de production en blanchisserie industrielle',
   'agentTri': 'Agent de tri',
   'agentTriPostal': 'Agent de tri postal',
   'aideTuyauteur': 'Aide tuyauteur',
@@ -4071,7 +4136,8 @@ const Map<String, String> kApiLabelDictionary = {
   'aleseur': 'Aléseur',
   'animateurIlotAssemblage': 'Animateur îlot assemblage',
   'appareilleur': 'Appareilleur',
-  'approvisionneurDistributeurAutomatique': 'Approvisionneur distributeur automatique',
+  'approvisionneurDistributeurAutomatique':
+      'Approvisionneur distributeur automatique',
   'assembleur': 'Assembleur',
   'assembleurAuPlan': 'Assembleur au plan',
   'assistantOrdonnancement': 'Assistant d\'ordonnancement',
@@ -4142,7 +4208,8 @@ const Map<String, String> kApiLabelDictionary = {
   'conducteurLigne': 'Conducteur de ligne',
   'conducteurLigneAutomatisee': 'Conducteur de ligne automatisée',
   'conducteurLigneConditionnement': 'Conducteur de ligne de conditionnement',
-  'conducteurLigneIndustriePharmaceutique': 'Conducteur de ligne industrie pharmaceutique',
+  'conducteurLigneIndustriePharmaceutique':
+      'Conducteur de ligne industrie pharmaceutique',
   'conducteurMachine': 'Conducteur de machine',
   'conducteurTravauxTuyauterie': 'Conducteur de travaux tuyauterie',
   'conducteurDecoupe': 'Conducteur découpe',
@@ -4348,7 +4415,8 @@ const Map<String, String> kApiLabelDictionary = {
   'responsableConditionnement': 'Responsable conditionnement',
   'responsableActivite': 'Responsable d\'activité',
   'responsableAtelier': 'Responsable d\'atelier',
-  'responsableAtelierProductionTextile': 'Responsable d\'atelier de production textile',
+  'responsableAtelierProductionTextile':
+      'Responsable d\'atelier de production textile',
   'responsableEquipe': 'Responsable d\'équipe',
   'responsableUnite': 'Responsable d\'unité',
   'responsableUniteOperationnelle': 'Responsable d\'unité opérationnelle',
@@ -4424,15 +4492,19 @@ const Map<String, String> kApiLabelDictionary = {
   'technicienUsinage': 'Technicien d\'usinage',
   'technicienDAO': 'Technicien DAO',
   'technicienConditionnement': 'Technicien de conditionnement',
-  'technicienConditionnementMachineAutomatisee': 'Technicien de conditionnement sur machine automatisée',
+  'technicienConditionnementMachineAutomatisee':
+      'Technicien de conditionnement sur machine automatisée',
   'technicienFabrication': 'Technicien de fabrication',
-  'technicienFabricationMaterielsElectriquesElectroniques': 'Technicien de fabrication de matériels électriques et électroniques',
+  'technicienFabricationMaterielsElectriquesElectroniques':
+      'Technicien de fabrication de matériels électriques et électroniques',
   'technicienFabricationMecanique': 'Technicien de fabrication mécanique',
   'technicienGestionProduction': 'Technicien de gestion de production',
   'technicienMaintenance': 'Technicien de maintenance',
   'technicienMaintenanceCFO': 'Technicien de maintenance CFO',
-  'technicienMaintenanceClimatisation': 'Technicien de maintenance climatisation',
-  'technicienMaintenanceControleCommande': 'Technicien de maintenance contrôle commande',
+  'technicienMaintenanceClimatisation':
+      'Technicien de maintenance climatisation',
+  'technicienMaintenanceControleCommande':
+      'Technicien de maintenance contrôle commande',
   'technicienMaintenanceElectrique': 'Technicien de maintenance électrique',
   'technicienMaintenanceItinerant': 'Technicien de maintenance itinérant',
   'technicienMiseService': 'Technicien de mise en service',
@@ -4448,7 +4520,8 @@ const Map<String, String> kApiLabelDictionary = {
   'technicienTraitementSurface': 'Technicien en traitement de surface',
   'technicienVentilation': 'Technicien en ventilation',
   'technicienEnergetique': 'Technicien énergétique',
-  'technicienEntretienAppareillagesMesureRegulation': 'Technicien entretien appareillages de mesure régulation',
+  'technicienEntretienAppareillagesMesureRegulation':
+      'Technicien entretien appareillages de mesure régulation',
   'technicienExploitationGaz': 'Technicien exploitation gaz',
   'technicienFAO': 'Technicien FAO',
   'technicienFluides': 'Technicien fluides',
@@ -4515,7 +4588,8 @@ const Map<String, String> kApiLabelDictionary = {
   'AssemblyQualityControlAgent': 'Agent de contrôle qualité assemblage',
   'WaterQualityControlAgent': 'Agent de contrôle qualité de l\'eau',
   'MechanicalQualityControlAgent': 'Agent de contrôle qualité en mécanique',
-  'MetalWorkQualityControlAgent': 'Agent de contrôle qualité travail des métaux',
+  'MetalWorkQualityControlAgent':
+      'Agent de contrôle qualité travail des métaux',
   'SterilizationAgent': 'Agent de stérilisation',
   'HSEAnimator': 'Animateur HSE',
   'HygieneAnimator': 'Animateur hygiène',
@@ -4524,7 +4598,8 @@ const Map<String, String> kApiLabelDictionary = {
   'QHSEAnimator': 'Animateur QHSE',
   'QSEAnimator': 'Animateur QSE',
   'QualityAnimator': 'Animateur qualité',
-  'QualitySafetyEnvironmentAnimator': 'Animateur qualité sécurité environnement',
+  'QualitySafetyEnvironmentAnimator':
+      'Animateur qualité sécurité environnement',
   'HygienistApplicator': 'Applicateur hygiéniste',
   'RegulatoryAffairsAssistant': 'Assistant affaires réglementaires',
   'QualityControlAssistant': 'Assistant contrôle qualité',
@@ -4631,7 +4706,8 @@ const Map<String, String> kApiLabelDictionary = {
   'DrillingAssistant': 'Aide sondeur',
   'ClinicalResearchAssistant': 'Assistant de recherche clinique',
   'RandDAssistant': 'Assistant R&D',
-  'ExperimentationTechnicianAssistant': 'Assistant technicien d\'expérimentation',
+  'ExperimentationTechnicianAssistant':
+      'Assistant technicien d\'expérimentation',
   'Astronomer': 'Astronome',
   'ATER': 'ATER',
   'ClinicalResearchAssociate': 'Attaché de recherche clinique',
@@ -4666,7 +4742,8 @@ const Map<String, String> kApiLabelDictionary = {
   'ConstructionDirector': 'Directeur construction',
   'ConstructionAgencyDirector': 'Directeur d\'agence BTP',
   'InnovationDirector': 'Directeur de l\'innovation',
-  'TechWatchDirector': 'Directeur de la veille technologique et concurrentielle',
+  'TechWatchDirector':
+      'Directeur de la veille technologique et concurrentielle',
   'TechnicalServicesDirector': 'Directeur des services techniques',
   'RandDDirector': 'Directeur R&D',
   'ScientificDirector': 'Directeur scientifique',
@@ -4683,7 +4760,8 @@ const Map<String, String> kApiLabelDictionary = {
   'ScientificCalculationEngineer': 'Ingénieur calcul scientifique',
   'ResearchEngineer': 'Ingénieur chercheur',
   'StudyEngineer': 'Ingénieur d\'études',
-  'MetalConstructionStudyEngineer': 'Ingénieur d\'études constructions métalliques',
+  'MetalConstructionStudyEngineer':
+      'Ingénieur d\'études constructions métalliques',
   'IndustrialStudyEngineer': 'Ingénieur d\'études industrielles',
   'FinishingWorkStudyEngineer': 'Ingénieur d\'études second œuvre',
   'PublicWorksStudyEngineer': 'Ingénieur d\'études travaux publics',
@@ -4729,9 +4807,11 @@ const Map<String, String> kApiLabelDictionary = {
   'PreprojectTechnician': 'Technicien d\'ensemble avant-projet',
   'TestTechnician': 'Technicien d\'essais',
   'CladdingStudyTechnician': 'Technicien d\'études bardage',
-  'MetalStructureStudyTechnician': 'Technicien d\'études charpentes métalliques',
+  'MetalStructureStudyTechnician':
+      'Technicien d\'études charpentes métalliques',
   'ClinicalStudyTechnician': 'Technicien d\'études cliniques',
-  'MetalConstructionStudyTechnician': 'Technicien d\'études constructions métalliques',
+  'MetalConstructionStudyTechnician':
+      'Technicien d\'études constructions métalliques',
   'RoofingStudyTechnician': 'Technicien d\'études couverture',
   'CostEstimationTechnician': 'Technicien d\'études de prix',
   'StructureWorkStudyTechnician': 'Technicien d\'études gros œuvre',
@@ -4943,7 +5023,8 @@ const Map<String, String> kApiLabelDictionary = {
   'afterSalesTechnician': 'Technicien SAV',
   'customerServiceTechnician': 'Technicien service client',
   'telephoneSurveyor': 'Téléenquêteur',
-  'homeHealthAgencyDeputyManager': 'Adjoint au responsable d\'agence de santé à domicile',
+  'homeHealthAgencyDeputyManager':
+      'Adjoint au responsable d\'agence de santé à domicile',
   'supportAgent': 'Agent accompagnement',
   'thermalAgent': 'Agent de thermalisme',
   'pmrAgent': 'Agent PMR',
@@ -5074,15 +5155,18 @@ const Map<String, String> kApiLabelDictionary = {
   'homeHelpAgencyManager': 'Responsable d\'agence aide à domicile',
   'associationManager': 'Responsable d\'association',
   'homeHelpSectorManager': 'Responsable de secteur d\'aide à domicile',
-  'personalServiceSectorManager': 'Responsable de secteur service à la personne',
-  'pharmaceuticalDevelopmentManager': 'Responsable développement pharmaceutique',
+  'personalServiceSectorManager':
+      'Responsable de secteur service à la personne',
+  'pharmaceuticalDevelopmentManager':
+      'Responsable développement pharmaceutique',
   'medicalManager': 'Responsable médical',
   'pharmacovigilanceManager': 'Responsable pharmacovigilance',
   'sexologist': 'Sexologue',
   'animalCaretakerRole': 'Soigneur animalier',
   'horseCaretaker': 'Soigneur chevaux',
   'sophrologist': 'Sophrologue',
-  'pharmaceuticalDevelopmentTechnician': 'Technicien développement pharmaceutique',
+  'pharmaceuticalDevelopmentTechnician':
+      'Technicien développement pharmaceutique',
   'toxicologist': 'Toxicologue',
   'medicalEquipmentSeller': 'Vendeur matériel médical',
   'veterinarian': 'Vétérinaire',
@@ -5230,8 +5314,10 @@ const Map<String, String> kApiLabelDictionary = {
   'porteurFuneraire': 'Porteur funéraire',
   'pupitreur': 'Pupitreur',
   'releveurCompteurs': 'Releveur de compteurs',
-  'responsableAgenceLocationMateriel': 'Responsable d\'agence location de matériel',
-  'responsableStructurePetiteEnfance': 'Responsable de structure petite enfance',
+  'responsableAgenceLocationMateriel':
+      'Responsable d\'agence location de matériel',
+  'responsableStructurePetiteEnfance':
+      'Responsable de structure petite enfance',
   'responsablePrestationsService': 'Responsable des prestations de service',
   'responsableSalonCoiffure': 'Responsable salon de coiffure',
   'reviseur': 'Réviseur',
@@ -5252,7 +5338,8 @@ const Map<String, String> kApiLabelDictionary = {
   'chargeDeveloppementEconomique': 'Chargé de développement économique',
   'chargeDeveloppementLocal': 'Chargé de développement local',
   'chargeDeveloppementTerritorial': 'Chargé de développement territorial',
-  'chargeMissionDeveloppementEconomique': 'Chargé de mission développement économique',
+  'chargeMissionDeveloppementEconomique':
+      'Chargé de mission développement économique',
   'chauffeurAmpliroll': 'Chauffeur ampliroll',
   'chauffeurCollecte': 'Chauffeur collecte',
   'chauffeurRipeur': 'Chauffeur ripeur',
@@ -5260,7 +5347,8 @@ const Map<String, String> kApiLabelDictionary = {
   'chefRegion': 'Chef de région',
   'chefServicePolitiqueVille': 'Chef de service Politique de la Ville',
   'conducteurBOM': 'Conducteur BOM',
-  'conseillerDeveloppementTerritorial': 'Conseiller en développement territorial',
+  'conseillerDeveloppementTerritorial':
+      'Conseiller en développement territorial',
   'delegueRegional': 'Délégué régional',
   'delegueTerritorial': 'Délégué territorial',
   'directeurAgenceBancaire': 'Directeur d\'agence bancaire',
@@ -5309,7 +5397,8 @@ const Map<String, String> kApiLabelDictionary = {
   'conseillerSocial': 'Conseiller social',
   'conseillerSocioEducatif': 'Conseiller socio-éducatif',
   'conseillerTechniqueActionSociale': 'Conseiller technique action sociale',
-  'conseillereEconomieSocialeFamiliale': 'Conseillère en économie sociale et familiale',
+  'conseillereEconomieSocialeFamiliale':
+      'Conseillère en économie sociale et familiale',
   'coordinateurSocial': 'Coordinateur social',
   'coordinateurSocioculturel': 'Coordinateur socioculturel',
   'delegueSocial': 'Délégué social',
@@ -5457,7 +5546,8 @@ const Map<String, String> kApiLabelDictionary = {
   'technicienRadioprotection': 'Technicien de radioprotection',
   'technicienDetectionIncendie': 'Technicien détection incendie',
   'technicienLevage': 'Technicien en levage',
-  'technicienPreventionRisquesIndustriels': 'Technicien en prévention des risques industriels',
+  'technicienPreventionRisquesIndustriels':
+      'Technicien en prévention des risques industriels',
   'technicienSecuriteIncendie': 'Technicien en sécurité incendie',
   'technicienSecurite': 'Technicien sécurité',
   'technicienVideoSurveillance': 'Technicien vidéosurveillance',
@@ -5502,7 +5592,8 @@ const Map<String, String> kApiLabelDictionary = {
   'radioOperator': 'Opérateur radio',
   'ftthActivityManager': 'Responsable d\'activité FTTH',
   'telecomSupervisor': 'Superviseur télécom',
-  'telecomMaintenanceTechnician': 'Technicien de maintenance en télécommunications',
+  'telecomMaintenanceTechnician':
+      'Technicien de maintenance en télécommunications',
   'telecomTechnician': 'Technicien en télécom',
   'fiberTechnician': 'Technicien fibre optique',
   'ftthTechnician': 'Technicien FTTH',
@@ -5790,7 +5881,8 @@ const Map<String, String> kApiLabelDictionary = {
   'webSalesperson': 'Web vendeur',
   'Hooker': 'Accrocheur',
   'DeputyLocksmithBusinessManager0': 'Adjoint chargé d\'affaires serrurerie',
-  'DeputyLocksmithProjectManager0': 'Adjoint Responsable d\'affaires serrurerie',
+  'DeputyLocksmithProjectManager0':
+      'Adjoint Responsable d\'affaires serrurerie',
   'RoadAgent0': 'Agent de voirie',
   'RoadWorker0': 'Agent routier',
   'SecondWorkTechnician0': 'Agent technique second oeuvre',
@@ -5937,7 +6029,8 @@ const Map<String, String> kApiLabelDictionary = {
   'BTPTacticalAdvisor': 'Conseiller technique BTP',
   'WoodConstructor': 'Constructeur bois',
   'IndividualHouseConstructor': 'Constructeur de maisons individuelles',
-  'MasonryAndReinforcedConcreteConstructor': 'Constructeur en maçonnerie et béton armé',
+  'MasonryAndReinforcedConcreteConstructor':
+      'Constructeur en maçonnerie et béton armé',
   'ConstructionManager0': 'Construction manager',
   'Foreman': 'Contremaître',
   'BTPTacticalController': 'Contrôleur technique BTP',
@@ -6090,7 +6183,8 @@ const Map<String, String> kApiLabelDictionary = {
   'ChimneySweeper': 'Ramoneur',
   'FacadeRenovationWorker': 'Ravaleur',
   'AsphaltRegulator': 'Régleur d\'enrobés',
-  'MetalStructuresBusinessManager': 'Responsable affaires structures métalliques',
+  'MetalStructuresBusinessManager':
+      'Responsable affaires structures métalliques',
   'EquipmentManager': 'Responsable de parc',
   'MaterialManager': 'Responsable de parc matériel',
   'WorksManager01': 'Responsable de travaux',
@@ -6196,7 +6290,8 @@ const Map<String, String> kApiLabelDictionary = {
   'orderPreparer': 'Préparateur de commande',
   'receiver': 'Réceptionnaire',
   'freightManager': 'Responsable affrètement',
-  'roadOperationsManager': 'Responsable d\'exploitation transport routier de marchandises',
+  'roadOperationsManager':
+      'Responsable d\'exploitation transport routier de marchandises',
   'depotManager': 'Responsable de dépôt',
   'siteLogisticsManager': 'Responsable de site logistique',
   'rouleur': 'Rouleur',

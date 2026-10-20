@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
@@ -101,10 +102,12 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
 
   Widget _buildDemandesList() {
     if (_isLoadingDemandes) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+          ),
         ),
       );
     }
@@ -146,7 +149,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       profileImage: 'assets/images/default_profile.png',
       username: 'Ma demande',
       categoryLabel: categoryLabel,
-      categoryColor: const Color(0xFFFF9800),
+      categoryColor: AdaptiveColors.foreground(
+        context,
+        const Color(0xFFFF9800),
+      ),
       title: title,
       description: description.length > 200
           ? '${description.substring(0, 200)}...'
@@ -216,19 +222,19 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
         PostTag(
           title: categoryLabel,
           icon: Icons.label_outline,
-          color: Colors.orange,
+          color: AdaptiveColors.foreground(context, Colors.orange),
         ),
         if (urgent)
           PostTag(
             title: 'Urgent',
             icon: Icons.warning_amber_rounded,
-            color: Colors.red,
+            color: AdaptiveColors.foreground(context, Colors.red),
           ),
         if (nationwide)
           PostTag(
             title: 'Toute la France',
             icon: Icons.public,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -273,10 +279,12 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
 
   Widget _buildTrainingsList() {
     if (_isLoadingTrainings) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+          ),
         ),
       );
     }
@@ -679,19 +687,19 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
           PostTag(
             title: category,
             icon: Icons.local_offer_outlined,
-            color: Colors.orange,
+            color: AdaptiveColors.foreground(context, Colors.orange),
           ),
         if (subCategory.isNotEmpty)
           PostTag(
             title: subCategory,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (type.isNotEmpty)
           PostTag(
             title: type,
             icon: Icons.check_circle_outline,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
       ];
 
@@ -1110,17 +1118,17 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
   Color _statusColor(String? status) {
     switch (status?.toUpperCase()) {
       case 'PUBLISHED':
-        return const Color(0xFF4CAF50);
+        return AdaptiveColors.foreground(context, const Color(0xFF4CAF50));
       case 'PENDING_REVIEW':
-        return const Color(0xFFFF9800);
+        return AdaptiveColors.foreground(context, const Color(0xFFFF9800));
       case 'DRAFT':
-        return Colors.grey;
+        return AdaptiveColors.foreground(context, Colors.grey);
       case 'REJECTED':
-        return const Color(0xFFF44336);
+        return AdaptiveColors.foreground(context, const Color(0xFFF44336));
       case 'ARCHIVED':
-        return Colors.blueGrey;
+        return AdaptiveColors.foreground(context, Colors.blueGrey);
       default:
-        return Colors.grey;
+        return AdaptiveColors.foreground(context, Colors.grey);
     }
   }
 
@@ -1139,14 +1147,14 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
         }
       },
       body: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AdaptiveColors.surface(context, Colors.white),
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
-              color: Color(0xFF616161),
+              color: AdaptiveColors.foreground(context, Color(0xFF616161)),
               size: 18,
             ),
             onPressed: () {
@@ -1159,10 +1167,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
               );
             },
           ),
-          title: const Text(
+          title: Text(
             'Mes annonces',
             style: TextStyle(
-              color: Color(0xFF616161),
+              color: AdaptiveColors.foreground(context, Color(0xFF616161)),
               fontFamily: 'Manjari',
               fontWeight: FontWeight.bold,
               fontSize: 18,
@@ -1196,11 +1204,17 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                       hintText: 'Faire une recherche',
                       hintStyle: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
                       ),
                       prefixIcon: Icon(
                         Icons.search,
-                        color: Colors.grey[600],
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[600],
+                        ),
                         size: 20,
                       ),
                       suffixIcon: _searchQuery.isNotEmpty
@@ -1213,7 +1227,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                             )
                           : null,
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: AdaptiveColors.surface(
+                        context,
+                        Colors.grey[100],
+                      ),
                       contentPadding: const EdgeInsets.symmetric(vertical: 12),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1221,7 +1238,12 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFFF9800)),
+                        borderSide: BorderSide(
+                          color: AdaptiveColors.border(
+                            context,
+                            Color(0xFFFF9800),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -1236,7 +1258,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                         child: _buildStatCard(
                           count: '$_totalCount',
                           label: 'Total',
-                          iconColor: const Color(0xFF03A9F4),
+                          iconColor: AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF03A9F4),
+                          ),
                           icon: Icons.description,
                         ),
                       ),
@@ -1245,7 +1270,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                         child: _buildStatCard(
                           count: '$_activeCount',
                           label: 'Activés',
-                          iconColor: const Color(0xFF4CAF50),
+                          iconColor: AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF4CAF50),
+                          ),
                           icon: Icons.check_circle,
                         ),
                       ),
@@ -1254,7 +1282,10 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                         child: _buildStatCard(
                           count: '$_expiredCount',
                           label: 'Expirées',
-                          iconColor: const Color(0xFFFF5252),
+                          iconColor: AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFFFF5252),
+                          ),
                           icon: Icons.cancel,
                         ),
                       ),
@@ -1268,12 +1299,15 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Filtre par catégorie',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF616161),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF616161),
+                          ),
                         ),
                       ),
                       ElevatedButton.icon(
@@ -1295,8 +1329,14 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                           style: TextStyle(fontSize: 12),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF9800),
-                          foregroundColor: Colors.white,
+                          backgroundColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFF9800),
+                          ),
+                          foregroundColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -1321,8 +1361,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                         CategoriesIcon(
                           title: 'Bons plans',
                           iconColor: const Color.fromARGB(255, 252, 116, 37),
-                          bgColor: const Color(
-                            0xFFFFE0B2,
+                          bgColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFFE0B2),
                           ).withValues(alpha: 0.2),
                           icon: Icons.card_giftcard_outlined,
                           onTap: () =>
@@ -1331,9 +1372,13 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                         const SizedBox(width: 15),
                         CategoriesIcon(
                           title: "Offre d'emploi",
-                          iconColor: Colors.lightBlueAccent,
-                          bgColor: const Color(
-                            0xFFB3E5FC,
+                          iconColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.lightBlueAccent,
+                          ),
+                          bgColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFB3E5FC),
                           ).withValues(alpha: 0.2),
                           iconAsset: 'assets/images/offres.png',
                           onTap: () => setState(
@@ -1343,9 +1388,13 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                         const SizedBox(width: 15),
                         CategoriesIcon(
                           title: 'Formations',
-                          iconColor: Colors.purple,
-                          bgColor: const Color(
-                            0xFFE1BEE7,
+                          iconColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.purple,
+                          ),
+                          bgColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFE1BEE7),
                           ).withValues(alpha: 0.1),
                           iconAsset: 'assets/images/Formation.png',
                           onTap: () =>
@@ -1354,9 +1403,13 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                         const SizedBox(width: 15),
                         CategoriesIcon(
                           title: 'Evenements',
-                          iconColor: Colors.green,
-                          bgColor: const Color(
-                            0xFFE6F7EF,
+                          iconColor: AdaptiveColors.foreground(
+                            context,
+                            Colors.green,
+                          ),
+                          bgColor: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFE6F7EF),
                           ).withValues(alpha: 0.5),
                           icon: Icons.event_outlined,
                           onTap: () =>
@@ -1408,10 +1461,12 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
 
   Widget _buildBonPlansList() {
     if (_isLoadingBonPlans) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+          ),
         ),
       );
     }
@@ -1431,10 +1486,12 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
 
   Widget _buildJobOffersList() {
     if (_isLoadingJobOffers) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+          ),
         ),
       );
     }
@@ -1454,10 +1511,12 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
 
   Widget _buildEventsList() {
     if (_isLoadingEvents) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: CircularProgressIndicator(color: Color(0xFFFF9800)),
+          child: CircularProgressIndicator(
+            color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+          ),
         ),
       );
     }
@@ -1614,19 +1673,19 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
           PostTag(
             title: categoryCode,
             icon: Icons.local_offer_outlined,
-            color: Colors.green,
+            color: AdaptiveColors.foreground(context, Colors.green),
           ),
         if (subCategoryCode != null && subCategoryCode.isNotEmpty)
           PostTag(
             title: subCategoryCode,
             icon: Icons.grid_view_outlined,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
           ),
         if (formatType != null && formatType.isNotEmpty)
           PostTag(
             title: formatType,
             icon: Icons.videocam_outlined,
-            color: Colors.blue,
+            color: AdaptiveColors.foreground(context, Colors.blue),
           ),
       ];
 
@@ -1704,7 +1763,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -1723,10 +1782,13 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF333333),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF333333),
+                    ),
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -1769,7 +1831,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                   if (loadingProgress == null) return child;
                   return Container(
                     height: 180,
-                    color: Colors.grey[100],
+                    color: AdaptiveColors.surface(context, Colors.grey[100]),
                     child: const Center(
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
@@ -1779,11 +1841,11 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                   debugPrint('Image load error: $error');
                   return Container(
                     height: 100,
-                    color: Colors.grey[200],
-                    child: const Center(
+                    color: AdaptiveColors.surface(context, Colors.grey[200]),
+                    child: Center(
                       child: Icon(
                         Icons.image_not_supported,
-                        color: Colors.grey,
+                        color: AdaptiveColors.foreground(context, Colors.grey),
                       ),
                     ),
                   );
@@ -1809,23 +1871,40 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
           Row(
             children: [
               if (merchantName.isNotEmpty) ...[
-                Icon(Icons.store_outlined, size: 14, color: Colors.grey[500]),
+                Icon(
+                  Icons.store_outlined,
+                  size: 14,
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     '$locationType chez $merchantName',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ] else
                 const Spacer(),
               if (createdAt != null) ...[
-                Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                Icon(
+                  Icons.access_time,
+                  size: 14,
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                ),
                 const SizedBox(width: 4),
                 Text(
                   _timeAgo(createdAt),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ],
             ],
@@ -1841,8 +1920,14 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
               icon: const Icon(Icons.visibility_outlined, size: 18),
               label: const Text('VOIR LE BON PLAN'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF9800),
-                foregroundColor: Colors.white,
+                backgroundColor: AdaptiveColors.surface(
+                  context,
+                  const Color(0xFFFF9800),
+                ),
+                foregroundColor: AdaptiveColors.foreground(
+                  context,
+                  Colors.white,
+                ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -2055,9 +2140,9 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
 
     return Text(
       descriptionPlain,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
-        color: Color(0xFF666666),
+        color: AdaptiveColors.foreground(context, Color(0xFF666666)),
         height: 1.5,
       ),
       maxLines: 3,
@@ -2069,16 +2154,31 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: AdaptiveColors.surface(context, const Color(0xFFF5F5F5)),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.grey[600]),
+          Icon(
+            icon,
+            size: 14,
+            color: AdaptiveColors.foreground(context, Colors.grey[600]),
+          ),
           const SizedBox(width: 4),
-          Text(text, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.grey[700]),
+            ),
+          ),
         ],
       ),
     );
@@ -2090,11 +2190,18 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[400]),
+            Icon(
+              Icons.inbox_outlined,
+              size: 48,
+              color: AdaptiveColors.foreground(context, Colors.grey[400]),
+            ),
             const SizedBox(height: 12),
             Text(
               message,
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              style: TextStyle(
+                fontSize: 14,
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -2109,11 +2216,18 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: AdaptiveColors.foreground(context, Colors.red[300]),
+            ),
             const SizedBox(height: 12),
             Text(
               message,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 14,
+                color: AdaptiveColors.foreground(context, Colors.grey[600]),
+              ),
               textAlign: TextAlign.center,
             ),
             if (onRetry != null) ...[
@@ -2144,7 +2258,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -2165,17 +2279,20 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
               const SizedBox(height: 6),
               Text(
                 label,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Color(0xFF666666)),
+                ),
               ),
             ],
           ),
           const Spacer(),
           Text(
             count,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w400,
-              color: Color(0xFF333333),
+              color: AdaptiveColors.foreground(context, Color(0xFF333333)),
             ),
           ),
         ],

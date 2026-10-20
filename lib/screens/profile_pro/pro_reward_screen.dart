@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/constants/reward_action_labels.dart';
 import 'package:myreklam/widgets/app_layout.dart';
@@ -41,21 +42,21 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
 
     if (mys <= SILVER_MAX) {
       level = 'Silver';
-      color = Colors.grey[400]!;
+      color = AdaptiveColors.foreground(context, Colors.grey[400]!);
       currentMin = SILVER_MIN;
       currentMax = SILVER_MAX;
       nextLevelMin = GOLD_MIN;
       nextLevel = 'Gold';
     } else if (mys <= GOLD_MAX) {
       level = 'Gold';
-      color = const Color(0xFFFF9800);
+      color = AdaptiveColors.foreground(context, const Color(0xFFFF9800));
       currentMin = GOLD_MIN;
       currentMax = GOLD_MAX;
       nextLevelMin = PLATINUM_MIN;
       nextLevel = 'Platinum';
     } else {
       level = 'Platinum';
-      color = const Color(0xFF4DB6AC);
+      color = AdaptiveColors.foreground(context, const Color(0xFF4DB6AC));
       currentMin = PLATINUM_MIN;
       currentMax = PLATINUM_MIN + 300; // Arbitrary max for display
       nextLevelMin = currentMax;
@@ -145,9 +146,9 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
     final availableMys = _currentMys > 0 ? _currentMys : UserSession().mys;
     if (availableMys < 1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Vous devez avoir au moins 1 My\'s à convertir.'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AdaptiveColors.surface(context, Colors.orange),
         ),
       );
       return;
@@ -225,13 +226,19 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
             response['message']?.toString() ??
                 'Conversion enregistrée avec succès.',
           ),
-          backgroundColor: const Color(0xFF3AAE5E),
+          backgroundColor: AdaptiveColors.surface(
+            context,
+            const Color(0xFF3AAE5E),
+          ),
         ),
       );
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.firstError), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.firstError),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isConverting = false);
@@ -268,22 +275,22 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
         }
       },
       body: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AdaptiveColors.surface(context, Colors.white),
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_back_ios,
-              color: Color(0xFF616161),
+              color: AdaptiveColors.foreground(context, Color(0xFF616161)),
               size: 18,
             ),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
+          title: Text(
             'Vos récompenses',
             style: TextStyle(
-              color: Color(0xFF2D2D2D),
+              color: AdaptiveColors.foreground(context, Color(0xFF2D2D2D)),
               fontFamily: 'Manjari',
               fontWeight: FontWeight.bold,
               fontSize: 18,
@@ -300,7 +307,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[500],
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
                   height: 1.4,
                 ),
               ),
@@ -313,7 +320,10 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
 
               Text(
                 'Echangez vos My\'s contre des avantages exclusifs',
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
 
               const SizedBox(height: 12),
@@ -336,8 +346,14 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF9800),
-                      foregroundColor: Colors.white,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFFF9800),
+                      ),
+                      foregroundColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.white,
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -359,9 +375,18 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                       icon: Icons.show_chart,
                       label: '${(levelInfo['progress'] * 100).toInt()}%',
                       sublabel: 'Progression',
-                      color: const Color(0xFF2196F3),
-                      borderColor: const Color(0xFFBBDEFB),
-                      iconBg: const Color(0xFFE3F2FD),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFF2196F3),
+                      ),
+                      borderColor: AdaptiveColors.border(
+                        context,
+                        const Color(0xFFBBDEFB),
+                      ),
+                      iconBg: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFE3F2FD),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     _buildTierBadge(
@@ -370,15 +395,30 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                       sublabel: 'Niveau actuel',
                       color: levelInfo['color'],
                       borderColor: levelInfo['level'] == 'Silver'
-                          ? Colors.grey[300]!
+                          ? AdaptiveColors.border(context, Colors.grey[300]!)
                           : (levelInfo['level'] == 'Gold'
-                                ? const Color(0xFFFFE0B2)
-                                : const Color(0xFFB2DFDB)),
+                                ? AdaptiveColors.border(
+                                    context,
+                                    const Color(0xFFFFE0B2),
+                                  )
+                                : AdaptiveColors.border(
+                                    context,
+                                    const Color(0xFFB2DFDB),
+                                  )),
                       iconBg: levelInfo['level'] == 'Silver'
-                          ? const Color(0xFFF0F0F0)
+                          ? AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFF0F0F0),
+                            )
                           : (levelInfo['level'] == 'Gold'
-                                ? const Color(0xFFFFF3E0)
-                                : const Color(0xFFE8F5F3)),
+                                ? AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFFFFF3E0),
+                                  )
+                                : AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFFE8F5F3),
+                                  )),
                     ),
                     const SizedBox(width: 8),
                     _buildTierBadge(
@@ -390,14 +430,32 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                           ? 'Niveau max'
                           : 'Prochain niveau',
                       color: levelInfo['nextLevel'] == 'Max'
-                          ? const Color(0xFF4DB6AC)
-                          : const Color(0xFFFFD600),
+                          ? AdaptiveColors.surface(
+                              context,
+                              const Color(0xFF4DB6AC),
+                            )
+                          : AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFFFD600),
+                            ),
                       borderColor: levelInfo['nextLevel'] == 'Max'
-                          ? const Color(0xFFB2DFDB)
-                          : const Color(0xFFFFF9C4),
+                          ? AdaptiveColors.border(
+                              context,
+                              const Color(0xFFB2DFDB),
+                            )
+                          : AdaptiveColors.border(
+                              context,
+                              const Color(0xFFFFF9C4),
+                            ),
                       iconBg: levelInfo['nextLevel'] == 'Max'
-                          ? const Color(0xFFE8F5F3)
-                          : const Color(0xFFFFFDE7),
+                          ? AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFE8F5F3),
+                            )
+                          : AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFFFFDE7),
+                            ),
                     ),
                   ],
                 ),
@@ -437,9 +495,12 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(16, 40, 16, 16),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF8F1),
+              color: AdaptiveColors.surface(context, const Color(0xFFFFF8F1)),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFFCC80), width: 1),
+              border: Border.all(
+                color: AdaptiveColors.border(context, const Color(0xFFFFCC80)),
+                width: 1,
+              ),
             ),
             child: Column(
               children: [
@@ -447,7 +508,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                   'Votre Solde',
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -461,15 +522,18 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                       style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFFFF9800),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFFFF9800),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 4),
                     Container(
                       width: 20,
                       height: 20,
-                      decoration: const BoxDecoration(
-                        color: Colors.amber,
+                      decoration: BoxDecoration(
+                        color: AdaptiveColors.surface(context, Colors.amber),
                         shape: BoxShape.circle,
                       ),
                       child: Image.asset(
@@ -486,13 +550,25 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                   children: [
                     Text(
                       'Niveau ${levelInfo['level']}',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[500],
+                        ),
+                      ),
                     ),
                     Text(
                       levelInfo['remaining'] > 0
                           ? '${levelInfo['remaining']} My\'s jusqu\'au ${levelInfo['nextLevel'].toUpperCase()}'
                           : 'Niveau maximum atteint',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[500],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -502,7 +578,10 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                   child: LinearProgressIndicator(
                     value: levelInfo['progress'],
                     minHeight: 8,
-                    backgroundColor: Colors.white,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      Colors.white,
+                    ),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       levelInfo['color'],
                     ),
@@ -537,8 +616,8 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
             top: -24,
             child: Container(
               padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFF9800),
+              decoration: BoxDecoration(
+                color: AdaptiveColors.surface(context, Color(0xFFFF9800)),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
@@ -548,9 +627,9 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.emoji_events,
-                color: Colors.white,
+                color: AdaptiveColors.foreground(context, Colors.white),
                 size: 28,
               ),
             ),
@@ -572,7 +651,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: borderColor, width: 1),
           boxShadow: [
@@ -603,7 +682,10 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[700],
+                      ),
                     ),
                   ),
                 ),
@@ -614,7 +696,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
               sublabel,
               style: TextStyle(
                 fontSize: 10,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -635,9 +717,11 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF9F9F9),
+          color: AdaptiveColors.surface(context, const Color(0xFFF9F9F9)),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(
+            color: AdaptiveColors.border(context, Colors.grey[200]!),
+          ),
         ),
         child: Column(
           children: [
@@ -646,13 +730,16 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFFF3E0),
+                  decoration: BoxDecoration(
+                    color: AdaptiveColors.surface(context, Color(0xFFFFF3E0)),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.emoji_events_outlined,
-                    color: Color(0xFFFF9800),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFFF9800),
+                    ),
                     size: 16,
                   ),
                 ),
@@ -661,7 +748,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                   'Votre Statut ambassadeur',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[500],
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -674,7 +761,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
               width: 190,
               height: 190,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AdaptiveColors.surface(context, Colors.white),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
@@ -694,7 +781,10 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFFFF9800).withValues(alpha: 0.4),
+                        color: AdaptiveColors.border(
+                          context,
+                          const Color(0xFFFF9800),
+                        ).withValues(alpha: 0.4),
                         width: 1.5,
                       ),
                     ),
@@ -710,13 +800,19 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                         errorBuilder: (context, error, stackTrace) => Container(
                           width: 50,
                           height: 50,
-                          decoration: const BoxDecoration(
-                            color: Colors.amber,
+                          decoration: BoxDecoration(
+                            color: AdaptiveColors.surface(
+                              context,
+                              Colors.amber,
+                            ),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.monetization_on,
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             size: 35,
                           ),
                         ),
@@ -727,7 +823,10 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFFF9800),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFFFF9800),
+                          ),
                         ),
                       ),
                     ],
@@ -747,10 +846,16 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                         ? Icons.check_circle
                         : Icons.lock_outline,
                     color: userMys > SILVER_MAX
-                        ? Colors.grey[400]!
-                        : Colors.grey[300]!,
-                    bgColor: const Color(0xFFF0F0F0),
-                    borderColor: Colors.grey[300]!,
+                        ? AdaptiveColors.surface(context, Colors.grey[400]!)
+                        : AdaptiveColors.surface(context, Colors.grey[300]!),
+                    bgColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFF0F0F0),
+                    ),
+                    borderColor: AdaptiveColors.border(
+                      context,
+                      Colors.grey[300]!,
+                    ),
                   ),
             const SizedBox(height: 12),
 
@@ -764,14 +869,26 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                         ? Icons.check_circle
                         : Icons.lock_outline,
                     color: userMys > GOLD_MAX
-                        ? const Color(0xFFFF9800)
-                        : Colors.grey[300]!,
+                        ? AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFF9800),
+                          )
+                        : AdaptiveColors.surface(context, Colors.grey[300]!),
                     bgColor: userMys > GOLD_MAX
-                        ? const Color(0xFFFFF7EE)
-                        : const Color(0xFFF0F0F0),
+                        ? AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFFFF7EE),
+                          )
+                        : AdaptiveColors.surface(
+                            context,
+                            const Color(0xFFF0F0F0),
+                          ),
                     borderColor: userMys > GOLD_MAX
-                        ? const Color(0xFFFFE0B2)
-                        : Colors.grey[300]!,
+                        ? AdaptiveColors.border(
+                            context,
+                            const Color(0xFFFFE0B2),
+                          )
+                        : AdaptiveColors.border(context, Colors.grey[300]!),
                   ),
 
             const SizedBox(height: 12),
@@ -783,9 +900,15 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                     title: 'PLATINUM',
                     subtitle: '201+ My\'s',
                     icon: Icons.lock_outline,
-                    color: Colors.grey[300]!,
-                    bgColor: const Color(0xFFF0F0F0),
-                    borderColor: Colors.grey[300]!,
+                    color: AdaptiveColors.surface(context, Colors.grey[300]!),
+                    bgColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFF0F0F0),
+                    ),
+                    borderColor: AdaptiveColors.border(
+                      context,
+                      Colors.grey[300]!,
+                    ),
                   ),
           ],
         ),
@@ -820,9 +943,17 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: color == const Color(0xFF4DB6AC)
-                      ? const Color(0xFF26A69A)
-                      : Colors.grey[700],
+                  color:
+                      color ==
+                          AdaptiveColors.foreground(
+                            context,
+                            const Color(0xFF4DB6AC),
+                          )
+                      ? AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFF26A69A),
+                        )
+                      : AdaptiveColors.foreground(context, Colors.grey[700]),
                 ),
               ),
               const SizedBox(height: 2),
@@ -830,7 +961,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                 subtitle,
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.grey[500],
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -856,10 +987,13 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: level == 'Silver'
-                ? const Color(0xFFF0F0F0)
+                ? AdaptiveColors.surface(context, const Color(0xFFF0F0F0))
                 : (level == 'Gold'
-                      ? const Color(0xFFFFF7EE)
-                      : const Color(0xFFE8F5F3)),
+                      ? AdaptiveColors.surface(context, const Color(0xFFFFF7EE))
+                      : AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFE8F5F3),
+                        )),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: color.withValues(alpha: 0.5)),
           ),
@@ -886,7 +1020,13 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                         level == 'Platinum'
                             ? '201+ My\'s'
                             : '$currentMin - $currentMax My\'s',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -898,7 +1038,10 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 6,
-                  backgroundColor: Colors.white,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    Colors.white,
+                  ),
                   valueColor: AlwaysStoppedAnimation<Color>(color),
                 ),
               ),
@@ -909,7 +1052,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                     : 'Niveau maximum atteint !',
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.grey[500],
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -932,12 +1075,12 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                 ),
               ],
             ),
-            child: const Text(
+            child: Text(
               'Plan Actuel',
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AdaptiveColors.foreground(context, Colors.white),
               ),
             ),
           ),
@@ -952,9 +1095,11 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(
+            color: AdaptiveColors.border(context, Colors.grey[200]!),
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -969,30 +1114,36 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
             // Header
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.emoji_events_outlined,
                   size: 20,
-                  color: Colors.grey,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
                 ),
                 const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Historique de Recompenses',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF424242),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF424242),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       '$userMys My\'s gagnés',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF3AAE5E),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF3AAE5E),
+                        ),
                       ),
                     ),
                   ],
@@ -1000,7 +1151,10 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            Divider(height: 1, color: Colors.grey[100]),
+            Divider(
+              height: 1,
+              color: AdaptiveColors.border(context, Colors.grey[100]),
+            ),
             const SizedBox(height: 16),
 
             // History rows
@@ -1017,7 +1171,13 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                   padding: const EdgeInsets.all(20),
                   child: Text(
                     'Aucun historique disponible',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                    style: TextStyle(
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[500],
+                      ),
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               )
@@ -1053,12 +1213,15 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                       ),
                     );
                   },
-                  child: const Text(
+                  child: Text(
                     'Voir plus',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF2D2D2D),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF2D2D2D),
+                      ),
                     ),
                   ),
                 ),
@@ -1078,7 +1241,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF2F2F2),
+        color: AdaptiveColors.surface(context, const Color(0xFFF2F2F2)),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -1086,10 +1249,17 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.grey[350]?.withValues(alpha: 0.5),
+              color: AdaptiveColors.surface(
+                context,
+                Colors.grey[350],
+              )?.withValues(alpha: 0.5),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.person, color: Colors.grey[500], size: 22),
+            child: Icon(
+              Icons.person,
+              color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              size: 22,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1098,16 +1268,22 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF555555),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF555555),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   date,
-                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                  ),
                 ),
               ],
             ),
@@ -1117,16 +1293,19 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
             children: [
               Text(
                 amount,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 type,
-                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
+                ),
               ),
             ],
           ),
@@ -1146,9 +1325,12 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AdaptiveColors.surface(context, Colors.white),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFF9800), width: 1),
+          border: Border.all(
+            color: AdaptiveColors.border(context, const Color(0xFFFF9800)),
+            width: 1,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1158,18 +1340,24 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.lightbulb_outline,
-                    color: Color(0xFFFFCCBC),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFFFCCBC),
+                    ),
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Comment gagner plus de My\'s',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFFFF9800),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFFFF9800),
+                      ),
                     ),
                   ),
                 ],
@@ -1180,15 +1368,18 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
               padding: const EdgeInsets.only(left: 40, bottom: 12),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.lightbulb_outline,
-                    color: Colors.grey,
+                    color: AdaptiveColors.foreground(context, Colors.grey),
                     size: 18,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     'Tips',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AdaptiveColors.foreground(context, Colors.grey),
+                    ),
                   ),
                 ],
               ),
@@ -1294,8 +1485,11 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: isEven
-            ? const Color(0xFFFFF3E0).withValues(alpha: 0.3)
-            : Colors.white,
+            ? AdaptiveColors.surface(
+                context,
+                const Color(0xFFFFF3E0),
+              ).withValues(alpha: 0.3)
+            : AdaptiveColors.surface(context, Colors.white),
         borderRadius: isLast
             ? const BorderRadius.only(
                 bottomLeft: Radius.circular(11),
@@ -1306,7 +1500,11 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: const Color(0xFFFF9800), size: 24),
+          Icon(
+            icon,
+            color: AdaptiveColors.foreground(context, const Color(0xFFFF9800)),
+            size: 24,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1314,10 +1512,13 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFFFF9800),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFFFF9800),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1325,7 +1526,7 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
                   subtitle,
                   style: TextStyle(
                     fontSize: 11,
-                    color: Colors.grey[500],
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
                     height: 1.3,
                   ),
                 ),
@@ -1335,10 +1536,10 @@ class _ProRewardScreenState extends State<ProRewardScreen> {
           const SizedBox(width: 12),
           Text(
             reward,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFFF9800),
+              color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
             ),
           ),
         ],

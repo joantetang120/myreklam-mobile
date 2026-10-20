@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/app_layout.dart';
 import 'package:myreklam/screens/particulier_main_screen.dart';
@@ -51,7 +52,9 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFFFF9800)),
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
+            ),
           ),
           child: child!,
         );
@@ -98,7 +101,9 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: AdaptiveColors.foreground(context, Colors.red),
+            ),
             child: const Text('Supprimer'),
           ),
         ],
@@ -109,17 +114,17 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
       final success = await _savedSearchService.deleteSearch(searchId);
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Recherche supprimée'),
-            backgroundColor: Color(0xFF3AAE5E),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
           ),
         );
         await _loadSavedSearches();
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Erreur lors de la suppression'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -193,23 +198,32 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                 Expanded(
                   child: Text(
                     search['name'] ?? 'Recherche',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF424242),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFF424242),
+                      ),
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.visibility_outlined,
-                    color: Color(0xFF2196F3),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF2196F3),
+                    ),
                   ),
                   onPressed: () => _viewSearch(search),
                   tooltip: 'Voir',
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  icon: Icon(
+                    Icons.delete_outline,
+                    color: AdaptiveColors.foreground(context, Colors.red),
+                  ),
                   onPressed: () => _deleteSearch(search['id']),
                   tooltip: 'Supprimer',
                 ),
@@ -229,15 +243,26 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF9800).withValues(alpha: 0.1),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFF9800),
+                    ).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFFF9800)),
+                    border: Border.all(
+                      color: AdaptiveColors.border(
+                        context,
+                        const Color(0xFFFF9800),
+                      ),
+                    ),
                   ),
                   child: Text(
                     '${entry.key}: ${entry.value}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color(0xFFFF9800),
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Color(0xFFFF9800),
+                      ),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -265,12 +290,15 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
         }
       },
       body: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AdaptiveColors.surface(context, Colors.white),
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF616161)),
+            icon: Icon(
+              Icons.arrow_back,
+              color: AdaptiveColors.foreground(context, Color(0xFF616161)),
+            ),
             onPressed: () {
               Navigator.pushReplacement(
                 context,
@@ -278,10 +306,10 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
               );
             },
           ),
-          title: const Text(
+          title: Text(
             'Mes recherches sauvegardées',
             style: TextStyle(
-              color: Color(0xFF616161),
+              color: AdaptiveColors.foreground(context, Color(0xFF616161)),
               fontFamily: 'Manjari',
               fontWeight: FontWeight.bold,
               fontSize: 18,
@@ -298,7 +326,7 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.grey[600],
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
                   height: 1.4,
                 ),
               ),
@@ -324,13 +352,27 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                           ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: _selectedDate != null
-                                ? Colors.white
-                                : const Color(0xFFFF9800),
+                                ? AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  )
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    const Color(0xFFFF9800),
+                                  ),
                             backgroundColor: _selectedDate != null
-                                ? const Color(0xFFFF9800)
+                                ? AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFFFF9800),
+                                  )
                                 : null,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            side: const BorderSide(color: Color(0xFFFF9800)),
+                            side: BorderSide(
+                              color: AdaptiveColors.border(
+                                context,
+                                Color(0xFFFF9800),
+                              ),
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -344,8 +386,14 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                           icon: const Icon(Icons.clear, size: 18),
                           tooltip: 'Effacer le filtre de date',
                           style: IconButton.styleFrom(
-                            backgroundColor: Colors.red.withValues(alpha: 0.1),
-                            foregroundColor: Colors.red,
+                            backgroundColor: AdaptiveColors.surface(
+                              context,
+                              Colors.red,
+                            ).withValues(alpha: 0.1),
+                            foregroundColor: AdaptiveColors.foreground(
+                              context,
+                              Colors.red,
+                            ),
                           ),
                         ),
                       ],
@@ -363,16 +411,30 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 _sortBy == 'created_at' && _sortOrder == 'desc'
-                                ? const Color(0xFFFF9800)
-                                : Colors.white,
+                                ? AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFFFF9800),
+                                  )
+                                : AdaptiveColors.surface(context, Colors.white),
                             foregroundColor:
                                 _sortBy == 'created_at' && _sortOrder == 'desc'
-                                ? Colors.white
-                                : const Color(0xFFFF9800),
+                                ? AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  )
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    const Color(0xFFFF9800),
+                                  ),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
-                              side: const BorderSide(color: Color(0xFFFF9800)),
+                              side: BorderSide(
+                                color: AdaptiveColors.border(
+                                  context,
+                                  Color(0xFFFF9800),
+                                ),
+                              ),
                             ),
                             elevation: 0,
                           ),
@@ -387,16 +449,30 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
                                 _sortBy == 'created_at' && _sortOrder == 'asc'
-                                ? const Color(0xFFFF9800)
-                                : Colors.white,
+                                ? AdaptiveColors.surface(
+                                    context,
+                                    const Color(0xFFFF9800),
+                                  )
+                                : AdaptiveColors.surface(context, Colors.white),
                             foregroundColor:
                                 _sortBy == 'created_at' && _sortOrder == 'asc'
-                                ? Colors.white
-                                : const Color(0xFFFF9800),
+                                ? AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  )
+                                : AdaptiveColors.foreground(
+                                    context,
+                                    const Color(0xFFFF9800),
+                                  ),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
-                              side: const BorderSide(color: Color(0xFFFF9800)),
+                              side: BorderSide(
+                                color: AdaptiveColors.border(
+                                  context,
+                                  Color(0xFFFF9800),
+                                ),
+                              ),
                             ),
                             elevation: 0,
                           ),
@@ -414,10 +490,13 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Total recherche : ${_savedSearches.length}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF616161),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Color(0xFF616161),
+                    ),
                   ),
                 ),
               ),
@@ -434,14 +513,20 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                           Icon(
                             Icons.search_off,
                             size: 64,
-                            color: Colors.grey[400],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[400],
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'Aucune recherche sauvegardée',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                         ],
@@ -472,8 +557,14 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9800),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFF9800),
+                    ),
+                    foregroundColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

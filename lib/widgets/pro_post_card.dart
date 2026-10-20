@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/widgets/reklam_avatar.dart';
 
@@ -45,7 +46,7 @@ class ProPostCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -54,7 +55,12 @@ class ProPostCard extends StatelessWidget {
             offset: const Offset(0, 5),
           ),
         ],
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        border: Border.all(
+          color: AdaptiveColors.border(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -80,10 +86,13 @@ class ProPostCard extends StatelessWidget {
                       onTap: onAvatarTap,
                       child: Text(
                         username,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF616161),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF616161),
+                          ),
                         ),
                       ),
                     ),
@@ -94,17 +103,26 @@ class ProPostCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE6F7EF),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFE6F7EF),
+                        ),
                         borderRadius: BorderRadius.circular(5),
                         border: Border.all(
-                          color: const Color(0xFF3AAE5E).withValues(alpha: 0.2),
+                          color: AdaptiveColors.border(
+                            context,
+                            const Color(0xFF3AAE5E),
+                          ).withValues(alpha: 0.2),
                         ),
                       ),
                       child: Text(
                         userType,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
-                          color: Color(0xFF3AAE5E),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFF3AAE5E),
+                          ),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -116,19 +134,28 @@ class ProPostCard extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.favorite_border,
-                    color: Colors.grey.withValues(alpha: 0.7),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Colors.grey,
+                    ).withValues(alpha: 0.7),
                     size: 20,
                   ),
                   const SizedBox(width: 10),
                   Icon(
                     Icons.more_horiz,
-                    color: Colors.grey.withValues(alpha: 0.7),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Colors.grey,
+                    ).withValues(alpha: 0.7),
                     size: 20,
                   ),
                   const SizedBox(width: 10),
                   Icon(
                     Icons.close,
-                    color: Colors.grey.withValues(alpha: 0.7),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      Colors.grey,
+                    ).withValues(alpha: 0.7),
                     size: 20,
                   ),
                 ],
@@ -139,18 +166,18 @@ class ProPostCard extends StatelessWidget {
           // Post Text
           RichText(
             text: TextSpan(
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF757575),
+                color: AdaptiveColors.foreground(context, Color(0xFF757575)),
                 height: 1.5,
               ),
               children: [
                 TextSpan(text: postText),
                 if (postText.length > 50)
-                  const TextSpan(
+                  TextSpan(
                     text: '...plus',
                     style: TextStyle(
-                      color: Colors.grey,
+                      color: AdaptiveColors.foreground(context, Colors.grey),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -164,7 +191,7 @@ class ProPostCard extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(15),
-                  child: _buildPostImage(postImage!),
+                  child: _buildPostImage(context, postImage!),
                 ),
                 if (reductionPercentage != null)
                   Positioned(
@@ -176,13 +203,19 @@ class ProPostCard extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFF9800),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFFF9800),
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         reductionPercentage!,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -196,30 +229,56 @@ class ProPostCard extends StatelessWidget {
           // Category Metadata
           Row(
             children: [
-              Icon(categoryIcon, size: 16, color: Colors.grey),
+              Icon(
+                categoryIcon,
+                size: 16,
+                color: AdaptiveColors.foreground(context, Colors.grey),
+              ),
               const SizedBox(width: 6),
               Text(
                 categoryName,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
+          Divider(
+            height: 1,
+            color: AdaptiveColors.border(
+              context,
+              Colors.grey,
+            ).withValues(alpha: 0.2),
+          ),
           const SizedBox(height: 12),
           // Merchant and Time
           Row(
             children: [
-              const Icon(Icons.public, size: 16, color: Colors.grey),
+              Icon(
+                Icons.public,
+                size: 16,
+                color: AdaptiveColors.foreground(context, Colors.grey),
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: RichText(
                   text: TextSpan(
-                    style: const TextStyle(fontSize: 12, color: Colors.black87),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AdaptiveColors.foreground(context, Colors.black87),
+                    ),
                     children: [
-                      const TextSpan(
+                      TextSpan(
                         text: 'En ligne disponible chez ',
-                        style: TextStyle(fontSize: 10, color: Colors.black87),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.black87,
+                          ),
+                        ),
                       ),
                       TextSpan(
                         text: merchantName,
@@ -232,17 +291,35 @@ class ProPostCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const Text(' | ', style: TextStyle(color: Colors.grey)),
-              const Icon(Icons.access_time, size: 16, color: Colors.grey),
+              Text(
+                ' | ',
+                style: TextStyle(
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
+              ),
+              Icon(
+                Icons.access_time,
+                size: 16,
+                color: AdaptiveColors.foreground(context, Colors.grey),
+              ),
               const SizedBox(width: 4),
               Text(
                 timeAgo,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
+          Divider(
+            height: 1,
+            color: AdaptiveColors.border(
+              context,
+              Colors.grey,
+            ).withValues(alpha: 0.2),
+          ),
           const SizedBox(height: 16),
           // Price and CTA
           Row(
@@ -250,10 +327,10 @@ class ProPostCard extends StatelessWidget {
             children: [
               Text(
                 price,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFFF9800),
+                  color: AdaptiveColors.foreground(context, Color(0xFFFF9800)),
                 ),
               ),
               ElevatedButton.icon(
@@ -264,8 +341,14 @@ class ProPostCard extends StatelessWidget {
                   style: TextStyle(fontSize: 12),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF9800),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFFF9800),
+                  ),
+                  foregroundColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.white,
+                  ),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 12,
@@ -279,14 +362,25 @@ class ProPostCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
+          Divider(
+            height: 1,
+            color: AdaptiveColors.border(
+              context,
+              Colors.grey,
+            ).withValues(alpha: 0.2),
+          ),
           const SizedBox(height: 16),
           // Engagement Stats
           Row(
             children: [
-              _buildStat(Icons.thumb_up_alt_outlined, likesCount.toString()),
+              _buildStat(
+                context,
+                Icons.thumb_up_alt_outlined,
+                likesCount.toString(),
+              ),
               const SizedBox(width: 20),
               _buildStat(
+                context,
                 Icons.chat_bubble_outline,
                 commentsCount.toString(),
                 onTap: onCommentsTap,
@@ -299,16 +393,28 @@ class ProPostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStat(IconData icon, String count, {VoidCallback? onTap}) {
+  Widget _buildStat(
+    BuildContext context,
+    IconData icon,
+    String count, {
+    VoidCallback? onTap,
+  }) {
     final content = Row(
       children: [
-        Icon(icon, color: Colors.grey.withValues(alpha: 0.7), size: 18),
+        Icon(
+          icon,
+          color: AdaptiveColors.foreground(
+            context,
+            Colors.grey,
+          ).withValues(alpha: 0.7),
+          size: 18,
+        ),
         const SizedBox(width: 6),
         Text(
           count,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Colors.grey,
+            color: AdaptiveColors.foreground(context, Colors.grey),
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -333,14 +439,14 @@ class ProPostCard extends StatelessWidget {
     return AssetImage(path);
   }
 
-  Widget _buildPostImage(String path) {
+  Widget _buildPostImage(BuildContext context, String path) {
     if (path.startsWith('http')) {
       return Image.network(
         path,
         width: double.infinity,
         height: 200,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+        errorBuilder: (_, __, ___) => _buildImagePlaceholder(context),
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
           return SizedBox(
@@ -363,18 +469,18 @@ class ProPostCard extends StatelessWidget {
       width: double.infinity,
       height: 200,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
+      errorBuilder: (_, __, ___) => _buildImagePlaceholder(context),
     );
   }
 
-  Widget _buildImagePlaceholder() {
+  Widget _buildImagePlaceholder(BuildContext context) {
     return Container(
       width: double.infinity,
       height: 200,
-      color: Colors.grey[200],
-      child: const Icon(
+      color: AdaptiveColors.surface(context, Colors.grey[200]),
+      child: Icon(
         Icons.image_not_supported,
-        color: Colors.grey,
+        color: AdaptiveColors.foreground(context, Colors.grey),
         size: 40,
       ),
     );

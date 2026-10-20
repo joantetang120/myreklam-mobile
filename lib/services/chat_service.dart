@@ -396,7 +396,7 @@ class ChatService {
     // 🟢 Récupérer la liste initiale des membres en ligne
     if (channelName == 'presence-online-users') {
       try {
-        debugPrint('👥 Data reçue: $data');
+        debugPrint('👥 Presence update received');
 
         onlineUserIds.clear();
 

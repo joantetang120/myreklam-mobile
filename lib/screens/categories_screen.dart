@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:myreklam/screens/notifications_screen.dart';
 import 'package:myreklam/widgets/app_layout.dart';
@@ -27,12 +28,15 @@ class CategoriesScreen extends StatelessWidget {
         height: 32,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: const Color(0xFFE6F7EF),
-          border: Border.all(color: const Color(0xFF2A8143), width: 1.5),
+          color: AdaptiveColors.surface(context, const Color(0xFFE6F7EF)),
+          border: Border.all(
+            color: AdaptiveColors.border(context, const Color(0xFF2A8143)),
+            width: 1.5,
+          ),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.notifications,
-          color: Color(0xFF2A8143),
+          color: AdaptiveColors.foreground(context, Color(0xFF2A8143)),
           size: 18,
         ),
       ),
@@ -47,7 +51,10 @@ class CategoriesScreen extends StatelessWidget {
         description:
             'Découvrez les meilleures offres et promotions près de chez vous.',
         icon: Icons.card_giftcard_outlined,
-        bgColor: const Color(0xFFFFE0B2).withValues(alpha: 0.3),
+        bgColor: AdaptiveColors.surface(
+          context,
+          const Color(0xFFFFE0B2),
+        ).withValues(alpha: 0.3),
         iconColor: const Color.fromARGB(255, 252, 116, 37),
         onTap: () {
           Navigator.push(
@@ -61,8 +68,11 @@ class CategoriesScreen extends StatelessWidget {
         description:
             'Trouvez votre prochain emploi ou déposez vos offres de recrutement.',
         icon: Icons.work_outline,
-        bgColor: const Color(0xFFB3E5FC).withValues(alpha: 0.3),
-        iconColor: Colors.lightBlueAccent,
+        bgColor: AdaptiveColors.surface(
+          context,
+          const Color(0xFFB3E5FC),
+        ).withValues(alpha: 0.3),
+        iconColor: AdaptiveColors.foreground(context, Colors.lightBlueAccent),
         onTap: () {
           Navigator.push(
             context,
@@ -75,8 +85,11 @@ class CategoriesScreen extends StatelessWidget {
         description:
             'Développez vos compétences avec nos formations et cours disponibles.',
         icon: Icons.school_outlined,
-        bgColor: const Color(0xFFE1BEE7).withValues(alpha: 0.2),
-        iconColor: Colors.purple,
+        bgColor: AdaptiveColors.surface(
+          context,
+          const Color(0xFFE1BEE7),
+        ).withValues(alpha: 0.2),
+        iconColor: AdaptiveColors.foreground(context, Colors.purple),
         onTap: () {
           Navigator.push(
             context,
@@ -89,8 +102,11 @@ class CategoriesScreen extends StatelessWidget {
         description:
             'Participez aux événements et rencontres organisés dans votre région.',
         icon: Icons.event_outlined,
-        bgColor: const Color(0xFFE6F7EF).withValues(alpha: 0.5),
-        iconColor: Colors.green,
+        bgColor: AdaptiveColors.surface(
+          context,
+          const Color(0xFFE6F7EF),
+        ).withValues(alpha: 0.5),
+        iconColor: AdaptiveColors.foreground(context, Colors.green),
         onTap: () {
           Navigator.push(
             context,
@@ -115,7 +131,7 @@ class CategoriesScreen extends StatelessWidget {
     ];
 
     return AppLayout(
-      backgroundColor: const Color(0xFFF9F9FB),
+      backgroundColor: AdaptiveColors.surface(context, const Color(0xFFF9F9FB)),
       onTabTapped: (index) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
@@ -130,7 +146,10 @@ class CategoriesScreen extends StatelessWidget {
             floating: false,
             pinned: true,
             snap: false,
-            backgroundColor: const Color(0xFF2A8143),
+            backgroundColor: AdaptiveColors.surface(
+              context,
+              const Color(0xFF2A8143),
+            ),
             automaticallyImplyLeading: false,
             elevation: 0,
             shape: const RoundedRectangleBorder(
@@ -149,11 +168,14 @@ class CategoriesScreen extends StatelessWidget {
 
                 return FlexibleSpaceBar(
                   background: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Color(0xFF2A8143), Color(0xFF3AAE5E)],
+                        colors: [
+                          AdaptiveColors.surface(context, Color(0xFF2A8143)),
+                          AdaptiveColors.surface(context, Color(0xFF3AAE5E)),
+                        ],
                       ),
                       borderRadius: BorderRadius.only(
                         bottomLeft: Radius.circular(30),
@@ -179,17 +201,23 @@ class CategoriesScreen extends StatelessWidget {
                               ),
                               child: GestureDetector(
                                 onTap: () => Navigator.pop(context),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.arrow_back,
-                                  color: Colors.white,
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.white,
+                                  ),
                                   size: 22,
                                 ),
                               ),
                             ),
-                            const Text(
+                            Text(
                               'Catégories',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.white,
+                                ),
                                 fontSize: 22,
                                 fontFamily: 'Manjari',
                                 fontWeight: FontWeight.bold,
@@ -211,9 +239,12 @@ class CategoriesScreen extends StatelessWidget {
                               children: [
                                 GestureDetector(
                                   onTap: () => Navigator.pop(context),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.arrow_back,
-                                    color: Colors.white,
+                                    color: AdaptiveColors.foreground(
+                                      context,
+                                      Colors.white,
+                                    ),
                                     size: 22,
                                   ),
                                 ),
@@ -249,9 +280,17 @@ class CategoriesScreen extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF9E6),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFFF9E6),
+                    ),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFFFD700)),
+                    border: Border.all(
+                      color: AdaptiveColors.border(
+                        context,
+                        const Color(0xFFFFD700),
+                      ),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -264,7 +303,10 @@ class CategoriesScreen extends StatelessWidget {
                       Text(
                         UserSession().mys.toString(),
                         style: TextStyle(
-                          color: Color(0xFFFFD700),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Color(0xFFFFD700),
+                          ),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -323,10 +365,13 @@ class CategoriesScreen extends StatelessWidget {
                         const SizedBox(height: 10),
                         Text(
                           cat.title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF616161),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF616161),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -334,7 +379,10 @@ class CategoriesScreen extends StatelessWidget {
                           cat.description,
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.grey[500],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[500],
+                            ),
                             height: 1.4,
                           ),
                           maxLines: 2,

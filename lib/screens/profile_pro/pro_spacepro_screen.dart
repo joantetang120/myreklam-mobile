@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:myreklam/constants/job_labels.dart';
@@ -197,7 +198,6 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
 
       debugPrint('Filtered events count: ${filtered.length}');
       if (filtered.isNotEmpty) {
-        debugPrint('First event user data: ${filtered.first['user']}');
         debugPrint(
           'First event participations: ${filtered.first['participations'] ?? filtered.first['participants']}',
         );
@@ -532,18 +532,21 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
       appBar: AppBar(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: AdaptiveColors.surface(context, Colors.grey[50]),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2E9B5B)),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Espace professionnel',
           style: TextStyle(
-            color: Colors.black,
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -552,8 +555,8 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
       ),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
-        color: const Color(0xFFEF8A40),
-        backgroundColor: Colors.white,
+        color: AdaptiveColors.surface(context, const Color(0xFFEF8A40)),
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
@@ -564,17 +567,42 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                 child: TextField(
                   decoration: InputDecoration(
                     hintText: 'Faire une recherche',
-                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+                    hintStyle: TextStyle(
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                      fontSize: 14,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
+                    ),
                     filled: true,
-                    fillColor: Colors.grey[100],
+                    fillColor: AdaptiveColors.surface(
+                      context,
+                      Colors.grey[100],
+                    ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[400]!),
+                      borderSide: BorderSide(
+                        color: AdaptiveColors.border(
+                          context,
+                          Colors.grey[400]!,
+                        ),
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey[400]!),
+                      borderSide: BorderSide(
+                        color: AdaptiveColors.border(
+                          context,
+                          Colors.grey[400]!,
+                        ),
+                      ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -586,18 +614,30 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                 child: Container(
                   height: 30,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF8A40).withValues(alpha: 0.1),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFEF8A40),
+                    ).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: TabBar(
                     controller: _tabController,
                     indicator: BoxDecoration(
-                      color: const Color(0xFFEF8A40),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFEF8A40),
+                      ),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     indicatorSize: TabBarIndicatorSize.tab,
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Colors.grey[600],
+                    labelColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
+                    unselectedLabelColor: AdaptiveColors.surface(
+                      context,
+                      Colors.grey[600],
+                    ),
                     labelStyle: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -606,7 +646,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
-                    dividerColor: Colors.transparent,
+                    dividerColor: AdaptiveColors.border(
+                      context,
+                      Colors.transparent,
+                    ),
                     tabs: const [
                       Tab(
                         child: Row(
@@ -650,7 +693,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                           : 'Total : $_myApplicationsTotal Candidature(s) envoyée(s)',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.black,
+                        color: AdaptiveColors.foreground(context, Colors.black),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -695,15 +738,24 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                           _jobOffersError!,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.red[400],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red[400],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
                         ElevatedButton(
                           onPressed: _loadMyJobOffers,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFEF8A40),
-                            foregroundColor: Colors.white,
+                            backgroundColor: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFEF8A40),
+                            ),
+                            foregroundColor: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -726,7 +778,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                           Icon(
                             Icons.work_outline,
                             size: 64,
-                            color: Colors.grey[400],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[400],
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -734,7 +789,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -742,7 +800,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                             'Vous n\'avez pas encore publié d\'offre d\'emploi',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -812,16 +873,20 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
-                                            color: Colors.black.withValues(
-                                              alpha: 0.5,
-                                            ),
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              Colors.black,
+                                            ).withValues(alpha: 0.5),
                                           ),
                                         ),
                                         Text(
                                           'Tout afficher',
                                           style: TextStyle(
                                             fontSize: 13,
-                                            color: Colors.grey[500],
+                                            color: AdaptiveColors.foreground(
+                                              context,
+                                              Colors.grey[500],
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -882,7 +947,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                         MediaQuery.of(context).size.height -
                                         310,
                                     width: 1.5,
-                                    color: Colors.black.withValues(alpha: 0.2),
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      Colors.black,
+                                    ).withValues(alpha: 0.2),
                                   ),
                                 ),
                                 Positioned(
@@ -892,7 +960,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                   child: Container(
                                     height: 1,
                                     width: 500,
-                                    color: Colors.black.withValues(alpha: 0.2),
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      Colors.black,
+                                    ).withValues(alpha: 0.2),
                                   ),
                                 ),
                                 Positioned(
@@ -902,7 +973,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                   child: Container(
                                     height: 1,
                                     width: 500,
-                                    color: Colors.black.withValues(alpha: 0.2),
+                                    color: AdaptiveColors.surface(
+                                      context,
+                                      Colors.black,
+                                    ).withValues(alpha: 0.2),
                                   ),
                                 ),
                               ],
@@ -923,7 +997,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                         children: [
                           Icon(
                             Icons.event,
-                            color: const Color(0xFFEF8A40),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFFEF8A40),
+                            ),
                             size: 18,
                           ),
                           const SizedBox(width: 8),
@@ -932,7 +1009,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black.withValues(alpha: 0.7),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.black,
+                              ).withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -1018,16 +1098,20 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
-                                              color: Colors.black.withValues(
-                                                alpha: 0.5,
-                                              ),
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Colors.black,
+                                              ).withValues(alpha: 0.5),
                                             ),
                                           ),
                                           Text(
                                             'Tout afficher',
                                             style: TextStyle(
                                               fontSize: 13,
-                                              color: Colors.grey[500],
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Colors.grey[500],
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -1083,9 +1167,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                           MediaQuery.of(context).size.height -
                                           310,
                                       width: 1.5,
-                                      color: Colors.black.withValues(
-                                        alpha: 0.2,
-                                      ),
+                                      color: AdaptiveColors.surface(
+                                        context,
+                                        Colors.black,
+                                      ).withValues(alpha: 0.2),
                                     ),
                                   ),
                                   Positioned(
@@ -1095,9 +1180,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                     child: Container(
                                       height: 1,
                                       width: 500,
-                                      color: Colors.black.withValues(
-                                        alpha: 0.2,
-                                      ),
+                                      color: AdaptiveColors.surface(
+                                        context,
+                                        Colors.black,
+                                      ).withValues(alpha: 0.2),
                                     ),
                                   ),
                                   Positioned(
@@ -1107,9 +1193,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                     child: Container(
                                       height: 1,
                                       width: 500,
-                                      color: Colors.black.withValues(
-                                        alpha: 0.2,
-                                      ),
+                                      color: AdaptiveColors.surface(
+                                        context,
+                                        Colors.black,
+                                      ).withValues(alpha: 0.2),
                                     ),
                                   ),
                                 ],
@@ -1131,7 +1218,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                         children: [
                           Icon(
                             Icons.school,
-                            color: const Color(0xFF2E9B5B),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              const Color(0xFF2E9B5B),
+                            ),
                             size: 18,
                           ),
                           const SizedBox(width: 8),
@@ -1140,7 +1230,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black.withValues(alpha: 0.7),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.black,
+                              ).withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -1233,16 +1326,20 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
-                                              color: Colors.black.withValues(
-                                                alpha: 0.5,
-                                              ),
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Colors.black,
+                                              ).withValues(alpha: 0.5),
                                             ),
                                           ),
                                           Text(
                                             'Tout afficher',
                                             style: TextStyle(
                                               fontSize: 13,
-                                              color: Colors.grey[500],
+                                              color: AdaptiveColors.foreground(
+                                                context,
+                                                Colors.grey[500],
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -1298,9 +1395,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                           MediaQuery.of(context).size.height -
                                           310,
                                       width: 1.5,
-                                      color: Colors.black.withValues(
-                                        alpha: 0.2,
-                                      ),
+                                      color: AdaptiveColors.surface(
+                                        context,
+                                        Colors.black,
+                                      ).withValues(alpha: 0.2),
                                     ),
                                   ),
                                   Positioned(
@@ -1310,9 +1408,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                     child: Container(
                                       height: 1,
                                       width: 500,
-                                      color: Colors.black.withValues(
-                                        alpha: 0.2,
-                                      ),
+                                      color: AdaptiveColors.surface(
+                                        context,
+                                        Colors.black,
+                                      ).withValues(alpha: 0.2),
                                     ),
                                   ),
                                   Positioned(
@@ -1322,9 +1421,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                     child: Container(
                                       height: 1,
                                       width: 500,
-                                      color: Colors.black.withValues(
-                                        alpha: 0.2,
-                                      ),
+                                      color: AdaptiveColors.surface(
+                                        context,
+                                        Colors.black,
+                                      ).withValues(alpha: 0.2),
                                     ),
                                   ),
                                 ],
@@ -1351,15 +1451,24 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                           _myApplicationsError!,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.red[400],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.red[400],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
                         ElevatedButton(
                           onPressed: _loadMyApplications,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFEF8A40),
-                            foregroundColor: Colors.white,
+                            backgroundColor: AdaptiveColors.surface(
+                              context,
+                              const Color(0xFFEF8A40),
+                            ),
+                            foregroundColor: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -1382,7 +1491,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                           Icon(
                             Icons.folder_open_outlined,
                             size: 64,
-                            color: Colors.grey[400],
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.grey[400],
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -1390,7 +1502,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -1398,7 +1513,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                             'Vous n\'avez postulé à aucune offre d\'emploi',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey[500],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[500],
+                              ),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -1525,9 +1643,11 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: AdaptiveColors.border(context, Colors.grey[200]!),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1544,7 +1664,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                     avatarUrl: avatar,
                     displayName: companyName,
                     accountType: isPro ? 'pro' : 'particulier',
-                    backgroundColor: Colors.white,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -1558,7 +1681,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black.withValues(alpha: 0.5),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.black,
+                        ).withValues(alpha: 0.5),
                       ),
                     ),
                     const SizedBox(height: 1),
@@ -1569,16 +1695,25 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                           vertical: 1,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.15),
+                          color: AdaptiveColors.surface(
+                            context,
+                            Colors.green,
+                          ).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: Colors.green.withValues(alpha: 0.5),
+                            color: AdaptiveColors.border(
+                              context,
+                              Colors.green,
+                            ).withValues(alpha: 0.5),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Pro',
                           style: TextStyle(
-                            color: Colors.green,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.green,
+                            ),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1591,7 +1726,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E9B5B),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFF2E9B5B),
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: GestureDetector(
@@ -1607,7 +1745,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF44336),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFF44336),
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: GestureDetector(
@@ -1628,48 +1769,71 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.black.withValues(alpha: 0.5),
+              color: AdaptiveColors.foreground(
+                context,
+                Colors.black,
+              ).withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             description,
-            style: TextStyle(fontSize: 12, color: Colors.black, height: 1.5),
+            style: TextStyle(
+              fontSize: 12,
+              color: AdaptiveColors.foreground(context, Colors.black),
+              height: 1.5,
+            ),
             maxLines: 4,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 16),
           Row(
             children: [
-              Icon(Icons.sell_outlined, size: 14, color: Colors.grey[500]),
+              Icon(
+                Icons.sell_outlined,
+                size: 14,
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
+              ),
               const SizedBox(width: 1),
               Text(
                 category,
-                style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
               const SizedBox(width: 2),
               const SizedBox(width: 5, child: Text('|')),
               Icon(
                 Icons.calendar_today_outlined,
                 size: 14,
-                color: Colors.grey[500],
+                color: AdaptiveColors.foreground(context, Colors.grey[500]),
               ),
               const SizedBox(width: 4),
               Text(
                 date,
-                style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                ),
               ),
               const SizedBox(width: 2),
               const SizedBox(width: 5, child: Text('|')),
               Icon(
                 Icons.person_2_outlined,
                 size: 14,
-                color: const Color(0xFFEF8A40),
+                color: AdaptiveColors.foreground(
+                  context,
+                  const Color(0xFFEF8A40),
+                ),
               ),
               const SizedBox(width: 4),
               Text(
                 '$candidatures Candidature(s)',
-                style: const TextStyle(fontSize: 9.5, color: Color(0xFFEF8A40)),
+                style: TextStyle(
+                  fontSize: 9.5,
+                  color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+                ),
               ),
             ],
           ),
@@ -1677,15 +1841,18 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              const Icon(
+              Icon(
                 Icons.visibility_outlined,
                 size: 18,
-                color: Color(0xFF2E9B5B),
+                color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
               ),
               const SizedBox(width: 4),
               Text(
                 '$views vue(s)',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF2E9B5B)),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AdaptiveColors.foreground(context, Color(0xFF2E9B5B)),
+                ),
               ),
             ],
           ),
@@ -1708,7 +1875,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -1729,7 +1896,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF8A40).withValues(alpha: 0.1),
+                    color: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFEF8A40),
+                    ).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(50),
                   ),
                   child: Padding(
@@ -1747,7 +1917,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          color: Colors.black.withValues(alpha: 0.5),
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.black,
+                          ).withValues(alpha: 0.5),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -1759,18 +1932,25 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                           vertical: 1,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2E9B5B).withValues(alpha: 0.1),
+                          color: AdaptiveColors.surface(
+                            context,
+                            const Color(0xFF2E9B5B),
+                          ).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: const Color(
-                              0xFF2E9B5B,
+                            color: AdaptiveColors.border(
+                              context,
+                              const Color(0xFF2E9B5B),
                             ).withValues(alpha: 0.5),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Offre d\'emploi',
                           style: TextStyle(
-                            color: Color(0xFF2E9B5B),
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Color(0xFF2E9B5B),
+                            ),
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1788,8 +1968,11 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                     height: 36,
                     decoration: BoxDecoration(
                       color: companyPhone != null && companyPhone.isNotEmpty
-                          ? const Color(0xFF8A38F5)
-                          : Colors.grey,
+                          ? AdaptiveColors.surface(
+                              context,
+                              const Color(0xFF8A38F5),
+                            )
+                          : AdaptiveColors.surface(context, Colors.grey),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Padding(
@@ -1807,7 +1990,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF44336),
+                      color: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFF44336),
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Padding(
@@ -1826,13 +2012,20 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.black.withValues(alpha: 0.5),
+                color: AdaptiveColors.foreground(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               description,
-              style: TextStyle(fontSize: 12, color: Colors.black, height: 1.5),
+              style: TextStyle(
+                fontSize: 12,
+                color: AdaptiveColors.foreground(context, Colors.black),
+                height: 1.5,
+              ),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
@@ -1842,12 +2035,15 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                 Icon(
                   Icons.access_time_rounded,
                   size: 18,
-                  color: Colors.grey[500],
+                  color: AdaptiveColors.foreground(context, Colors.grey[500]),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   date,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
                 const Spacer(),
                 SizedBox(
@@ -1864,8 +2060,14 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                       style: TextStyle(fontSize: 11),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF8A40),
-                      foregroundColor: Colors.white,
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFEF8A40),
+                      ),
+                      foregroundColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.white,
+                      ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
@@ -1882,15 +2084,20 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.green,
+                ).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: Colors.green),
+                border: Border.all(
+                  color: AdaptiveColors.border(context, Colors.green),
+                ),
               ),
               child: Text(
                 'Statut : $status',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: Colors.green,
+                  color: AdaptiveColors.foreground(context, Colors.green),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -1944,12 +2151,18 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEF8A40).withValues(alpha: 0.1),
+                        color: AdaptiveColors.surface(
+                          context,
+                          const Color(0xFFEF8A40),
+                        ).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.folder_shared_outlined,
-                        color: Color(0xFFEF8A40),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFFEF8A40),
+                        ),
                         size: 28,
                       ),
                     ),
@@ -1962,15 +2175,21 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                             'Documents de',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[600],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[600],
+                              ),
                             ),
                           ),
                           Text(
                             candidateName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF333333),
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Color(0xFF333333),
+                              ),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -1979,7 +2198,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.grey),
+                      icon: Icon(
+                        Icons.close,
+                        color: AdaptiveColors.foreground(context, Colors.grey),
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -1994,14 +2216,20 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                               Icon(
                                 Icons.folder_off_outlined,
                                 size: 48,
-                                color: Colors.grey[400],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[400],
+                                ),
                               ),
                               const SizedBox(height: 12),
                               Text(
                                 'Aucun document visible',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey[600],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                                 ),
                               ),
                             ],
@@ -2013,7 +2241,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                           itemBuilder: (context, index) {
                             final doc = visibleDocs[index];
                             final fileUrl = ApiConfig.resolveMediaUrl(
-                              doc['file_path'] ?? '',
+                              doc['url'] ?? doc['file_url'] ?? '',
                             );
                             final fileName =
                                 doc['original_name'] ?? 'Document ${index + 1}';
@@ -2025,9 +2253,17 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                             return Container(
                               margin: const EdgeInsets.only(bottom: 12),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: AdaptiveColors.surface(
+                                  context,
+                                  Colors.white,
+                                ),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.grey[200]!),
+                                border: Border.all(
+                                  color: AdaptiveColors.border(
+                                    context,
+                                    Colors.grey[200]!,
+                                  ),
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.grey.withValues(alpha: 0.1),
@@ -2071,10 +2307,14 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                             children: [
                                               Text(
                                                 fileName,
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF333333),
+                                                  color:
+                                                      AdaptiveColors.foreground(
+                                                        context,
+                                                        Color(0xFF333333),
+                                                      ),
                                                 ),
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
@@ -2117,7 +2357,11 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                                     fileSize,
                                                     style: TextStyle(
                                                       fontSize: 11,
-                                                      color: Colors.grey[500],
+                                                      color:
+                                                          AdaptiveColors.foreground(
+                                                            context,
+                                                            Colors.grey[500],
+                                                          ),
                                                     ),
                                                   ),
                                                 ],
@@ -2134,7 +2378,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                                         width: double.infinity,
                                         child: _buildActionButton(
                                           icon: Icons.visibility_outlined,
-                                          color: const Color(0xFF2E9B5B),
+                                          color: AdaptiveColors.surface(
+                                            context,
+                                            const Color(0xFF2E9B5B),
+                                          ),
                                           onTap: () =>
                                               _viewDocument(fileUrl, fileName),
                                           label: 'Voir',
@@ -2204,7 +2451,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Permission refusée. Impossible de télécharger.'),
-              backgroundColor: Colors.red,
+              backgroundColor: AdaptiveColors.surface(context, Colors.red),
             ),
           );
           return;
@@ -2219,12 +2466,12 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
       SnackBar(
         content: Row(
           children: [
-            const SizedBox(
+            SizedBox(
               width: 16,
               height: 16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Colors.white,
+                color: AdaptiveColors.foreground(context, Colors.white),
               ),
             ),
             const SizedBox(width: 12),
@@ -2268,12 +2515,23 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white, size: 20),
+              Icon(
+                Icons.check_circle,
+                color: AdaptiveColors.foreground(context, Colors.white),
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              Expanded(child: Text('Téléchargé dans Téléchargements')),
+              Expanded(
+                child: Text(
+                  'Document enregistré sur votre appareil. Cette copie contient des données personnelles et reste sous votre responsabilité.',
+                ),
+              ),
             ],
           ),
-          backgroundColor: const Color(0xFF2E9B5B),
+          backgroundColor: AdaptiveColors.surface(
+            context,
+            const Color(0xFF2E9B5B),
+          ),
           duration: const Duration(seconds: 3),
         ),
       );
@@ -2281,7 +2539,12 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(
+            'Impossible de télécharger. Actualisez la liste si le lien a expiré.',
+          ),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     }
   }
@@ -2311,14 +2574,14 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
   Color _getFileTypeColor(String type) {
     switch (type) {
       case 'cv':
-        return const Color(0xFF2E9B5B);
+        return AdaptiveColors.foreground(context, const Color(0xFF2E9B5B));
       case 'lettre':
       case 'cover_letter':
-        return const Color(0xFFEF8A40);
+        return AdaptiveColors.foreground(context, const Color(0xFFEF8A40));
       case 'portfolio':
-        return const Color(0xFF2196F3);
+        return AdaptiveColors.foreground(context, const Color(0xFF2196F3));
       default:
-        return const Color(0xFF666666);
+        return AdaptiveColors.foreground(context, const Color(0xFF666666));
     }
   }
 
@@ -2386,7 +2649,7 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
       margin: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AdaptiveColors.surface(context, Colors.white),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -2413,10 +2676,13 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF333333),
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFF333333),
+                        ),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -2424,7 +2690,13 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                     const SizedBox(height: 2),
                     Text(
                       email,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Colors.grey[500],
+                        ),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -2435,12 +2707,12 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: AdaptiveColors.surface(context, Colors.blue),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.visibility_outlined,
-                  color: Colors.white,
+                  color: AdaptiveColors.foreground(context, Colors.white),
                 ),
               ),
               const SizedBox(width: 8),
@@ -2448,7 +2720,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF44336),
+                  color: AdaptiveColors.surface(
+                    context,
+                    const Color(0xFFF44336),
+                  ),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Padding(
@@ -2471,7 +2746,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                 flex: 2,
                 child: Text(
                   jobTitle,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AdaptiveColors.foreground(context, Colors.grey[600]),
+                  ),
                 ),
               ),
               const Spacer(),
@@ -2485,8 +2763,14 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                     style: TextStyle(fontSize: 11),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEF8A40),
-                    foregroundColor: Colors.white,
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFEF8A40),
+                    ),
+                    foregroundColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
                     elevation: 0,
                     padding: const EdgeInsets.symmetric(horizontal: 5),
                     shape: RoundedRectangleBorder(
@@ -2508,7 +2792,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
               const SizedBox(width: 4),
               Text(
                 'Date de soumission : $submissionDate',
-                style: const TextStyle(fontSize: 11, color: Color(0xFFEF8A40)),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AdaptiveColors.foreground(context, Color(0xFFEF8A40)),
+                ),
               ),
             ],
           ),
@@ -2535,8 +2822,8 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: AdaptiveColors.surface(context, Colors.red),
+              foregroundColor: AdaptiveColors.foreground(context, Colors.white),
             ),
             child: const Text('Supprimer'),
           ),
@@ -2553,9 +2840,9 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Candidature supprimée'),
-            backgroundColor: Color(0xFF2E9B5B),
+            backgroundColor: AdaptiveColors.surface(context, Color(0xFF2E9B5B)),
           ),
         );
         _loadMyApplications();
@@ -2563,7 +2850,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
+          ),
         );
       }
     }
@@ -2576,9 +2866,9 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Impossible d\'appeler ce numéro'),
-            backgroundColor: Colors.red,
+            backgroundColor: AdaptiveColors.surface(context, Colors.red),
           ),
         );
       }
@@ -2727,14 +3017,17 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
                 PostTag(
                   title: workTime,
                   icon: Icons.access_time,
-                  color: Colors.grey,
+                  color: AdaptiveColors.foreground(context, Colors.grey),
                 ),
             ],
             subtags: contractType.isNotEmpty
                 ? PostTag(
                     title: contractType,
                     icon: Icons.description_outlined,
-                    color: const Color(0xFF27A5FF),
+                    color: AdaptiveColors.foreground(
+                      context,
+                      const Color(0xFF27A5FF),
+                    ),
                   )
                 : null,
             advantages: advantagesList,
@@ -2755,7 +3048,10 @@ class _ProSpaceProScreenState extends State<ProSpaceProScreen>
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Erreur: $e'),
+          backgroundColor: AdaptiveColors.surface(context, Colors.red),
+        ),
       );
     }
   }

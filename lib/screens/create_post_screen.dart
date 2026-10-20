@@ -1,3 +1,4 @@
+import 'package:myreklam/theme/app_theme.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -347,8 +348,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: isError
-            ? Colors.red.shade700
-            : const Color(0xFFFF9800),
+            ? AdaptiveColors.surface(context, Colors.red.shade700)
+            : AdaptiveColors.surface(context, const Color(0xFFFF9800)),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 4),
       ),
@@ -370,7 +371,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AdaptiveColors.surface(context, Colors.grey[300]),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -389,12 +390,21 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       ? Icons.people_outline
                       : Icons.lock_outline,
                   color: _selectedPrivacy == opt['value']
-                      ? const Color(0xFFFF9800)
-                      : Colors.grey[700],
+                      ? AdaptiveColors.foreground(
+                          context,
+                          const Color(0xFFFF9800),
+                        )
+                      : AdaptiveColors.foreground(context, Colors.grey[700]),
                 ),
                 title: Text(opt['label']!),
                 trailing: _selectedPrivacy == opt['value']
-                    ? const Icon(Icons.check, color: Color(0xFFFF9800))
+                    ? Icon(
+                        Icons.check,
+                        color: AdaptiveColors.foreground(
+                          context,
+                          Color(0xFFFF9800),
+                        ),
+                      )
                     : null,
                 onTap: () {
                   setState(() => _selectedPrivacy = opt['value']!);
@@ -412,12 +422,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AdaptiveColors.surface(context, Colors.white),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AdaptiveColors.surface(context, Colors.white),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: AdaptiveColors.foreground(context, Colors.black),
+          ),
           onPressed: () {
             if (_isEditMode) {
               Navigator.pop(context);
@@ -436,8 +449,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
         title: Text(
           _isEditMode ? 'Modifier le post' : 'Créer un post',
-          style: const TextStyle(
-            color: Colors.black,
+          style: TextStyle(
+            color: AdaptiveColors.foreground(context, Colors.black),
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -457,9 +470,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       ? Container(
                           width: 50,
                           height: 50,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.grey,
+                            color: AdaptiveColors.surface(context, Colors.grey),
                           ),
                           child: const CircularProgressIndicator(
                             strokeWidth: 2,
@@ -477,10 +490,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       children: [
                         Text(
                           _username ?? 'Mon compte',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.black,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -496,20 +512,29 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                                     ? Icons.people_outline
                                     : Icons.lock_outline,
                                 size: 16,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 _privacyLabel,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey[600],
+                                  color: AdaptiveColors.foreground(
+                                    context,
+                                    Colors.grey[600],
+                                  ),
                                 ),
                               ),
                               Icon(
                                 Icons.arrow_drop_down,
                                 size: 20,
-                                color: Colors.grey[600],
+                                color: AdaptiveColors.foreground(
+                                  context,
+                                  Colors.grey[600],
+                                ),
                               ),
                             ],
                           ),
@@ -523,9 +548,18 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                         ? null
                         : _publishPost,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF9800),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: Colors.grey[300],
+                      backgroundColor: AdaptiveColors.surface(
+                        context,
+                        const Color(0xFFFF9800),
+                      ),
+                      foregroundColor: AdaptiveColors.foreground(
+                        context,
+                        Colors.white,
+                      ),
+                      disabledBackgroundColor: AdaptiveColors.surface(
+                        context,
+                        Colors.grey[300],
+                      ),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
                         vertical: 12,
@@ -535,12 +569,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       ),
                     ),
                     child: (_isPosting || _isUploadingMedia)
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 16,
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.white,
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.white,
+                              ),
                             ),
                           )
                         : Text(
@@ -559,7 +596,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: AdaptiveColors.surface(context, Colors.grey[100]),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TextField(
@@ -569,7 +606,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   decoration: InputDecoration(
                     hintText: 'Quoi de neuf?',
                     hintStyle: TextStyle(
-                      color: Colors.grey[600],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[600],
+                      ),
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -578,10 +618,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     focusedBorder: InputBorder.none,
                     counterStyle: TextStyle(
                       fontSize: 11,
-                      color: Colors.grey[400],
+                      color: AdaptiveColors.foreground(
+                        context,
+                        Colors.grey[400],
+                      ),
                     ),
                   ),
-                  style: const TextStyle(fontSize: 14, color: Colors.black87),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AdaptiveColors.foreground(context, Colors.black87),
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
@@ -591,7 +637,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   'Partagez un moment ou une information avec votre communauté',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[500],
+                    color: AdaptiveColors.foreground(context, Colors.grey[500]),
                     height: 1.4,
                   ),
                 ),
@@ -623,7 +669,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     : _selectedMediaFiles.isEmpty
                     ? 'Photos / Vidéos'
                     : 'Photos / Vidéos (${_selectedMediaFiles.length}/10)',
-                color: const Color(0xFF00BCD4),
+                color: AdaptiveColors.surface(context, const Color(0xFF00BCD4)),
                 onTap: _isCompressingVideo ? null : _pickMedia,
               ),
               const SizedBox(height: 40),
@@ -637,21 +683,33 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       ? null
                       : _publishPost,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF9800),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey[300],
+                    backgroundColor: AdaptiveColors.surface(
+                      context,
+                      const Color(0xFFFF9800),
+                    ),
+                    foregroundColor: AdaptiveColors.foreground(
+                      context,
+                      Colors.white,
+                    ),
+                    disabledBackgroundColor: AdaptiveColors.surface(
+                      context,
+                      Colors.grey[300],
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: (_isPosting || _isUploadingMedia)
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: Colors.white,
+                            color: AdaptiveColors.foreground(
+                              context,
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Text(
@@ -697,7 +755,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   : isVideo
                   ? _VideoThumbnailWidget(videoPath: file.path)
                   : Container(
-                      color: Colors.grey[300],
+                      color: AdaptiveColors.surface(context, Colors.grey[300]),
                       child: Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -705,7 +763,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                             Icon(
                               Icons.play_circle_outline,
                               size: 40,
-                              color: Colors.grey[700],
+                              color: AdaptiveColors.foreground(
+                                context,
+                                Colors.grey[700],
+                              ),
                             ),
                           ],
                         ),
@@ -722,13 +783,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black54,
+                    color: AdaptiveColors.surface(context, Colors.black54),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text(
+                  child: Text(
                     'VIDEO',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       fontSize: 8,
                       fontWeight: FontWeight.bold,
                     ),
@@ -741,12 +802,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               child: GestureDetector(
                 onTap: () => _removeMedia(i),
                 child: Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.black54,
+                    color: AdaptiveColors.surface(context, Colors.black54),
                   ),
                   padding: const EdgeInsets.all(3),
-                  child: const Icon(Icons.close, size: 14, color: Colors.white),
+                  child: Icon(
+                    Icons.close,
+                    size: 14,
+                    color: AdaptiveColors.foreground(context, Colors.white),
+                  ),
                 ),
               ),
             ),
@@ -788,22 +853,31 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       url,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
-                        color: Colors.grey[200],
-                        child: const Icon(
+                        color: AdaptiveColors.surface(
+                          context,
+                          Colors.grey[200],
+                        ),
+                        child: Icon(
                           Icons.broken_image,
-                          color: Colors.grey,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.grey,
+                          ),
                         ),
                       ),
                     )
                   : url.isNotEmpty
                   ? _VideoThumbnailWidget(videoPath: url)
                   : Container(
-                      color: Colors.black87,
-                      child: const Center(
+                      color: AdaptiveColors.surface(context, Colors.black87),
+                      child: Center(
                         child: Icon(
                           Icons.play_circle_outline,
                           size: 36,
-                          color: Colors.white,
+                          color: AdaptiveColors.foreground(
+                            context,
+                            Colors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -818,13 +892,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black54,
+                    color: AdaptiveColors.surface(context, Colors.black54),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text(
+                  child: Text(
                     'VIDEO',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AdaptiveColors.foreground(context, Colors.white),
                       fontSize: 8,
                       fontWeight: FontWeight.bold,
                     ),
@@ -847,12 +921,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   setState(() => _existingMedia.removeAt(i));
                 },
                 child: Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.black54,
+                    color: AdaptiveColors.surface(context, Colors.black54),
                   ),
                   padding: const EdgeInsets.all(3),
-                  child: const Icon(Icons.close, size: 14, color: Colors.white),
+                  child: Icon(
+                    Icons.close,
+                    size: 14,
+                    color: AdaptiveColors.foreground(context, Colors.white),
+                  ),
                 ),
               ),
             ),
@@ -881,7 +959,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               label,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[800],
+                color: AdaptiveColors.foreground(context, Colors.grey[800]),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -937,7 +1015,7 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Container(
-        color: Colors.grey[300],
+        color: AdaptiveColors.surface(context, Colors.grey[300]),
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
@@ -951,13 +1029,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
           Center(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.4),
+                color: AdaptiveColors.surface(
+                  context,
+                  Colors.black,
+                ).withValues(alpha: 0.4),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.play_circle_outline,
                 size: 40,
-                color: Colors.white,
+                color: AdaptiveColors.foreground(context, Colors.white),
               ),
             ),
           ),
@@ -967,12 +1048,16 @@ class _VideoThumbnailWidgetState extends State<_VideoThumbnailWidget> {
 
     // Fallback if thumbnail generation failed
     return Container(
-      color: Colors.grey[300],
+      color: AdaptiveColors.surface(context, Colors.grey[300]),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.play_circle_outline, size: 40, color: Colors.grey[700]),
+            Icon(
+              Icons.play_circle_outline,
+              size: 40,
+              color: AdaptiveColors.foreground(context, Colors.grey[700]),
+            ),
           ],
         ),
       ),
