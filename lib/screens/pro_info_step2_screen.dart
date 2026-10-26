@@ -313,7 +313,7 @@ class _ProInfoStep2ScreenState extends State<ProInfoStep2Screen> {
                                       if (!RegExp(
                                         r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                                       ).hasMatch(value)) {
-                                        return 'Email invalide';
+                                        return 'Adresse e-mail invalide';
                                       }
                                       return null;
                                     },

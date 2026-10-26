@@ -956,7 +956,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
               Image.asset("assets/images/imagepop.png"),
               const SizedBox(height: 20),
               Text(
-                _isEditMode ? 'Evenement mis à jour' : 'Evenement publié',
+                _isEditMode ? 'Événement mis à jour' : 'Événement publié',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -1216,7 +1216,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
           _deletingMediaKeys.remove(key);
         });
       } else {
-        throw Exception('Failed to delete media');
+        throw Exception('Impossible de supprimer le média');
       }
     } catch (e) {
       debugPrint('Error deleting media: $e');
@@ -1257,7 +1257,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
         streamedResponse.statusCode >= 300) {
       final responseBody = await streamedResponse.stream.bytesToString();
       debugPrint(
-        'Media upload failed: ${streamedResponse.statusCode} -> $responseBody',
+        'Échec de l’importation des médias : ${streamedResponse.statusCode} -> $responseBody',
       );
       throw Exception('Échec du téléchargement des médias.');
     }
@@ -2215,11 +2215,11 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             ),
             const SizedBox(height: 12),
             _buildDropdownField(
-              label: "Format de l'evenement*",
+              label: "Format de l’événement*",
               value: _selectedType,
               items: _types,
               onChanged: (val) => setState(() => _selectedType = val),
-              hint: _buildRequiredHint("Format de l'evenement"),
+              hint: _buildRequiredHint("Format de l’événement"),
               backgroundColor: AdaptiveColors.surface(
                 context,
                 const Color(0xFFF9FAFB),
@@ -2310,7 +2310,7 @@ class _CreerEvenementScreenState extends State<CreerEvenementScreen> {
             ),
             const SizedBox(height: 12),
             _buildRadioGroup(
-              title: "Etes-vous l'organisateur de cet évènement ?",
+              title: "Êtes-vous l’organisateur de cet évènement ?",
               values: ["Oui", "Non"],
               selectedValue: selectedOptionOrg,
               onChanged: (val) => setState(() => selectedOptionOrg = val),

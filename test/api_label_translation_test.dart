@@ -98,7 +98,9 @@ void main() {
       expect(JobLabels.label('MEAL_VOUCHERS'), 'Titre restaurant');
       expect(JobLabels.label('REMOTE_WORK'), 'Télétravail');
       expect(JobLabels.label('COMPANY_CAR'), 'Voiture de fonction');
-      expect(JobLabels.label('THIRTEENTH_MONTH'), '13ème mois');
+      expect(JobLabels.label('THIRTEENTH_MONTH'), '13e mois');
+      expect(JobLabels.label('OVERTIME_PAY'), 'Heures supplémentaires majorées');
+      expect(JobLabels.label('SAVINGS_PLAN'), 'Plan d’épargne');
     });
 
     test('accepts the lowercase variant some endpoints return', () {
@@ -141,7 +143,8 @@ void main() {
 
     test('keeps translating the historical actions', () {
       expect(RewardActionLabels.label('bon_plan'), 'Bon plan');
-      expect(RewardActionLabels.label('mys_conversion'), 'Conversion récompense');
+      expect(RewardActionLabels.label('mys_conversion'), 'Conversion en récompense');
+      expect(RewardActionLabels.label('event_participation'), 'Participation à un événement');
       expect(RewardActionLabels.label(null), 'Action');
     });
   });

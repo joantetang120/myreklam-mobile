@@ -4004,7 +4004,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
             Center(
               child: Text(
-                "Autres offres d'emplois qui pourraient vous intéresser",
+                "Autres offres d’emploi qui pourraient vous intéresser",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

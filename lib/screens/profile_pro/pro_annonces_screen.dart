@@ -1023,7 +1023,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
                           ),
                           const SizedBox(width: 15),
                           CategoriesIcon(
-                            title: 'Evenements',
+                            title: 'Événements',
                             iconColor: AdaptiveColors.foreground(
                               context,
                               Colors.green,
@@ -2136,7 +2136,7 @@ class _ProAnnoncesScreenState extends State<ProAnnoncesScreen> {
       'CreativeHobbies': 'Loisir créatifs',
       'MoviesSeries': 'Films & Séries',
       'BooksMagazines': 'Livres & Magazines',
-      'ShowsTickets': 'Spectacles & Billeterie',
+      'ShowsTickets': 'Spectacles & Billetterie',
       'GamblingBetting': 'Jeux de hasard & paris',
       'SportsEvents': 'Événements Sportifs',
       'AutoMotoBoatPlane': 'Auto / Moto / Bateau / Avion',

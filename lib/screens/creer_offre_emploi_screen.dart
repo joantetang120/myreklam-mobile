@@ -938,6 +938,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       'Télétravail': 'REMOTE_WORK',
       'Voiture de fonction': 'COMPANY_CAR',
       'Plan épargne': 'SAVINGS_PLAN',
+      'Plan d’épargne': 'SAVINGS_PLAN',
       'Horaires flexibles': 'FLEXIBLE_HOURS',
       'Pourboires': 'TIPS',
       'Commissions': 'COMMISSIONS',
@@ -964,6 +965,8 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
       // Advantages - additional mappings
       '13ème mois': 'THIRTEENTH_MONTH',
       'Heures supp. majorée': 'OVERTIME_PAY',
+      '13e mois': 'THIRTEENTH_MONTH',
+      'Heures supplémentaires majorées': 'OVERTIME_PAY',
       'Participation au transport': 'TRANSPORT',
     };
 
@@ -1158,7 +1161,7 @@ class _CreerOffreEmploiScreenState extends State<CreerOffreEmploiScreen> {
         return true;
       } else {
         debugPrint(
-          'Media upload failed: ${response.statusCode} - ${response.body}',
+          'Échec de l’importation des médias : ${response.statusCode} - ${response.body}',
         );
         _showSnack('Médias non uploadés, mais offre créée', isError: false);
         return false;

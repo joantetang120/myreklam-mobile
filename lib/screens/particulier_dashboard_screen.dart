@@ -1308,7 +1308,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
       'CreativeHobbies': 'Loisir créatifs',
       'MoviesSeries': 'Films & Séries',
       'BooksMagazines': 'Livres & Magazines',
-      'ShowsTickets': 'Spectacles & Billeterie',
+      'ShowsTickets': 'Spectacles & Billetterie',
       'GamblingBetting': 'Jeux de hasard & paris',
       'SportsEvents': 'Événements Sportifs',
       'AutoMotoBoatPlane': 'Auto / Moto / Bateau / Avion',
@@ -3370,7 +3370,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
     final isFavoritedNotifier = ValueNotifier<bool>(initialIsFavorited);
 
     Future<void> toggleFavorite() async {
-      if (!_requireAuth('ajouter cet evenement aux favoris')) return;
+      if (!_requireAuth('ajouter cet événement aux favoris')) return;
 
       // Toggle immediately for responsive UI
       final newValue = !isFavoritedNotifier.value;
@@ -7713,7 +7713,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                           ),
                           const SizedBox(width: 15),
                           CategoriesIcon(
-                            title: "Evenements",
+                            title: "Événements",
                             iconColor: AdaptiveColors.foreground(
                               context,
                               Colors.green,
@@ -7724,7 +7724,7 @@ class _ParticulierDashboardScreenState extends State<ParticulierDashboardScreen>
                             ).withValues(alpha: 0.5),
                             icon: Icons.event_outlined,
                             onTap: () {
-                              if (!_requireAuth('ouvrir les evenements')) {
+                              if (!_requireAuth('ouvrir les événements')) {
                                 return;
                               }
 

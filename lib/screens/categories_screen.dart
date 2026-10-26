@@ -98,7 +98,7 @@ class CategoriesScreen extends StatelessWidget {
         },
       ),
       _CategoryItem(
-        title: 'Evènement',
+        title: 'Évènement',
         description:
             'Participez aux événements et rencontres organisés dans votre région.',
         icon: Icons.event_outlined,

@@ -945,7 +945,7 @@ extension ApiClientAvatar on ApiClient {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
-      throw Exception('Failed to upload avatar: ${response.statusCode}');
+      throw Exception('Impossible d’importer la photo de profil : ${response.statusCode}');
     }
   }
 }

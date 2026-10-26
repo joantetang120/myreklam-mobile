@@ -571,7 +571,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                         ),
                         const SizedBox(width: 15),
                         CategoriesIcon(
-                          title: "Evenements",
+                          title: "Événements",
                           iconColor: AdaptiveColors.foreground(
                             context,
                             Colors.green,

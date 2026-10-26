@@ -108,7 +108,7 @@ class _MysRewardModalState extends State<MysRewardModal>
       case 'presentation':
         return 'Présentation ajoutée';
       case 'onboarding_complete':
-        return 'Onboarding complété';
+        return 'Parcours de bienvenue terminé';
       case 'review':
         return 'Avis sur un profil entreprise';
       default:

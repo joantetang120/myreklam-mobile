@@ -16,6 +16,7 @@ class AppUpdateRequirement {
     required this.title,
     required this.message,
     this.startImmediateUpdate,
+    this.storeVersion,
   });
 
   final AppStorePlatform platform;
@@ -25,6 +26,9 @@ class AppUpdateRequirement {
   final String title;
   final String message;
   final Future<void> Function()? startImmediateUpdate;
+
+  /// Marketing version available on the App Store (not an Android build code).
+  final String? storeVersion;
 }
 
 class AppUpdatePolicy {
@@ -69,6 +73,7 @@ class AppUpdatePolicy {
   static List<int> _parseVersion(String value) {
     final numeric = value.trim().split(RegExp(r'[+\s(]')).first;
     if (numeric.isEmpty) return const [];
+    if (!RegExp(r'^\d+(?:\.\d+){0,2}$').hasMatch(numeric)) return const [];
     final parts = <int>[];
     for (final segment in numeric.split('.')) {
       final parsed = int.tryParse(segment.trim());
@@ -169,10 +174,11 @@ class AppUpdateService {
         storeUri: release.storeUri,
         currentBuildNumber: currentBuild,
         minimumBuildNumber: currentBuild + 1,
-        title: 'Mise à jour requise',
+        storeVersion: release.version,
+        title: 'Mise à jour disponible',
         message:
-            'Une nouvelle version de Myreklam est disponible sur l’App Store. '
-            'Installez-la pour continuer à utiliser l’application.',
+            'La version ${release.version} de Myreklam est disponible sur l’App Store. '
+            'Vous pouvez la télécharger maintenant ou continuer à utiliser l’application.',
         // Apple n'expose aucun équivalent des mises à jour intégrées de Google
         // Play : on ne peut qu'ouvrir la fiche du store.
         startImmediateUpdate: null,
@@ -212,13 +218,28 @@ class AppUpdateService {
 
       final version = first['version']?.toString().trim();
       if (version == null || version.isEmpty) return null;
+      if (first['bundleId'] != null && first['bundleId'] != bundleId) {
+        return null;
+      }
+      if (AppUpdatePolicy._parseVersion(version).isEmpty) return null;
 
       final trackViewUrl = first['trackViewUrl']?.toString();
       final storeUri = Uri.tryParse(trackViewUrl ?? '');
+      final validLink =
+          storeUri != null &&
+          storeUri.scheme == 'https' &&
+          storeUri.host == 'apps.apple.com';
+      final trackId =
+          first['trackId']?.toString() ??
+          (validLink
+              ? RegExp(r'/id(\d+)(?:/|$)').firstMatch(storeUri.path)?.group(1)
+              : null);
+      if (trackId == null || !RegExp(r'^\d+$').hasMatch(trackId)) return null;
 
       return AppStoreRelease(
         version: version,
-        storeUri: storeUri ?? Uri.parse('https://apps.apple.com/app/$bundleId'),
+        // No forced /fr/ storefront: let the device's App Store handle its region.
+        storeUri: Uri.https('apps.apple.com', '/app/id$trackId'),
       );
     } finally {
       if (_httpClient == null) client.close();

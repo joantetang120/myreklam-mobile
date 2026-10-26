@@ -89,36 +89,40 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
             final dark = Theme.of(context).brightness == Brightness.dark;
-            return AnnotatedRegion<SystemUiOverlayStyle>(
-              value: SystemUiOverlayStyle(
-                statusBarColor: AdaptiveColors.foreground(
-                  context,
-                  Colors.transparent,
+            return ForceUpdateGate(
+              child: AnnotatedRegion<SystemUiOverlayStyle>(
+                value: SystemUiOverlayStyle(
+                  statusBarColor: AdaptiveColors.foreground(
+                    context,
+                    Colors.transparent,
+                  ),
+                  statusBarIconBrightness: dark
+                      ? Brightness.light
+                      : Brightness.dark,
+                  statusBarBrightness: dark
+                      ? Brightness.dark
+                      : Brightness.light,
+                  systemNavigationBarColor: Theme.of(
+                    context,
+                  ).scaffoldBackgroundColor,
+                  systemNavigationBarIconBrightness: dark
+                      ? Brightness.light
+                      : Brightness.dark,
                 ),
-                statusBarIconBrightness: dark
-                    ? Brightness.light
-                    : Brightness.dark,
-                statusBarBrightness: dark ? Brightness.dark : Brightness.light,
-                systemNavigationBarColor: Theme.of(
-                  context,
-                ).scaffoldBackgroundColor,
-                systemNavigationBarIconBrightness: dark
-                    ? Brightness.light
-                    : Brightness.dark,
-              ),
-              child: AnimatedBuilder(
-                animation: DelegationManager.instance,
-                builder: (context, _) {
-                  if (!DelegationManager.instance.isActive || child == null) {
-                    return child ?? const SizedBox.shrink();
-                  }
-                  return Column(
-                    children: [
-                      const DelegationBanner(),
-                      Expanded(child: child),
-                    ],
-                  );
-                },
+                child: AnimatedBuilder(
+                  animation: DelegationManager.instance,
+                  builder: (context, _) {
+                    if (!DelegationManager.instance.isActive || child == null) {
+                      return child ?? const SizedBox.shrink();
+                    }
+                    return Column(
+                      children: [
+                        const DelegationBanner(),
+                        Expanded(child: child),
+                      ],
+                    );
+                  },
+                ),
               ),
             );
           },
@@ -136,7 +140,7 @@ class MyApp extends StatelessWidget {
           themeMode: ThemeController.instance.mode,
           // Define routes for navigation
           routes: {'/login': (context) => const LoginScreen()},
-          home: const ForceUpdateGate(child: SplashScreen()),
+          home: const SplashScreen(),
         ),
       ),
     );

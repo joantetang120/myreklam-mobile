@@ -22,7 +22,7 @@ class LocationService {
         final data = jsonDecode(response.body);
         return _parseGeoJsonResponse(data);
       } else {
-        throw Exception('Failed to search places: ${response.statusCode}');
+        throw Exception('Impossible de rechercher des lieux : ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Location search failed: $e');

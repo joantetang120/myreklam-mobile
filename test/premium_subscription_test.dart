@@ -32,4 +32,47 @@ void main() {
     expect(SubscriptionHelper.isProPremium, isTrue);
     expect(SubscriptionHelper.canAccessFeature(ProFeature.messaging), isTrue);
   });
+
+  test('legacy active plans unlock the same actions as premium', () {
+    for (final plan in ['monthly', 'annual', 'yearly']) {
+      session.updateFromApi(
+        accountType: 'pro',
+        subscription: {'plan': plan, 'status': 'active'},
+      );
+      expect(SubscriptionHelper.isProPremium, isTrue, reason: plan);
+      expect(
+        SubscriptionHelper.canAccessFeature(ProFeature.postAnnouncement),
+        isTrue,
+      );
+      expect(SubscriptionHelper.canAccessFeature(ProFeature.messaging), isTrue);
+    }
+  });
+
+  test('expired or cancelled paid plans reject stale allowed permissions', () {
+    for (final plan in ['premium', 'annual', 'monthly', 'yearly']) {
+      for (final values in [
+        {'status': 'cancelled'},
+        {'status': 'active', 'end_date': '2000-01-01T00:00:00Z'},
+        {'status': 'active', 'end_date': 'invalid-date'},
+      ]) {
+        session.updateFromApi(
+          accountType: 'pro',
+          subscription: {
+            'plan': plan,
+            ...values,
+            'permissions': {'post_announcement': true, 'messaging': true},
+          },
+        );
+        expect(SubscriptionHelper.isProPremium, isFalse);
+        expect(
+          SubscriptionHelper.canAccessFeature(ProFeature.postAnnouncement),
+          isFalse,
+        );
+        expect(
+          SubscriptionHelper.canAccessFeature(ProFeature.messaging),
+          isFalse,
+        );
+      }
+    }
+  });
 }

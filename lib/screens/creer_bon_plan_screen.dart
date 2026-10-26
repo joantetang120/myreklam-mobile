@@ -2388,11 +2388,11 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             ),
             const SizedBox(height: 12),
             _buildDropdownField(
-              label: "De quel type de bon plan s'agit-il?*",
+              label: "De quel type de bon plan s’agit-il ?*",
               value: _selectedType,
               items: _types,
               onChanged: _handleTypeChanged,
-              hint: _buildRequiredHint("De quel type de bon plan s'agit-il?"),
+              hint: _buildRequiredHint("De quel type de bon plan s’agit-il ?"),
               backgroundColor: AdaptiveColors.surface(
                 context,
                 const Color(0xFFF9FAFB),
@@ -2492,12 +2492,12 @@ class _CreerBonPlanScreenState extends State<CreerBonPlanScreen> {
             ),
             const SizedBox(height: 12),
             _buildDropdownField(
-              label: 'Ou est disponible cette offre*',
+              label: 'Où cette offre est-elle disponible ?*',
               value: _selectedDisponibleLocation,
               items: _locationOptions,
               onChanged: (val) =>
                   setState(() => _selectedDisponibleLocation = val),
-              hint: _buildRequiredHint('Ou est disponible cette offre'),
+              hint: _buildRequiredHint('Où cette offre est-elle disponible ?'),
               backgroundColor: AdaptiveColors.surface(
                 context,
                 const Color(0xFFF9FAFB),

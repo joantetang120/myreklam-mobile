@@ -280,7 +280,7 @@ class _ProProfileEntrepriseScreenState extends State<ProProfileEntrepriseScreen>
           // Section Coordonnés
           _buildSectionCard(
             icon: Icons.mail_outline,
-            title: 'Coordonnés',
+            title: 'Coordonnées',
             child: Column(
               children: [
                 _buildLabeledTextField(

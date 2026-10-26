@@ -3080,7 +3080,7 @@ class _DemandeDetailScreenState extends State<DemandeDetailScreen> {
     } else if (isEmploi || isStage || isAlternance) {
       // Translation maps
       const educationLabels = {
-        'sans_diplome': 'Sans diplome',
+        'sans_diplome': 'Sans diplôme',
         'cap_bep': 'CAP/BEP',
         'bac_employe': 'BAC/Employé/Ouvrier spécialisé',
         'bac2_technicien': 'BAC+2/Technicien/Employé',

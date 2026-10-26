@@ -49,12 +49,12 @@ class JobLabels {
     'RTT': 'RTT',
     'REMOTE_WORK': 'Télétravail',
     'COMPANY_CAR': 'Voiture de fonction',
-    'SAVINGS_PLAN': 'Plan épargne',
+    'SAVINGS_PLAN': 'Plan d’épargne',
     'FLEXIBLE_HOURS': 'Horaires flexibles',
     'TIPS': 'Pourboires',
     'COMMISSIONS': 'Commissions',
-    'THIRTEENTH_MONTH': '13ème mois',
-    'OVERTIME_PAY': 'Heures supp. majorée',
+    'THIRTEENTH_MONTH': '13e mois',
+    'OVERTIME_PAY': 'Heures supplémentaires majorées',
   };
 
   /// French label for [value].

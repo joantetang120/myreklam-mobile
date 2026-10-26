@@ -462,7 +462,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   isSpecial: true,
                 ),
               ],
-              advantages: const ['Primes', 'Heures supplementaires'],
+              advantages: const ['Primes', 'Heures supplémentaires'],
               timeAgo: 'il y a 2 jours',
               onApply: () {
                 Navigator.push(
@@ -506,7 +506,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           isSpecial: true,
                         ),
                       ],
-                      advantages: ['Primes', 'Heures supplementaires'],
+                      advantages: ['Primes', 'Heures supplémentaires'],
                       timeAgo: 'il y a 2 jours',
                     ),
                   ),

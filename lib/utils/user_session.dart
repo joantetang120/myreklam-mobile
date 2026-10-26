@@ -43,7 +43,7 @@ class UserSession {
     final endDate = _subscription!['end_date'];
     if (endDate == null) return true;
     final parsed = DateTime.tryParse(endDate.toString());
-    if (parsed == null) return true;
+    if (parsed == null) return false;
     return DateTime.now().isBefore(parsed);
   }
 

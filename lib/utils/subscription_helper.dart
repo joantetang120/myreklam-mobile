@@ -45,7 +45,12 @@ class SubscriptionHelper {
     final session = UserSession();
     if (!session.isPro) return false;
     return session.hasActiveSubscription &&
-        session.subscriptionPlan == 'premium';
+        const {
+          'premium',
+          'monthly',
+          'annual',
+          'yearly',
+        }.contains(session.subscriptionPlan);
   }
 
   /// Check if the current user is a pro with free plan (no active premium)
@@ -64,6 +69,16 @@ class SubscriptionHelper {
 
     // Premium pro: all features allowed
     if (isProPremium) return true;
+
+    // Stale permission snapshots must never revive expired/cancelled paid plans.
+    if (const {
+      'premium',
+      'monthly',
+      'annual',
+      'yearly',
+    }.contains(session.subscriptionPlan)) {
+      return feature == ProFeature.viewAnnouncements;
+    }
 
     // A legacy trial must not grant premium permissions.
     if (session.subscriptionStatus != 'trial') {

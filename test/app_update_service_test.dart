@@ -147,47 +147,103 @@ void main() {
       );
     }
 
-    test('reads the version and the store link from the lookup payload', () async {
+    test(
+      'reads the version and the store link from the lookup payload',
+      () async {
+        final service = serviceReturning(
+          200,
+          jsonEncode({
+            'resultCount': 1,
+            'results': [
+              {
+                'version': '1.1.5',
+                'trackViewUrl':
+                    'https://apps.apple.com/fr/app/myreklam/id123456789',
+              },
+            ],
+          }),
+        );
+
+        final release = await service.fetchAppStoreRelease('com.myreklam.app');
+
+        expect(release, isNotNull);
+        expect(release!.version, '1.1.5');
+        expect(release.storeUri.host, 'apps.apple.com');
+      },
+    );
+
+    test(
+      'returns null when the app is not published in that store front',
+      () async {
+        // Apple answers 200 with an empty result set, not an error status.
+        final service = serviceReturning(
+          200,
+          jsonEncode({'resultCount': 0, 'results': <dynamic>[]}),
+        );
+
+        expect(await service.fetchAppStoreRelease('com.myreklam.app'), isNull);
+      },
+    );
+
+    test('returns null on an error status or an unusable payload', () async {
+      expect(
+        await serviceReturning(
+          503,
+          '',
+        ).fetchAppStoreRelease('com.myreklam.app'),
+        isNull,
+      );
+      expect(
+        await serviceReturning(
+          200,
+          jsonEncode({
+            'results': [{}],
+          }),
+        ).fetchAppStoreRelease('com.myreklam.app'),
+        isNull,
+      );
+    });
+
+    test('uses numeric Apple id instead of an invalid bundle-id URL', () async {
       final service = serviceReturning(
         200,
         jsonEncode({
-          'resultCount': 1,
           'results': [
             {
-              'version': '1.1.5',
-              'trackViewUrl': 'https://apps.apple.com/fr/app/myreklam/id123456789',
+              'version': '1.21',
+              'trackId': 6766224435,
+              'bundleId': 'com.myreklam.app',
             },
           ],
         }),
       );
-
       final release = await service.fetchAppStoreRelease('com.myreklam.app');
-
-      expect(release, isNotNull);
-      expect(release!.version, '1.1.5');
-      expect(release.storeUri.host, 'apps.apple.com');
-    });
-
-    test('returns null when the app is not published in that store front', () async {
-      // Apple answers 200 with an empty result set, not an error status.
-      final service = serviceReturning(
-        200,
-        jsonEncode({'resultCount': 0, 'results': <dynamic>[]}),
-      );
-
-      expect(await service.fetchAppStoreRelease('com.myreklam.app'), isNull);
-    });
-
-    test('returns null on an error status or an unusable payload', () async {
       expect(
-        await serviceReturning(503, '').fetchAppStoreRelease('com.myreklam.app'),
-        isNull,
-      );
-      expect(
-        await serviceReturning(200, jsonEncode({'results': [{}]}))
-            .fetchAppStoreRelease('com.myreklam.app'),
-        isNull,
+        release!.storeUri.toString(),
+        'https://apps.apple.com/app/id6766224435',
       );
     });
+
+    test(
+      'rejects a foreign app, invalid version or unusable store link',
+      () async {
+        for (final value in [
+          {'version': '1.21', 'trackId': 123, 'bundleId': 'another.app'},
+          {'version': '-1.21', 'trackId': 123},
+          {'version': '1.21', 'trackViewUrl': ''},
+          {'version': '1.21', 'trackViewUrl': 'https://example.com/app/id123'},
+        ]) {
+          expect(
+            await serviceReturning(
+              200,
+              jsonEncode({
+                'results': [value],
+              }),
+            ).fetchAppStoreRelease('com.myreklam.app'),
+            isNull,
+          );
+        }
+      },
+    );
   });
 }

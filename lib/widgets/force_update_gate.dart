@@ -1,6 +1,8 @@
 import 'package:myreklam/theme/app_theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:myreklam/services/app_update_service.dart';
+import 'package:myreklam/services/update_reminder_store.dart';
 import 'package:myreklam/widgets/dot_loader.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -8,41 +10,179 @@ class ForceUpdateGate extends StatefulWidget {
   const ForceUpdateGate({
     required this.child,
     this.checkForRequiredUpdate,
+    this.reminderStore,
+    this.openStore,
     super.key,
   });
 
   final Widget child;
   final Future<AppUpdateRequirement?> Function()? checkForRequiredUpdate;
+  final UpdateReminderStore? reminderStore;
+  final Future<bool> Function(Uri)? openStore;
 
   @override
   State<ForceUpdateGate> createState() => _ForceUpdateGateState();
 }
 
-class _ForceUpdateGateState extends State<ForceUpdateGate> {
-  late final Future<AppUpdateRequirement?> _updateCheck;
+class _ForceUpdateGateState extends State<ForceUpdateGate>
+    with WidgetsBindingObserver {
+  late final UpdateReminderStore _reminders;
+  AppUpdateRequirement? _requirement;
+  bool _loading = true;
+  bool _checking = false;
+  bool _openingStore = false;
+  String? _storeError;
 
   @override
   void initState() {
     super.initState();
-    _updateCheck =
-        widget.checkForRequiredUpdate?.call() ??
-        AppUpdateService().checkForRequiredUpdate();
+    _reminders = widget.reminderStore ?? UpdateReminderStore();
+    WidgetsBinding.instance.addObserver(this);
+    _check();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        defaultTargetPlatform == TargetPlatform.iOS) {
+      _check();
+    }
+  }
+
+  Future<void> _check() async {
+    if (_checking) return;
+    _checking = true;
+    AppUpdateRequirement? result;
+    try {
+      result =
+          await (widget.checkForRequiredUpdate?.call() ??
+                  AppUpdateService().checkForRequiredUpdate())
+              .timeout(const Duration(seconds: 12));
+      if (result?.platform == AppStorePlatform.ios) {
+        final version = result?.storeVersion;
+        if (version == null || !await _reminders.shouldPrompt(version)) {
+          result = null;
+        }
+      }
+    } catch (_) {
+      // Offline, invalid lookup or plugin failure: no update lockout.
+      result = null;
+    } finally {
+      _checking = false;
+    }
+    if (!mounted) return;
+    setState(() {
+      _loading = false;
+      _requirement = result;
+    });
+  }
+
+  Future<void> _postpone() async {
+    final version = _requirement?.storeVersion;
+    setState(() => _requirement = null);
+    if (version != null) await _reminders.postpone(version);
+  }
+
+  Future<void> _openIosStore() async {
+    final requirement = _requirement;
+    if (_openingStore || requirement == null) return;
+    setState(() {
+      _openingStore = true;
+      _storeError = null;
+    });
+    try {
+      // Also suppress this release after visiting the store: an "Open" button
+      // instead of "Update" must not trap the person in an immediate loop.
+      await _reminders.postpone(requirement.storeVersion!);
+      final opened =
+          await (widget.openStore?.call(requirement.storeUri) ??
+                  launchUrl(
+                    requirement.storeUri,
+                    mode: LaunchMode.externalApplication,
+                  ))
+              .timeout(const Duration(seconds: 10));
+      if (!mounted) return;
+      setState(() {
+        if (opened) {
+          _requirement = null;
+        } else {
+          _storeError =
+              'Impossible d’ouvrir l’App Store. Réessayez ou choisissez « Plus tard ».';
+        }
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _storeError =
+              'Impossible d’ouvrir l’App Store. Vous pouvez continuer à utiliser l’application.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _openingStore = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<AppUpdateRequirement?>(
-      future: _updateCheck,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const _UpdateLoadingScreen();
-        }
-
-        final requirement = snapshot.data;
-        if (requirement == null) return widget.child;
-
-        return _RequiredUpdateScreen(requirement: requirement);
-      },
+    // Google Play retains its existing loading screen and mandatory flow.
+    if (_loading && defaultTargetPlatform != TargetPlatform.iOS) {
+      return const _UpdateLoadingScreen();
+    }
+    final requirement = _requirement;
+    if (requirement?.platform == AppStorePlatform.android) {
+      return _RequiredUpdateScreen(requirement: requirement!);
+    }
+    // This gate wraps the Navigator, so replacing the splash route cannot
+    // discard the lookup or the lifecycle observer before it finishes.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        widget.child,
+        if (requirement?.platform == AppStorePlatform.ios) ...[
+          ModalBarrier(
+            color: Colors.black54,
+            dismissible: true,
+            onDismiss: _postpone,
+          ),
+          Center(
+            child: AlertDialog(
+              title: Text(requirement!.title),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(requirement.message),
+                  if (_storeError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(
+                        _storeError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: _postpone,
+                  child: const Text('Plus tard'),
+                ),
+                FilledButton(
+                  onPressed: _openingStore ? null : _openIosStore,
+                  child: Text(_openingStore ? 'Ouverture…' : 'Mettre à jour'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

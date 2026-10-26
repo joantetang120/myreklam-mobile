@@ -184,7 +184,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       'CreativeHobbies': 'Loisir créatifs',
       'MoviesSeries': 'Films & Séries',
       'BooksMagazines': 'Livres & Magazines',
-      'ShowsTickets': 'Spectacles & Billeterie',
+      'ShowsTickets': 'Spectacles & Billetterie',
       'GamblingBetting': 'Jeux de hasard & paris',
       'SportsEvents': 'Événements Sportifs',
       'AutoMotoBoatPlane': 'Auto / Moto / Bateau / Avion',
@@ -2158,7 +2158,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         context,
                         Colors.orange,
                       ).withValues(alpha: 0.1),
-                      label: "Type d'evenements",
+                      label: "Type d’événement",
                       value: _translateSubCategory(widget.subCategoryCode!),
                     ),
                   if (widget.subCategoryCode != null &&

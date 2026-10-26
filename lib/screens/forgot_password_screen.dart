@@ -138,7 +138,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   if (!RegExp(
                     r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                   ).hasMatch(value)) {
-                    return 'Veuillez entrer un email valide';
+                    return 'Veuillez saisir une adresse e-mail valide';
                   }
                   return null;
                 },

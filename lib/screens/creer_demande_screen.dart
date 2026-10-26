@@ -149,7 +149,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     {'code': 'en_ligne', 'label': 'Formation en ligne (e-learning)'},
     {'code': 'intensive', 'label': 'Formation intensive'},
     {'code': 'vae', 'label': 'Validation des acquis de compétence (VAE)'},
-    {'code': 'stage', 'label': 'Stage/Immersion professionelle'},
+    {'code': 'stage', 'label': 'Stage / immersion professionnelle'},
   ];
 
   // Secteurs d'activité pour Emploi/Stage (codes uniques avec préfixe)
@@ -239,7 +239,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
     {'code': 'LookingForSharedHousing', 'label': 'Cherche colocation'},
     {
       'code': 'LookingForProfessionalSpace',
-      'label': 'Cherche local professionel',
+      'label': 'Recherche de local professionnel',
     },
   ];
 
@@ -4098,7 +4098,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               label: 'Quel est votre niveau d\'études ?',
               value: _niveauEtudes,
               items: [
-                {'code': 'sans_diplome', 'label': 'Sans diplome'},
+                {'code': 'sans_diplome', 'label': 'Sans diplôme'},
                 {'code': 'cap_bep', 'label': 'CAP/BEP'},
                 {
                   'code': 'bac_employe',
@@ -4669,7 +4669,7 @@ class _CreerDemandeScreenState extends State<CreerDemandeScreen> {
               label: 'Quel est votre niveau d\'études ?',
               value: _niveauEtudes,
               items: [
-                {'code': 'sans_diplome', 'label': 'Sans diplome'},
+                {'code': 'sans_diplome', 'label': 'Sans diplôme'},
                 {'code': 'cap_bep', 'label': 'CAP/BEP'},
                 {
                   'code': 'bac_employe',

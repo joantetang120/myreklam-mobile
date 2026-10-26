@@ -5063,7 +5063,7 @@ class _ProPublicViewScreenState extends State<ProPublicViewScreen>
       'CreativeHobbies': 'Loisir créatifs',
       'MoviesSeries': 'Films & Séries',
       'BooksMagazines': 'Livres & Magazines',
-      'ShowsTickets': 'Spectacles & Billeterie',
+      'ShowsTickets': 'Spectacles & Billetterie',
       'GamblingBetting': 'Jeux de hasard & paris',
       'SportsEvents': 'Événements Sportifs',
       'AutoMotoBoatPlane': 'Auto / Moto / Bateau / Avion',

@@ -69,7 +69,7 @@ class TrainingService {
         }
       }
     }
-    throw Exception('Failed to load categories');
+    throw Exception('Impossible de charger les catégories');
   }
 
   /// Create a new training
@@ -109,7 +109,7 @@ class TrainingService {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
-    throw Exception('Failed to upload media: ${response.body}');
+    throw Exception('Impossible d’importer les médias : ${response.body}');
   }
 
   /// Upload document files
@@ -138,7 +138,7 @@ class TrainingService {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
-    throw Exception('Failed to upload documents: ${response.body}');
+    throw Exception('Impossible d’importer les documents : ${response.body}');
   }
 
   /// Delete media
@@ -155,7 +155,7 @@ class TrainingService {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to delete media: ${response.body}');
+      throw Exception('Impossible de supprimer le média : ${response.body}');
     }
   }
 
@@ -173,7 +173,7 @@ class TrainingService {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to delete document: ${response.body}');
+      throw Exception('Impossible de supprimer le document : ${response.body}');
     }
   }
 
@@ -209,7 +209,7 @@ class TrainingService {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('Failed to delete training: ${response.body}');
+      throw Exception('Impossible de supprimer la formation : ${response.body}');
     }
   }
 }

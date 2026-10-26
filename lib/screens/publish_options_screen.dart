@@ -375,7 +375,7 @@ class _PublishOptionsScreenState extends State<PublishOptionsScreen> {
                       context,
                       const Color(0xFF00897B),
                     ),
-                    title: 'Publier un Evènement',
+                    title: 'Publier un Évènement',
                     description:
                         'Organisez et annoncez vos événements, rencontres et activités.',
                     icon: Icons.event_outlined,

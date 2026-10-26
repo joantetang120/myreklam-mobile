@@ -194,7 +194,7 @@ class ConversationService {
       );
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to mark as read: ${response.statusCode}');
+        throw Exception('Impossible de marquer les messages comme lus : ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('❌ Error marking as read: $e');

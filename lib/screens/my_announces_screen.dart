@@ -1402,7 +1402,7 @@ class _MyAnnouncesScreenState extends State<MyAnnouncesScreen> {
                         ),
                         const SizedBox(width: 15),
                         CategoriesIcon(
-                          title: 'Evenements',
+                          title: 'Événements',
                           iconColor: AdaptiveColors.foreground(
                             context,
                             Colors.green,
